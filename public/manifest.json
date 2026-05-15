@@ -1,0 +1,16 @@
+{
+  "name": "rent-control",
+  "short_name": "rent-control",
+  "description": "Property management app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F0",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}
