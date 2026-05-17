@@ -35,7 +35,15 @@
     "reportShare": "Share",
     "reportGenerateNew": "Generate a new report",
     "reportEmptyTitle": "No reports yet",
-    "reportEmptyMeta": "Your generated PDFs will live here."
+    "reportEmptyMeta": "Your generated PDFs will live here.",
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "needsAttention": "Needs Attention",
+    "overdueRent": "Overdue Rent",
+    "allGood": "All caught up!",
+    "reportsSubtitle": "Generate income & expense reports",
+    "leaseExpiringSoon": "Lease expiring soon"
   },
   "settings": {
     "title": "Settings",
@@ -58,7 +66,11 @@
     "deleteAccountConfirmButton": "Delete Account Permanently",
     "deleteAccountSuccess": "Account deleted successfully",
     "deleteAccountRequiresReauth": "For security, please sign out and sign back in before deleting your account.",
-    "deleteAccountFailed": "Failed to delete account. Please try again."
+    "deleteAccountFailed": "Failed to delete account. Please try again.",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "signOutConfirm": "Sign out?"
   },
   "restart": {
     "title": "Restart Required",
@@ -79,7 +91,10 @@
     "addRenter": "Add Renter",
     "editRenter": "Edit Renter",
     "transactions": "Transactions",
-    "transactionDetails": "Transaction Details"
+    "transactionDetails": "Transaction Details",
+    "settings": "Settings",
+    "suppliers": "Suppliers",
+    "reports": "Reports"
   },
   "property": {
     "basicInfo": "Basic Information",
@@ -141,7 +156,24 @@
     "basicInfoSubtitle": "Where the property is and what type it is.",
     "photo": "Photo",
     "addAPhoto": "Add a photo",
-    "photoHelper": "Or pick a house illustration"
+    "photoHelper": "Or pick a house illustration",
+    "tab_info": "Info",
+    "tab_renters": "Renters",
+    "tab_transactions": "Transactions",
+    "addNew": "Add Property",
+    "addTitle": "Add Property",
+    "editTitle": "Edit Property",
+    "createSuccess": "Property created",
+    "updateSuccess": "Property updated",
+    "owner": "Owner",
+    "selectType": "Select type",
+    "type_apartment": "Apartment",
+    "type_house": "House",
+    "type_commercial": "Commercial",
+    "type_garden_apartment": "Garden Apartment",
+    "rentersCount": "renter(s)",
+    "total": "properties",
+    "image": "Photo"
   },
   "renter": {
     "basicInfo": "Basic Information",
@@ -203,6 +235,26 @@
     },
     "noProperty": "No property assigned",
     "noTransactions": "No transactions for this renter",
+    "tab_info": "Info",
+    "tab_property": "Property",
+    "tab_transactions": "Transactions",
+    "addNew": "Add Renter",
+    "addTitle": "Add Renter",
+    "editTitle": "Edit Renter",
+    "createSuccess": "Renter created",
+    "updateSuccess": "Renter updated",
+    "leaseYears": "Lease Years",
+    "addYear": "Add year",
+    "option": "Option",
+    "contract": "Contract",
+    "selectProperty": "Select property",
+    "selectPaymentType": "Select payment type",
+    "paymentDay": "Payment day",
+    "amount": "Monthly rent",
+    "addContact": "Add contact",
+    "contactName": "Name",
+    "contactPhone": "Phone",
+    "total": "renters",
     "status": {
       "active": "Active",
       "paid": "Paid",
@@ -219,13 +271,21 @@
     "noTransactions": "No transactions yet. Tap + to add one.",
     "noTransactionSearchResults": "No transactions match your search.",
     "noRevenueThisPeriod": "No revenue in this period.",
-    "noExpenseThisPeriod": "No expenses in this period."
+    "noExpenseThisPeriod": "No expenses in this period.",
+    "properties": "No properties yet",
+    "propertiesDesc": "Tap the button above to add your first property",
+    "renters": "No renters yet",
+    "transactions": "No transactions yet",
+    "noResults": "No results found",
+    "suppliers": "No suppliers yet"
   },
   "search": {
     "placeholder": "Search renters, property, owner...",
     "placeholderProperties": "Search properties, addresses, owner...",
     "placeholderSuppliers": "Search suppliers...",
-    "placeholderTransactions": "Search by renter, property, owner, category..."
+    "placeholderTransactions": "Search by renter, property, owner, category...",
+    "propertiesPlaceholder": "Search properties, addresses...",
+    "rentersPlaceholder": "Search renters..."
   },
   "filters": {
     "all": "All",
@@ -256,7 +316,13 @@
     "selectItem": "Select item",
     "showMore": "Show more",
     "showLess": "Show less",
-    "step_n_of_m": "Step {{n}} of {{m}}"
+    "step_n_of_m": "Step {{n}} of {{m}}",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "or": "or",
+    "retry": "Try again",
+    "viewAll": "View all"
   },
   "validation": {
     "title": "Validation",
@@ -296,7 +362,8 @@
     "invalidTransactionId": "Invalid transaction ID",
     "transactionNotFound": "Transaction not found",
     "deleteTransactionFailed": "Failed to delete transaction",
-    "updateTransactionFailed": "Failed to update transaction"
+    "updateTransactionFailed": "Failed to update transaction",
+    "deleteFailed": "Failed to delete"
   },
   "transactions": {
     "addTransaction": "Add transaction",
@@ -331,6 +398,24 @@
     "category": "Category",
     "supplier": "Supplier",
     "notes": "Notes (optional)",
+    "revenue": "Revenue",
+    "expenses": "Expenses",
+    "expense": "Expense",
+    "filter_all": "All",
+    "filter_revenue": "Revenue",
+    "filter_expense": "Expense",
+    "paymentMethod_cash": "Cash",
+    "paymentMethod_bank_transfer": "Bank Transfer",
+    "paymentMethod_bit": "Bit",
+    "paymentMethod_check": "Check",
+    "deleteSuccess": "Transaction deleted",
+    "createSuccess": "Transaction saved",
+    "selectCategory": "Select category",
+    "selectProperty": "Select property",
+    "selectSupplier": "Select supplier",
+    "selectPaymentMethod": "Select payment method",
+    "addNew": "Add transaction",
+    "date": "Date",
     "revenueTitle": "Revenue",
     "expenseTitle": "Expense",
     "save": "Save",
@@ -419,7 +504,11 @@
     "deleteConfirmTitle": "Delete {{count}} item(s)?",
     "deleteConfirmMessage": "This cannot be undone.",
     "deleteButton": "Delete",
-    "partialError": "{{success}} deleted, {{failed}} failed."
+    "partialError": "{{success}} deleted, {{failed}} failed.",
+    "confirm": "Delete {{count}} item(s)?",
+    "delete": "Delete ({{count}})",
+    "success": "Deleted successfully",
+    "hint": "Long-press to select items"
   },
   "reports": {
     "incomeExpense": "Income & Expense",
@@ -462,6 +551,20 @@
     "errorWeakPassword": "Password must be at least 6 characters.",
     "errorInvalidEmail": "Invalid email address.",
     "errorTooManyRequests": "Too many attempts. Please try again later.",
-    "errorGeneric": "Something went wrong."
+    "errorGeneric": "Something went wrong.",
+    "signInTitle": "Sign in to your account",
+    "registerTitle": "Create a new account",
+    "forgotPasswordTitle": "Reset your password",
+    "backToSignIn": "Back to sign in",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Your password",
+    "signInButton": "Sign in",
+    "registerButton": "Create account",
+    "sendResetButton": "Send reset email",
+    "signInWithGoogle": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "registerLink": "Register"
   }
 }

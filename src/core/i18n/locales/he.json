@@ -35,7 +35,15 @@
     "reportShare": "שתף",
     "reportGenerateNew": "צור דוח חדש",
     "reportEmptyTitle": "אין דוחות עדיין",
-    "reportEmptyMeta": "הדוחות שתפיק יופיעו כאן."
+    "reportEmptyMeta": "הדוחות שתפיק יופיעו כאן.",
+    "goodMorning": "בוקר טוב",
+    "goodAfternoon": "צהריים טובים",
+    "goodEvening": "ערב טוב",
+    "needsAttention": "דורש טיפול",
+    "overdueRent": "שכר דירה באיחור",
+    "allGood": "הכל תקין!",
+    "reportsSubtitle": "צור דוחות הכנסות והוצאות",
+    "leaseExpiringSoon": "חוזה עומד לפוג"
   },
   "settings": {
     "title": "הגדרות",
@@ -58,7 +66,11 @@
     "deleteAccountConfirmButton": "מחק חשבון לצמיתות",
     "deleteAccountSuccess": "החשבון נמחק בהצלחה",
     "deleteAccountRequiresReauth": "מטעמי אבטחה, התנתק והתחבר מחדש לפני מחיקת החשבון.",
-    "deleteAccountFailed": "מחיקת החשבון נכשלה. נסה שוב."
+    "deleteAccountFailed": "מחיקת החשבון נכשלה. נסה שוב.",
+    "light": "בהיר",
+    "dark": "כהה",
+    "system": "מערכת",
+    "signOutConfirm": "להתנתק?"
   },
   "restart": {
     "title": "נדרש הפעלה מחדש",
@@ -79,7 +91,10 @@
     "addRenter": "הוספת דייר",
     "editRenter": "עריכת דייר",
     "transactions": "תנועות",
-    "transactionDetails": "פרטי תנועה"
+    "transactionDetails": "פרטי תנועה",
+    "settings": "הגדרות",
+    "suppliers": "ספקים",
+    "reports": "דוחות"
   },
   "property": {
     "basicInfo": "מידע בסיסי",
@@ -141,7 +156,24 @@
     "basicInfoSubtitle": "היכן הנכס ומה סוגו.",
     "photo": "תמונה",
     "addAPhoto": "הוסף תמונה",
-    "photoHelper": "או בחר איור בית"
+    "photoHelper": "או בחר איור בית",
+    "tab_info": "פרטים",
+    "tab_renters": "דיירים",
+    "tab_transactions": "תנועות",
+    "addNew": "הוסף נכס",
+    "addTitle": "הוסף נכס",
+    "editTitle": "ערוך נכס",
+    "createSuccess": "נכס נוצר",
+    "updateSuccess": "נכס עודכן",
+    "owner": "בעלים",
+    "selectType": "בחר סוג",
+    "type_apartment": "דירה",
+    "type_house": "בית",
+    "type_commercial": "מסחרי",
+    "type_garden_apartment": "דירת גן",
+    "rentersCount": "דייר(ים)",
+    "total": "נכסים",
+    "image": "תמונה"
   },
   "renter": {
     "basicInfo": "מידע בסיסי",
@@ -203,6 +235,26 @@
     },
     "noProperty": "לא משויך לנכס",
     "noTransactions": "אין תנועות לדייר זה",
+    "tab_info": "פרטים",
+    "tab_property": "נכס",
+    "tab_transactions": "תנועות",
+    "addNew": "הוסף דייר",
+    "addTitle": "הוסף דייר",
+    "editTitle": "ערוך דייר",
+    "createSuccess": "דייר נוצר",
+    "updateSuccess": "דייר עודכן",
+    "leaseYears": "שנות שכירות",
+    "addYear": "הוסף שנה",
+    "option": "אופציה",
+    "contract": "חוזה",
+    "selectProperty": "בחר נכס",
+    "selectPaymentType": "בחר אמצעי תשלום",
+    "paymentDay": "יום תשלום",
+    "amount": "שכר דירה חודשי",
+    "addContact": "הוסף איש קשר",
+    "contactName": "שם",
+    "contactPhone": "טלפון",
+    "total": "דיירים",
     "status": {
       "active": "פעיל",
       "paid": "שולם",
@@ -219,13 +271,21 @@
     "noTransactions": "אין תנועות עדיין. לחץ + להוספה.",
     "noTransactionSearchResults": "לא נמצאו תנועות התואמות לחיפוש.",
     "noRevenueThisPeriod": "אין הכנסות בתקופה זו.",
-    "noExpenseThisPeriod": "אין הוצאות בתקופה זו."
+    "noExpenseThisPeriod": "אין הוצאות בתקופה זו.",
+    "properties": "אין נכסים עדיין",
+    "propertiesDesc": "לחץ על הכפתור להוספת הנכס הראשון",
+    "renters": "אין דיירים עדיין",
+    "transactions": "אין תנועות עדיין",
+    "noResults": "לא נמצאו תוצאות",
+    "suppliers": "אין ספקים עדיין"
   },
   "search": {
     "placeholder": "חיפוש דיירים, נכס, בעלים...",
     "placeholderProperties": "חיפוש נכסים, כתובות, בעלים...",
     "placeholderSuppliers": "חיפוש ספקים...",
-    "placeholderTransactions": "חיפוש לפי דייר, נכס, בעלים, קטגוריה..."
+    "placeholderTransactions": "חיפוש לפי דייר, נכס, בעלים, קטגוריה...",
+    "propertiesPlaceholder": "חיפוש נכסים, כתובות...",
+    "rentersPlaceholder": "חיפוש דיירים..."
   },
   "filters": {
     "all": "הכל",
@@ -256,7 +316,13 @@
     "selectItem": "בחר פריט",
     "showMore": "הצג עוד",
     "showLess": "הצג פחות",
-    "step_n_of_m": "שלב {{n}} מתוך {{m}}"
+    "step_n_of_m": "שלב {{n}} מתוך {{m}}",
+    "edit": "עריכה",
+    "delete": "מחיקה",
+    "save": "שמירה",
+    "or": "או",
+    "retry": "נסה שוב",
+    "viewAll": "הצג הכל"
   },
   "validation": {
     "title": "אימות",
@@ -296,7 +362,8 @@
     "invalidTransactionId": "מזהה תנועה לא תקין",
     "transactionNotFound": "התנועה לא נמצאה",
     "deleteTransactionFailed": "מחיקת התנועה נכשלה",
-    "updateTransactionFailed": "עדכון התנועה נכשל"
+    "updateTransactionFailed": "עדכון התנועה נכשל",
+    "deleteFailed": "המחיקה נכשלה"
   },
   "transactions": {
     "addTransaction": "הוספת תנועה",
@@ -331,6 +398,24 @@
     "category": "קטגוריה",
     "supplier": "ספק",
     "notes": "הערות (אופציונלי)",
+    "revenue": "הכנסה",
+    "expenses": "הוצאות",
+    "expense": "הוצאה",
+    "filter_all": "הכל",
+    "filter_revenue": "הכנסות",
+    "filter_expense": "הוצאות",
+    "paymentMethod_cash": "מזומן",
+    "paymentMethod_bank_transfer": "העברה בנקאית",
+    "paymentMethod_bit": "ביט",
+    "paymentMethod_check": "צ'ק",
+    "deleteSuccess": "תנועה נמחקה",
+    "createSuccess": "תנועה נשמרה",
+    "selectCategory": "בחר קטגוריה",
+    "selectProperty": "בחר נכס",
+    "selectSupplier": "בחר ספק",
+    "selectPaymentMethod": "בחר אמצעי תשלום",
+    "addNew": "הוסף תנועה",
+    "date": "תאריך",
     "revenueTitle": "הכנסה",
     "expenseTitle": "הוצאה",
     "save": "שמירה",
@@ -419,7 +504,11 @@
     "deleteConfirmTitle": "למחוק {{count}} פריט(ים)?",
     "deleteConfirmMessage": "לא ניתן לבטל פעולה זו.",
     "deleteButton": "מחק",
-    "partialError": "{{success}} נמחקו, {{failed}} נכשלו."
+    "partialError": "{{success}} נמחקו, {{failed}} נכשלו.",
+    "confirm": "למחוק {{count}} פריט(ים)?",
+    "delete": "מחיקה ({{count}})",
+    "success": "נמחק בהצלחה",
+    "hint": "לחץ לאורך זמן לבחירת פריטים"
   },
   "reports": {
     "incomeExpense": "הכנסות והוצאות",
@@ -462,6 +551,20 @@
     "errorWeakPassword": "הסיסמה חייבת להכיל לפחות 6 תווים.",
     "errorInvalidEmail": "כתובת אימייל לא תקינה.",
     "errorTooManyRequests": "יותר מדי ניסיונות. נסה שוב מאוחר יותר.",
-    "errorGeneric": "משהו השתבש."
+    "errorGeneric": "משהו השתבש.",
+    "signInTitle": "התחבר לחשבון",
+    "registerTitle": "צור חשבון חדש",
+    "forgotPasswordTitle": "איפוס סיסמה",
+    "backToSignIn": "חזרה להתחברות",
+    "emailLabel": "אימייל",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "סיסמה",
+    "passwordPlaceholder": "הסיסמה שלך",
+    "signInButton": "התחברות",
+    "registerButton": "יצירת חשבון",
+    "sendResetButton": "שלח קישור לאיפוס",
+    "signInWithGoogle": "המשך עם Google",
+    "noAccount": "אין לך חשבון?",
+    "registerLink": "הרשמה"
   }
 }
