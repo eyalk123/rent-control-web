@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import { supplierFormSchema, type SupplierFormValues } from '../validation/supplierValidation';
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
+import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
 import { PageContainer } from '@/shared/components/ui/PageContainer';
 import { useToast } from '@/shared/components/ui/Toast';
 
@@ -24,21 +25,27 @@ export function AddEditSupplierPage() {
   const updateMutation = useUpdateSupplier(supplierId ?? 0);
   const { showToast } = useToast();
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<SupplierFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting } } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema) as never,
-    defaultValues: { name: '', phone: '', email: '', notes: '', categoryIds: [] },
+    defaultValues: { name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' } },
   });
 
   const selectedCategoryIds = watch('categoryIds') ?? [];
 
   useEffect(() => {
     if (existing) {
+      const parsedBankAccount = (() => {
+        if (!existing.bank_account) return { bank: '', branch: '', account: '' };
+        const parts = existing.bank_account.split('/');
+        return { bank: parts[0] ?? '', branch: parts[1] ?? '', account: parts[2] ?? '' };
+      })();
       reset({
         name: existing.name,
         phone: existing.phone ?? '',
         email: existing.email ?? '',
         notes: existing.notes ?? '',
         categoryIds: existing.category_ids ?? [],
+        bankAccount: parsedBankAccount as BankAccountValue,
       });
     }
   }, [existing, reset]);
@@ -50,6 +57,9 @@ export function AddEditSupplierPage() {
         phone: data.phone || null,
         email: data.email || null,
         notes: data.notes || null,
+        bank_account: isValidBankAccount(data.bankAccount as BankAccountValue)
+          ? `${data.bankAccount.bank}/${data.bankAccount.branch}/${data.bankAccount.account}`
+          : null,
         category_ids: data.categoryIds,
       };
 
@@ -128,6 +138,24 @@ export function AddEditSupplierPage() {
               })}
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-5 space-y-4">
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+            {t('suppliers.bankAccount')}
+          </p>
+          <Controller
+            control={control}
+            name="bankAccount"
+            render={({ field: { value, onChange }, fieldState: { error: fieldError } }) => (
+              <BankAccountInput
+                value={(value as BankAccountValue) ?? { bank: '', branch: '', account: '' }}
+                onChange={onChange}
+                disabled={isSubmitting}
+                error={fieldError?.message}
+              />
+            )}
+          />
         </div>
 
         <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">

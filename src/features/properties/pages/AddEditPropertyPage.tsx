@@ -49,6 +49,12 @@ export function AddEditPropertyPage() {
         inventoryNotes: existing.inventory_notes ?? '',
         floor: existing.floor?.toString() ?? '',
         apartment: existing.apartment ?? '',
+        propertyTax: existing.property_tax?.toString() ?? '',
+        houseCommittee: existing.house_committee?.toString() ?? '',
+        electricityMeterNumber: existing.electricity_meter_number ?? '',
+        electricityAccountNumber: existing.electricity_account_number ?? '',
+        waterMeterNumber: existing.water_meter_number ?? '',
+        waterAccountNumber: existing.water_account_number ?? '',
       });
       if (existing.image_url) setImagePreview(existing.image_url);
     }
@@ -72,6 +78,12 @@ export function AddEditPropertyPage() {
         inventory_notes: data.inventoryNotes || undefined,
         floor: data.floor ? Number(data.floor) : undefined,
         apartment: data.apartment || undefined,
+        property_tax: data.propertyTax ? Number(data.propertyTax) : undefined,
+        house_committee: data.houseCommittee ? Number(data.houseCommittee) : undefined,
+        electricity_meter_number: data.electricityMeterNumber || undefined,
+        electricity_account_number: data.electricityAccountNumber || undefined,
+        water_meter_number: data.waterMeterNumber || undefined,
+        water_account_number: data.waterAccountNumber || undefined,
       };
 
       if (isEditing && id) {
@@ -167,6 +179,14 @@ export function AddEditPropertyPage() {
                   {...register('inventoryNotes')}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormInput label={t('property.propertyTax')} type="number" error={errors.propertyTax?.message} {...register('propertyTax')} />
+                <FormInput label={t('property.houseCommittee')} type="number" error={errors.houseCommittee?.message} {...register('houseCommittee')} />
+              </div>
+              <FormInput label={t('property.electricityMeterNumber')} error={errors.electricityMeterNumber?.message} {...register('electricityMeterNumber')} />
+              <FormInput label={t('property.electricityAccountNumber')} error={errors.electricityAccountNumber?.message} {...register('electricityAccountNumber')} />
+              <FormInput label={t('property.waterMeterNumber')} error={errors.waterMeterNumber?.message} {...register('waterMeterNumber')} />
+              <FormInput label={t('property.waterAccountNumber')} error={errors.waterAccountNumber?.message} {...register('waterAccountNumber')} />
             </>
           )}
         </div>

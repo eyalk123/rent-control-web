@@ -25,7 +25,9 @@ function sanitizePropertyCreate(data: PropertyCreate): PropertyCreate {
     number_of_rooms,
     parking_numbers,
     electricity_meter_number,
-    water_meter_tax,
+    electricity_account_number,
+    water_meter_number,
+    water_account_number,
     property_tax,
     house_committee,
     property_owner,
@@ -44,7 +46,9 @@ function sanitizePropertyCreate(data: PropertyCreate): PropertyCreate {
   if (number_of_rooms !== undefined) out.number_of_rooms = number_of_rooms;
   if (parking_numbers !== undefined) out.parking_numbers = parking_numbers;
   if (electricity_meter_number !== undefined) out.electricity_meter_number = electricity_meter_number;
-  if (water_meter_tax !== undefined) out.water_meter_tax = water_meter_tax;
+  if (electricity_account_number !== undefined) out.electricity_account_number = electricity_account_number;
+  if (water_meter_number !== undefined) out.water_meter_number = water_meter_number;
+  if (water_account_number !== undefined) out.water_account_number = water_account_number;
   if (property_tax !== undefined) out.property_tax = property_tax;
   if (house_committee !== undefined) out.house_committee = house_committee;
   if (property_owner !== undefined) out.property_owner = property_owner;
@@ -67,7 +71,9 @@ function sanitizePropertyUpdate(data: PropertyUpdate): Record<string, unknown> {
     'number_of_rooms',
     'parking_numbers',
     'electricity_meter_number',
-    'water_meter_tax',
+    'electricity_account_number',
+    'water_meter_number',
+    'water_account_number',
     'property_tax',
     'house_committee',
     'property_owner',

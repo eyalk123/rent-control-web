@@ -138,7 +138,9 @@
     "parkingNumbers": "Parking numbers",
     "parkingNumbersPlaceholder": "e.g. A-12, B-34",
     "electricityMeterNumber": "Electricity meter number",
-    "waterMeterTax": "Water meter tax",
+    "electricityAccountNumber": "Electricity account number",
+    "waterMeterNumber": "Water meter number",
+    "waterAccountNumber": "Water account number",
     "propertyTax": "Property tax",
     "houseCommittee": "House committee",
     "details": "Details",
@@ -482,7 +484,12 @@
     "saveSupplier": "Save Supplier",
     "delete": "Delete Supplier",
     "deleteConfirmTitle": "Delete supplier?",
-    "deleteConfirmMessage": "This will deactivate the supplier. You can reactivate it later by editing."
+    "deleteConfirmMessage": "This will deactivate the supplier. You can reactivate it later by editing.",
+    "bankAccount": "Bank account",
+    "bankCode": "Bank",
+    "branchCode": "Branch",
+    "accountNumber": "Account",
+    "unknownBank": "Unknown bank"
   },
   "documents": {
     "title": "Documents",
