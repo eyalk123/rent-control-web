@@ -1,100 +1,321 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Users, Trash2 } from 'lucide-react';
-import { useRenters, useDeleteRenter } from '../queries';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
+import { Plus, Phone, Mail, MessageSquare } from 'lucide-react';
+import { useRenters } from '../queries';
+import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
+import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
-import { useToast } from '@/shared/components/ui/Toast';
-import { getLeaseEndDate } from '@/shared/types';
+import { Pill } from '@/shared/components/ui/Pill';
+import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { formatMoney } from '@/shared/utils/money';
+import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 
-function RenterCard({
-  renter, selected, selectionMode, onSelect, onOpen,
-}: {
-  renter: Renter; selected: boolean; selectionMode: boolean;
-  onSelect: () => void; onOpen: () => void;
-}) {
-  const { t } = useTranslation();
-  const end = getLeaseEndDate(renter);
-  const isExpiring = end && (end.getTime() - Date.now()) < 60 * 24 * 60 * 60 * 1000;
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function fmtLeaseEnd(renter: Renter): string | null {
+  const d = getLeaseEndDate(renter);
+  if (!d) return null;
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+type RenterStatus = 'active' | 'expiring' | 'overdue';
+
+// ─── card ────────────────────────────────────────────────────────────────────
+
+function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }) {
+  const navigate = useNavigate();
+  const color = getPropertyColor(renter.id);
+  const bg = getPropertyColorBg(renter.id);
+  const monthly = getRenterMonthlyRent(renter);
+  const leaseEnd = fmtLeaseEnd(renter);
+  const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
+  const pillLabel = status === 'overdue' ? 'Overdue' : status === 'expiring' ? 'Expiring' : 'Active';
+
   return (
     <div
-      onClick={selectionMode ? onSelect : onOpen}
-      className={`flex items-start gap-3 rounded-2xl bg-[var(--color-surface)] border cursor-pointer p-4 transition-colors hover:border-[var(--color-primary)]/40 ${selected ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-outline)]'}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/renters/${renter.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/renters/${renter.id}`); }}
+      className="flex flex-col gap-3 rounded-[var(--radius-card)] p-4 cursor-pointer transition-all hover:-translate-y-px text-start"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
     >
-      {selectionMode && (
-        <input type="checkbox" checked={selected} onChange={onSelect} onClick={(e) => e.stopPropagation()} className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-primary)]" />
-      )}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-avatar-bg)] text-[var(--color-avatar-text)] text-sm font-semibold border border-[var(--color-avatar-border)]">
-        {renter.first_name[0]}{renter.last_name[0]}
+      {/* Avatar + name + status pill */}
+      <div className="flex items-center gap-3.5">
+        <div className="relative shrink-0">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full text-[13px] font-bold" style={{ background: bg, color }}>
+            {(renter.first_name[0] + renter.last_name[0]).toUpperCase()}
+          </div>
+          {/* status dot */}
+          <span
+            className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2"
+            style={{
+              background: status === 'overdue' ? 'var(--color-error)' : status === 'expiring' ? 'var(--color-warning)' : 'var(--color-success)',
+              borderColor: 'var(--color-surface)',
+            }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>
+            {renter.first_name} {renter.last_name}
+          </p>
+          <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+            {renter.property?.address ?? '—'}
+          </p>
+        </div>
+        <Pill tone={pillTone}>{pillLabel}</Pill>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-[var(--color-text-primary)]">{renter.first_name} {renter.last_name}</p>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{renter.phone}</p>
-        {renter.property && <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{renter.property.address}</p>}
-        {isExpiring && <p className="text-xs text-[var(--color-warning)] mt-1">{t('home.leaseExpiringSoon')}</p>}
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 pt-3" style={{ borderTop: '1px solid var(--color-outline)' }}>
+        {[
+          { label: 'Rent', value: <LtrSpan>{formatMoney(monthly)}</LtrSpan> },
+          { label: 'Lease ends', value: leaseEnd ?? '—' },
+          { label: 'Pay day', value: renter.payment_day_of_month ? `Day ${renter.payment_day_of_month}` : '—' },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+            <p className="text-[13.5px] font-bold mt-0.5" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Contact strip */}
+      <div className="flex gap-2 mt-0.5" onClick={(e) => e.stopPropagation()}>
+        {[
+          { icon: Phone, label: 'Call', href: `tel:${renter.phone}` },
+          { icon: MessageSquare, label: 'SMS', href: `sms:${renter.phone}` },
+          { icon: Mail, label: 'Email', href: `mailto:${renter.email}` },
+        ].map(({ icon: Icon, label, href }) => (
+          <a
+            key={label}
+            href={href}
+            className="flex flex-1 h-8 items-center justify-center gap-1.5 rounded-[8px] text-[12px] font-medium transition-colors hover:opacity-80"
+            style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}
+          >
+            <Icon size={13} /> {label}
+          </a>
+        ))}
       </div>
     </div>
   );
 }
 
+// ─── table ───────────────────────────────────────────────────────────────────
+
+function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map<number, RenterStatus> }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
+            {['Renter', 'Property', 'Phone', 'Rent', 'Lease ends', 'Status'].map((h) => (
+              <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {renters.map((r, i) => {
+            const color = getPropertyColor(r.id);
+            const bg = getPropertyColorBg(r.id);
+            const monthly = getRenterMonthlyRent(r);
+            const leaseEnd = fmtLeaseEnd(r);
+            const status = statusMap.get(r.id) ?? 'active';
+            const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
+            const pillLabel = status === 'overdue' ? 'Overdue' : status === 'expiring' ? 'Expiring' : 'Active';
+
+            return (
+              <tr
+                key={r.id}
+                onClick={() => navigate(`/renters/${r.id}`)}
+                className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
+                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+              >
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: bg, color }}>
+                      {(r.first_name[0] + r.last_name[0]).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{r.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{r.property?.address ?? '—'}</td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{r.phone}</td>
+                <td className="px-4 py-3 text-sm font-semibold">
+                  <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(monthly)}</LtrSpan>
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{leaseEnd ?? '—'}</td>
+                <td className="px-4 py-3"><Pill tone={pillTone}>{pillLabel}</Pill></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── main page ───────────────────────────────────────────────────────────────
+
+type StatusFilter = 'all' | 'active' | 'expiring' | 'overdue';
+type ViewMode = 'card' | 'table';
+
 export function RentersListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: renters, isLoading, error, refetch } = useRenters();
-  const { mutateAsync: deleteRenter } = useDeleteRenter();
-  const { showToast } = useToast();
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [search, setSearch] = useState('');
-  const selectionMode = selectedIds.size > 0;
+  const { data: renters = [], isLoading, error, refetch } = useRenters();
+  const { data: overdueList = [] } = useOverdueRenters();
+  const { data: expiringList = [] } = useExpiringRenters();
 
-  const filtered = (renters ?? []).filter((r) =>
-    `${r.first_name} ${r.last_name} ${r.phone} ${r.email}`.toLowerCase().includes(search.toLowerCase()),
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [search, setSearch] = useState('');
+  const [view, setView] = useState<ViewMode>('card');
+
+  // Build status map
+  const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
+  const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
+  const statusMap = new Map<number, RenterStatus>(
+    renters.map((r) => [r.id, overdueIds.has(r.id) ? 'overdue' : expiringIds.has(r.id) ? 'expiring' : 'active'])
   );
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const counts = {
+    all: renters.length,
+    active: renters.filter((r) => statusMap.get(r.id) === 'active').length,
+    expiring: renters.filter((r) => statusMap.get(r.id) === 'expiring').length,
+    overdue: renters.filter((r) => statusMap.get(r.id) === 'overdue').length,
   };
 
-  const handleBulkDelete = async () => {
-    if (!confirm(t('bulkDelete.confirm', { count: selectedIds.size }))) return;
-    try {
-      await Promise.all([...selectedIds].map((id) => deleteRenter(id)));
-      setSelectedIds(new Set());
-      showToast(t('bulkDelete.success'), 'success');
-    } catch { showToast(t('error.deleteFailed'), 'error'); }
-  };
+  const filtered = renters.filter((r) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!`${r.first_name} ${r.last_name} ${r.phone} ${r.email}`.toLowerCase().includes(q)) return false;
+    }
+    if (statusFilter !== 'all' && statusMap.get(r.id) !== statusFilter) return false;
+    return true;
+  });
 
-  if (error) return <PageContainer><EmptyState icon={Users} title={t('error.loadFailed')} action={<button onClick={() => refetch()} className="text-sm text-[var(--color-primary)] hover:underline">{t('common.retry')}</button>} /></PageContainer>;
+  if (error) return (
+    <div className="max-w-6xl mx-auto px-8 py-8">
+      <EmptyState icon={undefined} title={t('error.loadFailed')} action={
+        <button onClick={() => refetch()} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{t('common.retry')}</button>
+      } />
+    </div>
+  );
+
+  const STATUS_TABS: { key: StatusFilter; label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' }[] = [
+    { key: 'all',      label: 'All',      tone: 'neutral' },
+    { key: 'active',   label: 'Active',   tone: 'success' },
+    { key: 'expiring', label: 'Expiring', tone: 'warning' },
+    { key: 'overdue',  label: 'Overdue',  tone: 'danger'  },
+  ];
 
   return (
-    <PageContainer>
-      <div className="mb-6 flex items-center justify-between gap-4">
+    <div className="max-w-6xl mx-auto px-8 py-8 space-y-0">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">{t('screens.renters')}</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{filtered.length} {t('renter.total', { count: filtered.length })}</p>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.renters')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            {renters.length} renters · {counts.expiring} expiring soon · {counts.overdue} overdue
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {selectionMode ? (
-            <>
-              <button onClick={() => setSelectedIds(new Set())} className="rounded-xl border border-[var(--color-outline)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-input-bg)]">{t('common.cancel')}</button>
-              <button onClick={handleBulkDelete} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-error)]/10 px-3 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/20"><Trash2 size={14} />{t('bulkDelete.delete', { count: selectedIds.size })}</button>
-            </>
-          ) : (
-            <button onClick={() => navigate('/renters/add')} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"><Plus size={16} />{t('renter.addNew')}</button>
-          )}
+        <button
+          onClick={() => navigate('/renters/add')}
+          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
+          style={{ background: 'var(--color-primary)' }}
+        >
+          <Plus size={14} /> Add renter
+        </button>
+      </div>
+
+      {/* Status tabs + search + view toggle */}
+      <div className="flex items-center gap-0 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+        {STATUS_TABS.map(({ key, label, tone }) => (
+          <button
+            key={key}
+            onClick={() => setStatusFilter(key)}
+            className="inline-flex items-center gap-1.5 px-1 py-2.5 mr-4 text-[13px] transition-colors"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderBottom: statusFilter === key ? '2px solid var(--color-brand-navy)' : '2px solid transparent',
+              color: statusFilter === key ? 'var(--color-brand-navy)' : 'var(--color-text-secondary)',
+              fontWeight: statusFilter === key ? 700 : 500,
+              cursor: 'pointer',
+              marginBottom: -1,
+            }}
+          >
+            {label}
+            <Pill tone={statusFilter === key ? tone : 'neutral'} size="sm">{counts[key]}</Pill>
+          </button>
+        ))}
+        <div className="flex-1" />
+        <div className="flex items-center gap-2 pb-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search renters…"
+            className="h-9 rounded-[9px] px-3 text-sm w-[240px] outline-none"
+            style={{
+              background: 'var(--color-input-filled-background)',
+              border: '1px solid var(--color-outline)',
+              color: 'var(--color-text-primary)',
+            }}
+          />
+          <SegToggle
+            value={view}
+            onChange={(v) => setView(v as ViewMode)}
+            options={[
+              { value: 'card', label: 'Cards' },
+              { value: 'table', label: 'Table' },
+            ]}
+            size="sm"
+          />
         </div>
       </div>
-      <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('search.rentersPlaceholder')} className="mb-5 w-full rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-placeholder)] outline-none focus:border-[var(--color-primary)]" />
-      {isLoading ? <PageLoader /> : filtered.length === 0 ? (
-        <EmptyState icon={Users} title={search ? t('empty.noResults') : t('empty.renters')} action={!search ? <button onClick={() => navigate('/renters/add')} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"><Plus size={14} />{t('renter.addNew')}</button> : undefined} />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((r) => <RenterCard key={r.id} renter={r} selected={selectedIds.has(r.id)} selectionMode={selectionMode} onSelect={() => toggleSelect(r.id)} onOpen={() => navigate(`/renters/${r.id}`)} />)}
-        </div>
-      )}
-    </PageContainer>
+
+      {/* Content */}
+      <div className="pt-5">
+        {isLoading ? (
+          <PageLoader />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={undefined}
+            title={search || statusFilter !== 'all' ? t('empty.noResults') : t('empty.renters')}
+            action={
+              !search && statusFilter === 'all' ? (
+                <button
+                  onClick={() => navigate('/renters/add')}
+                  className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
+                  style={{ background: 'var(--color-primary)' }}
+                >
+                  <Plus size={14} /> {t('renter.addNew')}
+                </button>
+              ) : undefined
+            }
+          />
+        ) : view === 'card' ? (
+          <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+            {filtered.map((r) => <RenterCard key={r.id} renter={r} status={statusMap.get(r.id) ?? 'active'} />)}
+          </div>
+        ) : (
+          <RenterTable renters={filtered} statusMap={statusMap} />
+        )}
+      </div>
+    </div>
   );
 }

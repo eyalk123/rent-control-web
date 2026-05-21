@@ -1,190 +1,279 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Trash2 } from 'lucide-react';
-import { useProperties, useDeleteProperty } from '../queries';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
+import { Plus, MapPin, AlertCircle, Download } from 'lucide-react';
+import { useProperties } from '../queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
-import { useToast } from '@/shared/components/ui/Toast';
+import { Pill } from '@/shared/components/ui/Pill';
+import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { formatMoney } from '@/shared/utils/money';
+import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import type { Property } from '@/shared/types';
 
-function PropertyCard({
-  property,
-  selected,
-  onSelect,
-  onOpen,
-  selectionMode,
-}: {
-  property: Property;
-  selected: boolean;
-  onSelect: () => void;
-  onOpen: () => void;
-  selectionMode: boolean;
-}) {
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+import type { Renter } from '@/shared/types';
+
+function fmtLeaseDate(renter: Renter | undefined): string | null {
+  if (!renter) return null;
+  const d = getLeaseEndDate(renter);
+  if (!d) return null;
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function StatusPill({ hasRenters }: { hasRenters: boolean }) {
+  return hasRenters
+    ? <Pill tone="success">Occupied</Pill>
+    : <Pill tone="warning">Vacant</Pill>;
+}
+
+function PropertyCard({ property }: { property: Property }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const color = getPropertyColor(property.id);
+  const bg = getPropertyColorBg(property.id, 0.35);
+  const activeRenter = property.renters?.[0];
+  const monthlyRent = activeRenter ? getRenterMonthlyRent(activeRenter) : null;
+  const leaseEnd = fmtLeaseDate(activeRenter);
+
   return (
     <div
-      onClick={selectionMode ? onSelect : onOpen}
-      className={`flex items-start gap-4 rounded-2xl bg-[var(--color-surface)] border cursor-pointer p-4 transition-colors hover:border-[var(--color-primary)]/40 ${
-        selected ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5' : 'border-[var(--color-outline)]'
-      }`}
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/properties/${property.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/properties/${property.id}`); }}
+      className="rounded-[var(--radius-card)] overflow-hidden cursor-pointer transition-all hover:-translate-y-px text-start"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
     >
-      {selectionMode && (
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onSelect}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-primary)]"
-        />
-      )}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
-        <Building2 size={18} className="text-[var(--color-primary)]" strokeWidth={1.75} />
+      {/* Photo strip */}
+      <div className="relative h-[120px] flex items-center justify-center" style={{ background: bg }}>
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
+          <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="rgba(255,255,255,0.55)" />
+          <path d="M3 11l9-8 9 8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+        </svg>
+        <div className="absolute top-2.5 left-3 flex gap-1.5">
+          <StatusPill hasRenters={!!property.hasRenters} />
+          <Pill tone="neutral">{t(`property.type_${property.type}` as never, property.type)}</Pill>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-[var(--color-text-primary)] truncate">{property.address}</p>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{property.city}</p>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-          {t(`property.type_${property.type}` as never, property.type)} · {property.sq_ft} m²
+
+      <div className="p-4">
+        <p className="text-[16px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+          {property.address}
         </p>
-        {property.renters && property.renters.length > 0 && (
-          <p className="text-xs text-[var(--color-success)] mt-1">
-            {property.renters.length} {t('property.rentersCount', { count: property.renters.length })}
-          </p>
-        )}
+        <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <MapPin size={11} />
+          {property.city}{property.zip_code ? `, ${property.zip_code}` : ''}
+          {property.property_owner && <> · {property.property_owner}</>}
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3" style={{ borderTop: '1px solid var(--color-outline)' }}>
+          {[
+            { label: 'Rent', value: monthlyRent ? formatMoney(monthlyRent) : '—' },
+            { label: 'Renters', value: property.renters?.length ?? 0 },
+            { label: 'Size', value: `${property.sq_ft}m²` },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+              <LtrSpan className="text-[14px] font-bold mt-0.5 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {String(value)}
+              </LtrSpan>
+            </div>
+          ))}
+        </div>
+
+        {/* Renter / vacant strip */}
+        <div className="mt-3 pt-3 flex items-center gap-2" style={{ borderTop: '1px solid var(--color-outline)' }}>
+          {activeRenter ? (
+            <>
+              <div className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold shrink-0" style={{ background: getPropertyColorBg(activeRenter.id), color: getPropertyColor(activeRenter.id) }}>
+                {(activeRenter.first_name[0] + activeRenter.last_name[0]).toUpperCase()}
+              </div>
+              <span className="text-xs font-medium flex-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                {activeRenter.first_name} {activeRenter.last_name}
+              </span>
+              {leaseEnd && (
+                <span className="text-[11px] shrink-0" style={{ color: 'var(--color-text-secondary)' }}>
+                  ends {leaseEnd}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-warning)' }}>
+              <AlertCircle size={12} /> Available
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
+function PropertyTable({ properties }: { properties: Property[] }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return (
+    <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
+            {['Property', 'Type', 'Owner', 'Renters', 'Rent', 'Status'].map((h) => (
+              <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {properties.map((p, i) => {
+            const activeRenter = p.renters?.[0];
+            const monthlyRent = activeRenter ? getRenterMonthlyRent(activeRenter) : null;
+            return (
+              <tr
+                key={p.id}
+                onClick={() => navigate(`/properties/${p.id}`)}
+                className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
+                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+              >
+                <td className="px-4 py-3">
+                  <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{p.address}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{p.city}</p>
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t(`property.type_${p.type}` as never, p.type)}
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {p.property_owner ?? '—'}
+                </td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-primary)' }}>
+                  {p.renters?.length ?? 0}
+                </td>
+                <td className="px-4 py-3 text-sm font-medium">
+                  <LtrSpan style={{ color: 'var(--color-text-primary)' }}>
+                    {monthlyRent ? formatMoney(monthlyRent) : '—'}
+                  </LtrSpan>
+                </td>
+                <td className="px-4 py-3">
+                  <StatusPill hasRenters={!!p.hasRenters} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+type ViewMode = 'card' | 'table';
+
 export function PropertiesListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
-  const { mutateAsync: deleteProperty } = useDeleteProperty();
-  const { showToast } = useToast();
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
-
-  const selectionMode = selectedIds.size > 0;
+  const [view, setView] = useState<ViewMode>('card');
 
   const filtered = (properties ?? []).filter((p) =>
     `${p.address} ${p.city} ${p.property_owner ?? ''}`.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    if (!confirm(t('bulkDelete.confirm', { count: selectedIds.size }))) return;
-    try {
-      await Promise.all([...selectedIds].map((id) => deleteProperty(id)));
-      setSelectedIds(new Set());
-      showToast(t('bulkDelete.success'), 'success');
-    } catch {
-      showToast(t('error.deleteFailed'), 'error');
-    }
-  };
+  const occupied = filtered.filter((p) => p.hasRenters).length;
+  const totalMonthly = filtered.reduce((sum, p) => {
+    const r = p.renters?.[0];
+    return sum + (r ? getRenterMonthlyRent(r) : 0);
+  }, 0);
 
   if (error) return (
-    <PageContainer>
-      <EmptyState icon={Building2} title={t('error.loadFailed')} action={
-        <button onClick={() => refetch()} className="text-sm text-[var(--color-primary)] hover:underline">{t('common.retry')}</button>
+    <div className="max-w-6xl mx-auto px-8 py-8">
+      <EmptyState icon={undefined} title={t('error.loadFailed')} action={
+        <button onClick={() => refetch()} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{t('common.retry')}</button>
       } />
-    </PageContainer>
+    </div>
   );
 
   return (
-    <PageContainer>
+    <div className="max-w-6xl mx-auto px-8 py-8 space-y-5">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">{t('screens.properties')}</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{filtered.length} {t('property.total', { count: filtered.length })}</p>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.properties')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            {filtered.length} properties · {occupied} occupied
+            {totalMonthly > 0 && <> · <LtrSpan>{formatMoney(totalMonthly)}</LtrSpan>/mo</>}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {selectionMode ? (
-            <>
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="rounded-xl border border-[var(--color-outline)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-input-bg)]"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-1.5 rounded-xl bg-[var(--color-error)]/10 px-3 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/20"
-              >
-                <Trash2 size={14} />
-                {t('bulkDelete.delete', { count: selectedIds.size })}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => navigate('/properties/add')}
-              className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-            >
-              <Plus size={16} />
-              {t('property.addNew')}
-            </button>
-          )}
+        <div className="flex items-center gap-2 shrink-0">
+          <button className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
+            <Download size={14} /> Export
+          </button>
+          <button
+            onClick={() => navigate('/properties/add')}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            <Plus size={14} /> Add property
+          </button>
         </div>
       </div>
 
-      {/* Search */}
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder={t('search.propertiesPlaceholder')}
-        className="mb-5 w-full rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-placeholder)] outline-none focus:border-[var(--color-primary)]"
-      />
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search address or city…"
+          className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none transition-colors"
+          style={{
+            background: 'var(--color-input-filled-background)',
+            border: '1px solid var(--color-outline)',
+            color: 'var(--color-text-primary)',
+          }}
+        />
+        <div className="flex-1" />
+        <SegToggle
+          value={view}
+          onChange={(v) => setView(v as ViewMode)}
+          options={[
+            { value: 'card', label: 'Cards' },
+            { value: 'table', label: 'Table' },
+          ]}
+          size="sm"
+        />
+      </div>
 
+      {/* Content */}
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={Building2}
+          icon={undefined}
           title={search ? t('empty.noResults') : t('empty.properties')}
           description={search ? undefined : t('empty.propertiesDesc')}
           action={
             !search ? (
               <button
                 onClick={() => navigate('/properties/add')}
-                className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
+                style={{ background: 'var(--color-primary)' }}
               >
-                <Plus size={14} />
-                {t('property.addNew')}
+                <Plus size={14} /> {t('property.addNew')}
               </button>
             ) : undefined
           }
         />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((p) => (
-            <PropertyCard
-              key={p.id}
-              property={p}
-              selected={selectedIds.has(p.id)}
-              selectionMode={selectionMode}
-              onSelect={() => toggleSelect(p.id)}
-              onOpen={() => navigate(`/properties/${p.id}`)}
-            />
-          ))}
+      ) : view === 'card' ? (
+        <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+          {filtered.map((p) => <PropertyCard key={p.id} property={p} />)}
         </div>
+      ) : (
+        <PropertyTable properties={filtered} />
       )}
-
-      {/* Long-press hint */}
-      {!selectionMode && filtered.length > 0 && (
-        <p className="mt-4 text-center text-xs text-[var(--color-text-secondary)] opacity-60">
-          {t('bulkDelete.hint')}
-        </p>
-      )}
-    </PageContainer>
+    </div>
   );
 }

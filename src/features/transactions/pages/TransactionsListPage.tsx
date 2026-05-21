@@ -1,44 +1,98 @@
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Wallet, Trash2, Store } from 'lucide-react';
-import { useTransactions, useDeleteTransaction, useTransactionSummary } from '../queries';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
+import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
+import { useTransactions, useTransactionSummary } from '../queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
-import { useToast } from '@/shared/components/ui/Toast';
+import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import type { Transaction } from '@/shared/types';
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
 type Filter = 'all' | 'revenue' | 'expense';
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function groupByMonth(txs: Transaction[]): Map<string, Transaction[]> {
   const map = new Map<string, Transaction[]>();
   for (const tx of txs) {
-    const key = tx.date_of_payment.slice(0, 7); // YYYY-MM
+    const key = tx.date_of_payment.slice(0, 7);
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(tx);
   }
   return map;
 }
 
+function fmtMonthKey(key: string): string {
+  const [y, m] = key.split('-');
+  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+}
+
+// ─── TxRow ───────────────────────────────────────────────────────────────────
+
+function TxRow({ tx }: { tx: Transaction }) {
+  const navigate = useNavigate();
+  const isRev = tx.type === 'revenue';
+  return (
+    <button
+      onClick={() => navigate(`/transactions/${tx.id}`)}
+      className="flex items-center gap-3 w-full px-4 py-3 text-start transition-colors hover:bg-[var(--color-input-filled-background)]"
+      style={{ borderBottom: '1px solid var(--color-outline)' }}
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]"
+        style={{ background: isRev ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)', color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}>
+        {isRev ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+          {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? tx.category_name ?? '—')}
+        </p>
+        <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+          {isRev ? 'Rent' : tx.category_name} · {tx.property_name} · {tx.date_of_payment}
+        </p>
+      </div>
+      <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
+        {isRev ? '+' : '−'}{formatMoney(tx.amount)}
+      </LtrSpan>
+    </button>
+  );
+}
+
+// ─── main page ───────────────────────────────────────────────────────────────
+
 export function TransactionsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const { mutateAsync: deleteTransaction } = useDeleteTransaction();
-  const { showToast } = useToast();
-  const selectionMode = selectedIds.size > 0;
+  const [search, setSearch] = useState('');
 
   const queryFilters = filter === 'all' ? {} : { type: filter as 'revenue' | 'expense' };
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(queryFilters);
   const { data: summary } = useTransactionSummary();
 
   const transactions = data?.pages.flat() ?? [];
-  const grouped = groupByMonth(transactions);
+  const filtered = search
+    ? transactions.filter((tx) => `${tx.renter_name ?? ''} ${tx.supplier_name ?? ''} ${tx.category_name ?? ''} ${tx.property_name}`.toLowerCase().includes(search.toLowerCase()))
+    : transactions;
 
+  const grouped = groupByMonth(filtered);
+  const months = [...grouped.keys()].sort().reverse();
+
+  const revTotal = filtered.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
+  const expTotal = filtered.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+
+  const buckets = (summary?.six_month_buckets ?? []).map((b) => ({
+    month: `${String(b.month).padStart(2, '0')}/${b.year}`,
+    revenue: b.revenue,
+    expenses: b.expenses,
+  }));
+  const lastBucket = summary?.six_month_buckets?.at(-1);
+
+  // Infinite scroll
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loaderRef = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) observerRef.current.disconnect();
@@ -49,104 +103,140 @@ export function TransactionsListPage() {
     observerRef.current.observe(node);
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
-
-  const handleBulkDelete = async () => {
-    if (!confirm(t('bulkDelete.confirm', { count: selectedIds.size }))) return;
-    try {
-      await Promise.all([...selectedIds].map((id) => deleteTransaction(id)));
-      setSelectedIds(new Set());
-      showToast(t('bulkDelete.success'), 'success');
-    } catch { showToast(t('error.deleteFailed'), 'error'); }
-  };
-
-  const heroBucket = summary?.six_month_buckets?.at(-1);
-
   return (
-    <PageContainer>
+    <div className="max-w-6xl mx-auto px-8 py-8 space-y-5">
       {/* Header */}
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-bold text-[var(--color-text-primary)]">{t('screens.transactions')}</h1>
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/suppliers')} className="flex items-center gap-1.5 rounded-xl border border-[var(--color-outline)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-input-bg)]"><Store size={14} />{t('screens.suppliers')}</button>
-          {selectionMode ? (
-            <>
-              <button onClick={() => setSelectedIds(new Set())} className="rounded-xl border border-[var(--color-outline)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)]">{t('common.cancel')}</button>
-              <button onClick={handleBulkDelete} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-error)]/10 px-3 py-2 text-sm font-medium text-[var(--color-error)]"><Trash2 size={14} />{t('bulkDelete.delete', { count: selectedIds.size })}</button>
-            </>
-          ) : (
-            <button onClick={() => navigate('/transactions/add')} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"><Plus size={16} />{t('transactions.addNew')}</button>
-          )}
+      <div className="flex items-start justify-between gap-4 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.transactions')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            {filtered.length} transactions · <LtrSpan>{formatMoney(revTotal)}</LtrSpan> revenue · <LtrSpan>{formatMoney(expTotal)}</LtrSpan> expenses
+          </p>
         </div>
+        <button
+          onClick={() => navigate('/transactions/add')}
+          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
+          style={{ background: 'var(--color-primary)' }}
+        >
+          <Plus size={14} /> Add transaction
+        </button>
       </div>
 
-      {/* Summary hero */}
-      {heroBucket && (
-        <div className="mb-5 grid grid-cols-3 gap-3">
-          {[
-            { label: t('transactions.revenue'), value: formatMoney(heroBucket.revenue), color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
-            { label: t('transactions.expenses'), value: formatMoney(heroBucket.expenses), color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
-            { label: t('transactions.profit'), value: formatMoney(heroBucket.profit), color: heroBucket.profit >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', bg: 'var(--color-outline)' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl p-4" style={{ backgroundColor: s.bg }}>
-              <p className="text-xs text-[var(--color-text-secondary)]">{s.label}</p>
-              <LtrSpan className="text-lg font-bold mt-1" style={{ color: s.color }}>{s.value}</LtrSpan>
+      {/* Hero: chart + KPI tiles */}
+      {buckets.length > 0 && (
+        <div className="grid gap-4" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
+          {/* Chart card */}
+          <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Revenue vs. expense</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Last 6 months</p>
+              </div>
+              <div className="flex gap-3.5 text-[11.5px]" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-success)' }} /> Revenue
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-error)' }} /> Expense
+                </span>
+              </div>
             </div>
-          ))}
+            <CashFlowChart data={buckets} height={180} />
+          </div>
+
+          {/* KPI tiles */}
+          <div className="flex flex-col gap-3">
+            {lastBucket && [
+              { label: 'This month revenue', value: lastBucket.revenue, tone: 'success' as const },
+              { label: 'This month expenses', value: lastBucket.expenses, tone: 'danger' as const },
+              { label: 'This month net', value: lastBucket.profit, tone: lastBucket.profit >= 0 ? 'success' as const : 'danger' as const },
+            ].map(({ label, value, tone }) => (
+              <div key={label} className="rounded-[var(--radius-md)] p-4 flex-1" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+                <LtrSpan className="text-[22px] font-bold mt-1 block" style={{ color: tone === 'success' ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
+                  {formatMoney(value)}
+                </LtrSpan>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Filter chips */}
-      <div className="mb-4 flex gap-2">
-        {(['all', 'revenue', 'expense'] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${filter === f ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-input-bg)] text-[var(--color-text-secondary)] hover:bg-[var(--color-outline)]'}`}
-          >
-            {t(`transactions.filter_${f}` as never, f)}
-          </button>
-        ))}
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <SegToggle
+          value={filter}
+          onChange={(v) => setFilter(v as Filter)}
+          options={[
+            { value: 'all', label: 'All' },
+            { value: 'revenue', label: 'Revenue' },
+            { value: 'expense', label: 'Expenses' },
+          ]}
+          size="sm"
+        />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by party or notes…"
+          className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none"
+          style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
+        />
+        <div className="ml-auto text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+          Net{' '}
+          <LtrSpan className="text-[14px] font-bold" style={{ color: revTotal - expTotal >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
+            {revTotal - expTotal >= 0 ? '+' : '−'}{formatMoney(Math.abs(revTotal - expTotal))}
+          </LtrSpan>
+        </div>
       </div>
 
-      {isLoading ? <PageLoader /> : transactions.length === 0 ? (
-        <EmptyState icon={Wallet} title={t('empty.transactions')} action={<button onClick={() => navigate('/transactions/add')} className="flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"><Plus size={14} />{t('transactions.addNew')}</button>} />
+      {/* Content */}
+      {isLoading ? (
+        <PageLoader />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={undefined}
+          title={search || filter !== 'all' ? t('empty.noResults') : t('empty.transactions')}
+          action={
+            !search && filter === 'all' ? (
+              <button
+                onClick={() => navigate('/transactions/add')}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
+                style={{ background: 'var(--color-primary)' }}
+              >
+                <Plus size={14} /> {t('transactions.addNew')}
+              </button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-5">
-          {[...grouped.entries()].map(([month, txs]) => (
-            <div key={month}>
-              <p className="mb-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">{month}</p>
-              <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] divide-y divide-[var(--color-subtle-outline)]">
-                {txs.map((tx) => (
-                  <div
-                    key={tx.id}
-                    onClick={selectionMode ? () => toggleSelect(tx.id) : () => navigate(`/transactions/${tx.id}`)}
-                    className={`flex items-center gap-3 p-4 cursor-pointer transition-colors hover:bg-[var(--color-input-bg)] ${selectedIds.has(tx.id) ? 'bg-[var(--color-primary)]/5' : ''}`}
-                  >
-                    {selectionMode && <input type="checkbox" checked={selectedIds.has(tx.id)} onChange={() => toggleSelect(tx.id)} onClick={(e) => e.stopPropagation()} className="h-4 w-4 accent-[var(--color-primary)]" />}
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tx.type === 'revenue' ? 'bg-[var(--color-rev-bg)]' : 'bg-[var(--color-exp-bg)]'}`}>
-                      <Wallet size={14} style={{ color: tx.type === 'revenue' ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{tx.property_name ?? '—'}</p>
-                      <p className="text-xs text-[var(--color-text-secondary)] truncate">{tx.renter_name ?? tx.category_name ?? '—'} · {tx.date_of_payment}</p>
-                    </div>
-                    <LtrSpan className={`text-sm font-semibold shrink-0 ${tx.type === 'revenue' ? 'text-[var(--color-rev-fg)]' : 'text-[var(--color-exp-fg)]'}`}>
-                      {tx.type === 'revenue' ? '+' : '-'}{formatMoney(tx.amount)}
-                    </LtrSpan>
+          {months.map((month) => {
+            const txs = grouped.get(month)!;
+            const mRev = txs.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
+            const mExp = txs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+            return (
+              <div key={month}>
+                {/* Month header */}
+                <div className="flex items-center justify-between px-1.5 pb-2.5">
+                  <p className="text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmtMonthKey(month)}</p>
+                  <div className="flex gap-4 text-[12px] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <LtrSpan style={{ color: 'var(--color-rev-fg)' }}>+{formatMoney(mRev)}</LtrSpan>
+                    <LtrSpan style={{ color: 'var(--color-exp-fg)' }}>−{formatMoney(mExp)}</LtrSpan>
+                    <LtrSpan style={{ color: 'var(--color-text-primary)' }}>{mRev - mExp >= 0 ? '+' : '−'}{formatMoney(Math.abs(mRev - mExp))}</LtrSpan>
                   </div>
-                ))}
+                </div>
+                {/* Transaction list */}
+                <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+                  {txs.map((tx) => <TxRow key={tx.id} tx={tx} />)}
+                </div>
               </div>
-            </div>
-          ))}
-          {/* Infinite scroll trigger */}
+            );
+          })}
           <div ref={loaderRef} className="py-2 text-center">
             {isFetchingNextPage && <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-primary)] border-t-transparent mx-auto" />}
           </div>
         </div>
       )}
-    </PageContainer>
+    </div>
   );
 }

@@ -1,0 +1,141 @@
+/* =========================================================================
+   Rent Control — Design Tokens (CSS variables)
+   Sourced 1:1 from src/core/theme/colors.ts, theme.ts, spacing.ts
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+:root {
+  /* ---------- Brand ---------- */
+  --rc-brand-navy:       #1A2D4A;   /* logo color */
+  --rc-android-bg:       #F1E8D6;   /* Android adaptive-icon cream */
+
+  /* ---------- Light palette (from colors.ts → lightColors) ---------- */
+  --rc-primary:          #2563EB;
+  --rc-primary-container:#DBEAFE;
+  --rc-on-primary-ctr:   #1E3A8A;
+  --rc-secondary:        rgba(13, 148, 136, 1);
+
+  --rc-bg:               rgba(241, 245, 249, 1);   /* slate-100 page */
+  --rc-surface:          #FFFFFF;
+  --rc-card:             #FFFFFF;
+
+  --rc-fg1:              rgba(15, 23, 42, 1);      /* textPrimary */
+  --rc-fg2:              rgba(100, 116, 139, 1);   /* textSecondary */
+  --rc-placeholder:      rgba(148, 163, 184, 1);
+
+  --rc-input-bg:         rgba(248, 250, 252, 1);
+  --rc-input-bg-filled:  rgba(241, 245, 249, 1);
+  --rc-input-border:     rgba(203, 213, 225, 1);
+  --rc-outline:          rgba(203, 213, 225, 1);
+
+  --rc-success:          rgba(5, 150, 105, 1);
+  --rc-warning:          rgba(217, 119, 6, 1);
+  --rc-error:            rgba(220, 38, 38, 1);
+
+  --rc-section-accent:   rgba(13, 148, 136, 1);
+
+  /* Choose-type tints (transactions) */
+  --rc-revenue-bg:       rgba(5, 150, 105, 0.13);
+  --rc-revenue-fg:       rgba(4, 120, 87, 1);
+  --rc-expense-bg:       rgba(220, 38, 38, 0.13);
+  --rc-expense-fg:       rgba(185, 28, 28, 1);
+
+  /* ---------- Type stack ---------- */
+  /* SUBSTITUTION: Inter stands in for the system UI stack (SF / Roboto). */
+  --rc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                  'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Type scale — derived from React Native Paper MD3 + observed overrides */
+  --rc-type-display-l: 700 57px/64px var(--rc-font-sans);
+  --rc-type-headline-l: 700 32px/40px var(--rc-font-sans);   /* "Renters" hero, fontSize:28 in code */
+  --rc-type-headline-m: 700 28px/36px var(--rc-font-sans);   /* heroTitle */
+  --rc-type-headline-s: 700 24px/32px var(--rc-font-sans);   /* chooseTitle */
+  --rc-type-title-l:    700 22px/28px var(--rc-font-sans);   /* property address */
+  --rc-type-title-m:    600 16px/24px var(--rc-font-sans);   /* section titles */
+  --rc-type-title-s:    600 14px/20px var(--rc-font-sans);   /* card title */
+  --rc-type-section-strong: 900 16px/24px var(--rc-font-sans); /* Settings section heading */
+  --rc-type-label-l:    600 14px/20px var(--rc-font-sans);
+  --rc-type-label-s:    500 11px/16px var(--rc-font-sans);   /* badge */
+  --rc-type-body-l:     400 16px/24px var(--rc-font-sans);
+  --rc-type-body-m:     400 14px/20px var(--rc-font-sans);
+  --rc-type-body-s:     400 12px/16px var(--rc-font-sans);   /* meta */
+
+  /* ---------- Spacing (spacing.ts, 1:1) ---------- */
+  --rc-sp-xs: 4px;
+  --rc-sp-sm: 8px;
+  --rc-sp-md: 12px;
+  --rc-sp-lg: 16px;
+  --rc-sp-xl: 24px;
+  --rc-sp-xxl: 32px;
+  --rc-sp-form-x: 18px;
+
+  /* ---------- Radii ---------- */
+  --rc-r-sm: 4px;
+  --rc-r-md: 10px;       /* search bar, list cards, sign-in submit */
+  --rc-r-lg: 12px;       /* transaction cards, badges, choose buttons */
+  --rc-r-xl: 16px;       /* Paper theme.roundness */
+  --rc-r-2xl: 20px;      /* auth card, form section cards */
+  --rc-r-full: 9999px;
+
+  /* ---------- Borders / shadows ---------- */
+  --rc-border: 1px solid var(--rc-outline);
+  --rc-shadow-none: none;
+  /* Light mode is intentionally flat — no shadows. Dark mode uses Paper elevation. */
+}
+
+/* =========================================================================
+   Dark palette (from colors.ts → darkColors)
+   ========================================================================= */
+[data-theme='dark'] {
+  --rc-primary:          rgb(40, 136, 226);
+  --rc-secondary:        rgb(70, 150, 224);
+  --rc-bg:               rgba(18, 18, 18, 1);
+  --rc-surface:          rgba(30, 30, 32, 1);
+  --rc-card:             rgba(30, 30, 32, 1);
+  --rc-fg1:              rgba(240, 241, 243, 1);
+  --rc-fg2:              rgba(240, 241, 243, 0.72);
+  --rc-placeholder:      rgba(240, 241, 243, 0.55);
+  --rc-input-bg:         rgba(30, 30, 32, 1);
+  --rc-input-bg-filled:  rgba(44, 44, 46, 1);
+  --rc-input-border:     rgba(255, 255, 255, 0.15);
+  --rc-outline:          rgba(255, 255, 255, 0.12);
+  --rc-success:          rgba(16, 185, 129, 1);
+  --rc-warning:          rgba(245, 158, 11, 1);
+  --rc-error:            rgba(248, 113, 113, 1);
+  --rc-section-accent:   rgba(86, 132, 174, 1);
+  --rc-revenue-bg:       rgba(16, 185, 129, 0.18);
+  --rc-revenue-fg:       rgba(52, 211, 153, 1);
+  --rc-expense-bg:       rgba(248, 113, 113, 0.18);
+  --rc-expense-fg:       rgba(252, 165, 165, 1);
+  --rc-surface-elevated: rgba(44, 44, 46, 1);
+  --rc-outline-subtle:   rgba(255, 255, 255, 0.08);
+  --rc-text-disabled:    rgba(240, 241, 243, 0.38);
+}
+
+/* =========================================================================
+   Semantic element styles — apply directly to HTML
+   ========================================================================= */
+body, .rc-body  { font: var(--rc-type-body-m); color: var(--rc-fg1); background: var(--rc-bg); }
+.rc-h1          { font: var(--rc-type-headline-l); letter-spacing: -0.5px; color: var(--rc-fg1); margin: 0; }
+.rc-h2          { font: var(--rc-type-headline-m); letter-spacing: -0.4px; color: var(--rc-fg1); margin: 0; }
+.rc-h3          { font: var(--rc-type-headline-s); color: var(--rc-fg1); margin: 0; }
+.rc-title       { font: var(--rc-type-title-l); color: var(--rc-fg1); }
+.rc-section     { font: var(--rc-type-section-strong); color: var(--rc-fg1); text-transform: none; }
+.rc-card-title  { font: var(--rc-type-title-s); color: var(--rc-fg1); }
+.rc-label       { font: var(--rc-type-label-l); color: var(--rc-fg1); }
+.rc-meta        { font: var(--rc-type-body-s); color: var(--rc-fg2); }
+.rc-mono        { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+
+.rc-card        { background: var(--rc-card); border: var(--rc-border); border-radius: var(--rc-r-md); padding: var(--rc-sp-md); }
+.rc-card--xl    { border-radius: var(--rc-r-2xl); padding: var(--rc-sp-xl); }
+.rc-badge       { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--rc-r-lg); font: var(--rc-type-label-s); color: #fff; background: var(--rc-success); }
+.rc-chip-revenue{ background: var(--rc-revenue-bg); color: var(--rc-revenue-fg); padding: 2px 8px; border-radius: var(--rc-r-lg); font: var(--rc-type-label-s); }
+.rc-chip-expense{ background: var(--rc-expense-bg); color: var(--rc-expense-fg); padding: 2px 8px; border-radius: var(--rc-r-lg); font: var(--rc-type-label-s); }
+
+.rc-btn         { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: var(--rc-r-md); font: var(--rc-type-label-l); border: 0; cursor: pointer; }
+.rc-btn-primary { background: var(--rc-primary); color: #fff; }
+.rc-btn-outline { background: transparent; color: var(--rc-fg1); border: 1px solid var(--rc-outline); }
+.rc-btn-text    { background: transparent; color: var(--rc-primary); padding: 8px 12px; }
+
+.rc-fab         { position: absolute; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: var(--rc-r-xl); background: var(--rc-primary); color: #fff; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(0,0,0,0.18); border: 0; cursor: pointer; }

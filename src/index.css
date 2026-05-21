@@ -1,95 +1,144 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 @import "tailwindcss";
 
-/* ── Design Tokens: Landlord Ink palette ─────────────────────────── */
+/* ── Design Tokens — Rent Control Web palette ────────────────────── */
 :root {
-  --color-primary: #1E3A5F;
-  --color-on-primary: #FFFFFF;
-  --color-secondary: #D4A24C;
-  --color-accent: #D4A24C;
-  --color-accent-fg: #FFFFFF;
-  --color-background: #FAF7F0;
-  --color-surface: #FFFFFF;
-  --color-card-background: #FFFFFF;
-  --color-text-primary: #1A2D4A;
-  --color-text-secondary: #6B7280;
-  --color-placeholder: #A8AFBA;
-  --color-input-background: #FFFFFF;
-  --color-input-filled-background: #F6F3EC;
-  --color-input-border: rgba(26,45,74,0.18);
-  --color-outline: rgba(26,45,74,0.10);
-  --color-subtle-outline: rgba(26,45,74,0.05);
-  --color-success: #0F766E;
-  --color-warning: #D4A24C;
-  --color-error: #9A3412;
-  --color-section-accent: #D4A24C;
-  --color-rev-bg: rgba(15,118,110,0.12);
-  --color-rev-fg: #0F766E;
-  --color-exp-bg: rgba(180,83,9,0.13);
-  --color-exp-fg: #9A3412;
-  --color-avatar-background: #EDF0F4;
-  --color-avatar-border: #D2D8E0;
-  --color-avatar-text: #1E3A5F;
+  /* Brand */
+  --color-brand-navy:             #1A2D4A;
+  --color-primary:                #2563EB;
+  --color-primary-container:      #DBEAFE;
+  --color-on-primary-container:   #1E3A8A;
+  --color-on-primary:             #FFFFFF;
+  --color-secondary:              rgba(13, 148, 136, 1);
+  --color-accent:                 rgba(13, 148, 136, 1);
+  --color-accent-fg:              #FFFFFF;
+
+  /* Surfaces */
+  --color-background:             rgba(241, 245, 249, 1);
+  --color-surface:                #FFFFFF;
+  --color-card-background:        #FFFFFF;
+
+  /* Text */
+  --color-text-primary:           rgba(15, 23, 42, 1);
+  --color-text-secondary:         rgba(100, 116, 139, 1);
+  --color-placeholder:            rgba(148, 163, 184, 1);
+
+  /* Inputs & borders */
+  --color-input-background:       rgba(248, 250, 252, 1);
+  --color-input-filled-background:rgba(241, 245, 249, 1);
+  --color-input-border:           rgba(203, 213, 225, 1);
+  --color-outline:                rgba(203, 213, 225, 1);
+  --color-subtle-outline:         rgba(203, 213, 225, 0.5);
+
+  /* Semantic */
+  --color-success:                rgba(5, 150, 105, 1);
+  --color-warning:                rgba(217, 119, 6, 1);
+  --color-error:                  rgba(220, 38, 38, 1);
+  --color-section-accent:         rgba(13, 148, 136, 1);
+
+  /* Transaction tints */
+  --color-rev-bg:                 rgba(5, 150, 105, 0.13);
+  --color-rev-fg:                 rgba(4, 120, 87, 1);
+  --color-exp-bg:                 rgba(220, 38, 38, 0.13);
+  --color-exp-fg:                 rgba(185, 28, 28, 1);
+
+  /* Avatar */
+  --color-avatar-background:      #DBEAFE;
+  --color-avatar-border:          rgba(203, 213, 225, 1);
+  --color-avatar-text:            #1E3A8A;
+
+  /* Radii */
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
   --radius-card: 16px;
-  --radius-sm: 8px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  12px;
+  --sp-lg:  16px;
+  --sp-xl:  24px;
+  --sp-xxl: 32px;
 }
 
 [data-theme="dark"] {
-  --color-primary: #3E6FA8;
-  --color-on-primary: #FFFFFF;
-  --color-secondary: #C29543;
-  --color-accent: #C29543;
-  --color-accent-fg: #1A2D4A;
-  --color-background: #0F1B2D;
-  --color-surface: #172A44;
-  --color-card-background: #172A44;
-  --color-text-primary: #F1ECDF;
-  --color-text-secondary: rgba(241,236,223,0.66);
-  --color-placeholder: rgba(241,236,223,0.45);
-  --color-input-background: #172A44;
-  --color-input-filled-background: #1F3556;
-  --color-input-border: rgba(241,236,223,0.20);
-  --color-outline: rgba(241,236,223,0.12);
-  --color-subtle-outline: rgba(241,236,223,0.06);
-  --color-success: #34A39A;
-  --color-warning: #E2B26A;
-  --color-error: #D87559;
-  --color-section-accent: #C29543;
-  --color-rev-bg: rgba(52,163,154,0.18);
-  --color-rev-fg: #34A39A;
-  --color-exp-bg: rgba(216,117,89,0.18);
-  --color-exp-fg: #D87559;
-  --color-avatar-background: #2A3950;
-  --color-avatar-border: #41506A;
-  --color-avatar-text: #FAF7F0;
+  --color-primary:                rgb(40, 136, 226);
+  --color-primary-container:      rgba(40, 136, 226, 0.2);
+  --color-on-primary-container:   rgb(147, 197, 253);
+  --color-secondary:              rgb(70, 150, 224);
+  --color-accent:                 rgb(70, 150, 224);
+  --color-accent-fg:              rgba(15, 23, 42, 1);
+
+  --color-background:             rgba(18, 18, 18, 1);
+  --color-surface:                rgba(30, 30, 32, 1);
+  --color-card-background:        rgba(30, 30, 32, 1);
+
+  --color-text-primary:           rgba(240, 241, 243, 1);
+  --color-text-secondary:         rgba(240, 241, 243, 0.72);
+  --color-placeholder:            rgba(240, 241, 243, 0.55);
+
+  --color-input-background:       rgba(30, 30, 32, 1);
+  --color-input-filled-background:rgba(44, 44, 46, 1);
+  --color-input-border:           rgba(255, 255, 255, 0.15);
+  --color-outline:                rgba(255, 255, 255, 0.12);
+  --color-subtle-outline:         rgba(255, 255, 255, 0.08);
+
+  --color-success:                rgba(16, 185, 129, 1);
+  --color-warning:                rgba(245, 158, 11, 1);
+  --color-error:                  rgba(248, 113, 113, 1);
+  --color-section-accent:         rgba(86, 132, 174, 1);
+
+  --color-rev-bg:                 rgba(16, 185, 129, 0.18);
+  --color-rev-fg:                 rgba(52, 211, 153, 1);
+  --color-exp-bg:                 rgba(248, 113, 113, 0.18);
+  --color-exp-fg:                 rgba(252, 165, 165, 1);
+
+  --color-avatar-background:      rgba(44, 44, 46, 1);
+  --color-avatar-border:          rgba(255, 255, 255, 0.15);
+  --color-avatar-text:            rgba(240, 241, 243, 1);
 }
 
 /* ── Tailwind v4 theme extension ─────────────────────────────────── */
 @theme inline {
   --font-family-sans: 'Inter', system-ui, sans-serif;
-  --color-primary: var(--color-primary);
-  --color-secondary: var(--color-secondary);
-  --color-accent: var(--color-accent);
-  --color-bg: var(--color-background);
-  --color-surface: var(--color-surface);
-  --color-card: var(--color-card-background);
-  --color-text-1: var(--color-text-primary);
-  --color-text-2: var(--color-text-secondary);
-  --color-muted: var(--color-placeholder);
-  --color-input-bg: var(--color-input-filled-background);
-  --color-border: var(--color-input-border);
-  --color-outline: var(--color-outline);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
-  --color-error: var(--color-error);
-  --color-rev-bg: var(--color-rev-bg);
-  --color-rev-fg: var(--color-rev-fg);
-  --color-exp-bg: var(--color-exp-bg);
-  --color-exp-fg: var(--color-exp-fg);
-  --color-avatar-bg: var(--color-avatar-background);
+
+  --color-primary:            var(--color-primary);
+  --color-primary-container:  var(--color-primary-container);
+  --color-secondary:          var(--color-secondary);
+  --color-accent:             var(--color-accent);
+  --color-brand-navy:         var(--color-brand-navy);
+
+  --color-bg:         var(--color-background);
+  --color-surface:    var(--color-surface);
+  --color-card:       var(--color-card-background);
+
+  --color-text-1:     var(--color-text-primary);
+  --color-text-2:     var(--color-text-secondary);
+  --color-muted:      var(--color-placeholder);
+
+  --color-input-bg:   var(--color-input-filled-background);
+  --color-border:     var(--color-input-border);
+  --color-outline:    var(--color-outline);
+
+  --color-success:    var(--color-success);
+  --color-warning:    var(--color-warning);
+  --color-error:      var(--color-error);
+
+  --color-rev-bg:     var(--color-rev-bg);
+  --color-rev-fg:     var(--color-rev-fg);
+  --color-exp-bg:     var(--color-exp-bg);
+  --color-exp-fg:     var(--color-exp-fg);
+
+  --color-avatar-bg:     var(--color-avatar-background);
   --color-avatar-border: var(--color-avatar-border);
-  --color-avatar-text: var(--color-avatar-text);
+  --color-avatar-text:   var(--color-avatar-text);
+
   --radius-card: var(--radius-card);
+  --radius-sm:   var(--radius-sm);
 }
 
 /* ── Base ─────────────────────────────────────────────────────────── */
@@ -109,10 +158,40 @@ body {
 #root { height: 100dvh; display: flex; flex-direction: column; }
 
 /* ── Scrollbar ───────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-outline); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-secondary); }
+::-webkit-scrollbar-thumb { background: var(--color-outline); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { filter: brightness(0.85); }
 
 /* ── Focus rings ─────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+button:focus:not(:focus-visible) { outline: none; }
+
+/* ── Selection ───────────────────────────────────────────────────── */
+::selection { background: var(--color-primary-container); }
+
+/* ── Drawer animation ────────────────────────────────────────────── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes slideOutRight {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-outline) 25%, var(--color-input-filled-background) 50%, var(--color-outline) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-md);
+}

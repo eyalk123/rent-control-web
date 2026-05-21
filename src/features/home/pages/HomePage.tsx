@@ -1,13 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, Clock, TrendingUp, TrendingDown, FileText, ChevronRight } from 'lucide-react';
+import {
+  AlertCircle, Clock, TrendingUp, TrendingDown, ArrowUpRight,
+  Plus, Building2, Users,
+} from 'lucide-react';
 import { useOverdueRenters, useExpiringRenters } from '../queries';
 import { useTransactionSummary, useTransactions } from '@/features/transactions/queries';
 import { useProperties } from '@/features/properties/queries';
-import { useRenters } from '@/features/renters/queries';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
-import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
+import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
+import type { MonthSummaryItem } from '@/features/transactions/api/transactions';
+
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function bucketToChartPoint(b: MonthSummaryItem) {
+  return { month: MONTHS_SHORT[b.month - 1], revenue: b.revenue, expenses: b.expenses };
+}
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -17,61 +26,140 @@ export function HomePage() {
   const { data: expiringRenters = [] } = useExpiringRenters(60);
   const { data: summary } = useTransactionSummary();
   const { data: properties = [] } = useProperties();
-  const { data: renters = [] } = useRenters();
   const { data: recentTxPages } = useTransactions({});
   const recentTransactions = recentTxPages?.pages[0]?.slice(0, 5) ?? [];
-  const heroBucket = summary?.six_month_buckets?.at(-1);
 
   const now = new Date();
-  const greeting = now.getHours() < 12
-    ? t('home.goodMorning', 'Good morning')
-    : now.getHours() < 18
-    ? t('home.goodAfternoon', 'Good afternoon')
-    : t('home.goodEvening', 'Good evening');
+  const hour = now.getHours();
+  const greeting =
+    hour < 12 ? t('home.goodMorning') :
+    hour < 18 ? t('home.goodAfternoon') :
+    t('home.goodEvening');
+
+  const chartData = (summary?.six_month_buckets ?? []).map(bucketToChartPoint);
+  const currentBucket = summary?.six_month_buckets?.at(-1);
+  const mtdRevenue = currentBucket?.revenue ?? 0;
+  const mtdExpenses = currentBucket?.expenses ?? 0;
+  const mtdProfit = mtdRevenue - mtdExpenses;
+
+  const occupiedCount = properties.filter((p) => p.hasRenters).length;
+  const occupancyPct = properties.length > 0
+    ? Math.round((occupiedCount / properties.length) * 100)
+    : 0;
+
+  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <PageContainer>
-      {/* Greeting */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">{greeting}</h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
-          {now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+    <div className="max-w-6xl mx-auto px-8 py-8 pb-10 space-y-8">
+      {/* Context strip */}
+      <div>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{greeting}</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{dateStr}</p>
       </div>
 
-      {/* Portfolio stats */}
-      {heroBucket && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: t('home.properties', 'Properties'), value: properties.length.toString(), suffix: '' },
-            { label: t('home.renters', 'Renters'), value: renters.length.toString(), suffix: '' },
-            { label: t('transactions.revenue'), value: formatMoney(heroBucket.revenue), color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
-            { label: t('transactions.expenses'), value: formatMoney(heroBucket.expenses), color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-4" style={s.bg ? { backgroundColor: s.bg } : {}}>
-              <p className="text-xs text-[var(--color-text-secondary)]">{s.label}</p>
-              <LtrSpan className="text-xl font-bold mt-1 block" style={s.color ? { color: s.color } : { color: 'var(--color-text-primary)' }}>
-                {s.value}
-              </LtrSpan>
+      {/* Hero — 2-column */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Left: profit + stats */}
+        <div className="rounded-[var(--radius-card)] p-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+            Net profit · MTD
+          </p>
+          <LtrSpan
+            className="block text-[56px] font-bold leading-none tracking-tight"
+            style={{ color: mtdProfit >= 0 ? 'var(--color-text-primary)' : 'var(--color-error)', letterSpacing: '-1.5px' }}
+          >
+            {mtdProfit >= 0 ? '+' : ''}{formatMoney(mtdProfit)}
+          </LtrSpan>
+          <div className="mt-1">
+            <span
+              className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+              style={mtdProfit >= 0
+                ? { background: 'var(--color-rev-bg)', color: 'var(--color-rev-fg)' }
+                : { background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)' }}
+            >
+              {mtdProfit >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+              {mtdProfit >= 0 ? 'Profitable' : 'In the red'}
+            </span>
+          </div>
+
+          <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--color-outline)' }}>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>Collected</p>
+                <LtrSpan className="text-lg font-bold" style={{ color: 'var(--color-rev-fg)' }}>{formatMoney(mtdRevenue)}</LtrSpan>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>Spent</p>
+                <LtrSpan className="text-lg font-bold" style={{ color: 'var(--color-exp-fg)' }}>{formatMoney(mtdExpenses)}</LtrSpan>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Right: Cash-flow chart */}
+        <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cash Flow</p>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1" style={{ color: 'var(--color-rev-fg)' }}>
+                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-rev-fg)' }} />Revenue
+              </span>
+              <span className="flex items-center gap-1" style={{ color: 'var(--color-exp-fg)' }}>
+                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-exp-fg)' }} />Expenses
+              </span>
+            </div>
+          </div>
+          {chartData.length > 0 ? (
+            <CashFlowChart data={chartData} height={180} />
+          ) : (
+            <div className="h-44 flex items-center justify-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              No data yet
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+          Quick Actions
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Record Revenue', icon: TrendingUp, to: '/transactions/add?type=revenue', color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
+            { label: 'Record Expense', icon: TrendingDown, to: '/transactions/add?type=expense', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
+            { label: 'Add Renter', icon: Users, to: '/renters/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+            { label: 'Add Property', icon: Building2, to: '/properties/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+          ].map(({ label, icon: Icon, to, color, bg }) => (
+            <button
+              key={label}
+              onClick={() => navigate(to)}
+              className="flex flex-col items-center gap-2.5 p-4 rounded-[var(--radius-card)] transition-opacity hover:opacity-80"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: bg }}>
+                <Icon size={18} style={{ color }} strokeWidth={2} />
+              </div>
+              <span className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{label}</span>
+            </button>
           ))}
         </div>
-      )}
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Needs Attention */}
+      {/* Needs attention + Portfolio occupancy */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Needs attention */}
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-            {t('home.needsAttention', 'Needs Attention')}
-          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('home.needsAttention')}
+          </p>
           <div className="space-y-3">
-            {/* Overdue */}
             {overdueRenters.length > 0 && (
-              <div className="rounded-2xl bg-[var(--color-exp-bg)] border border-[var(--color-exp-fg)]/20 p-4">
+              <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-exp-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle size={16} className="text-[var(--color-exp-fg)]" />
-                  <span className="text-sm font-semibold text-[var(--color-exp-fg)]">
-                    {t('home.overdueRent', 'Overdue Rent')} ({overdueRenters.length})
+                  <AlertCircle size={15} style={{ color: 'var(--color-exp-fg)' }} />
+                  <span className="text-sm font-semibold" style={{ color: 'var(--color-exp-fg)' }}>
+                    {t('home.overdueRent')} ({overdueRenters.length})
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -79,26 +167,25 @@ export function HomePage() {
                     <button
                       key={r.renter_id}
                       onClick={() => navigate(`/renters/${r.renter_id}`)}
-                      className="w-full flex items-center justify-between text-start hover:opacity-80"
+                      className="w-full flex items-center justify-between text-start hover:opacity-80 transition-opacity"
                     >
                       <div>
-                        <p className="text-sm font-medium text-[var(--color-text-primary)]">{r.first_name} {r.last_name}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{r.property_address} · {r.days_overdue}d overdue</p>
+                        <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {r.days_overdue}d overdue</p>
                       </div>
-                      <LtrSpan className="text-sm font-semibold text-[var(--color-exp-fg)]">{formatMoney(r.monthly_amount)}</LtrSpan>
+                      <LtrSpan className="text-sm font-semibold shrink-0" style={{ color: 'var(--color-exp-fg)' }}>{formatMoney(r.monthly_amount)}</LtrSpan>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Expiring leases */}
             {expiringRenters.length > 0 && (
-              <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-4">
+              <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Clock size={16} className="text-[var(--color-secondary)]" />
-                  <span className="text-sm font-semibold text-[var(--color-secondary)]">
-                    {t('home.expiringLeases', 'Expiring Leases')} ({expiringRenters.length})
+                  <Clock size={15} style={{ color: 'var(--color-warning)' }} />
+                  <span className="text-sm font-semibold" style={{ color: 'var(--color-warning)' }}>
+                    {t('home.expiringLeases')} ({expiringRenters.length})
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -109,10 +196,10 @@ export function HomePage() {
                       className="w-full flex items-center justify-between text-start hover:opacity-80"
                     >
                       <div>
-                        <p className="text-sm font-medium text-[var(--color-text-primary)]">{r.first_name} {r.last_name}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{r.property_address} · {r.days_until_expiry}d left</p>
+                        <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {r.days_until_expiry}d left</p>
                       </div>
-                      <ChevronRight size={14} className="text-[var(--color-text-secondary)]" />
+                      <ArrowUpRight size={14} style={{ color: 'var(--color-text-secondary)' }} />
                     </button>
                   ))}
                 </div>
@@ -120,67 +207,99 @@ export function HomePage() {
             )}
 
             {overdueRenters.length === 0 && expiringRenters.length === 0 && (
-              <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-6 text-center">
-                <p className="text-sm text-[var(--color-text-secondary)]">{t('home.allGood', 'All caught up!')}</p>
+              <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allGood')}</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Recent Transactions */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-              {t('home.recentTransactions', 'Recent Transactions')}
-            </h2>
-            <button onClick={() => navigate('/transactions')} className="text-xs text-[var(--color-primary)] hover:underline">
-              {t('common.viewAll', 'View all')}
-            </button>
-          </div>
-          <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] divide-y divide-[var(--color-subtle-outline)]">
-            {recentTransactions.length === 0 ? (
-              <div className="p-6 text-center text-sm text-[var(--color-text-secondary)]">{t('empty.transactions')}</div>
-            ) : recentTransactions.map((tx) => (
+        {/* Portfolio occupancy */}
+        <div className="rounded-[var(--radius-card)] p-6 flex flex-col" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-2">Portfolio occupancy</p>
+          <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px' }}>
+            {occupancyPct}%
+          </p>
+          <p className="text-sm opacity-65 mt-1">{occupiedCount} of {properties.length} properties</p>
+
+          {/* Property strip */}
+          <div className="flex gap-1.5 mt-auto pt-5">
+            {properties.slice(0, 8).map((p) => (
               <button
-                key={tx.id}
-                onClick={() => navigate(`/transactions/${tx.id}`)}
-                className="w-full flex items-center gap-3 p-4 text-start hover:bg-[var(--color-input-bg)] transition-colors"
-              >
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tx.type === 'revenue' ? 'bg-[var(--color-rev-bg)]' : 'bg-[var(--color-exp-bg)]'}`}>
-                  {tx.type === 'revenue'
-                    ? <TrendingUp size={14} style={{ color: 'var(--color-rev-fg)' }} />
-                    : <TrendingDown size={14} style={{ color: 'var(--color-exp-fg)' }} />
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{tx.property_name ?? '—'}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)]">{tx.date_of_payment}</p>
-                </div>
-                <LtrSpan className={`text-sm font-semibold shrink-0 ${tx.type === 'revenue' ? 'text-[var(--color-rev-fg)]' : 'text-[var(--color-exp-fg)]'}`}>
-                  {tx.type === 'revenue' ? '+' : '-'}{formatMoney(tx.amount)}
-                </LtrSpan>
-              </button>
+                key={p.id}
+                onClick={() => navigate(`/properties/${p.id}`)}
+                title={p.address}
+                className="flex-1 h-6 rounded-[4px] min-w-0 transition-opacity hover:opacity-80"
+                style={{
+                  background: p.hasRenters ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)',
+                }}
+              />
             ))}
+          </div>
+          <div className="flex items-center gap-4 mt-2 text-[11px] opacity-55">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.35)' }} />Occupied
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.12)' }} />Vacant
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Reports card */}
-      <div className="mt-6">
-        <button
-          onClick={() => navigate('/reports')}
-          className="w-full rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-5 flex items-center gap-4 hover:bg-[var(--color-input-bg)] transition-colors text-start"
-        >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
-            <FileText size={22} className="text-[var(--color-primary)]" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-[var(--color-text-primary)]">{t('screens.reports')}</p>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{t('home.reportsSubtitle', 'Generate income & expense reports')}</p>
-          </div>
-          <ChevronRight size={18} className="text-[var(--color-text-secondary)] shrink-0" />
-        </button>
+      {/* Recent transactions */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('home.recentTransactions')}
+          </p>
+          <button
+            onClick={() => navigate('/transactions')}
+            className="flex items-center gap-1 text-xs font-medium hover:opacity-80"
+            style={{ color: 'var(--color-primary)' }}
+          >
+            {t('common.viewAll')} <Plus size={11} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="rounded-[var(--radius-card)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+          {recentTransactions.length === 0 ? (
+            <div className="p-6 text-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {t('empty.transactions')}
+            </div>
+          ) : recentTransactions.map((tx, i) => (
+            <button
+              key={tx.id}
+              onClick={() => navigate(`/transactions/${tx.id}`)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-start hover:opacity-90 transition-opacity"
+              style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+            >
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: tx.type === 'revenue' ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)' }}
+              >
+                {tx.type === 'revenue'
+                  ? <TrendingUp size={14} style={{ color: 'var(--color-rev-fg)' }} />
+                  : <TrendingDown size={14} style={{ color: 'var(--color-exp-fg)' }} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                  {tx.renter_name ?? tx.property_name ?? '—'}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {tx.property_name} · {tx.date_of_payment}
+                </p>
+              </div>
+              <LtrSpan
+                className="text-sm font-semibold shrink-0"
+                style={{ color: tx.type === 'revenue' ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}
+              >
+                {tx.type === 'revenue' ? '+' : '−'}{formatMoney(tx.amount)}
+              </LtrSpan>
+            </button>
+          ))}
+        </div>
       </div>
-    </PageContainer>
+    </div>
   );
 }

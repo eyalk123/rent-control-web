@@ -1,12 +1,30 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
 import { useTransaction, useDeleteTransaction } from '../queries';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
 import { useToast } from '@/shared/components/ui/Toast';
+
+function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <Icon size={15} style={{ color: 'var(--color-brand-navy)' }} strokeWidth={1.6} />
+      <span className="flex-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+      <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{value}</span>
+    </div>
+  );
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  bit: 'Bit',
+  cash: 'Cash',
+  bank_transfer: 'Bank transfer',
+  check: 'Check',
+};
 
 export function TransactionDetailPage() {
   const { t } = useTranslation();
@@ -30,53 +48,65 @@ export function TransactionDetailPage() {
   if (!tx) return null;
 
   const isRevenue = tx.type === 'revenue';
+  const tintBg = isRevenue ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)';
+  const tintFg = isRevenue ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)';
 
   return (
-    <PageContainer>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]">
-          <ChevronLeft size={16} />{t('common.back')}
+    <div className="max-w-6xl mx-auto px-8 py-8">
+      {/* Back + actions */}
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <ChevronLeft size={14} /> All transactions
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(`/transactions/${txId}/edit`)} className="flex items-center gap-1.5 rounded-xl border border-[var(--color-outline)] px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-input-bg)]">
-            <Pencil size={14} />{t('common.edit')}
+          <button onClick={() => navigate(`/transactions/${txId}/edit`)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
+            <Pencil size={14} /> {t('common.edit')}
           </button>
-          <button onClick={handleDelete} className="flex items-center gap-1.5 rounded-xl border border-[var(--color-error)]/30 px-3 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error)]/10">
-            <Trash2 size={14} />{t('common.delete')}
+          <button onClick={handleDelete} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}>
+            <Trash2 size={14} /> {t('common.delete')}
           </button>
         </div>
       </div>
 
-      <div className="max-w-2xl space-y-4">
-        {/* Amount card */}
-        <div className={`rounded-2xl p-6 flex flex-col items-center gap-1 ${isRevenue ? 'bg-[var(--color-rev-bg)]' : 'bg-[var(--color-exp-bg)]'}`}>
-          <p className="text-xs font-medium" style={{ color: isRevenue ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}>
-            {t(`transactions.${tx.type}`)}
-          </p>
-          <LtrSpan className="text-3xl font-bold" style={{ color: isRevenue ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}>
-            {isRevenue ? '+' : '-'}{formatMoney(tx.amount)}
+      {/* 2-col layout */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        {/* Left: tinted hero card */}
+        <div className="rounded-[var(--radius-card)] p-8 flex flex-col items-center justify-center gap-4" style={{ background: tintBg, border: '1px solid var(--color-outline)' }}>
+          <Pill tone={isRevenue ? 'revenue' : 'expense'} size="md">{isRevenue ? 'Revenue' : 'Expense'}</Pill>
+          <LtrSpan className="text-[56px] font-bold leading-none" style={{ color: tintFg, fontVariantNumeric: 'tabular-nums' }}>
+            {isRevenue ? '+' : '−'}{formatMoney(tx.amount)}
           </LtrSpan>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
+            {isRevenue ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? tx.category_name ?? '—')}
+          </p>
+          {tx.notes && (
+            <p className="text-[13px] text-center max-w-[280px] mt-2 leading-relaxed italic" style={{ color: 'var(--color-text-secondary)' }}>"{tx.notes}"</p>
+          )}
         </div>
 
-        {/* Details */}
-        <div className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-5 space-y-3">
-          {[
-            { label: t('transactions.property'), value: tx.property_name },
-            { label: t('transactions.renter'), value: tx.renter_name },
-            { label: t('transactions.category'), value: tx.category_name },
-            { label: t('transactions.supplier'), value: tx.supplier_name },
-            { label: t('transactions.date'), value: tx.date_of_payment },
-            { label: t('transactions.monthFor'), value: tx.month_for },
-            { label: t('transactions.paymentMethod'), value: tx.payment_method },
-            { label: t('transactions.notes'), value: tx.notes },
-          ].filter((r) => r.value).map((row) => (
-            <div key={row.label} className="flex items-start gap-3">
-              <span className="text-sm text-[var(--color-text-secondary)] w-32 shrink-0">{row.label}</span>
-              <span className="text-sm font-medium text-[var(--color-text-primary)] break-words">{row.value}</span>
+        {/* Right: details panel */}
+        <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+          <header className="px-5 py-3.5 text-[14px] font-bold" style={{ color: 'var(--color-text-primary)', borderBottom: '1px solid var(--color-outline)' }}>
+            Details
+          </header>
+          <DetailRow icon={Building2} label="Property" value={tx.property_name} />
+          {isRevenue && <DetailRow icon={User} label="Renter" value={tx.renter_name} />}
+          {!isRevenue && <DetailRow icon={Store} label="Supplier" value={tx.supplier_name} />}
+          {!isRevenue && <DetailRow icon={Tag} label="Category" value={tx.category_name} />}
+          <DetailRow icon={CreditCard} label="Payment method" value={tx.payment_method ? PAYMENT_METHOD_LABELS[tx.payment_method] ?? tx.payment_method : null} />
+          {isRevenue && tx.month_for && <DetailRow icon={Calendar} label="Month for" value={tx.month_for} />}
+          <DetailRow icon={Calendar} label="Date of payment" value={tx.date_of_payment} />
+          {tx.notes && <DetailRow icon={FileText} label="Notes" value={tx.notes} />}
+
+          {/* Receipt placeholder */}
+          <div className="p-4" style={{ borderTop: '1px solid var(--color-outline)' }}>
+            <div className="rounded-[12px] p-8 flex flex-col items-center gap-2" style={{ border: '1.5px dashed var(--color-outline)' }}>
+              <Receipt size={24} style={{ color: 'var(--color-text-secondary)' }} />
+              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>No receipt attached</p>
             </div>
-          ))}
+          </div>
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 }

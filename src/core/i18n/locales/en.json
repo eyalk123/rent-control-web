@@ -4,7 +4,9 @@
     "properties": "Properties",
     "renters": "Renters",
     "settings": "Settings",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "reports": "Reports",
+    "suppliers": "Suppliers"
   },
   "home": {
     "portfolio": "Portfolio",
