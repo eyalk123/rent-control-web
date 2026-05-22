@@ -14,7 +14,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { Transaction } from '@/shared/types';
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function formatK(v: number): string {
   if (v === 0) return '—';
@@ -42,9 +42,13 @@ export function IncomeExpenseReportPage() {
   const { data: properties = [] } = useProperties();
   const { data: transactions = [], isLoading } = useAllTransactionsForYear(selectedYear);
 
+  const monthsLocale = Array.from({ length: 12 }, (_, idx) =>
+    new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(selectedYear, idx, 1))
+  );
+
   // Build matrix: property × month → {rev, exp}
   const rows = properties.map((p) => {
-    const monthly = MONTHS_SHORT.map((_, idx) => {
+    const monthly = monthsLocale.map((_, idx) => {
       const prefix = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
       const ptxs = transactions.filter((tx) => tx.property_id === p.id && tx.date_of_payment.startsWith(prefix));
       const rev = ptxs.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
@@ -80,10 +84,10 @@ export function IncomeExpenseReportPage() {
             className="inline-flex items-center gap-1 text-[12px] font-medium mb-1.5"
             style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <ChevronLeft size={14} /> Reports
+            <ChevronLeft size={14} /> {t('screens.reports')}
           </button>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>Income & Expense</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Calendar year {selectedYear}</p>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('reports.incomeExpense')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.calendarYear', { year: selectedYear })}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -107,7 +111,7 @@ export function IncomeExpenseReportPage() {
 
       {/* Controls */}
       <div className="flex items-center gap-4 px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-        <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>Year</span>
+        <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.year')}</span>
         <SegToggle
           value={String(selectedYear)}
           onChange={(v) => setSelectedYear(Number(v))}
@@ -116,9 +120,9 @@ export function IncomeExpenseReportPage() {
         />
         <div className="ml-auto flex gap-6">
           {[
-            { label: 'Revenue', value: grand.rev, color: 'var(--color-rev-fg)' },
-            { label: 'Expenses', value: grand.exp, color: 'var(--color-exp-fg)' },
-            { label: 'Net', value: grand.rev - grand.exp, color: grand.rev - grand.exp >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' },
+            { label: t('reports.revenue'), value: grand.rev, color: 'var(--color-rev-fg)' },
+            { label: t('reports.expenses'), value: grand.exp, color: 'var(--color-exp-fg)' },
+            { label: t('reports.net'), value: grand.rev - grand.exp, color: grand.rev - grand.exp >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' },
           ].map(({ label, value, color }) => (
             <div key={label} className="flex flex-col items-end">
               <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
@@ -135,13 +139,13 @@ export function IncomeExpenseReportPage() {
             <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header row */}
               <div className="flex items-center px-4 py-3 gap-1 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
-                <div className="flex-[2.4] min-w-0">Property</div>
-                {MONTHS_SHORT.map((m) => <div key={m} className="w-12 text-right" style={{ color: 'rgba(255,255,255,0.7)' }}>{m}</div>)}
-                <div className="w-20 text-right">Total</div>
+                <div className="flex-[2.4] min-w-0">{t('reports.property')}</div>
+                {monthsLocale.map((m) => <div key={m} className="w-12 text-right" style={{ color: 'rgba(255,255,255,0.7)' }}>{m}</div>)}
+                <div className="w-20 text-right">{t('reports.total')}</div>
               </div>
 
               {/* Revenue group */}
-              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-rev-bg)', color: 'var(--color-rev-fg)', borderBottom: '1px solid var(--color-outline)' }}>Revenue</div>
+              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-rev-bg)', color: 'var(--color-rev-fg)', borderBottom: '1px solid var(--color-outline)' }}>{t('reports.revenue')}</div>
               {rows.map((r) => (
                 <div key={`rev-${r.p.id}`} className="flex items-center px-4 py-2.5 gap-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
                   <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
@@ -161,7 +165,7 @@ export function IncomeExpenseReportPage() {
               ))}
 
               {/* Expenses group */}
-              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)', borderTop: '1px solid var(--color-outline)', borderBottom: '1px solid var(--color-outline)' }}>Expenses</div>
+              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)', borderTop: '1px solid var(--color-outline)', borderBottom: '1px solid var(--color-outline)' }}>{t('reports.expenses')}</div>
               {rows.map((r) => (
                 <div key={`exp-${r.p.id}`} className="flex items-center px-4 py-2.5 gap-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
                   <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
@@ -182,8 +186,8 @@ export function IncomeExpenseReportPage() {
 
               {/* Net totals row */}
               <div className="flex items-center px-4 py-3.5 gap-1" style={{ background: 'var(--color-input-filled-background)', borderTop: '1px solid var(--color-outline)' }}>
-                <div className="flex-[2.4] text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Net total</div>
-                {MONTHS_SHORT.map((_, idx) => {
+                <div className="flex-[2.4] text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{t('reports.netTotal')}</div>
+                {monthsLocale.map((_, idx) => {
                   const net = rows.reduce((s, r) => s + r.monthly[idx].rev - r.monthly[idx].exp, 0);
                   return (
                     <div key={idx} className="w-12 text-right text-[11.5px] font-bold" style={{ color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
@@ -210,9 +214,9 @@ export function IncomeExpenseReportPage() {
                   </div>
                   <div className="flex justify-between pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
                     {[
-                      { label: 'Rev', value: r.totalRev, color: 'var(--color-rev-fg)' },
-                      { label: 'Exp', value: r.totalExp, color: 'var(--color-exp-fg)' },
-                      { label: 'Net', value: r.totalRev - r.totalExp, color: 'var(--color-text-primary)' },
+                      { label: t('reports.revenue'), value: r.totalRev, color: 'var(--color-rev-fg)' },
+                      { label: t('reports.expenses'), value: r.totalExp, color: 'var(--color-exp-fg)' },
+                      { label: t('reports.net'), value: r.totalRev - r.totalExp, color: 'var(--color-text-primary)' },
                     ].map(({ label, value, color }) => (
                       <div key={label}>
                         <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>

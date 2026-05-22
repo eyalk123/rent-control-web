@@ -27,10 +27,10 @@ export function ReportsHubPage() {
   const { showToast } = useToast();
 
   const handleDelete = async (id: number) => {
-    if (!confirm(t('reports.deleteConfirm', 'Delete this report?'))) return;
+    if (!confirm(t('reports.deleteConfirm'))) return;
     try {
       await deleteReport(id);
-      showToast(t('reports.deleteSuccess', 'Report deleted'), 'success');
+      showToast(t('reports.deleteSuccess'), 'success');
     } catch {
       showToast(t('error.deleteFailed'), 'error');
     }
@@ -39,15 +39,15 @@ export function ReportsHubPage() {
   const reportCards = [
     {
       icon: BarChart2,
-      title: 'Income & Expense',
-      subtitle: 'Monthly revenue vs. expenses, by property and owner.',
+      title: t('reports.incomeExpense'),
+      subtitle: t('reports.incomeExpenseDescription'),
       color: 'var(--color-success)',
       path: '/reports/income-expense',
     },
     {
       icon: List,
-      title: 'Expense Log',
-      subtitle: 'Detailed list of all expenses, grouped by category.',
+      title: t('reports.expenseLog'),
+      subtitle: t('reports.expenseLogDescription'),
       color: 'var(--color-error)',
       path: '/reports/expense-log',
     },
@@ -58,12 +58,12 @@ export function ReportsHubPage() {
       {/* Header */}
       <div className="pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.reports')}</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Generate annual reports and export to PDF or CSV</p>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.hubSubtitle')}</p>
       </div>
 
       {/* Report type cards */}
       <section>
-        <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>Generate a report</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.generateSection')}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           {reportCards.map((card) => (
             <div
@@ -85,7 +85,7 @@ export function ReportsHubPage() {
                 className="flex items-center justify-center gap-1.5 h-9 w-full rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
                 style={{ background: 'var(--color-primary)' }}
               >
-                Open report <ArrowRight size={14} />
+                {t('reports.openReport')} <ArrowRight size={14} />
               </button>
             </div>
           ))}
@@ -95,12 +95,12 @@ export function ReportsHubPage() {
       {/* Export history */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Recent reports</p>
-          <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{history.length} saved</span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.recentReports')}</p>
+          <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.savedCount', { count: history.length })}</span>
         </div>
         {isLoading ? <PageLoader /> : history.length === 0 ? (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>No exports yet</p>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.noHistory')}</p>
           </div>
         ) : (
           <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
@@ -112,10 +112,10 @@ export function ReportsHubPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    {item.report_type === 'income_expense' ? 'Income & Expense' : 'Expense Log'} · {item.year}
+                    {item.report_type === 'income_expense' ? t('reports.incomeExpense') : t('reports.expenseLog')} · {item.year}
                   </p>
                   <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                    Generated {new Date(item.created_at).toLocaleDateString()} · {item.format.toUpperCase()}
+                    {t('reports.generatedMeta', { date: new Date(item.created_at).toLocaleDateString(), format: item.format.toUpperCase() })}
                   </p>
                 </div>
                 <button

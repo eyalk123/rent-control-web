@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/core/i18n';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTransactions, useTransactionSummary } from '../queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -15,8 +16,6 @@ import type { Transaction } from '@/shared/types';
 
 type Filter = 'all' | 'revenue' | 'expense';
 
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
 function groupByMonth(txs: Transaction[]): Map<string, Transaction[]> {
   const map = new Map<string, Transaction[]>();
   for (const tx of txs) {
@@ -29,12 +28,14 @@ function groupByMonth(txs: Transaction[]): Map<string, Transaction[]> {
 
 function fmtMonthKey(key: string): string {
   const [y, m] = key.split('-');
-  return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
+  return new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(date);
 }
 
 // ─── TxRow ───────────────────────────────────────────────────────────────────
 
 function TxRow({ tx }: { tx: Transaction }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isRev = tx.type === 'revenue';
   return (
@@ -52,7 +53,7 @@ function TxRow({ tx }: { tx: Transaction }) {
           {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? tx.category_name ?? '—')}
         </p>
         <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? 'Rent' : tx.category_name} · {tx.property_name} · {tx.date_of_payment}
+          {isRev ? t('transactions.rentLabel') : tx.category_name} · {tx.property_name} · {tx.date_of_payment}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
@@ -110,7 +111,7 @@ export function TransactionsListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.transactions')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {filtered.length} transactions · <LtrSpan>{formatMoney(revTotal)}</LtrSpan> revenue · <LtrSpan>{formatMoney(expTotal)}</LtrSpan> expenses
+            {t('transactions.headerMeta', { count: filtered.length, revenue: formatMoney(revTotal), expenses: formatMoney(expTotal) })}
           </p>
         </div>
         <button
@@ -118,7 +119,7 @@ export function TransactionsListPage() {
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
           style={{ background: 'var(--color-primary)' }}
         >
-          <Plus size={14} /> Add transaction
+          <Plus size={14} /> {t('transactions.addTransactionBtn')}
         </button>
       </div>
 
@@ -129,15 +130,15 @@ export function TransactionsListPage() {
           <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Revenue vs. expense</p>
-                <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Last 6 months</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.revVsExpense')}</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('transactions.last6Months')}</p>
               </div>
               <div className="flex gap-3.5 text-[11.5px]" style={{ color: 'var(--color-text-secondary)' }}>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-success)' }} /> Revenue
+                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-success)' }} /> {t('transactions.revenue')}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-error)' }} /> Expense
+                  <span className="w-2.5 h-2.5 rounded-[2px]" style={{ background: 'var(--color-error)' }} /> {t('transactions.expense')}
                 </span>
               </div>
             </div>
@@ -146,11 +147,14 @@ export function TransactionsListPage() {
 
           {/* KPI tiles */}
           <div className="flex flex-col gap-3">
-            {lastBucket && [
-              { label: 'This month revenue', value: lastBucket.revenue, tone: 'success' as const },
-              { label: 'This month expenses', value: lastBucket.expenses, tone: 'danger' as const },
-              { label: 'This month net', value: lastBucket.profit, tone: lastBucket.profit >= 0 ? 'success' as const : 'danger' as const },
-            ].map(({ label, value, tone }) => (
+            {lastBucket && (() => {
+              const profit = lastBucket.profit ?? (lastBucket.revenue - lastBucket.expenses);
+              return [
+                { label: t('transactions.thisMonthRevenue'), value: lastBucket.revenue, tone: 'success' as const },
+                { label: t('transactions.thisMonthExpenses'), value: lastBucket.expenses, tone: 'danger' as const },
+                { label: t('transactions.thisMonthNet'), value: profit, tone: profit >= 0 ? 'success' as const : 'danger' as const },
+              ];
+            })().map(({ label, value, tone }) => (
               <div key={label} className="rounded-[var(--radius-md)] p-4 flex-1" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
                 <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
                 <LtrSpan className="text-[22px] font-bold mt-1 block" style={{ color: tone === 'success' ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
@@ -168,21 +172,21 @@ export function TransactionsListPage() {
           value={filter}
           onChange={(v) => setFilter(v as Filter)}
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'revenue', label: 'Revenue' },
-            { value: 'expense', label: 'Expenses' },
+            { value: 'all', label: t('transactions.filterAll') },
+            { value: 'revenue', label: t('transactions.filterRevenue') },
+            { value: 'expense', label: t('transactions.filterExpense') },
           ]}
           size="sm"
         />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by party or notes…"
+          placeholder={t('transactions.searchPlaceholder')}
           className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none"
           style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
         />
         <div className="ml-auto text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          Net{' '}
+          {t('transactions.netLabel')}{' '}
           <LtrSpan className="text-[14px] font-bold" style={{ color: revTotal - expTotal >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
             {revTotal - expTotal >= 0 ? '+' : '−'}{formatMoney(Math.abs(revTotal - expTotal))}
           </LtrSpan>

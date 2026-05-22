@@ -13,21 +13,21 @@ import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import type { Property } from '@/shared/types';
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
+import i18n from '@/core/i18n';
 import type { Renter } from '@/shared/types';
 
 function fmtLeaseDate(renter: Renter | undefined): string | null {
   if (!renter) return null;
   const d = getLeaseEndDate(renter);
   if (!d) return null;
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
 }
 
 function StatusPill({ hasRenters }: { hasRenters: boolean }) {
+  const { t } = useTranslation();
   return hasRenters
-    ? <Pill tone="success">Occupied</Pill>
-    : <Pill tone="warning">Vacant</Pill>;
+    ? <Pill tone="success">{t('property.occupancy.occupied')}</Pill>
+    : <Pill tone="warning">{t('property.occupancy.vacant')}</Pill>;
 }
 
 function PropertyCard({ property }: { property: Property }) {
@@ -73,9 +73,9 @@ function PropertyCard({ property }: { property: Property }) {
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3" style={{ borderTop: '1px solid var(--color-outline)' }}>
           {[
-            { label: 'Rent', value: monthlyRent ? formatMoney(monthlyRent) : '—' },
-            { label: 'Renters', value: property.renters?.length ?? 0 },
-            { label: 'Size', value: `${property.sq_ft}m²` },
+            { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
+            { label: t('property.renters'), value: property.renters?.length ?? 0 },
+            { label: t('property.size'), value: `${property.sq_ft}m²` },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
@@ -98,13 +98,13 @@ function PropertyCard({ property }: { property: Property }) {
               </span>
               {leaseEnd && (
                 <span className="text-[11px] shrink-0" style={{ color: 'var(--color-text-secondary)' }}>
-                  ends {leaseEnd}
+                  {t('property.endsDate', { date: leaseEnd })}
                 </span>
               )}
             </>
           ) : (
             <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-warning)' }}>
-              <AlertCircle size={12} /> Available
+              <AlertCircle size={12} /> {t('property.available')}
             </span>
           )}
         </div>
@@ -122,7 +122,10 @@ function PropertyTable({ properties }: { properties: Property[] }) {
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
-            {['Property', 'Type', 'Owner', 'Renters', 'Rent', 'Status'].map((h) => (
+            {[
+              t('property.colProperty'), t('property.colType'), t('property.colOwner'),
+              t('property.renters'), t('property.rent'), t('property.colStatus'),
+            ].map((h) => (
               <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 {h}
               </th>
@@ -204,20 +207,20 @@ export function PropertiesListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.properties')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {filtered.length} properties · {occupied} occupied
-            {totalMonthly > 0 && <> · <LtrSpan>{formatMoney(totalMonthly)}</LtrSpan>/mo</>}
+            {t('property.headerMeta', { total: filtered.length, occupied })}
+            {totalMonthly > 0 && <> · <LtrSpan>{formatMoney(totalMonthly)}</LtrSpan>{t('common.perMonth')}</>}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-            <Download size={14} /> Export
+            <Download size={14} /> {t('common.export')}
           </button>
           <button
             onClick={() => navigate('/properties/add')}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
             style={{ background: 'var(--color-primary)' }}
           >
-            <Plus size={14} /> Add property
+            <Plus size={14} /> {t('property.addPropertyAction')}
           </button>
         </div>
       </div>
@@ -227,7 +230,7 @@ export function PropertiesListPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search address or city…"
+          placeholder={t('property.searchPlaceholder')}
           className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none transition-colors"
           style={{
             background: 'var(--color-input-filled-background)',
@@ -240,8 +243,8 @@ export function PropertiesListPage() {
           value={view}
           onChange={(v) => setView(v as ViewMode)}
           options={[
-            { value: 'card', label: 'Cards' },
-            { value: 'table', label: 'Table' },
+            { value: 'card', label: t('common.cardsView') },
+            { value: 'table', label: t('common.tableView') },
           ]}
           size="sm"
         />

@@ -12,10 +12,11 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import type { MonthSummaryItem } from '@/features/transactions/api/transactions';
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function bucketToChartPoint(b: MonthSummaryItem) {
-  return { month: MONTHS_SHORT[b.month - 1], revenue: b.revenue, expenses: b.expenses };
+  const month = new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(b.year, b.month - 1, 1));
+  return { month, revenue: b.revenue, expenses: b.expenses };
 }
 
 export function HomePage() {
@@ -62,7 +63,7 @@ export function HomePage() {
         {/* Left: profit + stats */}
         <div className="rounded-[var(--radius-card)] p-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
           <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-            Net profit · MTD
+            {t('home.netProfitMtd')}
           </p>
           <LtrSpan
             className="block text-[56px] font-bold leading-none tracking-tight"
@@ -78,18 +79,18 @@ export function HomePage() {
                 : { background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)' }}
             >
               {mtdProfit >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-              {mtdProfit >= 0 ? 'Profitable' : 'In the red'}
+              {mtdProfit >= 0 ? t('home.profitable') : t('home.inTheRed')}
             </span>
           </div>
 
           <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--color-outline)' }}>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>Collected</p>
+                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('home.collected')}</p>
                 <LtrSpan className="text-lg font-bold" style={{ color: 'var(--color-rev-fg)' }}>{formatMoney(mtdRevenue)}</LtrSpan>
               </div>
               <div>
-                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>Spent</p>
+                <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('home.spent')}</p>
                 <LtrSpan className="text-lg font-bold" style={{ color: 'var(--color-exp-fg)' }}>{formatMoney(mtdExpenses)}</LtrSpan>
               </div>
             </div>
@@ -99,13 +100,13 @@ export function HomePage() {
         {/* Right: Cash-flow chart */}
         <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cash Flow</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t('home.cashFlow')}</p>
             <div className="flex items-center gap-3 text-[11px]">
               <span className="flex items-center gap-1" style={{ color: 'var(--color-rev-fg)' }}>
-                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-rev-fg)' }} />Revenue
+                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-rev-fg)' }} />{t('home.revenue')}
               </span>
               <span className="flex items-center gap-1" style={{ color: 'var(--color-exp-fg)' }}>
-                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-exp-fg)' }} />Expenses
+                <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: 'var(--color-exp-fg)' }} />{t('home.expenses')}
               </span>
             </div>
           </div>
@@ -113,7 +114,7 @@ export function HomePage() {
             <CashFlowChart data={chartData} height={180} />
           ) : (
             <div className="h-44 flex items-center justify-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              No data yet
+              {t('home.noData')}
             </div>
           )}
         </div>
@@ -122,17 +123,17 @@ export function HomePage() {
       {/* Quick actions */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-          Quick Actions
+          {t('home.quickActions')}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Record Revenue', icon: TrendingUp, to: '/transactions/add?type=revenue', color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
-            { label: 'Record Expense', icon: TrendingDown, to: '/transactions/add?type=expense', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
-            { label: 'Add Renter', icon: Users, to: '/renters/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
-            { label: 'Add Property', icon: Building2, to: '/properties/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
-          ].map(({ label, icon: Icon, to, color, bg }) => (
+            { labelKey: 'home.recordRevenue', icon: TrendingUp, to: '/transactions/add?type=revenue', color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
+            { labelKey: 'home.recordExpense', icon: TrendingDown, to: '/transactions/add?type=expense', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
+            { labelKey: 'screens.addRenter', icon: Users, to: '/renters/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+            { labelKey: 'screens.addProperty', icon: Building2, to: '/properties/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+          ].map(({ labelKey, icon: Icon, to, color, bg }) => (
             <button
-              key={label}
+              key={labelKey}
               onClick={() => navigate(to)}
               className="flex flex-col items-center gap-2.5 p-4 rounded-[var(--radius-card)] transition-opacity hover:opacity-80"
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
@@ -140,7 +141,7 @@ export function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: bg }}>
                 <Icon size={18} style={{ color }} strokeWidth={2} />
               </div>
-              <span className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{label}</span>
+              <span className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{t(labelKey)}</span>
             </button>
           ))}
         </div>
@@ -171,7 +172,7 @@ export function HomePage() {
                     >
                       <div>
                         <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
-                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {r.days_overdue}d overdue</p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {t('home.daysOverdue', { count: r.days_overdue })}</p>
                       </div>
                       <LtrSpan className="text-sm font-semibold shrink-0" style={{ color: 'var(--color-exp-fg)' }}>{formatMoney(r.monthly_amount)}</LtrSpan>
                     </button>
@@ -197,7 +198,7 @@ export function HomePage() {
                     >
                       <div>
                         <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
-                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {r.days_until_expiry}d left</p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{r.property_address} · {t('home.expiresIn', { count: r.days_until_expiry })}</p>
                       </div>
                       <ArrowUpRight size={14} style={{ color: 'var(--color-text-secondary)' }} />
                     </button>
@@ -216,11 +217,11 @@ export function HomePage() {
 
         {/* Portfolio occupancy */}
         <div className="rounded-[var(--radius-card)] p-6 flex flex-col" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-2">Portfolio occupancy</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60 mb-2">{t('home.portfolioOccupancy')}</p>
           <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px' }}>
             {occupancyPct}%
           </p>
-          <p className="text-sm opacity-65 mt-1">{occupiedCount} of {properties.length} properties</p>
+          <p className="text-sm opacity-65 mt-1">{t('home.occupancyMeta', { occupied: occupiedCount, total: properties.length })}</p>
 
           {/* Property strip */}
           <div className="flex gap-1.5 mt-auto pt-5">
@@ -238,10 +239,10 @@ export function HomePage() {
           </div>
           <div className="flex items-center gap-4 mt-2 text-[11px] opacity-55">
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.35)' }} />Occupied
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.35)' }} />{t('home.occupied')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.12)' }} />Vacant
+              <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.12)' }} />{t('home.vacant')}
             </span>
           </div>
         </div>

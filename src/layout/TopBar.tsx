@@ -1,6 +1,7 @@
 import { Sun, Moon, Bell, Plus } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface TopBarProps {
   onOpenPalette: () => void;
@@ -8,6 +9,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
+  const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
   const navigate = useNavigate();
 
@@ -24,7 +26,7 @@ export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
         <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>
         </svg>
-        <span className="flex-1 text-start text-[13px]">Search properties, renters, transactions…</span>
+        <span className="flex-1 text-start text-[13px]">{t('common.searchPlaceholder')}</span>
         <span className="text-[10px] font-medium border border-[var(--color-outline)] rounded px-1.5 py-px">⌘K</span>
       </button>
 
@@ -32,14 +34,14 @@ export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
-          title="Toggle theme"
+          title={t('common.toggleTheme')}
           className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
           {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
         <button
-          title="Notifications"
+          title={t('common.notifications')}
           className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
           <Bell size={16} />
@@ -51,7 +53,7 @@ export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] bg-[var(--color-primary)] text-white text-[13px] font-semibold hover:opacity-90 transition-opacity"
         >
           <Plus size={15} />
-          Add
+          {t('common.addButton')}
         </button>
       </div>
     </div>

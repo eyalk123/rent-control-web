@@ -20,18 +20,18 @@ import type { Property, Renter, Transaction } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function fmtDate(s: string): string {
   const d = new Date(s);
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
 }
 
-function fmtLeaseEnd(renter: Renter): string | null {
+function fmtLeaseEnd(renter: Renter): { days: number } | 'expired' | null {
   const d = getLeaseEndDate(renter);
   if (!d) return null;
   const days = Math.ceil((d.getTime() - Date.now()) / 86_400_000);
-  return days > 0 ? `${days}d` : 'Expired';
+  return days > 0 ? { days } : 'expired';
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
@@ -70,11 +70,15 @@ function DetailRow({ icon: Icon, label, value, last = false }: { icon: React.Ele
 }
 
 function RenterMiniCard({ renter }: { renter: Renter }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
   const monthly = getRenterMonthlyRent(renter);
   const countdown = fmtLeaseEnd(renter);
+  const countdownStr = countdown === 'expired'
+    ? t('renter.leaseExpired')
+    : countdown ? t('property.endsIn', { countdown: `${countdown.days}d` }) : null;
 
   return (
     <button
@@ -90,7 +94,7 @@ function RenterMiniCard({ renter }: { renter: Renter }) {
           <p className="text-[14px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{renter.first_name} {renter.last_name}</p>
         </div>
         <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          <LtrSpan>{formatMoney(monthly)}</LtrSpan>/mo{countdown ? ` · ends in ${countdown}` : ''}
+          <LtrSpan>{formatMoney(monthly)}</LtrSpan>/mo{countdownStr ? ` · ${countdownStr}` : ''}
         </p>
       </div>
       <ChevronLeft size={15} className="rotate-180" style={{ color: 'var(--color-text-secondary)' }} />
@@ -99,6 +103,7 @@ function RenterMiniCard({ renter }: { renter: Renter }) {
 }
 
 function TxRow({ tx }: { tx: Transaction }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isRev = tx.type === 'revenue';
   return (
@@ -116,7 +121,7 @@ function TxRow({ tx }: { tx: Transaction }) {
           {isRev ? tx.renter_name : (tx.supplier_name ?? tx.category_name ?? '—')}
         </p>
         <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? 'Rent' : tx.category_name} · {fmtDate(tx.date_of_payment)}
+          {isRev ? t('property.rent') : tx.category_name} · {fmtDate(tx.date_of_payment)}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
@@ -127,6 +132,7 @@ function TxRow({ tx }: { tx: Transaction }) {
 }
 
 function DocRow({ label, url, last = false }: { label: string; url: string; last?: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3 p-3" style={{ borderBottom: last ? 'none' : '1px solid var(--color-outline)' }}>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px]" style={{ background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)' }}>
@@ -141,7 +147,7 @@ function DocRow({ label, url, last = false }: { label: string; url: string; last
         className="flex items-center gap-1 h-7 px-2.5 rounded-[7px] text-[12px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
-        <Download size={12} /> Download
+        <Download size={12} /> {t('common.download')}
       </a>
     </div>
   );
@@ -155,31 +161,31 @@ function DetailsTab({ property }: { property: Property }) {
 
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 1fr' }}>
-      <DetailPanel title="Basic info">
-        <DetailRow icon={MapPin} label="Address" value={`${property.address}, ${property.city}${property.zip_code ? ` ${property.zip_code}` : ''}`} />
-        <DetailRow icon={Receipt} label="Type" value={t(`property.type_${property.type}` as never, property.type)} />
-        <DetailRow icon={Users} label="Owner" value={property.property_owner} />
-        <DetailRow icon={Receipt} label="Size" value={property.sq_ft ? `${property.sq_ft}m²` : null} />
-        <DetailRow icon={Receipt} label="Rooms" value={property.number_of_rooms ? String(property.number_of_rooms) : null} />
-        <DetailRow icon={Receipt} label="Floor" value={property.floor != null ? String(property.floor) : null} last />
+      <DetailPanel title={t('property.basicInfo')}>
+        <DetailRow icon={MapPin} label={t('property.address')} value={`${property.address}, ${property.city}${property.zip_code ? ` ${property.zip_code}` : ''}`} />
+        <DetailRow icon={Receipt} label={t('property.type')} value={t(`property.type_${property.type}` as never, property.type)} />
+        <DetailRow icon={Users} label={t('property.owner')} value={property.property_owner} />
+        <DetailRow icon={Receipt} label={t('property.size')} value={property.sq_ft ? `${property.sq_ft}m²` : null} />
+        <DetailRow icon={Receipt} label={t('property.rooms')} value={property.number_of_rooms ? String(property.number_of_rooms) : null} />
+        <DetailRow icon={Receipt} label={t('property.floor')} value={property.floor != null ? String(property.floor) : null} last />
       </DetailPanel>
 
-      <DetailPanel title="Utilities & numbers">
-        <DetailRow icon={Car} label="Parking" value={parking} />
-        <DetailRow icon={Zap} label="Electric meter" value={property.electricity_meter_number} />
-        <DetailRow icon={Receipt} label="Electric account" value={property.electricity_account_number} />
-        <DetailRow icon={Droplets} label="Water meter" value={property.water_meter_number} />
-        <DetailRow icon={Receipt} label="Water account" value={property.water_account_number} last />
+      <DetailPanel title={t('property.utilitiesNumbers')}>
+        <DetailRow icon={Car} label={t('property.parking')} value={parking} />
+        <DetailRow icon={Zap} label={t('property.electricMeter')} value={property.electricity_meter_number} />
+        <DetailRow icon={Receipt} label={t('property.electricAccount')} value={property.electricity_account_number} />
+        <DetailRow icon={Droplets} label={t('property.waterMeter')} value={property.water_meter_number} />
+        <DetailRow icon={Receipt} label={t('property.waterAccount')} value={property.water_account_number} last />
       </DetailPanel>
 
-      <DetailPanel title="Fees">
-        <DetailRow icon={Receipt} label="Annual property tax" value={property.property_tax ? formatMoney(property.property_tax) : null} />
-        <DetailRow icon={Receipt} label="House committee" value={property.house_committee ? `${formatMoney(property.house_committee)}/mo` : null} last />
+      <DetailPanel title={t('property.fees')}>
+        <DetailRow icon={Receipt} label={t('property.annualPropertyTax')} value={property.property_tax ? formatMoney(property.property_tax) : null} />
+        <DetailRow icon={Receipt} label={t('property.houseCommittee')} value={property.house_committee ? `${formatMoney(property.house_committee)}${t('common.perMonth')}` : null} last />
       </DetailPanel>
 
-      <DetailPanel title="Inventory notes">
+      <DetailPanel title={t('property.inventoryNotesSection')}>
         <div className="p-4 text-[13px] leading-relaxed" style={{ color: property.inventory_notes ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}>
-          {property.inventory_notes || 'No inventory notes yet.'}
+          {property.inventory_notes || t('property.noInventoryNotes')}
         </div>
       </DetailPanel>
     </div>
@@ -187,6 +193,7 @@ function DetailsTab({ property }: { property: Property }) {
 }
 
 function RentersTab({ property }: { property: Property }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const renters = property.renters ?? [];
 
@@ -194,15 +201,15 @@ function RentersTab({ property }: { property: Property }) {
     return (
       <EmptyState
         icon={undefined}
-        title="No renters yet"
-        description="Add a renter to start tracking lease and payments."
+        title={t('property.noRentersYet')}
+        description={t('property.noRentersDesc')}
         action={
           <button
             onClick={() => navigate(`/renters/add?propertyId=${property.id}`)}
             className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
             style={{ background: 'var(--color-primary)' }}
           >
-            <Plus size={14} /> Add renter
+            <Plus size={14} /> {t('property.addRenterAction')}
           </button>
         }
       />
@@ -217,8 +224,9 @@ function RentersTab({ property }: { property: Property }) {
 }
 
 function TransactionsTab({ transactions }: { transactions: Transaction[] }) {
+  const { t } = useTranslation();
   if (transactions.length === 0) {
-    return <EmptyState icon={undefined} title="No transactions yet" />;
+    return <EmptyState icon={undefined} title={t('property.noTransactionsYet')} />;
   }
   return (
     <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
@@ -228,15 +236,16 @@ function TransactionsTab({ transactions }: { transactions: Transaction[] }) {
 }
 
 function DocumentsTab({ property }: { property: Property }) {
+  const { t } = useTranslation();
   const docs: { label: string; url: string }[] = [];
   if (property.basic_contract_url) docs.push({ label: 'Basic contract.pdf', url: property.basic_contract_url });
   if (property.land_registry_url) docs.push({ label: 'Land registry.pdf', url: property.land_registry_url });
 
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
-      <DetailPanel title="Documents">
+      <DetailPanel title={t('property.tabDocuments')}>
         {docs.length === 0 ? (
-          <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>No documents uploaded yet.</p>
+          <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('property.noDocuments')}</p>
         ) : (
           <div className="p-2">
             {docs.map((d, i) => <DocRow key={d.label} label={d.label} url={d.url} last={i === docs.length - 1} />)}
@@ -244,15 +253,15 @@ function DocumentsTab({ property }: { property: Property }) {
         )}
       </DetailPanel>
 
-      <DetailPanel title="Upload new">
+      <DetailPanel title={t('property.uploadNew')}>
         <div className="p-4">
           <div className="rounded-[12px] p-6 text-center" style={{ border: '1.5px dashed var(--color-outline)' }}>
             <Upload size={22} className="mx-auto mb-2" style={{ color: 'var(--color-text-secondary)' }} />
-            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Drop files here</p>
-            <p className="text-[12px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>PDF, JPG, PNG up to 10 MB</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t('property.dropFiles')}</p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>{t('property.fileFormats')}</p>
             <label className="mt-3 inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] text-[12px] font-medium cursor-pointer"
               style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-              <Paperclip size={13} /> Choose file
+              <Paperclip size={13} /> {t('property.chooseFile')}
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" />
             </label>
           </div>
@@ -288,10 +297,10 @@ export function PropertyDetailPage() {
   const rentersCount = property.renters?.length ?? 0;
 
   const TABS: { id: TabId; label: string }[] = [
-    { id: 'info', label: 'Details' },
-    { id: 'renters', label: `Renters (${rentersCount})` },
-    { id: 'transactions', label: `Transactions (${transactions.length})` },
-    { id: 'documents', label: 'Documents' },
+    { id: 'info', label: t('property.tabDetails') },
+    { id: 'renters', label: t('property.tabRentersCount', { count: rentersCount }) },
+    { id: 'transactions', label: t('property.tabTransactionsCount', { count: transactions.length }) },
+    { id: 'documents', label: t('property.tabDocuments') },
   ];
 
   return (
@@ -304,7 +313,7 @@ export function PropertyDetailPage() {
           className="inline-flex items-center gap-1 text-[12px] font-medium mb-3.5"
           style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <ChevronLeft size={14} /> All properties
+          <ChevronLeft size={14} /> {t('property.allProperties')}
         </button>
 
         {/* Header row */}
@@ -314,7 +323,7 @@ export function PropertyDetailPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Pill tone={property.hasRenters ? 'success' : 'warning'} size="md">
-                  {property.hasRenters ? 'Occupied' : 'Vacant'}
+                  {property.hasRenters ? t('property.occupancy.occupied') : t('property.occupancy.vacant')}
                 </Pill>
                 <Pill tone="neutral" size="md">{t(`property.type_${property.type}` as never, property.type)}</Pill>
               </div>
@@ -324,7 +333,7 @@ export function PropertyDetailPage() {
               <div className="flex items-center gap-1.5 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
                 <MapPin size={13} />
                 {property.city}{property.zip_code ? `, ${property.zip_code}` : ''}
-                {property.property_owner && <> · Owned by {property.property_owner}</>}
+                {property.property_owner && <> · {t('property.ownedBy', { owner: property.property_owner })}</>}
               </div>
             </div>
           </div>
@@ -343,17 +352,17 @@ export function PropertyDetailPage() {
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
               style={{ background: 'var(--color-primary)' }}
             >
-              <Plus size={14} /> Add transaction
+              <Plus size={14} /> {t('property.addTransaction')}
             </button>
           </div>
         </div>
 
         {/* KPI strip */}
         <div className="grid grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-          <HeroStat label="Monthly rent" value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
-          <HeroStat label="Size" value={property.sq_ft ? `${property.sq_ft}m²` : '—'} />
-          <HeroStat label="Total revenue" value={formatMoney(revTotal)} tone="success" sub="all time" />
-          <HeroStat label="Total expenses" value={formatMoney(expTotal)} tone="danger" sub="all time" />
+          <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
+          <HeroStat label={t('property.size')} value={property.sq_ft ? `${property.sq_ft}m²` : '—'} />
+          <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} />
+          <HeroStat label={t('property.totalExpenses')} value={formatMoney(expTotal)} tone="danger" sub={t('common.allTime')} />
         </div>
 
         {/* Tab bar */}

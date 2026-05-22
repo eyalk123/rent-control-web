@@ -25,8 +25,11 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
 
   if (!open) return null;
 
+  const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+  const slideIn = isRtl ? 'slideInLeft' : 'slideInRight';
+
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className={`fixed inset-0 z-50 flex ${isRtl ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Scrim */}
       <div
         className="flex-1 bg-black/40"
@@ -40,7 +43,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
         className="flex flex-col h-full bg-[var(--color-surface)] shadow-2xl"
         style={{
           width: Math.min(width, window.innerWidth),
-          animation: 'slideInRight 0.22s cubic-bezier(.2,.7,.2,1)',
+          animation: `${slideIn} 0.22s cubic-bezier(.2,.7,.2,1)`,
         }}
       >
         {/* Header */}

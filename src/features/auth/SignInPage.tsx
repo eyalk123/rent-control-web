@@ -170,23 +170,23 @@ export function SignInPage() {
             /* Forgot password */
             <div>
               <h2 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}>
-                Reset password
+                {t('auth.resetPasswordTitle')}
               </h2>
               <p className="text-[13px] mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-                Enter your email — we'll send a reset link.
+                {t('auth.resetPasswordDesc')}
               </p>
               <FormInput
-                label="Email"
+                label={t('auth.emailLabel')}
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 error={errors.email?.message}
                 {...register('email')}
               />
               {error && <p className="mt-2 text-xs text-center" style={{ color: 'var(--color-error)' }}>{error}</p>}
               {resetSent ? (
                 <div className="mt-4 flex items-center gap-2 rounded-[9px] px-3.5 py-3 text-sm font-medium" style={{ background: 'var(--color-rev-bg)', color: 'var(--color-rev-fg)' }}>
-                  <Check size={15} /> Check your inbox — reset link sent.
+                  <Check size={15} /> {t('auth.resetLinkSent')}
                 </div>
               ) : (
                 <button
@@ -195,7 +195,7 @@ export function SignInPage() {
                   className="mt-4 w-full h-11 rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: 'var(--color-primary)' }}
                 >
-                  {loading ? '…' : 'Send reset link'}
+                  {loading ? '…' : t('auth.sendResetLink')}
                 </button>
               )}
               <div className="mt-5 text-center">
@@ -212,10 +212,10 @@ export function SignInPage() {
             /* Sign-in / Register */
             <div>
               <h2 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}>
-                {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
+                {mode === 'login' ? t('auth.signInTitle') : t('auth.registerTitle')}
               </h2>
               <p className="text-[13px] mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-                {mode === 'login' ? 'Welcome back. Pick up where you left off.' : 'Free for personal use. Cancel anytime.'}
+                {mode === 'login' ? t('auth.signInDesc') : t('auth.createAccountDesc')}
               </p>
 
               {/* Google button */}
@@ -232,31 +232,31 @@ export function SignInPage() {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                 </svg>
-                {googleLoading ? '…' : 'Continue with Google'}
+                {googleLoading ? '…' : t('auth.signInWithGoogle')}
               </button>
 
               {/* Divider */}
               <div className="flex items-center gap-2.5 my-5 text-[11px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
                 <span className="flex-1 h-px" style={{ background: 'var(--color-outline)' }} />
-                OR CONTINUE WITH EMAIL
+                {t('auth.orContinueWithEmail')}
                 <span className="flex-1 h-px" style={{ background: 'var(--color-outline)' }} />
               </div>
 
               <form onSubmit={onSubmit} className="flex flex-col gap-2.5">
                 <FormInput
-                  label="Email"
+                  label={t('auth.emailLabel')}
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   error={errors.email?.message}
                   {...register('email')}
                 />
                 <div>
                   <FormInput
-                    label="Password"
+                    label={t('auth.passwordLabel')}
                     type="password"
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     error={errors.password?.message}
                     {...register('password')}
                   />
@@ -282,18 +282,18 @@ export function SignInPage() {
                   className="mt-1 h-11 w-full rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: 'var(--color-primary)' }}
                 >
-                  {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
+                  {loading ? '…' : mode === 'login' ? t('auth.signInButton') : t('auth.registerButton')}
                 </button>
               </form>
 
               <div className="mt-5 text-center text-[12.5px]" style={{ color: 'var(--color-text-secondary)' }}>
-                {mode === 'login' ? 'New here? ' : 'Already have an account? '}
+                {mode === 'login' ? t('auth.newHerePrompt') : t('auth.alreadyHaveAccountPrompt')}{' '}
                 <button
                   onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
                   className="font-semibold"
                   style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  {mode === 'login' ? 'Create account' : 'Sign in'}
+                  {mode === 'login' ? t('auth.registerButton') : t('auth.signInButton')}
                 </button>
               </div>
             </div>

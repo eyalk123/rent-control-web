@@ -17,12 +17,12 @@ import type { Renter } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function fmtLeaseEnd(renter: Renter): string | null {
   const d = getLeaseEndDate(renter);
   if (!d) return null;
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
 }
 
 type RenterStatus = 'active' | 'expiring' | 'overdue';
@@ -30,13 +30,14 @@ type RenterStatus = 'active' | 'expiring' | 'overdue';
 // ─── card ────────────────────────────────────────────────────────────────────
 
 function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
   const monthly = getRenterMonthlyRent(renter);
   const leaseEnd = fmtLeaseEnd(renter);
   const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-  const pillLabel = status === 'overdue' ? 'Overdue' : status === 'expiring' ? 'Expiring' : 'Active';
+  const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
 
   return (
     <div
@@ -76,9 +77,9 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
       {/* Stats row */}
       <div className="grid grid-cols-3 pt-3" style={{ borderTop: '1px solid var(--color-outline)' }}>
         {[
-          { label: 'Rent', value: <LtrSpan>{formatMoney(monthly)}</LtrSpan> },
-          { label: 'Lease ends', value: leaseEnd ?? '—' },
-          { label: 'Pay day', value: renter.payment_day_of_month ? `Day ${renter.payment_day_of_month}` : '—' },
+          { label: t('property.rent'), value: <LtrSpan>{formatMoney(monthly)}</LtrSpan> },
+          { label: t('renter.leaseEnds'), value: leaseEnd ?? '—' },
+          { label: t('renter.payDay'), value: renter.payment_day_of_month ? t('renter.payDayShort', { day: renter.payment_day_of_month }) : '—' },
         ].map(({ label, value }) => (
           <div key={label}>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
@@ -90,9 +91,9 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
       {/* Contact strip */}
       <div className="flex gap-2 mt-0.5" onClick={(e) => e.stopPropagation()}>
         {[
-          { icon: Phone, label: 'Call', href: `tel:${renter.phone}` },
-          { icon: MessageSquare, label: 'SMS', href: `sms:${renter.phone}` },
-          { icon: Mail, label: 'Email', href: `mailto:${renter.email}` },
+          { icon: Phone, label: t('renter.call'), href: `tel:${renter.phone}` },
+          { icon: MessageSquare, label: t('renter.sms'), href: `sms:${renter.phone}` },
+          { icon: Mail, label: t('renter.email'), href: `mailto:${renter.email}` },
         ].map(({ icon: Icon, label, href }) => (
           <a
             key={label}
@@ -111,6 +112,7 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
 // ─── table ───────────────────────────────────────────────────────────────────
 
 function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map<number, RenterStatus> }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -118,7 +120,10 @@ function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
-            {['Renter', 'Property', 'Phone', 'Rent', 'Lease ends', 'Status'].map((h) => (
+            {[
+              t('renter.colRenter'), t('property.colProperty'), t('renter.colPhone'),
+              t('property.rent'), t('renter.leaseEnds'), t('property.colStatus'),
+            ].map((h) => (
               <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 {h}
               </th>
@@ -133,7 +138,7 @@ function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map
             const leaseEnd = fmtLeaseEnd(r);
             const status = statusMap.get(r.id) ?? 'active';
             const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-            const pillLabel = status === 'overdue' ? 'Overdue' : status === 'expiring' ? 'Expiring' : 'Active';
+            const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
 
             return (
               <tr
@@ -217,10 +222,10 @@ export function RentersListPage() {
   );
 
   const STATUS_TABS: { key: StatusFilter; label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' }[] = [
-    { key: 'all',      label: 'All',      tone: 'neutral' },
-    { key: 'active',   label: 'Active',   tone: 'success' },
-    { key: 'expiring', label: 'Expiring', tone: 'warning' },
-    { key: 'overdue',  label: 'Overdue',  tone: 'danger'  },
+    { key: 'all',      label: t('renter.statusAll'), tone: 'neutral' },
+    { key: 'active',   label: t('renter.active'),    tone: 'success' },
+    { key: 'expiring', label: t('renter.expiring'),  tone: 'warning' },
+    { key: 'overdue',  label: t('renter.overdue'),   tone: 'danger'  },
   ];
 
   return (
@@ -230,7 +235,7 @@ export function RentersListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.renters')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {renters.length} renters · {counts.expiring} expiring soon · {counts.overdue} overdue
+            {t('renter.headerMeta', { count: renters.length, expiring: counts.expiring, overdue: counts.overdue })}
           </p>
         </div>
         <button
@@ -238,7 +243,7 @@ export function RentersListPage() {
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
           style={{ background: 'var(--color-primary)' }}
         >
-          <Plus size={14} /> Add renter
+          <Plus size={14} /> {t('property.addRenterAction')}
         </button>
       </div>
 
@@ -268,7 +273,7 @@ export function RentersListPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search renters…"
+            placeholder={t('renter.searchPlaceholder')}
             className="h-9 rounded-[9px] px-3 text-sm w-[240px] outline-none"
             style={{
               background: 'var(--color-input-filled-background)',
@@ -280,8 +285,8 @@ export function RentersListPage() {
             value={view}
             onChange={(v) => setView(v as ViewMode)}
             options={[
-              { value: 'card', label: 'Cards' },
-              { value: 'table', label: 'Table' },
+              { value: 'card', label: t('common.cardsView') },
+              { value: 'table', label: t('common.tableView') },
             ]}
             size="sm"
           />

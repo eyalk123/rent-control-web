@@ -18,8 +18,12 @@ export function useProperties() {
   return useQuery({ queryKey: propertyKeys.all, queryFn: getProperties });
 }
 
-export function useProperty(id: number) {
-  return useQuery({ queryKey: propertyKeys.detail(id), queryFn: () => getPropertyById(id) });
+export function useProperty(id: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: propertyKeys.detail(id),
+    queryFn: () => getPropertyById(id),
+    enabled: (options?.enabled ?? true) && id > 0,
+  });
 }
 
 export function useCreateProperty() {

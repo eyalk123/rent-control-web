@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useRenter } from '../queries';
+import { useProperty } from '@/features/properties/queries';
 import { useTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
@@ -19,12 +20,12 @@ import type { Renter, Transaction } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function fmtDate(s: string): string {
   const d = new Date(s);
   if (isNaN(d.getTime())) return s;
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
 }
 
 function daysUntil(d: Date | null): number | null {
@@ -79,17 +80,20 @@ function DetailRow({ icon: Icon, label, value, href, last = false }: { icon: Rea
 // ─── LeaseTimeline ────────────────────────────────────────────────────────────
 
 function LeaseTimeline({ renter }: { renter: Renter }) {
+  const { t } = useTranslation();
   const years = renter.lease_years ?? [];
   const leaseEnd = getLeaseEndDate(renter);
   const leaseStart = renter.lease_start;
 
+  const yearsLabel = years.length === 1 ? t('renter.yearsCount', { count: 1 }) : t('renter.yearsCount_plural', { count: years.length });
+
   return (
-    <DetailPanel title="Lease timeline">
+    <DetailPanel title={t('renter.leaseTimeline')}>
       <div className="p-5">
         {/* Date range header */}
         <div className="flex items-center justify-between mb-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
           <span>{leaseStart ? fmtDate(leaseStart) : '—'} → {leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : '—'}</span>
-          <span>{years.length} year{years.length === 1 ? '' : 's'}</span>
+          <span>{yearsLabel}</span>
         </div>
 
         {/* Year strip */}
@@ -98,6 +102,7 @@ function LeaseTimeline({ renter }: { renter: Renter }) {
             const isCurrent = isCurrentLeaseYear(leaseStart, i);
             const isOption = y.type === 'option';
             const bgColor = isCurrent ? 'var(--color-rev-bg)' : isOption ? 'var(--color-input-filled-background)' : 'var(--color-surface)';
+            const typeLabel = isOption ? t('renter.optionYear') : t('renter.contractYear');
             return (
               <div
                 key={i}
@@ -105,12 +110,12 @@ function LeaseTimeline({ renter }: { renter: Renter }) {
                 style={{ background: bgColor, borderRight: i === years.length - 1 ? 'none' : '1px solid var(--color-outline)' }}
               >
                 {isCurrent && (
-                  <span className="absolute top-1.5 right-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>Current</span>
+                  <span className="absolute top-1.5 right-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
                 )}
                 <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, i)}</p>
                 <LtrSpan className="text-[16px] font-bold mt-1 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(y.amount)}</LtrSpan>
                 <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}>
-                  {y.type}
+                  {typeLabel}
                 </p>
               </div>
             );
@@ -120,9 +125,9 @@ function LeaseTimeline({ renter }: { renter: Renter }) {
         {/* Legend */}
         <div className="flex gap-4 mt-4 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
           {[
-            { color: 'var(--color-rev-bg)', label: 'Current year' },
-            { color: 'var(--color-surface)', label: 'Contract', border: true },
-            { color: 'var(--color-input-filled-background)', label: 'Option year' },
+            { color: 'var(--color-rev-bg)', label: t('renter.currentYear') },
+            { color: 'var(--color-surface)', label: t('renter.contractYear'), border: true },
+            { color: 'var(--color-input-filled-background)', label: t('renter.optionYear') },
           ].map(({ color, label, border }) => (
             <span key={label} className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: color, border: border ? '1px solid var(--color-outline)' : 'none' }} />
@@ -138,6 +143,7 @@ function LeaseTimeline({ renter }: { renter: Renter }) {
 // ─── tabs ────────────────────────────────────────────────────────────────────
 
 function LeaseInfoTab({ renter }: { renter: Renter }) {
+  const { t } = useTranslation();
   const extras = renter.extra_contacts ?? [];
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
@@ -145,33 +151,33 @@ function LeaseInfoTab({ renter }: { renter: Renter }) {
       <div className="flex flex-col gap-4">
         <LeaseTimeline renter={renter} />
 
-        <DetailPanel title="Insurance">
+        <DetailPanel title={t('renter.insurancePanel')}>
           {renter.insurance_type ? (
             <div>
-              <DetailRow icon={Shield} label="Type" value={renter.insurance_type} />
-              <DetailRow icon={CreditCard} label="Amount" value={renter.insurance_amount ? formatMoney(renter.insurance_amount) : null} last />
+              <DetailRow icon={Shield} label={t('renter.insuranceTypeLabel')} value={renter.insurance_type} />
+              <DetailRow icon={CreditCard} label={t('renter.insuranceAmountLabel')} value={renter.insurance_amount ? formatMoney(renter.insurance_amount) : null} last />
             </div>
           ) : (
-            <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>No insurance on file.</p>
+            <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('renter.noInsurance')}</p>
           )}
         </DetailPanel>
       </div>
 
       {/* Right column */}
       <div className="flex flex-col gap-4">
-        <DetailPanel title="Contact">
-          <DetailRow icon={Phone} label="Phone" value={renter.phone} href={`tel:${renter.phone}`} />
-          <DetailRow icon={Mail} label="Email" value={renter.email} href={`mailto:${renter.email}`} last />
+        <DetailPanel title={t('renter.contactPanel')}>
+          <DetailRow icon={Phone} label={t('renter.phone')} value={renter.phone} href={`tel:${renter.phone}`} />
+          <DetailRow icon={Mail} label={t('renter.email')} value={renter.email} href={`mailto:${renter.email}`} last />
         </DetailPanel>
 
-        <DetailPanel title="Payment">
-          <DetailRow icon={CreditCard} label="Method" value={renter.payment_type} />
-          <DetailRow icon={Calendar} label="Pay day" value={renter.payment_day_of_month ? `Day ${renter.payment_day_of_month} of month` : null} last />
+        <DetailPanel title={t('renter.paymentPanel')}>
+          <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type} />
+          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} last />
         </DetailPanel>
 
-        <DetailPanel title={`Extra contacts (${extras.length})`}>
+        <DetailPanel title={t('renter.extraContactsPanel', { count: extras.length })}>
           {extras.length === 0 ? (
-            <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>No extra contacts added.</p>
+            <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('renter.noExtraContacts')}</p>
           ) : extras.map((c, i) => (
             <div key={i} className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: i === extras.length - 1 ? 'none' : '1px solid var(--color-outline)' }}>
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: 'var(--color-input-filled-background)', color: 'var(--color-text-secondary)' }}>
@@ -193,27 +199,30 @@ function LeaseInfoTab({ renter }: { renter: Renter }) {
 }
 
 function PropertyTab({ renter }: { renter: Renter }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const p = renter.property;
+  const { data: fullProp } = useProperty(p?.id ?? 0, { enabled: !!p?.id });
 
   if (!p) {
-    return <EmptyState icon={undefined} title="No property linked" description="Edit this renter to link a property." />;
+    return <EmptyState icon={undefined} title={t('renter.noPropertyLinked')} description={t('renter.noPropertyLinkedDesc')} />;
   }
 
   const propBg = getPropertyColorBg(p.id, 0.25);
+  const parking = fullProp?.parking_numbers?.filter(Boolean).join(', ') ?? null;
 
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
       {/* Tinted card */}
       <div className="rounded-[var(--radius-card)] p-6 flex flex-col gap-5" style={{ background: propBg, border: '1px solid var(--color-outline)' }}>
         <div className="flex items-center justify-between">
-          <Pill tone="success">Occupied</Pill>
+          <Pill tone="success">{t('property.occupancy.occupied')}</Pill>
           <button
             onClick={() => navigate(`/properties/${p.id}`)}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium"
             style={{ background: 'rgba(255,255,255,0.7)', color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer' }}
           >
-            Open property <ArrowRight size={12} />
+            {t('renter.openProperty')} <ArrowRight size={12} />
           </button>
         </div>
         <PropTile propertyId={p.id} size={80} />
@@ -226,13 +235,13 @@ function PropertyTab({ renter }: { renter: Renter }) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <DetailPanel title="At a glance">
-          <DetailRow icon={Building2} label="Type" value={p.type} />
-          <DetailRow icon={Car} label="Parking" last value={null} />
+        <DetailPanel title={t('property.atAGlance')}>
+          <DetailRow icon={Building2} label={t('property.colType')} value={p.type} />
+          <DetailRow icon={Car} label={t('property.parking')} last value={parking} />
         </DetailPanel>
-        <DetailPanel title="Meters">
-          <DetailRow icon={Zap} label="Electric" value={null} />
-          <DetailRow icon={Droplets} label="Water" value={null} last />
+        <DetailPanel title={t('renter.metersPanel')}>
+          <DetailRow icon={Zap} label={t('property.electricMeter')} value={fullProp?.electricity_meter_number ?? null} />
+          <DetailRow icon={Droplets} label={t('property.waterMeter')} value={fullProp?.water_meter_number ?? null} last />
         </DetailPanel>
       </div>
     </div>
@@ -240,10 +249,11 @@ function PropertyTab({ renter }: { renter: Renter }) {
 }
 
 function TransactionsTab({ transactions }: { transactions: Transaction[] }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   if (transactions.length === 0) {
-    return <EmptyState icon={undefined} title="No transactions yet" />;
+    return <EmptyState icon={undefined} title={t('renter.noTransactionsYet')} />;
   }
 
   return (
@@ -263,7 +273,7 @@ function TransactionsTab({ transactions }: { transactions: Transaction[] }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                {isRev ? 'Rent payment' : (tx.supplier_name ?? tx.category_name ?? '—')}
+                {isRev ? t('renter.rentPayment') : (tx.supplier_name ?? tx.category_name ?? '—')}
               </p>
               <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                 {tx.date_of_payment}
@@ -314,12 +324,12 @@ export function RenterDetailPage() {
   const avatarBg = getPropertyColorBg(renter.id, 0.18);
 
   const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-  const pillLabel = status === 'overdue' ? 'Overdue' : status === 'expiring' ? 'Expiring' : 'Active';
+  const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
 
   const TABS: { id: TabId; label: string }[] = [
-    { id: 'info', label: 'Lease info' },
-    { id: 'property', label: 'Property' },
-    { id: 'transactions', label: `Transactions (${transactions.length})` },
+    { id: 'info', label: t('renter.tabLeaseInfo') },
+    { id: 'property', label: t('renter.tabProperty') },
+    { id: 'transactions', label: t('renter.tabTransactionsCount', { count: transactions.length }) },
   ];
 
   return (
@@ -332,7 +342,7 @@ export function RenterDetailPage() {
           className="inline-flex items-center gap-1 text-[12px] font-medium mb-3.5"
           style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <ChevronLeft size={14} /> All renters
+          <ChevronLeft size={14} /> {t('renter.allRenters')}
         </button>
 
         {/* Header row */}
@@ -346,7 +356,7 @@ export function RenterDetailPage() {
               <div className="flex items-center gap-2 mb-1">
                 <Pill tone={pillTone} size="md">{pillLabel}</Pill>
                 {renter.lease_start && (
-                  <Pill tone="neutral" size="md">Since {fmtDate(renter.lease_start)}</Pill>
+                  <Pill tone="neutral" size="md">{t('renter.since', { date: fmtDate(renter.lease_start) })}</Pill>
                 )}
               </div>
               <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
@@ -368,7 +378,7 @@ export function RenterDetailPage() {
               <Phone size={14} /> {t('common.call', 'Call')}
             </a>
             <a href={`sms:${renter.phone}`} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-              <MessageSquare size={14} /> SMS
+              <MessageSquare size={14} /> {t('renter.sms')}
             </a>
             <button
               onClick={() => navigate(`/renters/${renterId}/edit`)}
@@ -382,21 +392,21 @@ export function RenterDetailPage() {
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
               style={{ background: 'var(--color-primary)' }}
             >
-              <Plus size={14} /> Record payment
+              <Plus size={14} /> {t('renter.recordPayment')}
             </button>
           </div>
         </div>
 
         {/* KPI strip */}
         <div className="grid grid-cols-3 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-          <HeroStat label="Monthly rent" value={formatMoney(monthly)} />
+          <HeroStat label={t('renter.monthlyRent')} value={formatMoney(monthly)} />
           <HeroStat
-            label="Lease ends in"
-            value={days != null ? `${days} days` : '—'}
-            sub={leaseEnd ? `${fmtDate(leaseEnd.toISOString().split('T')[0])}` : undefined}
+            label={t('renter.leaseEndsIn')}
+            value={days != null ? t('renter.leaseEndsInDays', { days }) : '—'}
+            sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
             tone={days != null && days < 90 ? 'warning' : undefined}
           />
-          <HeroStat label="Total paid" value={formatMoney(totalPaid)} sub={`${transactions.filter((t) => t.type === 'revenue').length} payments`} tone="success" />
+          <HeroStat label={t('renter.totalPaid')} value={formatMoney(totalPaid)} sub={t('renter.paymentsCount', { count: transactions.filter((tx) => tx.type === 'revenue').length })} tone="success" />
         </div>
 
         {/* Tab bar */}

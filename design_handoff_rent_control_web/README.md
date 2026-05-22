@@ -62,6 +62,20 @@ Wait for answers before writing code.
 
 ---
 
+## ⚠️ Critical UX pattern — read this before anything else
+
+**Every "Add" and "Edit" form in this app is a right-side drawer, NOT a separate page.** This applies to:
+- Add / edit **property**
+- Add / edit **renter** (including the nested lease-years and extra-contacts repeaters)
+- Add / edit **transaction** (single revenue + bulk revenue + expense — same drawer, different modes)
+- Add / edit **supplier**
+
+The user remains on the list or detail page they came from; the drawer slides in from the right (~620px wide, ~760px for bulk revenue), darkens the page behind with a scrim, and closes on ESC, scrim click, or Cancel/Save. **Do not** route to `/properties/new`, `/renters/:id/edit`, etc. — these are not pages.
+
+If your existing codebase already has a Sheet / SidePanel / Drawer primitive, use it. If not, build one (see `design/shared.jsx → Drawer` for the exact spec: slide-in 220ms `cubic-bezier(.2,.7,.2,1)`, scrim `rgba(15,23,42,0.32)` with `blur(2px)`, fixed header with title + subtitle + close X, scrollable body, sticky footer with Cancel + Save).
+
+The detail pages (`PropertyDetailPage`, `RenterDetailPage`, `TransactionDetailPage`) ARE full pages, with their own routes. Only the **forms** are drawers.
+
 ## Overview
 
 Rent Control is a property-management app for small landlords. Users track properties, renters (with multi-year leases), revenue/expense transactions, suppliers, and generate annual reports. The original product is a React Native mobile app; this handoff is for the **web companion** which mirrors the mobile feature set on a wider canvas.
@@ -117,6 +131,16 @@ Below is every screen in the design. For each one: purpose, layout, components, 
 **Card spec:** 120px tinted photo strip (placeholder house glyph) with two pills top-left (status + type) and a more-menu top-right. Body: address (700 16px), city/zip with map-pin icon, 3-stat row (Rent / Renters / Size), avatar stack + renter name + lease-end date.
 **Table spec:** Sticky header row (Property / Type / Owner / Renters / Rent / Lease ends / Status). Each row is a button that navigates to detail.
 
+### 3b. Property — Add / Edit form (drawer, NOT a page)
+**Source:** `design/pages-properties.jsx` → `PropertyForm`
+**Container:** Right-side drawer, 620px wide. Opens from the "Add property" button on the list page or "Edit" button on the detail page. **Never navigates away.**
+**Sections** (each a labeled card inside the drawer body):
+1. *Basic information* — Owner select (with "+ Add new owner…"), Type, Status, Address, City, Zip.
+2. *Additional details* — Size, monthly rent, beds, baths; chip-style multi-inputs for Parking / Electric / Water / Gas meter numbers; Property tax (annual); Committee fee (monthly); Inventory notes (textarea).
+3. *Photo* — preset color swatch grid (8 colors) — picks the tinted thumbnail color, no photo upload.
+4. *Documents* — Upload rows for Basic contract / Full contract / Land registry + an "Add custom file" button.
+**Footer:** Cancel + Create property / Save changes.
+
 ### 4. Properties — Detail (4 tabs)
 **Source:** `design/pages-properties.jsx` → `PropertyDetailPage`
 **Tabs:** `Details` · `Renters (n)` · `Transactions (n)` · `Documents`
@@ -140,6 +164,17 @@ Below is every screen in the design. For each one: purpose, layout, components, 
 - **Lease info tab:** Big panel — `Lease timeline` shows a horizontal strip of lease-year cells; each cell has range (e.g. `26-27`), amount, and kind (`Contract` or `Option`). The current year is highlighted in green. Legend below. Side panels: Contact, Payment, Extra contacts (Insurance lives alongside).
 - **Property tab:** Tinted summary card linking back to the property + utilities/meters/size panels.
 - **Transactions tab:** Flat list of this renter's payments.
+
+### 6b. Renter — Add / Edit form (drawer, NOT a page)
+**Source:** `design/pages-renters.jsx` → `RenterForm`
+**Container:** Right-side drawer, 680px wide. Opens from "Add renter" on the list or "Edit" on the detail. **Never navigates away.**
+**Sections:**
+1. *Basic information* — "Pick from device contacts" CTA (mobile/PWA), First + Last name, Phone, Email.
+2. *Property* — single Select bound to all properties.
+3. *Lease information* — Lease start date, payment type, pay day; plus a **dynamic Lease years repeater**: rows of `range / amount / kind (Contract|Option) / delete`. "Add year" button at the top of the repeater.
+4. *Insurance* — Company / Policy / Expiry.
+5. *Extra contacts* — dynamic repeater: rows of `name / phone / delete`. "Add contact" button.
+**Footer:** Cancel + Create renter / Save changes.
 
 ### 7. Transactions — List
 **Source:** `design/pages-transactions.jsx` → `TransactionsPage`

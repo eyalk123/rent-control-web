@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppAuth } from '@/core/auth/AuthContext';
+import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { mainNavItems, bottomNavItems } from './navConfig';
 import { Building2, TrendingUp } from 'lucide-react';
 import { useTransactionSummary } from '@/features/transactions/queries';
@@ -51,6 +52,7 @@ function IconNavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; l
 }
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const { user } = useAppAuth();
   const navigate = useNavigate();
   const { data: summary } = useTransactionSummary();
@@ -78,7 +80,7 @@ export function Sidebar() {
           <div>
             <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">Rent Control</div>
             <div className="text-[10.5px] text-[var(--color-text-secondary)]">
-              {user?.displayName ?? user?.email?.split('@')[0]} · personal
+              {user?.displayName ?? user?.email?.split('@')[0]} · {t('common.personal')}
             </div>
           </div>
         </div>
@@ -88,7 +90,7 @@ export function Sidebar() {
             <NavBtn key={item.path} {...item} />
           ))}
           <div className="mt-3.5 mb-1.5 px-3 text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest">
-            Manage
+            {t('common.manage')}
           </div>
           {bottomNavItems.map((item) => (
             <NavBtn key={item.path} {...item} />
@@ -98,13 +100,13 @@ export function Sidebar() {
         {profit !== null && (
           <div className="mx-3.5 mb-3 rounded-[10px] bg-[var(--color-input-filled-background)] p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">
-              This month
+              {t('home.thisMonthPL')}
             </p>
-            <p className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight leading-none">
+            <LtrSpan className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight leading-none block">
               {formatMoney(profit)}
-            </p>
+            </LtrSpan>
             <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-success)]">
-              <TrendingUp size={12} /> net profit
+              <TrendingUp size={12} /> {t('common.netProfit')}
             </p>
           </div>
         )}

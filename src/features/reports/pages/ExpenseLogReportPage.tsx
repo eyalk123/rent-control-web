@@ -21,12 +21,12 @@ function useExpensesForYear(year: number) {
   });
 }
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+import i18n from '@/core/i18n';
 
 function fmtDate(s: string): string {
   const d = new Date(s);
   if (isNaN(d.getTime())) return s;
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short' }).format(d);
 }
 
 export function ExpenseLogReportPage() {
@@ -72,11 +72,11 @@ export function ExpenseLogReportPage() {
             className="inline-flex items-center gap-1 text-[12px] font-medium mb-1.5"
             style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <ChevronLeft size={14} /> Reports
+            <ChevronLeft size={14} /> {t('screens.reports')}
           </button>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>Expense Log</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('reports.expenseLog')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {expenses.length} expenses · <LtrSpan>{formatMoney(total)}</LtrSpan> total
+            {t('reports.expenseLogMeta', { count: expenses.length, total: formatMoney(total) })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function ExpenseLogReportPage() {
 
       {/* Controls */}
       <div className="flex items-center gap-4 px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-        <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>Year</span>
+        <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.year')}</span>
         <SegToggle
           value={String(selectedYear)}
           onChange={(v) => setSelectedYear(Number(v))}
@@ -115,17 +115,17 @@ export function ExpenseLogReportPage() {
         {isLoading ? (
           <PageLoader />
         ) : expenses.length === 0 ? (
-          <EmptyState icon={undefined} title="No expenses found" description={`No expenses recorded for ${selectedYear}.`} />
+          <EmptyState icon={undefined} title={t('reports.noExpenses')} description={t('reports.noExpensesForYear', { year: selectedYear })} />
         ) : (
           <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 320px', alignItems: 'start' }}>
             {/* Main table */}
             <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header */}
               <div className="flex items-center px-4 py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
-                <div className="w-[90px]">Date</div>
-                <div className="flex-[1.5]">Supplier / category</div>
-                <div className="flex-1">Property</div>
-                <div className="w-[90px] text-right">Amount</div>
+                <div className="w-[90px]">{t('reports.date')}</div>
+                <div className="flex-[1.5]">{t('reports.supplierCategory')}</div>
+                <div className="flex-1">{t('reports.property')}</div>
+                <div className="w-[90px] text-right">{t('reports.amount')}</div>
               </div>
 
               {categories.map(([catName, txs]) => {
@@ -157,7 +157,7 @@ export function ExpenseLogReportPage() {
 
               {/* Grand total */}
               <div className="flex items-center px-4 py-3.5" style={{ background: 'var(--color-input-filled-background)', borderTop: '1px solid var(--color-outline)' }}>
-                <div className="flex-1 text-[13px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Grand total</div>
+                <div className="flex-1 text-[13px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{t('reports.grandTotal')}</div>
                 <LtrSpan className="text-[16px] font-bold" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(total)}</LtrSpan>
               </div>
             </div>
@@ -165,7 +165,7 @@ export function ExpenseLogReportPage() {
             {/* Right sidebar: % breakdown */}
             <div className="flex flex-col gap-3">
               <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-                <p className="text-[13px] font-bold mb-3" style={{ color: 'var(--color-text-primary)' }}>By category</p>
+                <p className="text-[13px] font-bold mb-3" style={{ color: 'var(--color-text-primary)' }}>{t('reports.byCategory')}</p>
                 <div className="flex flex-col gap-3">
                   {categories.map(([catName, txs]) => {
                     const catTotal = txs.reduce((s, tx) => s + tx.amount, 0);
@@ -186,9 +186,9 @@ export function ExpenseLogReportPage() {
               </div>
 
               <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Total expenses</p>
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.totalExpenses')}</p>
                 <LtrSpan className="text-[24px] font-bold mt-1 block" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(total)}</LtrSpan>
-                <p className="text-[11.5px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>{expenses.length} transactions · {categories.length} categories</p>
+                <p className="text-[11.5px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.transactionsCategoriesMeta', { txCount: expenses.length, catCount: categories.length })}</p>
               </div>
             </div>
           </div>

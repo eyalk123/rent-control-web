@@ -68,7 +68,7 @@ export function AddEditSupplierPage() {
       } else {
         await createMutation.mutateAsync(payload as never);
       }
-      showToast(t(isEditing ? 'suppliers.updateSuccess' : 'suppliers.createSuccess', isEditing ? 'Supplier updated' : 'Supplier created'), 'success');
+      showToast(t(isEditing ? 'suppliers.updateSuccess' : 'suppliers.createSuccess'), 'success');
       navigate('/suppliers');
     } catch {
       showToast(t('error.saveFailed'), 'error');
@@ -77,10 +77,10 @@ export function AddEditSupplierPage() {
 
   const handleDeactivate = async () => {
     if (!supplierId) return;
-    if (!confirm(t('suppliers.deactivateConfirm', 'Deactivate this supplier?'))) return;
+    if (!confirm(t('suppliers.deactivateConfirm'))) return;
     try {
       await updateMutation.mutateAsync({ is_active: false });
-      showToast(t('suppliers.deactivateSuccess', 'Supplier deactivated'), 'success');
+      showToast(t('suppliers.deactivateSuccess'), 'success');
       navigate('/suppliers');
     } catch {
       showToast(t('error.saveFailed'), 'error');
@@ -103,12 +103,12 @@ export function AddEditSupplierPage() {
         </button>
         {isEditing && existing?.is_active !== false && (
           <button onClick={handleDeactivate} className="flex items-center gap-1.5 text-sm text-[var(--color-error)] hover:opacity-80">
-            <Trash2 size={14} />{t('suppliers.deactivate', 'Deactivate')}
+            <Trash2 size={14} />{t('suppliers.deactivate')}
           </button>
         )}
       </div>
       <h1 className="mb-5 text-xl font-bold text-[var(--color-text-primary)]">
-        {isEditing ? t('suppliers.editTitle', 'Edit Supplier') : t('suppliers.addTitle', 'Add Supplier')}
+        {isEditing ? t('suppliers.editTitle') : t('suppliers.addTitle')}
       </h1>
 
       <form onSubmit={onSubmit} className="max-w-2xl space-y-4">

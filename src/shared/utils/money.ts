@@ -4,6 +4,6 @@ const numberFormatter = new Intl.NumberFormat('en-US', {
 });
 
 export function formatMoney(amount: number | null | undefined): string {
-  if (amount == null) return '₪0';
+  if (amount == null || isNaN(amount)) return '₪0';
   return `${numberFormatter.format(amount)}₪`;
 }

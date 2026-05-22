@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Store, Building2 } from 'lucide-react';
 import { useSuppliers } from '../queries';
+import { useExpenseCategories } from '@/features/transactions/queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
@@ -13,7 +14,8 @@ function bankString(account: string | null | undefined): string | null {
   return account; // stored as "code/branch/account"
 }
 
-function SupplierCard({ supplier }: { supplier: Supplier }) {
+function SupplierCard({ supplier, catMap }: { supplier: Supplier; catMap: Map<number, string> }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const bank = bankString(supplier.bank_account);
 
@@ -36,14 +38,13 @@ function SupplierCard({ supplier }: { supplier: Supplier }) {
           <p className="text-[14.5px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{supplier.name}</p>
           {supplier.phone && <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>{supplier.phone}</p>}
         </div>
-        {!supplier.is_active && <Pill tone="neutral">Inactive</Pill>}
+        {!supplier.is_active && <Pill tone="neutral">{t('suppliers.inactive')}</Pill>}
       </div>
 
-      {/* Category pills (show placeholder if no category names — category_ids only) */}
       {supplier.category_ids.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {supplier.category_ids.map((cid) => (
-            <Pill key={cid} tone="info">Cat {cid}</Pill>
+            <Pill key={cid} tone="info">{catMap.get(cid) ?? String(cid)}</Pill>
           ))}
         </div>
       )}
@@ -65,7 +66,9 @@ export function SuppliersListPage() {
   const [showInactive, setShowInactive] = useState(false);
 
   const { data: suppliers = [], isLoading } = useSuppliers({ q: search || undefined, includeInactive: showInactive });
+  const { data: categories = [] } = useExpenseCategories();
 
+  const catMap = new Map<number, string>(categories.map((c) => [c.id, c.name ?? c.key ?? String(c.id)]));
   const activeCount = (suppliers as Supplier[]).filter((s) => s.is_active).length;
 
   return (
@@ -75,7 +78,7 @@ export function SuppliersListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.suppliers')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {suppliers.length} total · {activeCount} active
+            {t('suppliers.headerMeta', { count: suppliers.length, active: activeCount })}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -88,14 +91,14 @@ export function SuppliersListPage() {
               background: showInactive ? 'var(--color-primary-container)' : 'var(--color-surface)',
             }}
           >
-            {showInactive ? 'Hiding inactive' : 'Show inactive'}
+            {showInactive ? t('suppliers.hideInactive') : t('suppliers.showInactive')}
           </button>
           <button
             onClick={() => navigate('/suppliers/add')}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
             style={{ background: 'var(--color-primary)' }}
           >
-            <Plus size={14} /> Add supplier
+            <Plus size={14} /> {t('suppliers.add')}
           </button>
         </div>
       </div>
@@ -104,7 +107,7 @@ export function SuppliersListPage() {
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search suppliers…"
+        placeholder={t('suppliers.searchPlaceholder')}
         className="h-9 rounded-[9px] px-3 text-sm w-full max-w-[400px] outline-none"
         style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
       />
@@ -123,14 +126,14 @@ export function SuppliersListPage() {
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                 style={{ background: 'var(--color-primary)' }}
               >
-                <Plus size={14} /> {t('suppliers.addNew', 'Add Supplier')}
+                <Plus size={14} /> {t('suppliers.addNew')}
               </button>
             ) : undefined
           }
         />
       ) : (
         <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
-          {(suppliers as Supplier[]).map((s) => <SupplierCard key={s.id} supplier={s} />)}
+          {(suppliers as Supplier[]).map((s) => <SupplierCard key={s.id} supplier={s} catMap={catMap} />)}
         </div>
       )}
     </div>

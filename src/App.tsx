@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/core/auth/ProtectedRoute';
 import { AppShell } from '@/layout/AppShell';
 import { ToastProvider } from '@/shared/components/ui/Toast';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const SignInPage = lazy(() => import('@/features/auth/SignInPage').then((m) => ({ default: m.SignInPage })));
 const HomePage = lazy(() => import('@/features/home/pages/HomePage').then((m) => ({ default: m.HomePage })));
@@ -69,6 +70,7 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
+  useLanguage();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
