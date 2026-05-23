@@ -29,21 +29,21 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
   const slideIn = isRtl ? 'slideInLeft' : 'slideInRight';
 
   return (
-    <div className={`fixed inset-0 z-50 flex ${isRtl ? 'flex-row-reverse' : 'flex-row'}`}>
-      {/* Scrim */}
+    <div className="fixed inset-0 z-50">
+      {/* Scrim — full screen */}
       <div
-        className="flex-1 bg-black/40"
-        style={{ animation: 'fadeIn 0.18s ease' }}
+        className="absolute inset-0 bg-black/40"
+        style={{ animation: 'fadeIn 0.18s ease backwards' }}
         onClick={onClose}
         aria-hidden
       />
 
       {/* Panel */}
       <div
-        className="flex flex-col h-full bg-[var(--color-surface)] shadow-2xl"
+        className={`absolute top-0 bottom-0 flex flex-col bg-[var(--color-surface)] shadow-2xl ${isRtl ? 'left-0' : 'right-0'}`}
         style={{
           width: Math.min(width, window.innerWidth),
-          animation: `${slideIn} 0.22s cubic-bezier(.2,.7,.2,1)`,
+          animation: `${slideIn} 0.22s cubic-bezier(.2,.7,.2,1) backwards`,
         }}
       >
         {/* Header */}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, MapPin, AlertCircle, Download } from 'lucide-react';
 import { useProperties } from '../queries';
@@ -183,6 +183,14 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setDrawerOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   const filtered = (properties ?? []).filter((p) =>
     `${p.address} ${p.city} ${p.property_owner ?? ''}`.toLowerCase().includes(search.toLowerCase()),

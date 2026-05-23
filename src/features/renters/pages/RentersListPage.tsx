@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Phone, Mail, MessageSquare } from 'lucide-react';
 import { RenterFormDrawer } from './RenterFormDrawer';
@@ -190,6 +190,14 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setDrawerOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   // Build status map
   const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));

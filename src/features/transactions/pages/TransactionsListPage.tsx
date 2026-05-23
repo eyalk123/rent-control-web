@@ -1,4 +1,5 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/core/i18n';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
@@ -70,6 +71,17 @@ export function TransactionsListPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [initialTxType, setInitialTxType] = useState<'revenue' | 'expense' | undefined>(undefined);
+
+  useEffect(() => {
+    const newParam = searchParams.get('new');
+    if (newParam === 'revenue' || newParam === 'expense') {
+      setInitialTxType(newParam);
+      setDrawerOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   const queryFilters = filter === 'all' ? {} : { type: filter as 'revenue' | 'expense' };
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(queryFilters);
@@ -242,7 +254,7 @@ export function TransactionsListPage() {
         </div>
       )}
 
-      <TransactionFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <TransactionFormDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); setInitialTxType(undefined); }} initialType={initialTxType} />
     </div>
   );
 }
