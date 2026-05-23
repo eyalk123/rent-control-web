@@ -57,11 +57,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { group: 'Pages', label: 'Reports',      icon: BarChart2,       action: () => go('/reports') },
     { group: 'Pages', label: 'Settings',     icon: Settings,        action: () => go('/settings') },
 
-    { group: 'Actions', label: 'Add property',   icon: Plus,        action: () => go('/properties/add') },
-    { group: 'Actions', label: 'Add renter',     icon: Plus,        action: () => go('/renters/add') },
-    { group: 'Actions', label: 'Record revenue', icon: TrendingUp,  action: () => go('/transactions/add?type=revenue') },
-    { group: 'Actions', label: 'Record expense', icon: TrendingDown,action: () => go('/transactions/add?type=expense') },
-    { group: 'Actions', label: 'Add supplier',   icon: Store,       action: () => go('/suppliers/add') },
+    { group: 'Actions', label: 'Add property',   icon: Plus,        action: () => go('/properties') },
+    { group: 'Actions', label: 'Add renter',     icon: Plus,        action: () => go('/renters') },
+    { group: 'Actions', label: 'Record revenue', icon: TrendingUp,  action: () => go('/transactions') },
+    { group: 'Actions', label: 'Record expense', icon: TrendingDown,action: () => go('/transactions') },
+    { group: 'Actions', label: 'Add supplier',   icon: Store,       action: () => go('/suppliers') },
     { group: 'Actions', label: 'Generate report',icon: FileText,    action: () => go('/reports') },
 
     ...properties.map((p) => ({

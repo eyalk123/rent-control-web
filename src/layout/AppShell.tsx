@@ -5,6 +5,7 @@ import { MobileBottomBar } from './MobileBottomBar';
 import { TopBar } from './TopBar';
 import { CommandPalette } from './CommandPalette';
 import { AuthTokenSync } from '@/core/auth/AuthTokenSync';
+import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 
 function useDocumentTitle() {
   const { pathname } = useLocation();
@@ -18,6 +19,7 @@ function useDocumentTitle() {
 export function AppShell() {
   useDocumentTitle();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [txDrawerOpen, setTxDrawerOpen] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -37,6 +39,7 @@ export function AppShell() {
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <TopBar
           onOpenPalette={() => setPaletteOpen(true)}
+          onAddClick={() => setTxDrawerOpen(true)}
         />
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <Outlet />
@@ -44,6 +47,7 @@ export function AppShell() {
       </main>
       <MobileBottomBar />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} />
     </div>
   );
 }

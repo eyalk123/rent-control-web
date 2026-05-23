@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Phone, Mail, MessageSquare } from 'lucide-react';
+import { RenterFormDrawer } from './RenterFormDrawer';
 import { useRenters } from '../queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
@@ -181,7 +181,6 @@ type ViewMode = 'card' | 'table';
 
 export function RentersListPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: renters = [], isLoading, error, refetch } = useRenters();
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
@@ -189,6 +188,7 @@ export function RentersListPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Build status map
   const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
@@ -239,7 +239,7 @@ export function RentersListPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/renters/add')}
+          onClick={() => setDrawerOpen(true)}
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
           style={{ background: 'var(--color-primary)' }}
         >
@@ -304,7 +304,7 @@ export function RentersListPage() {
             action={
               !search && statusFilter === 'all' ? (
                 <button
-                  onClick={() => navigate('/renters/add')}
+                  onClick={() => setDrawerOpen(true)}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                   style={{ background: 'var(--color-primary)' }}
                 >
@@ -321,6 +321,8 @@ export function RentersListPage() {
           <RenterTable renters={filtered} statusMap={statusMap} />
         )}
       </div>
+
+      <RenterFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }

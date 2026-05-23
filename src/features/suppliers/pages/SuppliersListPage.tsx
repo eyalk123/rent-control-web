@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Store, Building2 } from 'lucide-react';
 import { useSuppliers } from '../queries';
@@ -7,6 +6,7 @@ import { useExpenseCategories } from '@/features/transactions/queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
+import { SupplierFormDrawer } from './SupplierFormDrawer';
 import type { Supplier } from '@/shared/types';
 
 function bankString(account: string | null | undefined): string | null {
@@ -14,14 +14,13 @@ function bankString(account: string | null | undefined): string | null {
   return account; // stored as "code/branch/account"
 }
 
-function SupplierCard({ supplier, catMap }: { supplier: Supplier; catMap: Map<number, string> }) {
+function SupplierCard({ supplier, catMap, onEdit }: { supplier: Supplier; catMap: Map<number, string>; onEdit: (id: number) => void }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const bank = bankString(supplier.bank_account);
 
   return (
     <button
-      onClick={() => navigate(`/suppliers/${supplier.id}/edit`)}
+      onClick={() => onEdit(supplier.id)}
       className="flex flex-col gap-3 p-4 rounded-[var(--radius-card)] text-start w-full transition-all hover:-translate-y-px"
       style={{
         background: 'var(--color-surface)',
@@ -61,9 +60,13 @@ function SupplierCard({ supplier, catMap }: { supplier: Supplier; catMap: Map<nu
 
 export function SuppliersListPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editSupplierId, setEditSupplierId] = useState<number | undefined>();
+
+  const openEdit = (id: number) => { setEditSupplierId(id); setDrawerOpen(true); };
+  const openAdd = () => { setEditSupplierId(undefined); setDrawerOpen(true); };
 
   const { data: suppliers = [], isLoading } = useSuppliers({ q: search || undefined, includeInactive: showInactive });
   const { data: categories = [] } = useExpenseCategories();
@@ -94,7 +97,7 @@ export function SuppliersListPage() {
             {showInactive ? t('suppliers.hideInactive') : t('suppliers.showInactive')}
           </button>
           <button
-            onClick={() => navigate('/suppliers/add')}
+            onClick={openAdd}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
             style={{ background: 'var(--color-primary)' }}
           >
@@ -122,7 +125,7 @@ export function SuppliersListPage() {
           action={
             !search ? (
               <button
-                onClick={() => navigate('/suppliers/add')}
+                onClick={openAdd}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                 style={{ background: 'var(--color-primary)' }}
               >
@@ -133,9 +136,15 @@ export function SuppliersListPage() {
         />
       ) : (
         <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
-          {(suppliers as Supplier[]).map((s) => <SupplierCard key={s.id} supplier={s} catMap={catMap} />)}
+          {(suppliers as Supplier[]).map((s) => <SupplierCard key={s.id} supplier={s} catMap={catMap} onEdit={openEdit} />)}
         </div>
       )}
+
+      <SupplierFormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        supplierId={editSupplierId}
+      />
     </div>
   );
 }

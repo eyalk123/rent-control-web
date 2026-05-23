@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { PropertyFormDrawer } from './PropertyFormDrawer';
+import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
+import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronLeft, Pencil, Plus, MapPin, Car, Zap, Droplets,
@@ -192,9 +195,8 @@ function DetailsTab({ property }: { property: Property }) {
   );
 }
 
-function RentersTab({ property }: { property: Property }) {
+function RentersTab({ property, onAddRenter }: { property: Property; onAddRenter: () => void }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const renters = property.renters ?? [];
 
   if (renters.length === 0) {
@@ -205,7 +207,7 @@ function RentersTab({ property }: { property: Property }) {
         description={t('property.noRentersDesc')}
         action={
           <button
-            onClick={() => navigate(`/renters/add?propertyId=${property.id}`)}
+            onClick={onAddRenter}
             className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
             style={{ background: 'var(--color-primary)' }}
           >
@@ -281,6 +283,9 @@ export function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const propertyId = Number(id);
   const [tab, setTab] = useState<TabId>('info');
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [txDrawerOpen, setTxDrawerOpen] = useState(false);
+  const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
 
   const { data: property, isLoading } = useProperty(propertyId);
   const { data: txPages } = useTransactions({ propertyId });
@@ -341,14 +346,14 @@ export function PropertyDetailPage() {
           {/* Action buttons */}
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => navigate(`/properties/${propertyId}/edit`)}
+              onClick={() => setEditDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
               style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
             >
               <Pencil size={14} /> {t('common.edit')}
             </button>
             <button
-              onClick={() => navigate(`/transactions/add?propertyId=${propertyId}`)}
+              onClick={() => setTxDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
               style={{ background: 'var(--color-primary)' }}
             >
@@ -390,10 +395,14 @@ export function PropertyDetailPage() {
       {/* Tab content */}
       <div className="p-10">
         {tab === 'info' && <DetailsTab property={property} />}
-        {tab === 'renters' && <RentersTab property={property} />}
+        {tab === 'renters' && <RentersTab property={property} onAddRenter={() => setRenterDrawerOpen(true)} />}
         {tab === 'transactions' && <TransactionsTab transactions={transactions} />}
         {tab === 'documents' && <DocumentsTab property={property} />}
       </div>
+
+      <PropertyFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} propertyId={propertyId} />
+      <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialPropertyId={propertyId} />
+      <RenterFormDrawer open={renterDrawerOpen} onClose={() => setRenterDrawerOpen(false)} initialPropertyId={propertyId} />
     </div>
   );
 }

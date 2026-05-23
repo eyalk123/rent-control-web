@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { RenterFormDrawer } from './RenterFormDrawer';
+import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useRenter } from '../queries';
@@ -299,6 +301,8 @@ export function RenterDetailPage() {
   const { id } = useParams<{ id: string }>();
   const renterId = Number(id);
   const [tab, setTab] = useState<TabId>('info');
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [txDrawerOpen, setTxDrawerOpen] = useState(false);
 
   const { data: renter, isLoading } = useRenter(renterId);
   const { data: txPages } = useTransactions({ renterId });
@@ -381,14 +385,14 @@ export function RenterDetailPage() {
               <MessageSquare size={14} /> {t('renter.sms')}
             </a>
             <button
-              onClick={() => navigate(`/renters/${renterId}/edit`)}
+              onClick={() => setEditDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
               style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
             >
               <Pencil size={14} /> {t('common.edit')}
             </button>
             <button
-              onClick={() => navigate(`/transactions/add?renterId=${renterId}&type=revenue`)}
+              onClick={() => setTxDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
               style={{ background: 'var(--color-primary)' }}
             >
@@ -437,6 +441,9 @@ export function RenterDetailPage() {
         {tab === 'property' && <PropertyTab renter={renter} />}
         {tab === 'transactions' && <TransactionsTab transactions={transactions} />}
       </div>
+
+      <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
+      <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialType="revenue" />
     </div>
   );
 }

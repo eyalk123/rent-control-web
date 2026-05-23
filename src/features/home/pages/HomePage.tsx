@@ -127,10 +127,10 @@ export function HomePage() {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { labelKey: 'home.recordRevenue', icon: TrendingUp, to: '/transactions/add?type=revenue', color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
-            { labelKey: 'home.recordExpense', icon: TrendingDown, to: '/transactions/add?type=expense', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
-            { labelKey: 'screens.addRenter', icon: Users, to: '/renters/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
-            { labelKey: 'screens.addProperty', icon: Building2, to: '/properties/add', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+            { labelKey: 'home.recordRevenue', icon: TrendingUp, to: '/transactions', color: 'var(--color-rev-fg)', bg: 'var(--color-rev-bg)' },
+            { labelKey: 'home.recordExpense', icon: TrendingDown, to: '/transactions', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
+            { labelKey: 'screens.addRenter', icon: Users, to: '/renters', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+            { labelKey: 'screens.addProperty', icon: Building2, to: '/properties', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
           ].map(({ labelKey, icon: Icon, to, color, bg }) => (
             <button
               key={labelKey}

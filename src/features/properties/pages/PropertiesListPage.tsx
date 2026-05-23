@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, MapPin, AlertCircle, Download } from 'lucide-react';
 import { useProperties } from '../queries';
+import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
@@ -181,6 +182,7 @@ export function PropertiesListPage() {
   const { data: properties, isLoading, error, refetch } = useProperties();
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const filtered = (properties ?? []).filter((p) =>
     `${p.address} ${p.city} ${p.property_owner ?? ''}`.toLowerCase().includes(search.toLowerCase()),
@@ -216,7 +218,7 @@ export function PropertiesListPage() {
             <Download size={14} /> {t('common.export')}
           </button>
           <button
-            onClick={() => navigate('/properties/add')}
+            onClick={() => setDrawerOpen(true)}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
             style={{ background: 'var(--color-primary)' }}
           >
@@ -261,7 +263,7 @@ export function PropertiesListPage() {
           action={
             !search ? (
               <button
-                onClick={() => navigate('/properties/add')}
+                onClick={() => setDrawerOpen(true)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                 style={{ background: 'var(--color-primary)' }}
               >
@@ -277,6 +279,8 @@ export function PropertiesListPage() {
       ) : (
         <PropertyTable properties={filtered} />
       )}
+
+      <PropertyFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }

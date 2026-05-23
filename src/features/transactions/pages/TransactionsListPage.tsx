@@ -1,5 +1,4 @@
 import { useRef, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/core/i18n';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
@@ -10,6 +9,7 @@ import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
+import { TransactionFormDrawer } from './TransactionFormDrawer';
 import type { Transaction } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -67,9 +67,9 @@ function TxRow({ tx }: { tx: Transaction }) {
 
 export function TransactionsListPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const queryFilters = filter === 'all' ? {} : { type: filter as 'revenue' | 'expense' };
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(queryFilters);
@@ -115,7 +115,7 @@ export function TransactionsListPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/transactions/add')}
+          onClick={() => setDrawerOpen(true)}
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
           style={{ background: 'var(--color-primary)' }}
         >
@@ -203,7 +203,7 @@ export function TransactionsListPage() {
           action={
             !search && filter === 'all' ? (
               <button
-                onClick={() => navigate('/transactions/add')}
+                onClick={() => setDrawerOpen(true)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                 style={{ background: 'var(--color-primary)' }}
               >
@@ -241,6 +241,8 @@ export function TransactionsListPage() {
           </div>
         </div>
       )}
+
+      <TransactionFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }

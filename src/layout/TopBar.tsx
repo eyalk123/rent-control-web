@@ -1,6 +1,5 @@
 import { Sun, Moon, Bell, Plus } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 interface TopBarProps {
@@ -11,7 +10,6 @@ interface TopBarProps {
 export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
   const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
-  const navigate = useNavigate();
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -49,7 +47,7 @@ export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
         </button>
 
         <button
-          onClick={onAddClick ?? (() => navigate('/transactions/add'))}
+          onClick={onAddClick}
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] bg-[var(--color-primary)] text-white text-[13px] font-semibold hover:opacity-90 transition-opacity"
         >
           <Plus size={15} />

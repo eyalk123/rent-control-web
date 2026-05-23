@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
-import { ChevronLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import {
   useCreateRevenueTransaction,
   useCreateExpenseTransaction,
@@ -13,7 +12,7 @@ import { useSuppliers } from '@/features/suppliers/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormDateInput } from '@/shared/components/form/FormDateInput';
-import { PageContainer } from '@/shared/components/ui/PageContainer';
+import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { PAYMENT_METHOD_VALUES } from '@/shared/constants/paymentMethods';
 
@@ -38,15 +37,26 @@ interface ExpenseFormFields {
   notes: string;
 }
 
-function RevenueForm() {
+interface RevenueFormProps {
+  onClose: () => void;
+  initialPropertyId?: number;
+}
+
+function RevenueForm({ onClose, initialPropertyId }: RevenueFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const createRevenue = useCreateRevenueTransaction();
   const { showToast } = useToast();
-  const navigate = useNavigate();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<RevenueFormFields>({
-    defaultValues: { propertyId: '', amount: '', monthFor: '', dateOfPayment: '', paymentMethod: '', notes: '' },
+    defaultValues: {
+      propertyId: initialPropertyId?.toString() ?? '',
+      amount: '',
+      monthFor: '',
+      dateOfPayment: '',
+      paymentMethod: '',
+      notes: '',
+    },
   });
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
@@ -65,12 +75,12 @@ function RevenueForm() {
         notes: data.notes || undefined,
       });
       showToast(t('transactions.createSuccess'), 'success');
-      navigate('/transactions');
+      onClose();
     } catch { showToast(t('error.saveFailed'), 'error'); }
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form id="transaction-form" onSubmit={onSubmit} className="space-y-4">
       <Controller control={control} name="propertyId" render={({ field }) => (
         <FormSelect label={t('transactions.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('transactions.selectProperty')} error={errors.propertyId?.message} />
       )} />
@@ -81,14 +91,16 @@ function RevenueForm() {
         <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
-      <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
-        {isSubmitting ? '...' : t('common.save')}
-      </button>
     </form>
   );
 }
 
-function ExpenseForm() {
+interface ExpenseFormProps {
+  onClose: () => void;
+  initialPropertyId?: number;
+}
+
+function ExpenseForm({ onClose, initialPropertyId }: ExpenseFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const { data: categories } = useExpenseCategories();
@@ -96,10 +108,17 @@ function ExpenseForm() {
   const { data: suppliers } = useSuppliers({ categoryId: selectedCategoryId ?? undefined });
   const createExpense = useCreateExpenseTransaction();
   const { showToast } = useToast();
-  const navigate = useNavigate();
 
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<ExpenseFormFields>({
-    defaultValues: { propertyId: '', amount: '', dateOfPayment: '', categoryId: '', supplierId: '', paymentMethod: '', notes: '' },
+    defaultValues: {
+      propertyId: initialPropertyId?.toString() ?? '',
+      amount: '',
+      dateOfPayment: '',
+      categoryId: '',
+      supplierId: '',
+      paymentMethod: '',
+      notes: '',
+    },
   });
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
@@ -121,12 +140,12 @@ function ExpenseForm() {
         notes: data.notes || undefined,
       });
       showToast(t('transactions.createSuccess'), 'success');
-      navigate('/transactions');
+      onClose();
     } catch { showToast(t('error.saveFailed'), 'error'); }
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form id="transaction-form" onSubmit={onSubmit} className="space-y-4">
       <Controller control={control} name="propertyId" render={({ field }) => (
         <FormSelect label={t('transactions.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('transactions.selectProperty')} />
       )} />
@@ -151,50 +170,98 @@ function ExpenseForm() {
         <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
-      <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
-        {isSubmitting ? '...' : t('common.save')}
-      </button>
     </form>
   );
 }
 
-export function AddTransactionPage() {
+// ─── main drawer ─────────────────────────────────────────────────────────────
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  initialType?: TxType;
+  initialPropertyId?: number;
+}
+
+export function TransactionFormDrawer({ open, onClose, initialType, initialPropertyId }: Props) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [txType, setTxType] = useState<TxType | null>(null);
+  const [txType, setTxType] = useState<TxType | null>(initialType ?? null);
+
+  useEffect(() => {
+    if (!open) setTxType(initialType ?? null);
+    else if (initialType) setTxType(initialType);
+  }, [open, initialType]);
+
+  const saveButton = (
+    <button
+      type="submit"
+      form="transaction-form"
+      className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
+      style={{ background: 'var(--color-primary)' }}
+    >
+      {t('common.save')}
+    </button>
+  );
+
+  const footer = txType ? (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => { if (initialType) onClose(); else setTxType(null); }}
+        className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
+        style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+      >
+        {initialType ? t('common.cancel') : t('common.back')}
+      </button>
+      {saveButton}
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={onClose}
+      className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
+      style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+    >
+      {t('common.cancel')}
+    </button>
+  );
 
   return (
-    <PageContainer>
-      <button onClick={() => txType ? setTxType(null) : navigate(-1)} className="mb-4 flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-primary)]">
-        <ChevronLeft size={16} />{txType ? t('common.back') : t('common.cancel')}
-      </button>
-      <h1 className="mb-5 text-xl font-bold text-[var(--color-text-primary)]">{t('transactions.addNew')}</h1>
-
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={t('transactions.addNew')}
+      width={640}
+      footer={footer}
+    >
       {!txType ? (
-        <div className="grid grid-cols-2 gap-4 max-w-sm">
+        <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setTxType('revenue')}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-[var(--color-rev-fg)]/30 bg-[var(--color-rev-bg)] p-6 hover:border-[var(--color-rev-fg)]/60 transition-colors"
+            className="flex flex-col items-center gap-3 rounded-2xl p-6 transition-colors"
+            style={{ border: '2px solid var(--color-rev-fg)', background: 'var(--color-rev-bg)', opacity: 0.85 }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.85')}
           >
-            <TrendingUp size={28} className="text-[var(--color-rev-fg)]" />
-            <span className="text-sm font-semibold text-[var(--color-rev-fg)]">{t('transactions.revenue')}</span>
+            <TrendingUp size={28} style={{ color: 'var(--color-rev-fg)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--color-rev-fg)' }}>{t('transactions.revenue')}</span>
           </button>
           <button
             onClick={() => setTxType('expense')}
-            className="flex flex-col items-center gap-3 rounded-2xl border-2 border-[var(--color-exp-fg)]/30 bg-[var(--color-exp-bg)] p-6 hover:border-[var(--color-exp-fg)]/60 transition-colors"
+            className="flex flex-col items-center gap-3 rounded-2xl p-6 transition-colors"
+            style={{ border: '2px solid var(--color-exp-fg)', background: 'var(--color-exp-bg)', opacity: 0.85 }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.85')}
           >
-            <TrendingDown size={28} className="text-[var(--color-exp-fg)]" />
-            <span className="text-sm font-semibold text-[var(--color-exp-fg)]">{t('transactions.expense')}</span>
+            <TrendingDown size={28} style={{ color: 'var(--color-exp-fg)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--color-exp-fg)' }}>{t('transactions.expense')}</span>
           </button>
         </div>
+      ) : txType === 'revenue' ? (
+        <RevenueForm onClose={onClose} initialPropertyId={initialPropertyId} />
       ) : (
-        <div className="max-w-2xl rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline)] p-5">
-          <p className="mb-4 text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
-            {txType === 'revenue' ? t('transactions.revenue') : t('transactions.expense')}
-          </p>
-          {txType === 'revenue' ? <RevenueForm /> : <ExpenseForm />}
-        </div>
+        <ExpenseForm onClose={onClose} initialPropertyId={initialPropertyId} />
       )}
-    </PageContainer>
+    </Drawer>
   );
 }
