@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/core/auth/ProtectedRoute';
 import { AppShell } from '@/layout/AppShell';
 import { ToastProvider } from '@/shared/components/ui/Toast';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { RouteErrorPage } from '@/shared/components/ui/RouteErrorPage';
 import { useLanguage } from '@/hooks/useLanguage';
 
 const SignInPage = lazy(() => import('@/features/auth/SignInPage').then((m) => ({ default: m.SignInPage })));
@@ -29,9 +30,10 @@ const queryClient = new QueryClient({
 });
 
 const router = createBrowserRouter([
-  { path: '/sign-in', element: <SignInPage /> },
+  { path: '/sign-in', element: <SignInPage />, errorElement: <RouteErrorPage /> },
   {
     path: '/',
+    errorElement: <RouteErrorPage />,
     element: (
       <ProtectedRoute>
         <AppShell />
