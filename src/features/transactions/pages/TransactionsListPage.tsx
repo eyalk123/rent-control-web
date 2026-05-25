@@ -95,9 +95,6 @@ export function TransactionsListPage() {
   const grouped = groupByMonth(filtered);
   const months = [...grouped.keys()].sort().reverse();
 
-  const revTotal = filtered.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
-  const expTotal = filtered.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-
   const buckets = (summary?.six_month_buckets ?? []).map((b) => ({
     month: `${String(b.month).padStart(2, '0')}/${b.year}`,
     revenue: b.revenue,
@@ -123,7 +120,7 @@ export function TransactionsListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.transactions')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('transactions.headerMeta', { count: filtered.length, revenue: formatMoney(revTotal), expenses: formatMoney(expTotal) })}
+            {t('transactions.headerMeta', { count: filtered.length })}
           </p>
         </div>
         <button
@@ -197,12 +194,6 @@ export function TransactionsListPage() {
           className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none"
           style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
         />
-        <div className="ml-auto text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-          {t('transactions.netLabel')}{' '}
-          <LtrSpan className="text-[14px] font-bold" style={{ color: revTotal - expTotal >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
-            {revTotal - expTotal >= 0 ? '+' : '−'}{formatMoney(Math.abs(revTotal - expTotal))}
-          </LtrSpan>
-        </div>
       </div>
 
       {/* Content */}
@@ -238,7 +229,6 @@ export function TransactionsListPage() {
                   <div className="flex gap-4 text-[12px] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     <LtrSpan style={{ color: 'var(--color-rev-fg)' }}>+{formatMoney(mRev)}</LtrSpan>
                     <LtrSpan style={{ color: 'var(--color-exp-fg)' }}>−{formatMoney(mExp)}</LtrSpan>
-                    <LtrSpan style={{ color: 'var(--color-text-primary)' }}>{mRev - mExp >= 0 ? '+' : '−'}{formatMoney(Math.abs(mRev - mExp))}</LtrSpan>
                   </div>
                 </div>
                 {/* Transaction list */}

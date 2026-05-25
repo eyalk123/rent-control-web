@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
 import { useTransaction, useDeleteTransaction } from '../queries';
+import { TransactionFormDrawer } from './TransactionFormDrawer';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
@@ -28,6 +30,7 @@ export function TransactionDetailPage() {
   const { data: tx, isLoading } = useTransaction(txId);
   const { mutateAsync: deleteTx } = useDeleteTransaction();
   const { showToast } = useToast();
+  const [editOpen, setEditOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm(t('transactions.deleteConfirm'))) return;
@@ -53,7 +56,7 @@ export function TransactionDetailPage() {
           <ChevronLeft size={14} /> {t('transactions.allTransactions')}
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(`/transactions/${txId}/edit`)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
+          <button onClick={() => setEditOpen(true)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
             <Pencil size={14} /> {t('common.edit')}
           </button>
           <button onClick={handleDelete} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}>
@@ -84,7 +87,7 @@ export function TransactionDetailPage() {
             {t('transactions.detailsPanel')}
           </header>
           <DetailRow icon={Building2} label={t('transactions.propertyLabel')} value={tx.property_name} />
-          {isRevenue && <DetailRow icon={User} label={t('transactions.renterLabel')} value={tx.renter_name} />}
+          <DetailRow icon={User} label={t('transactions.renterLabel')} value={tx.renter_name} />
           {!isRevenue && <DetailRow icon={Store} label={t('transactions.supplierLabel')} value={tx.supplier_name} />}
           {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={tx.category_name} />}
           <DetailRow icon={CreditCard} label={t('transactions.paymentMethodLabel')} value={tx.payment_method ? t(`transactions.paymentMethod_${tx.payment_method}`, { defaultValue: tx.payment_method }) : null} />
@@ -101,6 +104,7 @@ export function TransactionDetailPage() {
           </div>
         </div>
       </div>
+      <TransactionFormDrawer open={editOpen} onClose={() => setEditOpen(false)} transaction={tx} />
     </div>
   );
 }

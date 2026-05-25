@@ -71,7 +71,7 @@ export async function getTransactions(
     },
   });
 
-  return response.data;
+  return response.data.map((tx) => ({ ...tx, amount: Number(tx.amount) }));
 }
 
 export async function getTransactionsSummary(): Promise<TransactionSummaryResponse> {
@@ -188,7 +188,7 @@ export async function getTransactionById(id: number): Promise<Transaction> {
     return found;
   }
   const response = await apiClient.get<Transaction>(`/transactions/${id}`);
-  return response.data;
+  return { ...response.data, amount: Number(response.data.amount) };
 }
 
 export async function deleteTransaction(id: number): Promise<void> {

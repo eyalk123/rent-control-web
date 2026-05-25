@@ -519,6 +519,8 @@ export const mockTransactionsApi = {
         first_name: r.first_name,
         last_name: r.last_name,
         monthly_rent: r.lease_years?.[0]?.amount ?? 0,
+        lease_start: r.lease_start ?? null,
+        lease_years: r.lease_years ?? [],
       }));
   },
 };

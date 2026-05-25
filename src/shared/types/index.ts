@@ -190,6 +190,8 @@ export interface PropertyRenterSummary {
   last_name: string;
   /** Display monthly rent (e.g. derived from first lease year). */
   monthly_rent: number;
+  lease_start: string | null;
+  lease_years: LeaseYear[];
 }
 
 // Create payload (what frontend sends on POST /properties)
