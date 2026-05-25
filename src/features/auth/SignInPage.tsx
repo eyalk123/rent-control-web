@@ -12,7 +12,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { auth } from '@/core/auth/firebase';
 import { loginSchema } from './authFormSchema';
 import { FormInput } from '@/shared/components/form/FormInput';
-import { Building2, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTranslation } from 'react-i18next';
 import { getPropertyColor } from '@/shared/utils/propertyColor';
 import type { z } from 'zod';
@@ -105,9 +106,7 @@ export function SignInPage() {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-            <Building2 size={18} style={{ color: 'var(--color-brand-navy)' }} />
-          </div>
+          <img src={logoImage} alt="Rent Control" className="h-8 w-auto rounded-lg" />
           <span className="text-base font-bold tracking-tight">Rent Control</span>
         </div>
 
@@ -160,9 +159,7 @@ export function SignInPage() {
         <div className="w-full max-w-[340px]">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: 'var(--color-brand-navy)' }}>
-              <Building2 size={19} className="text-white" />
-            </div>
+            <img src={logoImage} alt="Rent Control" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
             <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Rent Control</span>
           </div>
 

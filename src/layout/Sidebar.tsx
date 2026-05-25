@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { mainNavItems, bottomNavItems } from './navConfig';
-import { Building2, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
+import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTransactionSummary } from '@/features/transactions/queries';
 import { formatMoney } from '@/shared/utils/money';
 
@@ -74,9 +75,7 @@ export function Sidebar() {
           onClick={() => navigate('/home')}
           className="flex items-center gap-2.5 px-4 py-5 cursor-pointer"
         >
-          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-navy)]">
-            <Building2 size={18} className="text-white" />
-          </div>
+          <img src={logoImage} alt="Rent Control" className="h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
           <div>
             <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">Rent Control</div>
             <div className="text-[10.5px] text-[var(--color-text-secondary)]">
@@ -131,12 +130,12 @@ export function Sidebar() {
 
       {/* Icon sidebar — 1024px–1280px */}
       <aside className="hidden lg:flex 2xl:hidden flex-col w-16 shrink-0 h-screen sticky top-0 border-e border-[var(--color-outline)] bg-[var(--color-surface)] py-4">
-        <div
+        <img
+          src={logoImage}
+          alt="Rent Control"
           onClick={() => navigate('/home')}
-          className="flex h-9 w-9 mx-auto mb-5 items-center justify-center rounded-[9px] bg-[var(--color-brand-navy)] cursor-pointer"
-        >
-          <Building2 size={18} className="text-white" />
-        </div>
+          className="h-9 w-9 mx-auto mb-5 rounded-[9px] object-contain cursor-pointer"
+        />
 
         <nav className="flex flex-col gap-1 px-2.5 flex-1">
           {mainNavItems.map((item) => (

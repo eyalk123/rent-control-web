@@ -8,9 +8,22 @@
   "theme_color": "#1E3A5F",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any"
+      "src": "/rent-control-icon-no-text.png",
+      "type": "image/png",
+      "sizes": "1049x754",
+      "purpose": "any"
+    },
+    {
+      "src": "/rent-control-icon-padded.png",
+      "type": "image/png",
+      "sizes": "1169x874",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/rent-control-icon-android-foreground.png",
+      "type": "image/png",
+      "sizes": "1024x1024",
+      "purpose": "any maskable"
     }
   ]
 }
