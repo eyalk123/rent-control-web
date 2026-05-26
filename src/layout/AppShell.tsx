@@ -39,7 +39,6 @@ export function AppShell() {
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <TopBar
           onOpenPalette={() => setPaletteOpen(true)}
-          onAddClick={() => setTxDrawerOpen(true)}
         />
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           <Outlet />

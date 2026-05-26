@@ -1,13 +1,12 @@
-import { Sun, Moon, Bell, Plus } from 'lucide-react';
+import { Sun, Moon, Bell } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 
 interface TopBarProps {
   onOpenPalette: () => void;
-  onAddClick?: () => void;
 }
 
-export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
+export function TopBar({ onOpenPalette }: TopBarProps) {
   const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
 
@@ -46,13 +45,6 @@ export function TopBar({ onOpenPalette, onAddClick }: TopBarProps) {
           <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />
         </button>
 
-        <button
-          onClick={onAddClick}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] bg-[var(--color-primary)] text-white text-[13px] font-semibold hover:opacity-90 transition-opacity"
-        >
-          <Plus size={15} />
-          {t('common.addButton')}
-        </button>
       </div>
     </div>
   );
