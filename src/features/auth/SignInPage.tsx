@@ -99,35 +99,36 @@ export function SignInPage() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-background)' }}>
-      {/* Left — brand panel */}
+      {/* Left — brand panel (rtl:order-last keeps it on the left in Hebrew) */}
       <div
-        className="hidden md:flex flex-col justify-between flex-1 min-w-0 relative overflow-hidden"
+        className="hidden md:flex flex-col justify-between flex-1 min-w-0 relative overflow-hidden rtl:order-last"
         style={{ background: 'var(--color-brand-navy)', padding: '40px 56px', color: '#fff' }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <img src={logoImage} alt="Rent Control" className="h-8 w-auto rounded-lg" />
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={logoImage} alt="Rent Control" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+          </div>
           <span className="text-base font-bold tracking-tight">Rent Control</span>
         </div>
 
         {/* Hero copy */}
         <div className="relative z-10">
           <p className="text-[13px] font-medium uppercase tracking-widest opacity-65 mb-5">
-            One ledger. Every property.
+            {t('auth.brandTagline')}
           </p>
           <h1 className="text-5xl font-bold leading-[1.06] tracking-tight max-w-[520px]" style={{ letterSpacing: '-1.2px' }}>
-            Track rent, expenses & leases without spreadsheets.
+            {t('auth.brandHeadline')}
           </h1>
           <p className="text-base opacity-80 mt-5 max-w-[460px] leading-relaxed">
-            Built for small landlords. Multi-year leases with automatic escalation,
-            supplier-linked expenses, and annual reports in one click.
+            {t('auth.brandDescription')}
           </p>
         </div>
 
         {/* Decorative property tiles grid */}
         <div
           className="absolute pointer-events-none"
-          style={{ right: -120, top: -80, opacity: 0.16, transform: 'rotate(-8deg)' }}
+          style={{ insetInlineEnd: -120, top: -80, opacity: 0.16, transform: 'rotate(-8deg)' }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 100px)', gap: 14 }}>
             {TILE_IDS.map((id) => (
@@ -146,14 +147,14 @@ export function SignInPage() {
         {/* Footer */}
         <div className="flex items-center gap-4 text-[12.5px] opacity-60">
           <span>v1.0.0</span><span>·</span>
-          <span>iOS · Android · Web</span><span>·</span>
+          <span>{t('auth.brandPlatforms')}</span><span>·</span>
           <span>EN · עברית</span>
         </div>
       </div>
 
-      {/* Right — auth form */}
+      {/* Right — auth form (rtl:order-first keeps it on the right in Hebrew) */}
       <div
-        className="flex items-center justify-center shrink-0 w-full md:w-[480px] p-10"
+        className="flex items-center justify-center shrink-0 w-full md:w-[480px] p-10 rtl:order-first"
         style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline)' }}
       >
         <div className="w-full max-w-[340px]">
@@ -175,6 +176,7 @@ export function SignInPage() {
               <FormInput
                 label={t('auth.emailLabel')}
                 type="email"
+                dir="ltr"
                 autoComplete="email"
                 placeholder={t('auth.emailPlaceholder')}
                 error={errors.email?.message}
@@ -243,6 +245,7 @@ export function SignInPage() {
                 <FormInput
                   label={t('auth.emailLabel')}
                   type="email"
+                  dir="ltr"
                   autoComplete="email"
                   placeholder={t('auth.emailPlaceholder')}
                   error={errors.email?.message}
@@ -252,6 +255,7 @@ export function SignInPage() {
                   <FormInput
                     label={t('auth.passwordLabel')}
                     type="password"
+                    dir="ltr"
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={t('auth.passwordPlaceholder')}
                     error={errors.password?.message}

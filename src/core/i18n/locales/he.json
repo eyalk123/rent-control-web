@@ -805,6 +805,10 @@
     "resetLinkSent": "בדוק את תיבת הדואר — נשלח קישור לאיפוס.",
     "sendResetLink": "שלח קישור לאיפוס",
     "newHerePrompt": "חדש כאן?",
-    "alreadyHaveAccountPrompt": "כבר יש לך חשבון?"
+    "alreadyHaveAccountPrompt": "כבר יש לך חשבון?",
+    "brandTagline": "ספר חשבונות אחד. כל נכס.",
+    "brandHeadline": "עקוב אחר שכר דירה, הוצאות וחוזים — בלי גיליונות אלקטרוניים.",
+    "brandDescription": "נבנה עבור משכירים קטנים. חוזים רב-שנתיים עם הצמדה אוטומטית, הוצאות מקושרות לספקים, ודוחות שנתיים בלחיצה אחת.",
+    "brandPlatforms": "iOS · Android · Web"
   }
 }

@@ -805,6 +805,10 @@
     "resetLinkSent": "Check your inbox — reset link sent.",
     "sendResetLink": "Send reset link",
     "newHerePrompt": "New here?",
-    "alreadyHaveAccountPrompt": "Already have an account?"
+    "alreadyHaveAccountPrompt": "Already have an account?",
+    "brandTagline": "One ledger. Every property.",
+    "brandHeadline": "Track rent, expenses & leases without spreadsheets.",
+    "brandDescription": "Built for small landlords. Multi-year leases with automatic escalation, supplier-linked expenses, and annual reports in one click.",
+    "brandPlatforms": "iOS · Android · Web"
   }
 }
