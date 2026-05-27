@@ -8,7 +8,7 @@ import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
-import { FormDateInput } from '@/shared/components/form/FormDateInput';
+import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
@@ -179,7 +179,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
           </>
         ) : (
           <>
-            <FormDateInput label={t('renter.leaseStart')} error={errors.leaseStart?.message} {...register('leaseStart')} />
+            <Controller control={control} name="leaseStart" render={({ field }) => (
+              <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
+            )} />
             <div>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.leaseYears')}</p>
               <div className="space-y-2">
@@ -199,7 +201,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
                 </button>
               </div>
             </div>
-            <FormInput label={t('renter.paymentDay')} type="number" min="1" max="31" error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
+            <Controller control={control} name="paymentDayOfMonth" render={({ field }) => (
+              <WheelDatePicker mode="day" label={t('renter.paymentDay')} value={field.value ? Number(field.value) : undefined} onChange={(v) => field.onChange(String(v))} error={errors.paymentDayOfMonth?.message} />
+            )} />
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} />
             )} />
