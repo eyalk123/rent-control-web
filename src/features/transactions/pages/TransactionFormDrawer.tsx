@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { translateCategory } from '@/shared/utils/categories';
 import { useForm, Controller } from 'react-hook-form';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { PAYMENT_METHOD_VALUES } from '@/shared/constants/paymentMethods';
 import { formatMoney } from '@/shared/utils/money';
+import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
 import {
   type PeriodType,
   getMonthsForPeriod,
@@ -439,7 +439,6 @@ interface ExpenseEditFields {
   renterId: string;
   amount: string;
   dateOfPayment: string;
-  categoryId: string;
   supplierId: string;
   paymentMethod: string;
   notes: string;
@@ -458,8 +457,23 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const updateExpense = useUpdateExpenseTransaction(transaction?.id ?? 0);
   const { showToast } = useToast();
 
-  // ── Shared state for both modes ────────────────────────────────────────────
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(transaction?.category_id ?? null);
+  // ── Category multi-select state ────────────────────────────────────────────
+  const initialCategoryIds = transaction?.category_ids?.length
+    ? transaction.category_ids
+    : transaction?.category_id
+    ? [transaction.category_id]
+    : [];
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>(initialCategoryIds);
+  const [categoryError, setCategoryError] = useState('');
+
+  useEffect(() => {
+    const ids = transaction?.category_ids?.length
+      ? transaction.category_ids
+      : transaction?.category_id
+      ? [transaction.category_id]
+      : [];
+    setSelectedCategoryIds(ids);
+  }, [transaction?.id]);
 
   // ── Create mode state ──────────────────────────────────────────────────────
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
@@ -471,12 +485,11 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   // ── Edit mode renter data ──────────────────────────────────────────────────
   const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null);
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<ExpenseEditFields>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<ExpenseEditFields>({
     defaultValues: {
       renterId: transaction?.renter_id?.toString() ?? '__none__',
       amount: transaction?.amount?.toString() ?? '',
       dateOfPayment: transaction?.date_of_payment ?? '',
-      categoryId: transaction?.category_id?.toString() ?? '',
       supplierId: transaction?.supplier_id?.toString() ?? '',
       paymentMethod: transaction?.payment_method ?? '',
       notes: transaction?.notes ?? '',
@@ -485,25 +498,34 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
 
   const watchedAmount = watch('amount');
 
-  const { data: suppliers } = useSuppliers({ categoryId: selectedCategoryId ?? undefined });
+  // Fetch all suppliers, filter client-side by selected categories (intersection)
+  const { data: allSuppliers } = useSuppliers({});
+  const suppliers = selectedCategoryIds.length > 0
+    ? (allSuppliers ?? []).filter((s) => s.category_ids.some((id) => selectedCategoryIds.includes(id)))
+    : [];
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
-  const categoryOptions = (categories ?? []).filter((c) => c.is_active).map((c) => ({ value: c.id.toString(), label: c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id)) }));
-  const supplierOptions = (suppliers ?? []).map((s) => ({ value: s.id.toString(), label: s.name }));
+  const supplierOptions = suppliers.map((s) => ({ value: s.id.toString(), label: s.name }));
   const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 
   const createRenterOptions = (createRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
   const editRenterOptions = (editRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
 
+  const handleCategoryChange = (ids: number[]) => {
+    setSelectedCategoryIds(ids);
+    setCategoryError('');
+    setValue('supplierId', '');
+  };
+
   const onEditSubmit = handleSubmit(async (data) => {
-    if (!data.categoryId) return;
+    if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
     try {
       await updateExpense.mutateAsync({
         renter_id: data.renterId && data.renterId !== '__none__' ? Number(data.renterId) : null,
         amount: Number(data.amount),
         date_of_payment: data.dateOfPayment,
         payment_method: data.paymentMethod as never,
-        category_id: Number(data.categoryId),
+        category_ids: selectedCategoryIds,
         supplier_id: data.supplierId ? Number(data.supplierId) : null,
         notes: data.notes || null,
       });
@@ -516,7 +538,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const handleBulkCreate = handleSubmit(async (data) => {
     setPropertyError('');
     if (selectedPropertyIds.length === 0) { setPropertyError(t('transactions.selectProperties')); return; }
-    if (!data.categoryId) return;
+    if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
 
     const perAmount = Number(data.amount) / selectedPropertyIds.length;
     const renterId = selectedPropertyIds.length === 1 && data.renterId && data.renterId !== '__none__' ? Number(data.renterId) : null;
@@ -527,7 +549,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
       amount: perAmount,
       date_of_payment: data.dateOfPayment,
       payment_method: data.paymentMethod as never,
-      category_id: Number(data.categoryId),
+      category_ids: selectedCategoryIds,
       supplier_id: data.supplierId ? Number(data.supplierId) : null,
       notes: data.notes || undefined,
     }));
@@ -564,17 +586,14 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         <Controller control={control} name="dateOfPayment" rules={{ required: true }} render={({ field }) => (
           <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
-        <Controller control={control} name="categoryId" render={({ field }) => (
-          <FormSelect
-            label={t('transactions.category')}
-            value={field.value}
-            onValueChange={(v) => { field.onChange(v); setSelectedCategoryId(Number(v)); }}
-            options={categoryOptions}
-            placeholder={t('transactions.selectCategory')}
-            error={errors.categoryId?.message}
-          />
-        )} />
-        {selectedCategoryId && supplierOptions.length > 0 && (
+        <CategoryMultiSelect
+          label={t('transactions.category')}
+          categories={categories ?? []}
+          selectedIds={selectedCategoryIds}
+          onChange={handleCategoryChange}
+          error={categoryError}
+        />
+        {selectedCategoryIds.length > 0 && supplierOptions.length > 0 && (
           <Controller control={control} name="supplierId" render={({ field }) => (
             <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
           )} />
@@ -638,17 +657,14 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
       <Controller control={control} name="dateOfPayment" rules={{ required: true }} render={({ field }) => (
         <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
       )} />
-      <Controller control={control} name="categoryId" render={({ field }) => (
-        <FormSelect
-          label={t('transactions.category')}
-          value={field.value}
-          onValueChange={(v) => { field.onChange(v); setSelectedCategoryId(Number(v)); }}
-          options={categoryOptions}
-          placeholder={t('transactions.selectCategory')}
-          error={errors.categoryId?.message}
-        />
-      )} />
-      {selectedCategoryId && supplierOptions.length > 0 && (
+      <CategoryMultiSelect
+        label={t('transactions.category')}
+        categories={categories ?? []}
+        selectedIds={selectedCategoryIds}
+        onChange={handleCategoryChange}
+        error={categoryError}
+      />
+      {selectedCategoryIds.length > 0 && supplierOptions.length > 0 && (
         <Controller control={control} name="supplierId" render={({ field }) => (
           <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
         )} />

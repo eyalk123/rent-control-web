@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import { supplierFormSchema, type SupplierFormValues } from '../validation/supplierValidation';
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
@@ -11,6 +11,7 @@ import { FormInput } from '@/shared/components/form/FormInput';
 import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
+import { AddCategoryModal } from '@/features/transactions/components/AddCategoryModal';
 
 interface Props {
   open: boolean;
@@ -27,6 +28,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier(supplierId ?? 0);
   const { showToast } = useToast();
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting } } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema) as never,
@@ -172,8 +174,29 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => setAddCategoryOpen(true)}
+                className="rounded-full px-3 py-1 text-sm font-medium flex items-center gap-1 transition-colors"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--color-primary)',
+                  border: '1px solid var(--color-primary)',
+                }}
+              >
+                <Plus size={13} />
+                {t('categories.add')}
+              </button>
             </div>
           </div>
+          <AddCategoryModal
+            opened={addCategoryOpen}
+            onClose={() => setAddCategoryOpen(false)}
+            onCreated={(cat) => {
+              const current = selectedCategoryIds;
+              setValue('categoryIds', [...current, cat.id], { shouldValidate: true });
+            }}
+          />
         </div>
 
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>

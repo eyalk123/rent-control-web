@@ -634,6 +634,11 @@
     "noReceipt": "לא צורף קבלה",
     "rentLabel": "שכירות"
   },
+  "categories": {
+    "add": "הוסף",
+    "addTitle": "הוספת קטגוריה",
+    "namePlaceholder": "שם הקטגוריה"
+  },
   "expenseCategories": {
     "maintenance": "תחזוקה",
     "electricity": "חשמל",

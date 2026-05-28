@@ -634,6 +634,11 @@
     "noReceipt": "No receipt attached",
     "rentLabel": "Rent"
   },
+  "categories": {
+    "add": "Add",
+    "addTitle": "Add Category",
+    "namePlaceholder": "Category name"
+  },
   "expenseCategories": {
     "maintenance": "Maintenance",
     "electricity": "Electricity",
