@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trash2 } from 'lucide-react';
@@ -167,7 +168,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
                       color: selected ? '#fff' : 'var(--color-text-secondary)',
                     }}
                   >
-                    {c.name ?? c.key ?? String(c.id)}
+                    {c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id))}
                   </button>
                 );
               })}

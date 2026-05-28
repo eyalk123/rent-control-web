@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
 import { useTransaction, useDeleteTransaction } from '../queries';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
@@ -89,7 +90,7 @@ export function TransactionDetailPage() {
           <DetailRow icon={Building2} label={t('transactions.propertyLabel')} value={tx.property_name} />
           <DetailRow icon={User} label={t('transactions.renterLabel')} value={tx.renter_name} />
           {!isRevenue && <DetailRow icon={Store} label={t('transactions.supplierLabel')} value={tx.supplier_name} />}
-          {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={tx.category_name} />}
+          {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={tx.category_name ? translateCategory(tx.category_name, t) : null} />}
           <DetailRow icon={CreditCard} label={t('transactions.paymentMethodLabel')} value={tx.payment_method ? t(`transactions.paymentMethod_${tx.payment_method}`, { defaultValue: tx.payment_method }) : null} />
           {isRevenue && tx.month_for && <DetailRow icon={Calendar} label={t('transactions.monthForLabel2')} value={tx.month_for} />}
           <DetailRow icon={Calendar} label={t('transactions.dateOfPaymentLabel')} value={tx.date_of_payment} />

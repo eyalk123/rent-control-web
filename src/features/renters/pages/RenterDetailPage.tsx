@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useRenter } from '../queries';
 import { useProperty } from '@/features/properties/queries';
@@ -275,7 +276,7 @@ function TransactionsTab({ transactions }: { transactions: Transaction[] }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-                {isRev ? t('renter.rentPayment') : (tx.supplier_name ?? tx.category_name ?? '—')}
+                {isRev ? t('renter.rentPayment') : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
               </p>
               <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                 {tx.date_of_payment}

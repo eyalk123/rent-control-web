@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { useForm, Controller } from 'react-hook-form';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -487,7 +488,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const { data: suppliers } = useSuppliers({ categoryId: selectedCategoryId ?? undefined });
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
-  const categoryOptions = (categories ?? []).filter((c) => c.is_active).map((c) => ({ value: c.id.toString(), label: c.name ?? c.key ?? String(c.id) }));
+  const categoryOptions = (categories ?? []).filter((c) => c.is_active).map((c) => ({ value: c.id.toString(), label: c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id)) }));
   const supplierOptions = (suppliers ?? []).map((s) => ({ value: s.id.toString(), label: s.name }));
   const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 

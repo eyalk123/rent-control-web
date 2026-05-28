@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { Plus, Store, Building2 } from 'lucide-react';
 import { useSuppliers } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
@@ -71,7 +72,7 @@ export function SuppliersListPage() {
   const { data: suppliers = [], isLoading } = useSuppliers({ q: search || undefined, includeInactive: showInactive });
   const { data: categories = [] } = useExpenseCategories();
 
-  const catMap = new Map<number, string>(categories.map((c) => [c.id, c.name ?? c.key ?? String(c.id)]));
+  const catMap = new Map<number, string>(categories.map((c) => [c.id, c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id))]));
   const activeCount = (suppliers as Supplier[]).filter((s) => s.is_active).length;
 
   return (

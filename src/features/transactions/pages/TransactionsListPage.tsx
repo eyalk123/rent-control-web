@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import i18n from '@/core/i18n';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { useTransactions, useTransactionSummary } from '../queries';
@@ -51,10 +52,10 @@ function TxRow({ tx }: { tx: Transaction }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-          {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? tx.category_name ?? '—')}
+          {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
         </p>
         <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? t('transactions.rentLabel') : tx.category_name} · {tx.property_name} · {tx.date_of_payment}
+          {isRev ? t('transactions.rentLabel') : translateCategory(tx.category_name, t)} · {tx.property_name} · {tx.date_of_payment}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>

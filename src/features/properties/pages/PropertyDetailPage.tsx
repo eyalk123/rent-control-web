@@ -4,6 +4,7 @@ import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import {
   ChevronLeft, Pencil, Plus, MapPin, Car, Zap, Droplets,
   Receipt, Users, FileText, Upload, TrendingUp, TrendingDown,
@@ -121,10 +122,10 @@ function TxRow({ tx }: { tx: Transaction }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-          {isRev ? tx.renter_name : (tx.supplier_name ?? tx.category_name ?? '—')}
+          {isRev ? tx.renter_name : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
         </p>
         <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? t('property.rent') : tx.category_name} · {fmtDate(tx.date_of_payment)}
+          {isRev ? t('property.rent') : translateCategory(tx.category_name, t)} · {fmtDate(tx.date_of_payment)}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>

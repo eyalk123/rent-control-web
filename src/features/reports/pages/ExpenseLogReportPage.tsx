@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, Download } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { downloadExpenseLogReport, type ReportFormat } from '../api/reports';
@@ -134,7 +135,7 @@ export function ExpenseLogReportPage() {
                   <div key={catName}>
                     {/* Category header */}
                     <div className="flex items-center px-4 py-2.5" style={{ background: 'var(--color-input-filled-background)', borderTop: '1px solid var(--color-outline)', borderBottom: '1px solid var(--color-outline)' }}>
-                      <div className="flex-1 text-[12.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{catName}</div>
+                      <div className="flex-1 text-[12.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{translateCategory(catName, t)}</div>
                       <LtrSpan className="text-[12.5px] font-bold" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(catTotal)}</LtrSpan>
                     </div>
                     {/* Rows */}
@@ -142,7 +143,7 @@ export function ExpenseLogReportPage() {
                       <div key={tx.id} className="flex items-center px-4 py-2.5" style={{ borderBottom: i === txs.length - 1 ? 'none' : '1px solid var(--color-outline)' }}>
                         <div className="w-[90px] text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{fmtDate(tx.date_of_payment)}</div>
                         <div className="flex-[1.5] min-w-0">
-                          <p className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{tx.supplier_name ?? tx.category_name ?? '—'}</p>
+                          <p className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—')}</p>
                           {tx.notes && <p className="text-[11px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.notes}</p>}
                         </div>
                         <div className="flex-1 text-[12px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.property_name}</div>
