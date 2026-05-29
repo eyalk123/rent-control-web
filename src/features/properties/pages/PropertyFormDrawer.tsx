@@ -97,6 +97,16 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
+      let imageUrl: string | undefined;
+      let basicContractUrl = data.basicContractUrl || undefined;
+      let landRegistryUrl = data.landRegistryUrl || undefined;
+
+      if (user) {
+        if (imageFile) imageUrl = await uploadToFirebase(imageFile, 'properties', user.uid);
+        if (basicContractFile) basicContractUrl = await uploadToFirebase(basicContractFile, 'properties', user.uid);
+        if (landRegistryFile) landRegistryUrl = await uploadToFirebase(landRegistryFile, 'properties', user.uid);
+      }
+
       const payload = {
         address: data.address,
         city: data.city,
@@ -117,29 +127,15 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         parking_numbers: data.parkingNumbersStr
           ? data.parkingNumbersStr.split(',').map((s) => s.trim()).filter(Boolean)
           : undefined,
-        basic_contract_url: data.basicContractUrl || undefined,
-        land_registry_url: data.landRegistryUrl || undefined,
+        image_url: imageUrl,
+        basic_contract_url: basicContractUrl,
+        land_registry_url: landRegistryUrl,
       };
 
       if (isEditing && propertyId) {
         await updateMutation.mutateAsync(payload);
       } else {
         await createMutation.mutateAsync(payload);
-      }
-
-      if (user) {
-        if (imageFile) {
-          const url = await uploadToFirebase(imageFile, 'properties', user.uid);
-          await updateMutation.mutateAsync({ image_url: url });
-        }
-        if (basicContractFile) {
-          const url = await uploadToFirebase(basicContractFile, 'properties', user.uid);
-          await updateMutation.mutateAsync({ basic_contract_url: url });
-        }
-        if (landRegistryFile) {
-          const url = await uploadToFirebase(landRegistryFile, 'properties', user.uid);
-          await updateMutation.mutateAsync({ land_registry_url: url });
-        }
       }
 
       showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');

@@ -26,8 +26,8 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
     onChange(next.join(', '));
   }
 
-  function removeChip(chip: string) {
-    const next = chips.filter((c) => c !== chip);
+  function removeChip(index: number) {
+    const next = chips.filter((_, i) => i !== index);
     onChange(next.join(', '));
   }
 
@@ -62,25 +62,29 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>}
       <div
-        className={`flex flex-wrap gap-1.5 min-h-[42px] rounded-xl px-3 py-2 cursor-text ${
+        className={`flex flex-wrap gap-1.5 min-h-[42px] rounded-xl px-3 py-2 cursor-text border ${
           error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'
         }`}
-        style={{ background: 'var(--color-input-bg)', border: '1px solid' }}
+        style={{ background: 'var(--color-input-bg)' }}
         onClick={() => inputRef.current?.focus()}
       >
-        {chips.map((chip) => (
+        {chips.map((chip, index) => (
           <span
-            key={chip}
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium"
-            style={{ background: 'var(--color-primary)', color: '#fff' }}
+            key={`${chip}-${index}`}
+            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[12px] font-medium"
+            style={{
+              background: 'var(--color-outline)',
+              color: 'var(--color-text-primary)',
+              borderColor: 'var(--color-input-border)',
+            }}
           >
             {chip}
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); removeChip(chip); }}
-              className="flex items-center justify-center rounded-full hover:opacity-70"
+              onClick={(e) => { e.stopPropagation(); removeChip(index); }}
+              className="flex items-center justify-center rounded-full opacity-50 hover:opacity-100 transition-opacity"
             >
-              <X size={10} />
+              <X size={12} />
             </button>
           </span>
         ))}
@@ -92,7 +96,7 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           placeholder={chips.length === 0 ? placeholder : undefined}
-          className="flex-1 min-w-[80px] bg-transparent outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]"
+          className="flex-1 min-w-[80px] bg-transparent outline-none focus-visible:outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]"
         />
       </div>
       {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
