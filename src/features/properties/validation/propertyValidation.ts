@@ -17,9 +17,9 @@ export const propertyFormSchema = z.object({
   address: nonEmptyTrimmed,
   city: nonEmptyTrimmed,
   zipCode: z.string().transform((val) => val.trim()),
-  type: z.custom<PropertyType | undefined>((val) => val === undefined || val === '' || (typeof val === 'string' && PROPERTY_TYPES.includes(val as PropertyType)), {
-    message: 'invalidType',
-  }).optional(),
+  type: z.custom<PropertyType>((val) => typeof val === 'string' && PROPERTY_TYPES.includes(val as PropertyType), {
+    message: 'common.required',
+  }),
   sqFt: optionalNumericString,
   numberOfRooms: optionalNumericString,
   parkingNumbersStr: z.string().transform((val) => val ?? ''),

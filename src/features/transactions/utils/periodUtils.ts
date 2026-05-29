@@ -1,9 +1,17 @@
 import type { LeaseYear } from '@/shared/types';
 
-export type PeriodType = '1month' | 'custom' | 'year';
+export type PeriodType = '1month' | '3months' | '6months' | 'custom' | 'year';
 
-export function getMonthsForPeriod(_type: '1month', value: string): string[] {
-  return [`${value}-01`];
+export function getMonthsForPeriod(type: '1month' | '3months' | '6months', value: string): string[] {
+  if (type === '1month') return [`${value}-01`];
+  const count = type === '3months' ? 3 : 6;
+  const [y, m] = value.split('-').map(Number);
+  return Array.from({ length: count }, (_, i) => {
+    let month = m - i;
+    let year = y;
+    while (month < 1) { month += 12; year -= 1; }
+    return `${year}-${String(month).padStart(2, '0')}-01`;
+  }).reverse();
 }
 
 export function getContractYearMonths(startYear: number, leaseStart: string): string[] {
@@ -21,7 +29,9 @@ export function getCurrentPeriodValue(type: PeriodType): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  if (type === '1month') return `${year}-${String(month).padStart(2, '0')}`;
+  if (type === '1month' || type === '3months' || type === '6months') {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
   return String(year);
 }
 

@@ -99,3 +99,18 @@ export async function deleteRenter(id: number): Promise<void> {
   if (USE_MOCK_API) return mockRentersApi.deleteRenter(id);
   await apiClient.delete(`/renters/${id}`);
 }
+
+export async function uploadRenterDocument(
+  id: number,
+  field: 'id_image' | 'full_contract',
+  file: File
+): Promise<string> {
+  if (USE_MOCK_API) return `https://mock-bucket.s3.amazonaws.com/renters/${id}/${field}/${file.name}`;
+  const fd = new FormData();
+  fd.append('file', file);
+  const response = await apiClient.post<{ url: string }>(
+    `/renters/${id}/documents/${field}`,
+    fd
+  );
+  return response.data.url;
+}

@@ -36,11 +36,15 @@ export const renterFormSchema = z.object({
   ),
   propertyId: optionalString,
   paymentType: optionalString,
+  paymentFrequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
   paymentDayOfMonth: optionalNumericString,
-  insuranceType: optionalString,
+  insuranceType: z.enum(['wire_transfer', 'bank_guarantee', '']).optional(),
   insuranceAmount: optionalNumericString,
+  contractYears: optionalNumericString,
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
+  idImageUrl: z.string().nullable().optional(),
+  fullContractUrl: z.string().nullable().optional(),
 });
 
 export type RenterFormValues = z.infer<typeof renterFormSchema>;

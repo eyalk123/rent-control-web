@@ -186,7 +186,6 @@ type ViewMode = 'card' | 'table';
 
 export function PropertiesListPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');

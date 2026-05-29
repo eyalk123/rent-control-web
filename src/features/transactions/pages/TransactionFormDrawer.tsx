@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { TrendingUp, TrendingDown } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useProperties } from '@/features/properties/queries';
 import { useSuppliers } from '@/features/suppliers/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
+import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { PropertyMultiSelect } from '@/shared/components/form/PropertyMultiSelect';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
@@ -32,6 +33,7 @@ import {
   getRentForMonth,
   YEAR_OPTIONS,
 } from '../utils/periodUtils';
+import { uploadTransactionReceipt } from '../api/transactions';
 import type { Transaction, Renter } from '@/shared/types';
 
 type TxType = 'revenue' | 'expense';
@@ -102,6 +104,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   const [periodValue, setPeriodValue] = useState(() => getCurrentPeriodValue('1month'));
   const [customMonths, setCustomMonths] = useState<Set<string>>(new Set());
   const [gridYear, setGridYear] = useState(() => new Date().getFullYear());
+  const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
   const [allRenters, setAllRenters] = useState<RenterWithProperty[]>([]);
   const [selectedRenterIds, setSelectedRenterIds] = useState<Set<number>>(new Set());
@@ -118,6 +121,22 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
     if (periodType !== 'custom') setPeriodValue(getCurrentPeriodValue(periodType));
   }, [periodType]);
 
+  const ownerOptions = useMemo(() => {
+    const owners = Array.from(new Set(
+      (properties ?? []).map((p) => p.property_owner?.trim()).filter((o): o is string => !!o)
+    )).sort();
+    return [
+      { value: '__all__', label: t('transactions.bulkRevenue.allOwners') },
+      ...owners.map((o) => ({ value: o, label: o })),
+    ];
+  }, [properties, t]);
+
+  const filteredPropertyOptions = useMemo(() => {
+    const all = properties ?? [];
+    const filtered = ownerFilter ? all.filter((p) => p.property_owner === ownerFilter) : all;
+    return filtered.map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
+  }, [properties, ownerFilter]);
+
   useEffect(() => {
     if (selectedPropertyIds.length === 0) { setAllRenters([]); return; }
     const enriched = selectedPropertyIds.flatMap((pid) => {
@@ -126,9 +145,11 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       return (prop?.renters ?? []).map((r) => ({ ...r, propertyId: pid, propertyLabel: label }));
     });
     setAllRenters(enriched);
+    if (!bulkPayment && enriched.length > 0 && enriched[0].payment_type) {
+      setBulkPayment(enriched[0].payment_type);
+    }
   }, [selectedPropertyIds, properties]);
 
-  const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
   const allRenterIds = allRenters.map((r) => r.id);
 
   function toggleRenter(renter: RenterWithProperty) {
@@ -185,7 +206,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
         ? getContractYearMonths(Number(periodValue), renter.lease_start ?? '')
         : periodType === 'custom'
         ? [...customMonths].sort()
-        : getMonthsForPeriod(periodType, periodValue);
+        : getMonthsForPeriod(periodType as '1month', periodValue);
       const overrideAmount = overriddenIds.has(renter.id)
         ? Number(overrideAmounts[renter.id])
         : null;
@@ -249,6 +270,17 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   // ── Bulk create render ─────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
+      {/* Owner filter — only shown when 2+ distinct owners */}
+      {ownerOptions.length > 2 && (
+        <FormSelect
+          label={t('transactions.bulkRevenue.ownerFilter')}
+          value={ownerFilter ?? '__all__'}
+          onValueChange={(v) => { setOwnerFilter(v === '__all__' ? null : v); setSelectedPropertyIds([]); setSelectedRenterIds(new Set()); setOverrideAmounts({}); setOverriddenIds(new Set()); }}
+          options={ownerOptions}
+          placeholder={t('transactions.bulkRevenue.allOwners')}
+        />
+      )}
+
       {/* Period type */}
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.timePeriod')}</label>
@@ -297,7 +329,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       {/* Properties */}
       <PropertyMultiSelect
         label={t('transactions.property')}
-        options={propertyOptions}
+        options={filteredPropertyOptions}
         selectedIds={selectedPropertyIds}
         onChange={(ids) => { setSelectedPropertyIds(ids); setSelectedRenterIds(new Set()); setOverrideAmounts({}); setOverriddenIds(new Set()); }}
         error={propertyError}
@@ -456,6 +488,8 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const qc = useQueryClient();
   const updateExpense = useUpdateExpenseTransaction(transaction?.id ?? 0);
   const { showToast } = useToast();
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(transaction?.receipt_image_url ?? null);
 
   // ── Category multi-select state ────────────────────────────────────────────
   const initialCategoryIds = transaction?.category_ids?.length
@@ -520,6 +554,10 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const onEditSubmit = handleSubmit(async (data) => {
     if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
     try {
+      let receiptUrl = transaction?.receipt_image_url ?? undefined;
+      if (receiptFile && transaction?.id) {
+        receiptUrl = await uploadTransactionReceipt(transaction.id, receiptFile);
+      }
       await updateExpense.mutateAsync({
         renter_id: data.renterId && data.renterId !== '__none__' ? Number(data.renterId) : null,
         amount: Number(data.amount),
@@ -528,6 +566,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         category_ids: selectedCategoryIds,
         supplier_id: data.supplierId ? Number(data.supplierId) : null,
         notes: data.notes || null,
+        receipt_image_url: receiptUrl ?? null,
       });
       showToast(t('transactions.updateSuccess'), 'success');
       onClose();
@@ -552,10 +591,15 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
       category_ids: selectedCategoryIds,
       supplier_id: data.supplierId ? Number(data.supplierId) : null,
       notes: data.notes || undefined,
+      receipt_image_url: receiptFile ? undefined : null,
     }));
 
     try {
       const results = await Promise.allSettled(payloads.map((p) => createExpenseTransaction(p)));
+      if (receiptFile) {
+        const created = results.filter((r): r is PromiseFulfilledResult<Transaction> => r.status === 'fulfilled');
+        await Promise.allSettled(created.map((r) => uploadTransactionReceipt(r.value.id, receiptFile!)));
+      }
       qc.invalidateQueries({ queryKey: transactionKeys.all });
       const failed = results.filter((r) => r.status === 'rejected').length;
       const success = results.length - failed;
@@ -602,6 +646,13 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
           <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
         )} />
         <FormInput label={t('transactions.notes')} {...register('notes')} />
+        <FormFileInput
+          label={t('transactions.receiptImage')}
+          accept="image/*"
+          value={receiptFile}
+          onChange={(f) => { setReceiptFile(f); setReceiptPreview(f ? URL.createObjectURL(f) : transaction?.receipt_image_url ?? null); }}
+          preview={receiptPreview}
+        />
       </form>
     );
   }
@@ -673,6 +724,13 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
+      <FormFileInput
+        label={t('transactions.receiptImage')}
+        accept="image/*"
+        value={receiptFile}
+        onChange={(f) => { setReceiptFile(f); setReceiptPreview(f ? URL.createObjectURL(f) : null); }}
+        preview={receiptPreview}
+      />
     </form>
   );
 }

@@ -112,6 +112,7 @@ export interface Transaction {
   category_ids?: number[];
   supplier_id: number | null;
   notes: string | null;
+  receipt_image_url?: string | null;
   // Denormalized display fields
   property_name: string;
   renter_name: string | null;
@@ -139,6 +140,7 @@ export interface TransactionCreateExpense {
   category_ids: number[];
   supplier_id?: number | null;
   notes?: string;
+  receipt_image_url?: string | null;
 }
 
 export interface ExpenseCategory {

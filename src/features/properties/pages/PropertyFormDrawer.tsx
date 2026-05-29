@@ -3,15 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { propertyFormSchema, PROPERTY_TYPES } from '../validation/propertyValidation';
-import { useCreatePropertyWithImage, useUpdateProperty, useProperty, useProperties } from '../queries';
+import { useCreateProperty, useUpdateProperty, useProperty, useProperties } from '../queries';
+import { useAppAuth } from '@/core/auth/AuthContext';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
+import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
+import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
-import { uploadPropertyImage } from '../api/properties';
+import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 
 type FormData = z.infer<typeof propertyFormSchema>;
@@ -28,7 +31,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
   const { data: existing } = useProperty(propertyId ?? 0);
   const { data: allProperties = [] } = useProperties();
-  const createMutation = useCreatePropertyWithImage();
+  const { user } = useAppAuth();
+  const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty(propertyId ?? 0);
 
   const ownerOptions = useMemo(() =>
@@ -43,14 +47,16 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const [step, setStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [basicContractFile, setBasicContractFile] = useState<File | null>(null);
+  const [landRegistryFile, setLandRegistryFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema),
     defaultValues: { numberOfRooms: '', parkingNumbersStr: '' },
   });
 
   useEffect(() => {
-    if (!open) { setStep(1); setImageFile(null); }
+    if (!open) { setStep(1); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); }
   }, [open]);
 
   useEffect(() => {
@@ -71,8 +77,10 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         electricityAccountNumber: existing.electricity_account_number ?? '',
         waterMeterNumber: existing.water_meter_number ?? '',
         waterAccountNumber: existing.water_account_number ?? '',
-        numberOfRooms: '',
-        parkingNumbersStr: '',
+        numberOfRooms: existing.number_of_rooms?.toString() ?? '',
+        parkingNumbersStr: existing.parking_numbers?.join(', ') ?? '',
+        basicContractUrl: existing.basic_contract_url ?? undefined,
+        landRegistryUrl: existing.land_registry_url ?? undefined,
       });
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
@@ -93,7 +101,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         address: data.address,
         city: data.city,
         zip_code: data.zipCode || '',
-        type: data.type || 'apartment',
+        type: data.type,
         sq_ft: data.sqFt ? Number(data.sqFt) : 0,
         property_owner: data.propertyOwner || undefined,
         inventory_notes: data.inventoryNotes || undefined,
@@ -105,17 +113,33 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         electricity_account_number: data.electricityAccountNumber || undefined,
         water_meter_number: data.waterMeterNumber || undefined,
         water_account_number: data.waterAccountNumber || undefined,
+        number_of_rooms: data.numberOfRooms ? Number(data.numberOfRooms) : undefined,
+        parking_numbers: data.parkingNumbersStr
+          ? data.parkingNumbersStr.split(',').map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        basic_contract_url: data.basicContractUrl || undefined,
+        land_registry_url: data.landRegistryUrl || undefined,
       };
 
       if (isEditing && propertyId) {
         await updateMutation.mutateAsync(payload);
-        if (imageFile) {
-          const fd = new FormData();
-          fd.append('file', imageFile);
-          await uploadPropertyImage(propertyId, fd);
-        }
       } else {
-        await createMutation.mutateAsync({ data: payload, imageFile });
+        await createMutation.mutateAsync(payload);
+      }
+
+      if (user) {
+        if (imageFile) {
+          const url = await uploadToFirebase(imageFile, 'properties', user.uid);
+          await updateMutation.mutateAsync({ image_url: url });
+        }
+        if (basicContractFile) {
+          const url = await uploadToFirebase(basicContractFile, 'properties', user.uid);
+          await updateMutation.mutateAsync({ basic_contract_url: url });
+        }
+        if (landRegistryFile) {
+          const url = await uploadToFirebase(landRegistryFile, 'properties', user.uid);
+          await updateMutation.mutateAsync({ land_registry_url: url });
+        }
       }
 
       showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');
@@ -145,7 +169,10 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         <button
           key="next"
           type="button"
-          onClick={() => setStep(2)}
+          onClick={async () => {
+            const ok = await trigger(['address', 'city', 'type']);
+            if (ok) setStep(2);
+          }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
           style={{ background: 'var(--color-primary)' }}
         >
@@ -206,6 +233,22 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
               )}
             />
             <div className="grid grid-cols-2 gap-3">
+              <FormInput label={t('property.numberOfRooms')} type="number" error={errors.numberOfRooms?.message} {...register('numberOfRooms')} />
+              <Controller
+                control={control}
+                name="parkingNumbersStr"
+                render={({ field }) => (
+                  <FormChipInput
+                    label={t('property.parkingNumbers')}
+                    placeholder={t('property.parkingNumbersPlaceholder')}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    error={errors.parkingNumbersStr?.message}
+                  />
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
               <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
             </div>
@@ -247,6 +290,32 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
             <FormInput label={t('property.electricityAccountNumber')} error={errors.electricityAccountNumber?.message} {...register('electricityAccountNumber')} />
             <FormInput label={t('property.waterMeterNumber')} error={errors.waterMeterNumber?.message} {...register('waterMeterNumber')} />
             <FormInput label={t('property.waterAccountNumber')} error={errors.waterAccountNumber?.message} {...register('waterAccountNumber')} />
+            <Controller
+              control={control}
+              name="basicContractUrl"
+              render={({ field }) => (
+                <FormDocumentInput
+                  label={t('documents.basicContract')}
+                  existingUrl={field.value ?? null}
+                  pendingFile={basicContractFile}
+                  onChange={(f) => { setBasicContractFile(f); if (f) field.onChange(undefined); }}
+                  onRemoveExisting={() => field.onChange(null)}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="landRegistryUrl"
+              render={({ field }) => (
+                <FormDocumentInput
+                  label={t('documents.landRegistry')}
+                  existingUrl={field.value ?? null}
+                  pendingFile={landRegistryFile}
+                  onChange={(f) => { setLandRegistryFile(f); if (f) field.onChange(undefined); }}
+                  onRemoveExisting={() => field.onChange(null)}
+                />
+              )}
+            />
           </>
         )}
       </form>

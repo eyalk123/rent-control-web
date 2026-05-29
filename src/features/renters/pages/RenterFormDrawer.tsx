@@ -9,9 +9,12 @@ import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
+import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
+import { useAppAuth } from '@/core/auth/AuthContext';
+import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof renterFormSchema>;
@@ -29,26 +32,41 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
 
   const { data: existing } = useRenter(renterId ?? 0);
   const { data: properties } = useProperties();
+  const { user } = useAppAuth();
   const createMutation = useCreateRenter();
   const updateMutation = useUpdateRenter(renterId ?? 0);
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
+  const [idImageFile, setIdImageFile] = useState<File | null>(null);
+  const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
   const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [] },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], contractYears: '' },
   });
 
   const leaseStart = watch('leaseStart');
+  const contractYears = watch('contractYears');
   const { fields: leaseYearFields, append: addYear, remove: removeYear } = useFieldArray({ control, name: 'leaseYears' });
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
 
   useEffect(() => {
-    if (!open) setStep(1);
+    const count = Number(contractYears);
+    if (!contractYears || isNaN(count) || count < 1) return;
+    const current = leaseYearFields.length;
+    if (count > current) {
+      for (let i = current; i < count; i++) addYear({ amount: '', type: 'contract' });
+    }
+  }, [contractYears]);
+
+  useEffect(() => {
+    if (!open) { setStep(1); setIdImageFile(null); setFullContractFile(null); }
   }, [open]);
 
   useEffect(() => {
     if (existing && open) {
+      const numPayments = existing.number_of_payments;
+      const paymentFrequency = numPayments === 12 ? 'monthly' : numPayments === 4 ? 'quarterly' : numPayments === 1 ? 'yearly' : undefined;
       reset({
         firstName: existing.first_name,
         lastName: existing.last_name,
@@ -57,24 +75,39 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         propertyId: existing.property_id?.toString() ?? '',
         leaseStart: existing.lease_start ?? '',
         leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
+        contractYears: existing.lease_years.length > 0 ? existing.lease_years.length.toString() : '',
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
         paymentType: existing.payment_type ?? undefined,
+        paymentFrequency,
         extraContacts: existing.extra_contacts ?? [],
-        insuranceType: existing.insurance_type ?? '',
+        insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
+        idImageUrl: existing.id_image_url ?? undefined,
+        fullContractUrl: existing.full_contract_url ?? undefined,
       });
     } else if (!renterId && open) {
       reset({
         leaseStart: '',
         leaseYears: [{ amount: '', type: 'contract' }],
         extraContacts: [],
+        contractYears: '',
         propertyId: initialPropertyId?.toString() ?? '',
       });
     }
   }, [existing, open, renterId, initialPropertyId, reset]);
 
+  const freqToPayments = (freq?: string) => freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : undefined;
+
   const onSubmit = handleSubmit(async (data) => {
     try {
+      let idImageUrl = data.idImageUrl;
+      let fullContractUrl = data.fullContractUrl;
+
+      if (user) {
+        if (idImageFile) idImageUrl = await uploadToFirebase(idImageFile, 'renters', user.uid);
+        if (fullContractFile) fullContractUrl = await uploadToFirebase(fullContractFile, 'renters', user.uid);
+      }
+
       const payload = {
         first_name: data.firstName,
         last_name: data.lastName,
@@ -85,9 +118,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         lease_years: (data.leaseYears ?? []).map((ly: { amount: string; type?: 'option' | 'contract' }) => ({ amount: Number(ly.amount) || 0, type: ly.type ?? 'contract' })),
         payment_day_of_month: data.paymentDayOfMonth ? Number(data.paymentDayOfMonth) : undefined,
         payment_type: data.paymentType || undefined,
+        number_of_payments: freqToPayments(data.paymentFrequency),
         extra_contacts: data.extraContacts ?? [],
         insurance_type: data.insuranceType || undefined,
         insurance_amount: data.insuranceAmount ? Number(data.insuranceAmount) : undefined,
+        id_image_url: idImageUrl || undefined,
+        full_contract_url: fullContractUrl || undefined,
       };
 
       if (isEditing && renterId) {
@@ -95,6 +131,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       } else {
         await createMutation.mutateAsync(payload as never);
       }
+
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
       onClose();
     } catch (err) { console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
@@ -102,6 +139,15 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
   const paymentTypeOptions = ['cash', 'bank_transfer', 'bit', 'check'].map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
+  const paymentFrequencyOptions = [
+    { value: 'monthly', label: t('renter.frequencyMonthly') },
+    { value: 'quarterly', label: t('renter.frequencyQuarterly') },
+    { value: 'yearly', label: t('renter.frequencyYearly') },
+  ];
+  const insuranceTypeOptions = [
+    { value: 'wire_transfer', label: t('renter.insuranceTypeWireTransfer') },
+    { value: 'bank_guarantee', label: t('renter.insuranceTypeBankGuarantee') },
+  ];
 
   const footer = (
     <div className="flex gap-3">
@@ -166,6 +212,20 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
+            <Controller
+              control={control}
+              name="idImageUrl"
+              render={({ field }) => (
+                <FormDocumentInput
+                  label={t('documents.idImage')}
+                  accept="image/*,.pdf"
+                  existingUrl={field.value ?? null}
+                  pendingFile={idImageFile}
+                  onChange={(f) => { setIdImageFile(f); if (f) field.onChange(undefined); }}
+                  onRemoveExisting={() => field.onChange(null)}
+                />
+              )}
+            />
             <div>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.extraContacts')}</p>
               <div className="space-y-2">
@@ -187,6 +247,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="leaseStart" render={({ field }) => (
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
             )} />
+            <FormInput label={t('renter.contractYears')} type="number" error={errors.contractYears?.message} {...register('contractYears')} />
             <div>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.leaseYears')}</p>
               <div className="space-y-2">
@@ -213,10 +274,28 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} />
             )} />
+            <Controller control={control} name="paymentFrequency" render={({ field }) => (
+              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} placeholder={t('renter.selectPaymentFrequency')} />
+            )} />
             <div className="grid grid-cols-2 gap-3">
-              <FormInput label={t('renter.insuranceType')} {...register('insuranceType')} />
+              <Controller control={control} name="insuranceType" render={({ field }) => (
+                <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} />
+              )} />
               <FormInput label={t('renter.insuranceAmount')} type="number" {...register('insuranceAmount')} />
             </div>
+            <Controller
+              control={control}
+              name="fullContractUrl"
+              render={({ field }) => (
+                <FormDocumentInput
+                  label={t('documents.fullContract')}
+                  existingUrl={field.value ?? null}
+                  pendingFile={fullContractFile}
+                  onChange={(f) => { setFullContractFile(f); if (f) field.onChange(undefined); }}
+                  onRemoveExisting={() => field.onChange(null)}
+                />
+              )}
+            />
           </>
         )}
       </form>

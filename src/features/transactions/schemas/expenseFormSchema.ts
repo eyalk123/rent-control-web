@@ -13,6 +13,7 @@ export const expenseFormSchema = z
     categoryId: z.number().nullable(),
     supplierId: z.number().nullable(),
     notes: z.string(),
+    receiptImageUrl: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.categoryId === null) {
