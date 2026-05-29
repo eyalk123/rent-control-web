@@ -19,7 +19,7 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
 
       {preview ? (
         <div className="relative inline-block">
-          <img src={preview} alt="preview" className="h-32 w-full rounded-xl object-cover border border-[var(--color-outline)]" />
+          <img src={preview} alt="preview" className="h-48 w-full rounded-xl object-contain border border-[var(--color-outline)] bg-white" />
           <button
             type="button"
             onClick={() => onChange(null)}

@@ -4,6 +4,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
+import { getLeaseYearLabel } from '@/shared/utils/leaseYear';
 import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -33,11 +34,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
 
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [] },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [] },
   });
 
+  const leaseStart = watch('leaseStart');
   const { fields: leaseYearFields, append: addYear, remove: removeYear } = useFieldArray({ control, name: 'leaseYears' });
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
 
@@ -63,6 +65,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       });
     } else if (!renterId && open) {
       reset({
+        leaseStart: '',
         leaseYears: [{ amount: '', type: 'contract' }],
         extraContacts: [],
         propertyId: initialPropertyId?.toString() ?? '',
@@ -94,7 +97,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       }
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
       onClose();
-    } catch { showToast(t('error.saveFailed'), 'error'); }
+    } catch (err) { console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
   });
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
@@ -112,6 +115,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       </button>
       {step === 1 ? (
         <button
+          key="next"
           type="button"
           onClick={() => setStep(2)}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
@@ -121,6 +125,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         </button>
       ) : (
         <button
+          key="save"
           type="submit"
           form="renter-form"
           disabled={isSubmitting}
@@ -187,6 +192,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
               <div className="space-y-2">
                 {leaseYearFields.map((f, i) => (
                   <div key={f.id} className="flex items-center gap-2">
+                    <span className="text-xs font-medium w-12 text-center shrink-0" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, i)}</span>
                     <FormInput type="number" placeholder={t('renter.amount')} {...register(`leaseYears.${i}.amount`)} className="flex-1" />
                     <Controller control={control} name={`leaseYears.${i}.type`} render={({ field }) => (
                       <FormSelect value={field.value} onValueChange={field.onChange} options={[{ value: 'contract', label: t('renter.contract') }, { value: 'option', label: t('renter.option') }]} />

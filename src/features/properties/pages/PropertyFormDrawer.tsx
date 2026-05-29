@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { propertyFormSchema, PROPERTY_TYPES } from '../validation/propertyValidation';
-import { useCreatePropertyWithImage, useUpdateProperty, useProperty } from '../queries';
+import { useCreatePropertyWithImage, useUpdateProperty, useProperty, useProperties } from '../queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
+import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadPropertyImage } from '../api/properties';
+import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
@@ -25,8 +27,17 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const isEditing = !!propertyId;
 
   const { data: existing } = useProperty(propertyId ?? 0);
+  const { data: allProperties = [] } = useProperties();
   const createMutation = useCreatePropertyWithImage();
   const updateMutation = useUpdateProperty(propertyId ?? 0);
+
+  const ownerOptions = useMemo(() =>
+    Array.from(new Set(
+      allProperties
+        .map((p) => p.property_owner?.trim())
+        .filter((o): o is string => !!o)
+    )).sort(),
+  [allProperties]);
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -35,6 +46,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema),
+    defaultValues: { numberOfRooms: '', parkingNumbersStr: '' },
   });
 
   useEffect(() => {
@@ -59,10 +71,12 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         electricityAccountNumber: existing.electricity_account_number ?? '',
         waterMeterNumber: existing.water_meter_number ?? '',
         waterAccountNumber: existing.water_account_number ?? '',
+        numberOfRooms: '',
+        parkingNumbersStr: '',
       });
-      if (existing.image_url) setImagePreview(existing.image_url);
+      setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
-      reset({});
+      reset({ numberOfRooms: '', parkingNumbersStr: '' });
       setImagePreview(null);
     }
   }, [existing, open, propertyId, reset]);
@@ -70,7 +84,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
     if (file) setImagePreview(URL.createObjectURL(file));
-    else setImagePreview(existing?.image_url ?? null);
+    else setImagePreview(getPropertyImageSrc(existing?.image_url));
   };
 
   const onSubmit = handleSubmit(async (data) => {
@@ -79,7 +93,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         address: data.address,
         city: data.city,
         zip_code: data.zipCode || '',
-        type: data.type ?? 'apartment',
+        type: data.type || 'apartment',
         sq_ft: data.sqFt ? Number(data.sqFt) : 0,
         property_owner: data.propertyOwner || undefined,
         inventory_notes: data.inventoryNotes || undefined,
@@ -106,7 +120,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
       showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');
       onClose();
-    } catch {
+    } catch (err) {
+      console.error('[PropertyFormDrawer] save failed:', err);
       showToast(t('error.saveFailed'), 'error');
     }
   });
@@ -128,6 +143,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       </button>
       {step === 1 ? (
         <button
+          key="next"
           type="button"
           onClick={() => setStep(2)}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
@@ -137,6 +153,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         </button>
       ) : (
         <button
+          key="save"
           type="submit"
           form="property-form"
           disabled={isSubmitting}
@@ -202,7 +219,17 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
           </>
         ) : (
           <>
-            <FormInput label={t('property.owner')} error={errors.propertyOwner?.message} {...register('propertyOwner')} />
+            <FormCreatableSelect
+                control={control}
+                name="propertyOwner"
+                label={t('property.owner')}
+                options={ownerOptions}
+                placeholder={t('property.ownerPlaceholder')}
+                createLabel={t('property.ownerCreate')}
+                createModalTitle={t('property.createOwnerTitle')}
+                createModalPlaceholder={t('property.ownerNamePlaceholder')}
+                error={errors.propertyOwner?.message}
+              />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.inventoryNotes')}</label>
               <textarea
