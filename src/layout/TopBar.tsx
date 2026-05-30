@@ -42,7 +42,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
           className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
           <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />
+          <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />
         </button>
 
       </div>

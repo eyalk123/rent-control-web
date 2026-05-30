@@ -20,6 +20,7 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
         <input
           ref={ref}
           id={inputId}
+          dir={(rest.type === 'number' || rest.type === 'tel') ? 'ltr' : undefined}
           className={`w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-placeholder)] outline-none transition-colors focus:border-[var(--color-primary)] ${
             error
               ? 'border-[var(--color-error)]'

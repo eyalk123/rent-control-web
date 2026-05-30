@@ -478,7 +478,17 @@
     "download": "Download",
     "cardsView": "Cards",
     "tableView": "Table",
-    "perMonth": "/mo"
+    "perMonth": "/mo",
+    "clickToUpload": "Click to upload",
+    "addProperty": "Add property",
+    "addRenter": "Add renter",
+    "addSupplier": "Add supplier",
+    "palette": {
+      "search": "Type a command, page, property or person…",
+      "pagesGroup": "Pages",
+      "actionsGroup": "Actions",
+      "noMatches": "No matches."
+    }
   },
   "validation": {
     "title": "Validation",

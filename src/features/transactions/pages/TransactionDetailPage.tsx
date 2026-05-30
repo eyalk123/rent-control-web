@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
-import { ChevronLeft, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useTransaction, useDeleteTransaction } from '../queries';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -25,6 +26,7 @@ function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; labe
 
 export function TransactionDetailPage() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const txId = Number(id);
@@ -54,7 +56,7 @@ export function TransactionDetailPage() {
       {/* Back + actions */}
       <div className="flex items-center justify-between gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          <ChevronLeft size={14} /> {t('transactions.allTransactions')}
+          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('transactions.allTransactions')}
         </button>
         <div className="flex items-center gap-2">
           <button onClick={() => setEditOpen(true)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>

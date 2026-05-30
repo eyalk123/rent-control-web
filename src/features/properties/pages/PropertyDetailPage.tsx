@@ -6,10 +6,11 @@ import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import {
-  ChevronLeft, Pencil, Plus, MapPin, Car, Zap, Droplets,
+  ChevronLeft, ChevronRight, Pencil, Plus, MapPin, Car, Zap, Droplets,
   Receipt, Users, FileText, Upload, TrendingUp, TrendingDown,
   Paperclip, Download,
 } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useProperty } from '../queries';
 import { useTransactions } from '@/features/transactions/queries';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -75,6 +76,7 @@ function DetailRow({ icon: Icon, label, value, last = false }: { icon: React.Ele
 
 function RenterMiniCard({ renter }: { renter: Renter }) {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
@@ -101,7 +103,7 @@ function RenterMiniCard({ renter }: { renter: Renter }) {
           <LtrSpan>{formatMoney(monthly)}</LtrSpan>/mo{countdownStr ? ` · ${countdownStr}` : ''}
         </p>
       </div>
-      <ChevronLeft size={15} className="rotate-180" style={{ color: 'var(--color-text-secondary)' }} />
+      {isRtl ? <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronLeft size={15} className="rotate-180" style={{ color: 'var(--color-text-secondary)' }} />}
     </button>
   );
 }
@@ -280,6 +282,7 @@ type TabId = 'info' | 'renters' | 'transactions' | 'documents';
 
 export function PropertyDetailPage() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const propertyId = Number(id);
@@ -319,7 +322,7 @@ export function PropertyDetailPage() {
           className="inline-flex items-center gap-1 text-[12px] font-medium mb-3.5"
           style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <ChevronLeft size={14} /> {t('property.allProperties')}
+          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('property.allProperties')}
         </button>
 
         {/* Header row */}

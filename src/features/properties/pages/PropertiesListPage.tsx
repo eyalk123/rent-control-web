@@ -63,7 +63,7 @@ function PropertyCard({ property }: { property: Property }) {
             </svg>
           </div>
         )}
-        <div className="absolute top-2.5 left-3 flex gap-1.5">
+        <div className="absolute top-2.5 start-3 flex gap-1.5">
           <StatusPill hasRenters={!!property.hasRenters} />
           <Pill tone="neutral">{t(`property.type_${property.type}` as never, property.type)}</Pill>
         </div>
@@ -135,7 +135,7 @@ function PropertyTable({ properties }: { properties: Property[] }) {
               t('property.colProperty'), t('property.colType'), t('property.colOwner'),
               t('property.renters'), t('property.rent'), t('property.colStatus'),
             ].map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <th key={h} className="px-4 py-3 text-start text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 {h}
               </th>
             ))}

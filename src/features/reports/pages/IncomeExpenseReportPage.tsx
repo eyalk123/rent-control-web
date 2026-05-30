@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
 import { downloadIncomeExpenseReport, type ReportFormat } from '../api/reports';
 import { getTransactions } from '@/features/transactions/api/transactions';
@@ -32,6 +33,7 @@ function useAllTransactionsForYear(year: number) {
 
 export function IncomeExpenseReportPage() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentYear = new Date().getFullYear();
@@ -84,7 +86,7 @@ export function IncomeExpenseReportPage() {
             className="inline-flex items-center gap-1 text-[12px] font-medium mb-1.5"
             style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <ChevronLeft size={14} /> {t('screens.reports')}
+            {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('screens.reports')}
           </button>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('reports.incomeExpense')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.calendarYear', { year: selectedYear })}</p>
@@ -118,7 +120,7 @@ export function IncomeExpenseReportPage() {
           options={years.slice(0, 3).map((y) => ({ value: String(y), label: String(y) }))}
           size="sm"
         />
-        <div className="ml-auto flex gap-6">
+        <div className="ms-auto flex gap-6">
           {[
             { label: t('reports.revenue'), value: grand.rev, color: 'var(--color-rev-fg)' },
             { label: t('reports.expenses'), value: grand.exp, color: 'var(--color-exp-fg)' },
@@ -140,8 +142,8 @@ export function IncomeExpenseReportPage() {
               {/* Header row */}
               <div className="flex items-center px-4 py-3 gap-1 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
                 <div className="flex-[2.4] min-w-0">{t('reports.property')}</div>
-                {monthsLocale.map((m) => <div key={m} className="w-12 text-right" style={{ color: 'rgba(255,255,255,0.7)' }}>{m}</div>)}
-                <div className="w-20 text-right">{t('reports.total')}</div>
+                {monthsLocale.map((m) => <div key={m} className="w-12 text-end" style={{ color: 'rgba(255,255,255,0.7)' }}>{m}</div>)}
+                <div className="w-20 text-end">{t('reports.total')}</div>
               </div>
 
               {/* Revenue group */}
@@ -156,11 +158,11 @@ export function IncomeExpenseReportPage() {
                     </div>
                   </div>
                   {r.monthly.map((m, idx) => (
-                    <div key={idx} className="w-12 text-right text-[11.5px] font-medium" style={{ color: m.rev ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                    <div key={idx} className="w-12 text-end text-[11.5px] font-medium" style={{ color: m.rev ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                       {formatK(m.rev)}
                     </div>
                   ))}
-                  <div className="w-20 text-right text-[13px] font-bold" style={{ color: 'var(--color-rev-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalRev > 0 ? formatMoney(r.totalRev) : '—'}</div>
+                  <div className="w-20 text-end text-[13px] font-bold" style={{ color: 'var(--color-rev-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalRev > 0 ? formatMoney(r.totalRev) : '—'}</div>
                 </div>
               ))}
 
@@ -176,11 +178,11 @@ export function IncomeExpenseReportPage() {
                     </div>
                   </div>
                   {r.monthly.map((m, idx) => (
-                    <div key={idx} className="w-12 text-right text-[11.5px] font-medium" style={{ color: m.exp ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                    <div key={idx} className="w-12 text-end text-[11.5px] font-medium" style={{ color: m.exp ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                       {formatK(m.exp)}
                     </div>
                   ))}
-                  <div className="w-20 text-right text-[13px] font-bold" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalExp > 0 ? formatMoney(r.totalExp) : '—'}</div>
+                  <div className="w-20 text-end text-[13px] font-bold" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalExp > 0 ? formatMoney(r.totalExp) : '—'}</div>
                 </div>
               ))}
 
@@ -190,12 +192,12 @@ export function IncomeExpenseReportPage() {
                 {monthsLocale.map((_, idx) => {
                   const net = rows.reduce((s, r) => s + r.monthly[idx].rev - r.monthly[idx].exp, 0);
                   return (
-                    <div key={idx} className="w-12 text-right text-[11.5px] font-bold" style={{ color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
+                    <div key={idx} className="w-12 text-end text-[11.5px] font-bold" style={{ color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
                       {net === 0 ? '—' : formatK(net)}
                     </div>
                   );
                 })}
-                <div className="w-20 text-right text-[14px] font-bold" style={{ color: grand.rev - grand.exp >= 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
+                <div className="w-20 text-end text-[14px] font-bold" style={{ color: grand.rev - grand.exp >= 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(grand.rev - grand.exp)}
                 </div>
               </div>

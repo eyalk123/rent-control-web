@@ -155,7 +155,7 @@ export function SignInPage() {
       {/* Right — auth form (rtl:order-first keeps it on the right in Hebrew) */}
       <div
         className="flex items-center justify-center shrink-0 w-full md:w-[480px] p-10 rtl:order-first"
-        style={{ background: 'var(--color-surface)', borderLeft: '1px solid var(--color-outline)' }}
+        style={{ background: 'var(--color-surface)', borderInlineStart: '1px solid var(--color-outline)' }}
       >
         <div className="w-full max-w-[340px]">
           {/* Mobile logo */}

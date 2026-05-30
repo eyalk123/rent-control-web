@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, Users, Wallet, BarChart2, Store, Settings,
-  Plus, TrendingUp, TrendingDown, Search, ArrowRight, FileText,
+  Plus, TrendingUp, TrendingDown, Search, ArrowRight, ArrowLeft, FileText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface PaletteItem {
   group: string;
@@ -21,14 +23,21 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
-const GROUP_ORDER = ['Pages', 'Actions', 'Properties', 'Renters'];
-
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const { data: properties = [] } = useProperties();
   const { data: renters = [] } = useRenters();
+
+  const pagesGroup = t('common.palette.pagesGroup');
+  const actionsGroup = t('common.palette.actionsGroup');
+  const propertiesGroup = t('tabs.properties');
+  const rentersGroup = t('tabs.renters');
+
+  const GROUP_ORDER = [pagesGroup, actionsGroup, propertiesGroup, rentersGroup];
 
   useEffect(() => {
     if (open) {
@@ -49,23 +58,23 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const go = (path: string) => { navigate(path); onClose(); };
 
   const allItems: PaletteItem[] = [
-    { group: 'Pages', label: 'Home',         icon: LayoutDashboard, action: () => go('/home') },
-    { group: 'Pages', label: 'Properties',   icon: Building2,       action: () => go('/properties') },
-    { group: 'Pages', label: 'Renters',      icon: Users,           action: () => go('/renters') },
-    { group: 'Pages', label: 'Transactions', icon: Wallet,          action: () => go('/transactions') },
-    { group: 'Pages', label: 'Suppliers',    icon: Store,           action: () => go('/suppliers') },
-    { group: 'Pages', label: 'Reports',      icon: BarChart2,       action: () => go('/reports') },
-    { group: 'Pages', label: 'Settings',     icon: Settings,        action: () => go('/settings') },
+    { group: pagesGroup, label: t('tabs.home'),         icon: LayoutDashboard, action: () => go('/home') },
+    { group: pagesGroup, label: t('tabs.properties'),   icon: Building2,       action: () => go('/properties') },
+    { group: pagesGroup, label: t('tabs.renters'),      icon: Users,           action: () => go('/renters') },
+    { group: pagesGroup, label: t('tabs.transactions'), icon: Wallet,          action: () => go('/transactions') },
+    { group: pagesGroup, label: t('tabs.suppliers'),    icon: Store,           action: () => go('/suppliers') },
+    { group: pagesGroup, label: t('tabs.reports'),      icon: BarChart2,       action: () => go('/reports') },
+    { group: pagesGroup, label: t('tabs.settings'),     icon: Settings,        action: () => go('/settings') },
 
-    { group: 'Actions', label: 'Add property',   icon: Plus,        action: () => go('/properties') },
-    { group: 'Actions', label: 'Add renter',     icon: Plus,        action: () => go('/renters') },
-    { group: 'Actions', label: 'Record revenue', icon: TrendingUp,  action: () => go('/transactions') },
-    { group: 'Actions', label: 'Record expense', icon: TrendingDown,action: () => go('/transactions') },
-    { group: 'Actions', label: 'Add supplier',   icon: Store,       action: () => go('/suppliers') },
-    { group: 'Actions', label: 'Generate report',icon: FileText,    action: () => go('/reports') },
+    { group: actionsGroup, label: t('common.addProperty'),      icon: Plus,        action: () => go('/properties') },
+    { group: actionsGroup, label: t('common.addRenter'),        icon: Plus,        action: () => go('/renters') },
+    { group: actionsGroup, label: t('home.recordRevenue'),      icon: TrendingUp,  action: () => go('/transactions') },
+    { group: actionsGroup, label: t('home.recordExpense'),      icon: TrendingDown,action: () => go('/transactions') },
+    { group: actionsGroup, label: t('common.addSupplier'),      icon: Store,       action: () => go('/suppliers') },
+    { group: actionsGroup, label: t('home.reportGenerateNew'),  icon: FileText,    action: () => go('/reports') },
 
     ...properties.map((p) => ({
-      group: 'Properties',
+      group: propertiesGroup,
       label: p.address,
       sub: p.city,
       icon: Building2 as LucideIcon,
@@ -73,7 +82,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     })),
 
     ...renters.map((r) => ({
-      group: 'Renters',
+      group: rentersGroup,
       label: `${r.first_name} ${r.last_name}`,
       sub: r.property?.address,
       icon: Users as LucideIcon,
@@ -105,7 +114,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command, page, property or person…"
+            placeholder={t('common.palette.search')}
             className="flex-1 border-0 outline-none text-sm text-[var(--color-text-primary)] bg-transparent placeholder:text-[var(--color-placeholder)]"
           />
           <span className="text-[10px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-outline)] rounded px-1.5 py-px">esc</span>
@@ -130,7 +139,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     <item.icon size={16} className="text-[var(--color-text-secondary)] shrink-0" />
                     <span className="flex-1 text-[13.5px] font-medium text-[var(--color-text-primary)]">{item.label}</span>
                     {item.sub && <span className="text-xs text-[var(--color-text-secondary)]">{item.sub}</span>}
-                    <ArrowRight size={13} className="text-[var(--color-placeholder)] shrink-0" />
+                    {isRtl
+                      ? <ArrowLeft size={13} className="text-[var(--color-placeholder)] shrink-0" />
+                      : <ArrowRight size={13} className="text-[var(--color-placeholder)] shrink-0" />
+                    }
                   </button>
                 ))}
               </div>
@@ -139,7 +151,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
           {filtered.length === 0 && (
             <div className="px-4 py-6 text-center text-sm text-[var(--color-text-secondary)]">
-              No matches.
+              {t('common.palette.noMatches')}
             </div>
           )}
         </div>

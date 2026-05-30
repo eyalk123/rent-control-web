@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
 import { downloadExpenseLogReport, type ReportFormat } from '../api/reports';
 import { getTransactions } from '@/features/transactions/api/transactions';
@@ -32,6 +33,7 @@ function fmtDate(s: string): string {
 
 export function ExpenseLogReportPage() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentYear = new Date().getFullYear();
@@ -73,7 +75,7 @@ export function ExpenseLogReportPage() {
             className="inline-flex items-center gap-1 text-[12px] font-medium mb-1.5"
             style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <ChevronLeft size={14} /> {t('screens.reports')}
+            {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('screens.reports')}
           </button>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('reports.expenseLog')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -118,7 +120,7 @@ export function ExpenseLogReportPage() {
         ) : expenses.length === 0 ? (
           <EmptyState icon={undefined} title={t('reports.noExpenses')} description={t('reports.noExpensesForYear', { year: selectedYear })} />
         ) : (
-          <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 320px', alignItems: 'start' }}>
+          <div className="grid gap-5" style={{ gridTemplateColumns: isRtl ? '320px 1fr' : '1fr 320px', alignItems: 'start' }}>
             {/* Main table */}
             <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header */}
@@ -126,7 +128,7 @@ export function ExpenseLogReportPage() {
                 <div className="w-[90px]">{t('reports.date')}</div>
                 <div className="flex-[1.5]">{t('reports.supplierCategory')}</div>
                 <div className="flex-1">{t('reports.property')}</div>
-                <div className="w-[90px] text-right">{t('reports.amount')}</div>
+                <div className="w-[90px] text-end">{t('reports.amount')}</div>
               </div>
 
               {categories.map(([catName, txs]) => {
@@ -175,7 +177,7 @@ export function ExpenseLogReportPage() {
                       <div key={catName}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[12px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{catName}</span>
-                          <span className="text-[11.5px] font-semibold ml-2 shrink-0" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{pct.toFixed(0)}%</span>
+                          <span className="text-[11.5px] font-semibold ms-2 shrink-0" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{pct.toFixed(0)}%</span>
                         </div>
                         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-outline)' }}>
                           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--color-exp-fg)' }} />

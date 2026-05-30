@@ -478,7 +478,17 @@
     "download": "הורד",
     "cardsView": "כרטיסיות",
     "tableView": "טבלה",
-    "perMonth": "/חודש"
+    "perMonth": "/חודש",
+    "clickToUpload": "לחץ להעלאה",
+    "addProperty": "הוסף נכס",
+    "addRenter": "הוסף דייר",
+    "addSupplier": "הוסף ספק",
+    "palette": {
+      "search": "חפש פקודה, עמוד, נכס או אדם...",
+      "pagesGroup": "עמודים",
+      "actionsGroup": "פעולות",
+      "noMatches": "לא נמצאו תוצאות."
+    }
   },
   "validation": {
     "title": "אימות",

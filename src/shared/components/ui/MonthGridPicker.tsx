@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface Props {
   selectedMonths: Set<string>;
@@ -10,6 +11,7 @@ interface Props {
 
 export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYearChange }: Props) {
   const { t, i18n } = useTranslation();
+  const { isRtl } = useLanguage();
   const monthNames = Array.from({ length: 12 }, (_, i) =>
     new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(2000, i, 1))
   );
@@ -23,7 +25,7 @@ export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYear
           onClick={() => onGridYearChange(gridYear - 1)}
           className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors"
         >
-          <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} />
+          {isRtl ? <ChevronRight size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} />}
         </button>
         <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{gridYear}</span>
         <button
@@ -31,7 +33,7 @@ export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYear
           onClick={() => onGridYearChange(gridYear + 1)}
           className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors"
         >
-          <ChevronRight size={15} style={{ color: 'var(--color-text-secondary)' }} />
+          {isRtl ? <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronRight size={15} style={{ color: 'var(--color-text-secondary)' }} />}
         </button>
       </div>
 

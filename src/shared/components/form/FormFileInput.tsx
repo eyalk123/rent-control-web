@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   label?: string;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function FormFileInput({ label, error, accept, value, onChange, preview }: Props) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLInputElement>(null);
 
   return (
@@ -38,7 +40,7 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
         >
           <Upload size={20} className="text-[var(--color-text-secondary)]" />
           <span className="text-sm text-[var(--color-text-secondary)]">
-            {value ? value.name : 'Click to upload'}
+            {value ? value.name : t('common.clickToUpload')}
           </span>
         </button>
       )}

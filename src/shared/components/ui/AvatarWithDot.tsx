@@ -33,7 +33,7 @@ export function AvatarWithDot({ name, id, size = 48, status = 'none' }: AvatarWi
       </div>
       {status !== 'none' && (
         <span
-          className="absolute bottom-0 right-0 rounded-full border-2 border-[var(--color-surface)]"
+          className="absolute bottom-0 end-0 rounded-full border-2 border-[var(--color-surface)]"
           style={{ width: dotSize, height: dotSize, background: dotColors[status] }}
         />
       )}

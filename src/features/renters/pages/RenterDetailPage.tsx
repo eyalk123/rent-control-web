@@ -4,7 +4,8 @@ import { RenterFormDrawer } from './RenterFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
-import { ChevronLeft, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useRenter } from '../queries';
 import { useProperty } from '@/features/properties/queries';
 import { useTransactions } from '@/features/transactions/queries';
@@ -110,10 +111,10 @@ function LeaseTimeline({ renter }: { renter: Renter }) {
               <div
                 key={i}
                 className="flex-1 relative px-2.5 py-3"
-                style={{ background: bgColor, borderRight: i === years.length - 1 ? 'none' : '1px solid var(--color-outline)' }}
+                style={{ background: bgColor, borderInlineEnd: i === years.length - 1 ? 'none' : '1px solid var(--color-outline)' }}
               >
                 {isCurrent && (
-                  <span className="absolute top-1.5 right-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
+                  <span className="absolute top-1.5 end-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
                 )}
                 <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, i)}</p>
                 <LtrSpan className="text-[16px] font-bold mt-1 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(y.amount)}</LtrSpan>
@@ -298,6 +299,7 @@ type TabId = 'info' | 'property' | 'transactions';
 
 export function RenterDetailPage() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const renterId = Number(id);
@@ -347,7 +349,7 @@ export function RenterDetailPage() {
           className="inline-flex items-center gap-1 text-[12px] font-medium mb-3.5"
           style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <ChevronLeft size={14} /> {t('renter.allRenters')}
+          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('renter.allRenters')}
         </button>
 
         {/* Header row */}

@@ -75,7 +75,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
               })
             )}
           </div>
-          <ChevronDown size={16} className="shrink-0 ml-2 text-[var(--color-text-secondary)]" style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }} />
+          <ChevronDown size={16} className="shrink-0 ms-2 text-[var(--color-text-secondary)]" style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }} />
         </button>
 
         {open && (

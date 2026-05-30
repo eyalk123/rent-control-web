@@ -57,7 +57,7 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
           </div>
           {/* status dot */}
           <span
-            className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2"
+            className="absolute bottom-0 end-0 h-3.5 w-3.5 rounded-full border-2"
             style={{
               background: status === 'overdue' ? 'var(--color-error)' : status === 'expiring' ? 'var(--color-warning)' : 'var(--color-success)',
               borderColor: 'var(--color-surface)',
@@ -125,7 +125,7 @@ function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map
               t('renter.colRenter'), t('property.colProperty'), t('renter.colPhone'),
               t('property.rent'), t('renter.leaseEnds'), t('property.colStatus'),
             ].map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <th key={h} className="px-4 py-3 text-start text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 {h}
               </th>
             ))}
@@ -262,7 +262,7 @@ export function RentersListPage() {
           <button
             key={key}
             onClick={() => setStatusFilter(key)}
-            className="inline-flex items-center gap-1.5 px-1 py-2.5 mr-4 text-[13px] transition-colors"
+            className="inline-flex items-center gap-1.5 px-1 py-2.5 me-4 text-[13px] transition-colors"
             style={{
               background: 'transparent',
               border: 'none',
