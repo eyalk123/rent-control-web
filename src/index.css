@@ -163,6 +163,11 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-outline); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { filter: brightness(0.85); }
 
+/* ── Pointer cursor on interactive elements ──────────────────────── */
+button, a, [role="button"], [role="link"], [role="tab"],
+[role="menuitem"], [role="option"], label[for],
+summary { cursor: pointer; }
+
 /* ── Focus rings ─────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 button:focus:not(:focus-visible) { outline: none; }
