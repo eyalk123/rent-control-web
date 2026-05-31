@@ -5,9 +5,8 @@ import {
   createProperty,
   updateProperty,
   deleteProperty,
-  uploadPropertyImage,
 } from './api/properties';
-import type { PropertyCreate, PropertyUpdate } from '@/shared/types';
+import type { PropertyUpdate } from '@/shared/types';
 
 export const propertyKeys = {
   all: ['properties'] as const,
@@ -49,34 +48,6 @@ export function useDeleteProperty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteProperty,
-    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
-  });
-}
-
-export function useUploadPropertyImage(id: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (formData: FormData) => uploadPropertyImage(id, formData),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: propertyKeys.all });
-      qc.invalidateQueries({ queryKey: propertyKeys.detail(id) });
-    },
-  });
-}
-
-// For use in create – we don't have an id yet, so we pass create + image together
-export function useCreatePropertyWithImage() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ data, imageFile }: { data: PropertyCreate; imageFile?: File | null }) => {
-      const property = await createProperty(data);
-      if (imageFile) {
-        const fd = new FormData();
-        fd.append('file', imageFile);
-        await uploadPropertyImage(property.id, fd);
-      }
-      return property;
-    },
     onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
   });
 }

@@ -400,13 +400,6 @@ export const mockPropertiesApi = {
       r.property_id === id ? { ...r, property_id: null, property: null } : r
     );
   },
-  uploadPropertyImage: async (id: number, _formData: FormData): Promise<Property> => {
-    // FormData should have 'file' field per API spec
-    const idx = mockProperties.findIndex((x) => x.id === id);
-    if (idx < 0) throw new Error('Property not found');
-    mockProperties[idx] = { ...mockProperties[idx], image_url: 'https://placehold.co/400x300' };
-    return { ...mockProperties[idx] };
-  },
 };
 
 export const mockRentersApi = {

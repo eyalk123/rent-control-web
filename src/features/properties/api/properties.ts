@@ -112,15 +112,3 @@ export async function deleteProperty(id: number): Promise<void> {
   if (USE_MOCK_API) return mockPropertiesApi.deleteProperty(id);
   await apiClient.delete(`/properties/${id}`);
 }
-
-export async function uploadPropertyImage(
-  id: number,
-  formData: FormData
-): Promise<Property> {
-  if (USE_MOCK_API) return mockPropertiesApi.uploadPropertyImage(id, formData);
-  const response = await apiClient.post<Property>(
-    `/properties/${id}/image`,
-    formData
-  );
-  return response.data;
-}
