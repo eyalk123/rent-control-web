@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -8,6 +9,7 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
 
 export const FormDateInput = forwardRef<HTMLInputElement, Props>(
   ({ label, error, className = '', id, ...rest }, ref) => {
+    const { t } = useTranslation();
     const inputId = id ?? `fd-${label?.replace(/\s+/g, '-').toLowerCase()}`;
     return (
       <div className="flex flex-col gap-1.5">
@@ -25,7 +27,7 @@ export const FormDateInput = forwardRef<HTMLInputElement, Props>(
           } ${className}`}
           {...rest}
         />
-        {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+        {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
       </div>
     );
   },

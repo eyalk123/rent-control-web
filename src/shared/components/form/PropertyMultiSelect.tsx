@@ -114,7 +114,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
           </div>
         )}
       </div>
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
     </div>
   );
 }

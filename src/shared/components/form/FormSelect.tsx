@@ -1,5 +1,6 @@
 import * as Select from '@radix-ui/react-select';
 import { ChevronDown, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface SelectOption<T extends string = string> {
   label: string;
@@ -19,6 +20,7 @@ interface Props<T extends string> {
 export function FormSelect<T extends string>({
   label, error, value, onValueChange, options, placeholder, disabled,
 }: Props<T>) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>}
@@ -48,7 +50,7 @@ export function FormSelect<T extends string>({
           </Select.Content>
         </Select.Portal>
       </Select.Root>
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   label?: string;
@@ -14,6 +15,7 @@ function parseChips(value: string): string[] {
 }
 
 export function FormChipInput({ label, error, placeholder, value, onChange }: Props) {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -99,7 +101,7 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
           className="flex-1 min-w-[80px] bg-transparent outline-none focus-visible:outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]"
         />
       </div>
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
     </div>
   );
 }

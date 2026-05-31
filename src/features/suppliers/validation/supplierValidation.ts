@@ -25,7 +25,7 @@ export const supplierFormSchema = z.object({
   notes: optionalString,
   categoryIds: z
     .array(z.number())
-    .min(1, { message: 'At least one category is required' }),
+    .min(1, { message: 'common.required' }),
   bankAccount: bankAccountSchema,
 });
 

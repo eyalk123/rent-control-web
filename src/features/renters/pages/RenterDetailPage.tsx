@@ -4,7 +4,7 @@ import { RenterFormDrawer } from './RenterFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
-import { ChevronLeft, ChevronRight, Pencil, Plus, Phone, Mail, MessageSquare, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Phone, Mail, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useRenter } from '../queries';
 import { useProperty } from '@/features/properties/queries';
@@ -381,12 +381,6 @@ export function RenterDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 shrink-0">
-            <a href={`tel:${renter.phone}`} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-              <Phone size={14} /> {t('common.call', 'Call')}
-            </a>
-            <a href={`sms:${renter.phone}`} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-              <MessageSquare size={14} /> {t('renter.sms')}
-            </a>
             <button
               onClick={() => setEditDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"

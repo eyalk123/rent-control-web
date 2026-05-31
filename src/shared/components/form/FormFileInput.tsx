@@ -55,7 +55,7 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
           onChange(file);
         }}
       />
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
     </div>
   );
 }

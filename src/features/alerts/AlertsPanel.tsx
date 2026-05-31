@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { formatMoney } from '@/shared/utils/money';
-import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
+import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { formatMoney } from '@/shared/utils/money';
 import { createRevenueTransaction } from '@/features/transactions/api/transactions';
-import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
+import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
+import { useAlertsPanel } from './AlertsPanelContext';
+import type { OverdueRenter } from '@/features/home/api/homeApi';
 import type { PaymentMethod } from '@/shared/types';
-import type { OverdueRenter, ExpiringRenter } from '../api/homeApi';
 
-interface Props {
-  overdueRenters: OverdueRenter[];
-  expiringRenters: ExpiringRenter[];
+const SEEN_KEY = 'alerts_seen_ids';
+
+function getSeenIds(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function markSeen(id: string) {
+  const seen = getSeenIds();
+  seen.add(id);
+  localStorage.setItem(SEEN_KEY, JSON.stringify([...seen]));
 }
 
 function mapPaymentType(type?: string | null): PaymentMethod {
@@ -22,21 +35,37 @@ function mapPaymentType(type?: string | null): PaymentMethod {
   return 'cash';
 }
 
-export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props) {
+export function AlertsPanel() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { openPanel } = useAlertsPanel();
+  const { isOpen, closePanel, setHasAlerts } = useAlertsPanel();
+
+  const { data: overdueRenters = [] } = useOverdueRenters();
+  const { data: expiringRenters = [] } = useExpiringRenters(60);
+
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [seenIds, setSeenIds] = useState<Set<string>>(getSeenIds);
+
+  useEffect(() => {
+    setHasAlerts(overdueRenters.length > 0 || expiringRenters.length > 0);
+  }, [overdueRenters, expiringRenters, setHasAlerts]);
 
   function dismiss(key: string) {
-    setDismissed((prev) => new Set(prev).add(key));
+    setDismissed(prev => new Set(prev).add(key));
+  }
+
+  function handleNavigate(renterId: number, key: string) {
+    markSeen(key);
+    setSeenIds(getSeenIds());
+    navigate(`/renters/${renterId}`);
+    closePanel();
   }
 
   async function handleMarkPaid(r: OverdueRenter) {
     if (!r.property_id) return;
-    const key = `o-${r.renter_id}`;
+    const key = `o_${r.renter_id}`;
     setSavingId(key);
     try {
       await createRevenueTransaction({
@@ -55,15 +84,12 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
     }
   }
 
-  const visibleOverdue = overdueRenters.filter((r) => !dismissed.has(`o-${r.renter_id}`));
-  const visibleExpiring = expiringRenters.filter((r) => !dismissed.has(`e-${r.renter_id}`));
+  const visibleOverdue = overdueRenters.filter(r => !dismissed.has(`o_${r.renter_id}`));
+  const visibleExpiring = expiringRenters.filter(r => !dismissed.has(`e_${r.renter_id}`));
 
   return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-        {t('home.needsAttention')}
-      </p>
-      <div className="space-y-3">
+    <Drawer open={isOpen} onClose={closePanel} title={t('common.notifications')} width={420}>
+      <div className="space-y-4">
         {visibleOverdue.length > 0 && (
           <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-exp-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
             <div className="flex items-center gap-2 mb-3">
@@ -73,13 +99,14 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
               </span>
             </div>
             <div className="space-y-2">
-              {visibleOverdue.slice(0, 3).map((r) => {
-                const key = `o-${r.renter_id}`;
+              {visibleOverdue.map(r => {
+                const key = `o_${r.renter_id}`;
                 const saving = savingId === key;
+                const seen = seenIds.has(key);
                 return (
-                  <div key={r.renter_id} className="flex items-center gap-2">
+                  <div key={r.renter_id} className={`flex items-center gap-2 transition-opacity ${seen ? 'opacity-50' : ''}`}>
                     <button
-                      onClick={() => navigate(`/renters/${r.renter_id}`)}
+                      onClick={() => handleNavigate(r.renter_id, key)}
                       className="flex-1 flex items-center justify-between text-start hover:opacity-80 transition-opacity min-w-0"
                     >
                       <div className="min-w-0">
@@ -114,15 +141,6 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
                 );
               })}
             </div>
-            {visibleOverdue.length > 3 && (
-              <button
-                onClick={openPanel}
-                className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--color-exp-fg)' }}
-              >
-                {t('home.seeAll')} ({visibleOverdue.length - 3} {t('home.more')})
-              </button>
-            )}
           </div>
         )}
 
@@ -135,12 +153,13 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
               </span>
             </div>
             <div className="space-y-2">
-              {visibleExpiring.slice(0, 3).map((r) => {
-                const key = `e-${r.renter_id}`;
+              {visibleExpiring.map(r => {
+                const key = `e_${r.renter_id}`;
+                const seen = seenIds.has(key);
                 return (
-                  <div key={r.renter_id} className="flex items-center gap-2">
+                  <div key={r.renter_id} className={`flex items-center gap-2 transition-opacity ${seen ? 'opacity-50' : ''}`}>
                     <button
-                      onClick={() => navigate(`/renters/${r.renter_id}`)}
+                      onClick={() => handleNavigate(r.renter_id, key)}
                       className="flex-1 flex items-center justify-between text-start hover:opacity-80 min-w-0"
                     >
                       <div className="min-w-0">
@@ -159,7 +178,7 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
                         {t('home.actionIgnore')}
                       </button>
                       <button
-                        onClick={() => navigate(`/renters/${r.renter_id}`)}
+                        onClick={() => handleNavigate(r.renter_id, key)}
                         className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
                         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-warning)', color: 'var(--color-warning)' }}
                       >
@@ -170,15 +189,6 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
                 );
               })}
             </div>
-            {visibleExpiring.length > 3 && (
-              <button
-                onClick={openPanel}
-                className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--color-warning)' }}
-              >
-                {t('home.seeAll')} ({visibleExpiring.length - 3} {t('home.more')})
-              </button>
-            )}
           </div>
         )}
 
@@ -188,6 +198,6 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
           </div>
         )}
       </div>
-    </div>
+    </Drawer>
   );
 }

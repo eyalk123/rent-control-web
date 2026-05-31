@@ -116,6 +116,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [propertyError, setPropertyError] = useState('');
   const [renterError, setRenterError] = useState('');
+  const [bulkDateError, setBulkDateError] = useState('');
 
   useEffect(() => {
     if (periodType !== 'custom') setPeriodValue(getCurrentPeriodValue(periodType));
@@ -194,10 +195,11 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   async function handleBulkSubmit() {
     setPropertyError('');
     setRenterError('');
+    setBulkDateError('');
     if (selectedPropertyIds.length === 0) { setPropertyError(t('transactions.selectProperties')); return; }
     if (selectedRenterIds.size === 0) { setRenterError(t('transactions.bulkRevenue.noSelectionError')); return; }
     if (periodType === 'custom' && customMonths.size === 0) { setRenterError(t('transactions.bulkRevenue.noMonthsError')); return; }
-    if (!bulkDate) return;
+    if (!bulkDate) { setBulkDateError(t('common.required')); return; }
 
     const checkedRenters = allRenters.filter((r) => selectedRenterIds.has(r.id));
 
@@ -252,11 +254,11 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
         <Controller control={control} name="renterId" render={({ field }) => (
           <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...renterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
-        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: true })} />
-        <Controller control={control} name="monthFor" rules={{ required: true }} render={({ field }) => (
+        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
+        <Controller control={control} name="monthFor" rules={{ required: t('common.required') }} render={({ field }) => (
           <WheelDatePicker mode="month" label={t('transactions.monthFor')} value={field.value} onChange={field.onChange} error={errors.monthFor?.message} />
         )} />
-        <Controller control={control} name="dateOfPayment" rules={{ required: true }} render={({ field }) => (
+        <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
           <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
         <Controller control={control} name="paymentMethod" render={({ field }) => (
@@ -341,7 +343,8 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
         mode="date"
         label={t('transactions.date')}
         value={bulkDate}
-        onChange={(v) => setBulkDate(v as string)}
+        onChange={(v) => { setBulkDate(v as string); setBulkDateError(''); }}
+        error={bulkDateError}
       />
       <FormSelect
         label={t('transactions.paymentMethod')}
@@ -626,8 +629,8 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         <Controller control={control} name="renterId" render={({ field }) => (
           <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...editRenterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
-        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: true })} />
-        <Controller control={control} name="dateOfPayment" rules={{ required: true }} render={({ field }) => (
+        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
+        <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
           <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
         <CategoryMultiSelect
@@ -680,7 +683,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
           type="number"
           step="0.01"
           error={errors.amount?.message}
-          {...register('amount', { required: true })}
+          {...register('amount', { required: t('common.required') })}
         />
         {showSplit && (
           <p className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
@@ -705,7 +708,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         )}
       </div>
 
-      <Controller control={control} name="dateOfPayment" rules={{ required: true }} render={({ field }) => (
+      <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
         <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
       )} />
       <CategoryMultiSelect

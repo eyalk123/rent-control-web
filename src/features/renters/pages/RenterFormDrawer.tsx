@@ -42,22 +42,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
 
   const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], contractYears: '' },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [] },
   });
 
   const leaseStart = watch('leaseStart');
-  const contractYears = watch('contractYears');
   const { fields: leaseYearFields, append: addYear, remove: removeYear } = useFieldArray({ control, name: 'leaseYears' });
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
-
-  useEffect(() => {
-    const count = Number(contractYears);
-    if (!contractYears || isNaN(count) || count < 1) return;
-    const current = leaseYearFields.length;
-    if (count > current) {
-      for (let i = current; i < count; i++) addYear({ amount: '', type: 'contract' });
-    }
-  }, [contractYears]);
 
   useEffect(() => {
     if (!open) { setStep(1); setIdImageFile(null); setFullContractFile(null); }
@@ -75,7 +65,6 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         propertyId: existing.property_id?.toString() ?? '',
         leaseStart: existing.lease_start ?? '',
         leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
-        contractYears: existing.lease_years.length > 0 ? existing.lease_years.length.toString() : '',
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
         paymentType: existing.payment_type ?? undefined,
         paymentFrequency,
@@ -90,7 +79,6 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         leaseStart: '',
         leaseYears: [{ amount: '', type: 'contract' }],
         extraContacts: [],
-        contractYears: '',
         propertyId: initialPropertyId?.toString() ?? '',
       });
     }
@@ -247,7 +235,6 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="leaseStart" render={({ field }) => (
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
             )} />
-            <FormInput label={t('renter.contractYears')} type="number" error={errors.contractYears?.message} {...register('contractYears')} />
             <div>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.leaseYears')}</p>
               <div className="space-y-2">

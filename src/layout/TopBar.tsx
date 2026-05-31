@@ -1,6 +1,7 @@
 import { Sun, Moon, Bell } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
+import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 
 interface TopBarProps {
   onOpenPalette: () => void;
@@ -9,6 +10,7 @@ interface TopBarProps {
 export function TopBar({ onOpenPalette }: TopBarProps) {
   const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
+  const { openPanel, hasAlerts } = useAlertsPanel();
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -38,11 +40,12 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
         </button>
 
         <button
+          onClick={openPanel}
           title={t('common.notifications')}
           className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
           <Bell size={16} />
-          <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />
+          {hasAlerts && <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />}
         </button>
 
       </div>

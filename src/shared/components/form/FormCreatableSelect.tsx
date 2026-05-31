@@ -104,7 +104,7 @@ export function FormCreatableSelect<TFieldValues extends FieldValues>({
             </DropdownMenu.Root>
 
             {displayError && (
-              <p className="text-xs text-[var(--color-error)]">{displayError}</p>
+              <p className="text-xs text-[var(--color-error)]">{t(displayError, { defaultValue: displayError })}</p>
             )}
 
             <Dialog.Root open={modalOpen} onOpenChange={(open) => { if (!open) handleModalClose(); }}>

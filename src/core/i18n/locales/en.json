@@ -60,7 +60,14 @@
     "vacant": "Vacant",
     "occupancyMeta": "{{occupied}} of {{total}} properties",
     "recordRevenue": "Record Revenue",
-    "recordExpense": "Record Expense"
+    "recordExpense": "Record Expense",
+    "actionIgnore": "Ignore",
+    "actionMarkPaid": "Mark paid",
+    "actionSaving": "Saving…",
+    "actionUpdateLease": "Update lease",
+    "expiresLabel": "Expires {{date}}",
+    "daysOverdue_plural": "{{count}}d overdue",
+    "more": "more"
   },
   "settings": {
     "title": "Settings",
@@ -446,6 +453,7 @@
   "common": {
     "back": "Back",
     "required": "Required",
+    "mustBeNumber": "Must be a number",
     "optional": "Optional",
     "discardChanges": "Discard changes?",
     "discardChangesMessage": "You have unsaved changes. Are you sure you want to leave?",

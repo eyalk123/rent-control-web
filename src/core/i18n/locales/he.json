@@ -17,8 +17,8 @@
     "recentTransactions": "תנועות אחרונות",
     "seeAll": "הצג הכל",
     "viewAll": "הצג הכל",
-    "daysOverdue": "{{count}}י באיחור",
-    "expiresIn": "{{count}}י נותרו",
+    "daysOverdue": "{{count}} יום באיחור",
+    "expiresIn": "נותר {{count}} יום",
     "properties": "נכסים",
     "renters": "דיירים",
     "thisMonthPL": "החודש",
@@ -60,7 +60,15 @@
     "vacant": "פנוי",
     "occupancyMeta": "{{occupied}} מתוך {{total}} נכסים",
     "recordRevenue": "הוסף הכנסה",
-    "recordExpense": "הוסף הוצאה"
+    "recordExpense": "הוסף הוצאה",
+    "actionIgnore": "התעלם",
+    "actionMarkPaid": "סמן כשולם",
+    "actionSaving": "שומר…",
+    "actionUpdateLease": "עדכן חוזה",
+    "expiresLabel": "פג ב-{{date}}",
+    "daysOverdue_plural": "{{count}} ימים באיחור",
+    "expiresIn_plural": "נותרו {{count}} ימים",
+    "more": "נוספים"
   },
   "settings": {
     "title": "הגדרות",
@@ -446,6 +454,7 @@
   "common": {
     "back": "חזרה",
     "required": "חובה",
+    "mustBeNumber": "חייב להיות מספר",
     "optional": "אופציונלי",
     "discardChanges": "לבטל שינויים?",
     "discardChangesMessage": "יש שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?",

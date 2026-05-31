@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Phone, Mail, MessageSquare } from 'lucide-react';
+import { Plus, Mail } from 'lucide-react';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { useRenters } from '../queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
@@ -92,8 +92,6 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
       {/* Contact strip */}
       <div className="flex gap-2 mt-0.5" onClick={(e) => e.stopPropagation()}>
         {[
-          { icon: Phone, label: t('renter.call'), href: `tel:${renter.phone}` },
-          { icon: MessageSquare, label: t('renter.sms'), href: `sms:${renter.phone}` },
           { icon: Mail, label: t('renter.email'), href: `mailto:${renter.email}` },
         ].map(({ icon: Icon, label, href }) => (
           <a

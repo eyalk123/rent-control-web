@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,6 +10,7 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
 
 export const FormInput = forwardRef<HTMLInputElement, Props>(
   ({ label, error, hint, className = '', id, ...rest }, ref) => {
+    const { t } = useTranslation();
     const inputId = id ?? `fi-${label?.replace(/\s+/g, '-').toLowerCase()}`;
     return (
       <div className="flex flex-col gap-1.5">
@@ -28,7 +30,7 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
           } ${className}`}
           {...rest}
         />
-        {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+        {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
         {hint && !error && <p className="text-xs text-[var(--color-text-secondary)]">{hint}</p>}
       </div>
     );

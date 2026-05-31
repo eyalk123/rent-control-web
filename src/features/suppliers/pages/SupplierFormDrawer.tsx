@@ -156,7 +156,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
 
           <div>
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.category')}</p>
-            {errors.categoryIds && <p className="text-xs mb-2" style={{ color: 'var(--color-error)' }}>{errors.categoryIds.message}</p>}
+            {errors.categoryIds && <p className="text-xs mb-2" style={{ color: 'var(--color-error)' }}>{t(errors.categoryIds.message!, { defaultValue: errors.categoryIds.message })}</p>}
             <div className="flex flex-wrap gap-2">
               {activeCategories.map((c) => {
                 const selected = selectedCategoryIds.includes(c.id);

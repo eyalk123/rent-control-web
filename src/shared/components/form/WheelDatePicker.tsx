@@ -59,7 +59,7 @@ export function WheelDatePicker({
   minYear = THIS_YEAR - 5,
   maxYear = THIS_YEAR + 10,
 }: Props) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const monthNames = useMemo(
     () =>
@@ -166,7 +166,7 @@ export function WheelDatePicker({
           }}
         />
       </div>
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
     </div>
   );
 }

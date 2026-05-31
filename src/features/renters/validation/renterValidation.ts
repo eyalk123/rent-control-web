@@ -40,7 +40,6 @@ export const renterFormSchema = z.object({
   paymentDayOfMonth: optionalNumericString,
   insuranceType: z.enum(['wire_transfer', 'bank_guarantee', '']).optional(),
   insuranceAmount: optionalNumericString,
-  contractYears: optionalNumericString,
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
   idImageUrl: z.string().nullable().optional(),
