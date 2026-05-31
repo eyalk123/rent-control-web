@@ -10,7 +10,9 @@ import {
   usePropertyRenters,
   transactionKeys,
 } from '../queries';
-import { createRevenueTransaction, createExpenseTransaction } from '../api/transactions';
+import { createRevenueTransaction, createExpenseTransaction, updateExpenseTransaction } from '../api/transactions';
+import { useAppAuth } from '@/core/auth/AuthContext';
+import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { useProperties } from '@/features/properties/queries';
 import { useSuppliers } from '@/features/suppliers/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -33,7 +35,6 @@ import {
   getRentForMonth,
   YEAR_OPTIONS,
 } from '../utils/periodUtils';
-import { uploadTransactionReceipt } from '../api/transactions';
 import type { Transaction, Renter } from '@/shared/types';
 
 type TxType = 'revenue' | 'expense';
@@ -491,6 +492,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   const qc = useQueryClient();
   const updateExpense = useUpdateExpenseTransaction(transaction?.id ?? 0);
   const { showToast } = useToast();
+  const { user } = useAppAuth();
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(transaction?.receipt_image_url ?? null);
 
@@ -558,8 +560,8 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
     if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
     try {
       let receiptUrl = transaction?.receipt_image_url ?? undefined;
-      if (receiptFile && transaction?.id) {
-        receiptUrl = await uploadTransactionReceipt(transaction.id, receiptFile);
+      if (receiptFile && user) {
+        receiptUrl = await uploadToFirebase(receiptFile, 'transactions', user.uid);
       }
       await updateExpense.mutateAsync({
         renter_id: data.renterId && data.renterId !== '__none__' ? Number(data.renterId) : null,
@@ -599,9 +601,10 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
 
     try {
       const results = await Promise.allSettled(payloads.map((p) => createExpenseTransaction(p)));
-      if (receiptFile) {
+      if (receiptFile && user) {
+        const receiptUrl = await uploadToFirebase(receiptFile, 'transactions', user.uid);
         const created = results.filter((r): r is PromiseFulfilledResult<Transaction> => r.status === 'fulfilled');
-        await Promise.allSettled(created.map((r) => uploadTransactionReceipt(r.value.id, receiptFile!)));
+        await Promise.allSettled(created.map((r) => updateExpenseTransaction(r.value.id, { receipt_image_url: receiptUrl })));
       }
       qc.invalidateQueries({ queryKey: transactionKeys.all });
       const failed = results.filter((r) => r.status === 'rejected').length;

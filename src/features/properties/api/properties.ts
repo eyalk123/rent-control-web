@@ -124,18 +124,3 @@ export async function uploadPropertyImage(
   );
   return response.data;
 }
-
-export async function uploadPropertyDocument(
-  id: number,
-  field: 'basic_contract' | 'land_registry',
-  file: File
-): Promise<string> {
-  if (USE_MOCK_API) return `https://mock-bucket.s3.amazonaws.com/properties/${id}/${field}/${file.name}`;
-  const fd = new FormData();
-  fd.append('file', file);
-  const response = await apiClient.post<{ url: string }>(
-    `/properties/${id}/documents/${field}`,
-    fd
-  );
-  return response.data.url;
-}

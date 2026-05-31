@@ -198,14 +198,6 @@ export async function deleteTransaction(id: number): Promise<void> {
   await apiClient.delete(`/transactions/${id}`);
 }
 
-export async function uploadTransactionReceipt(id: number, file: File): Promise<string> {
-  if (USE_MOCK_API) return `https://mock-bucket.s3.amazonaws.com/transactions/${id}/receipt/${file.name}`;
-  const fd = new FormData();
-  fd.append('file', file);
-  const response = await apiClient.post<{ url: string }>(`/transactions/${id}/receipt`, fd);
-  return response.data.url;
-}
-
 export async function getPropertyRenters(
   propertyId: number,
 ): Promise<PropertyRenterSummary[]> {
