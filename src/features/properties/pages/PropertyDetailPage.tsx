@@ -328,7 +328,7 @@ export function PropertyDetailPage() {
         {/* Header row */}
         <div className="flex items-start justify-between gap-6">
           <div className="flex gap-4 items-start">
-            <PropTile propertyId={property.id} size={84} />
+            <PropTile propertyId={property.id} imageUrl={property.image_url} width={160} height={120} />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Pill tone={property.hasRenters ? 'success' : 'warning'} size="md">

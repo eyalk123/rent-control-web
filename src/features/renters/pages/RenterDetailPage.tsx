@@ -4,10 +4,10 @@ import { RenterFormDrawer } from './RenterFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
-import { ChevronLeft, ChevronRight, Pencil, Plus, Phone, Mail, Building2, MapPin, Car, Zap, Droplets, Shield, CreditCard, Calendar, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Phone, Mail, Building2, MapPin, Shield, CreditCard, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useRenter } from '../queries';
-import { useProperty } from '@/features/properties/queries';
+import { useRenter, useUpdateRenter } from '../queries';
+import { useProperty, useProperties } from '@/features/properties/queries';
 import { useTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
@@ -15,12 +15,13 @@ import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
-import { PropTile } from '@/shared/components/ui/PropTile';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { getPropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
-import type { Renter, Transaction } from '@/shared/types';
+import { FormSelect } from '@/shared/components/form/FormSelect';
+import type { Renter, Transaction, Property } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -202,52 +203,134 @@ function LeaseInfoTab({ renter }: { renter: Renter }) {
   );
 }
 
+function RenterPropertyCard({ property, monthlyRent }: { property: Property; monthlyRent: number }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const color = getPropertyColor(property.id);
+  const bg = getPropertyColorBg(property.id, 0.35);
+  const imageSrc = getPropertyImageSrc(property.image_url);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/properties/${property.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/properties/${property.id}`); }}
+      className="rounded-[var(--radius-card)] overflow-hidden cursor-pointer transition-all hover:-translate-y-px text-start"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
+    >
+      <div className="relative w-full" style={{ aspectRatio: '4/3', background: imageSrc ? 'var(--color-input-filled-background)' : bg }}>
+        {imageSrc ? (
+          <img src={imageSrc} alt="" className="absolute inset-0 w-full h-full object-contain p-3" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
+              <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="rgba(255,255,255,0.55)" />
+              <path d="M3 11l9-8 9 8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+            </svg>
+          </div>
+        )}
+        <div className="absolute top-2.5 start-3 flex gap-1.5">
+          <Pill tone="success">{t('property.occupancy.occupied')}</Pill>
+          <Pill tone="neutral">{t(`property.type_${property.type}` as never, property.type)}</Pill>
+        </div>
+      </div>
+      <div className="p-3">
+        <p className="text-[14px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+          {property.address}
+        </p>
+        <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <MapPin size={10} />
+          {property.city}{property.zip_code ? `, ${property.zip_code}` : ''}
+          {property.property_owner && <> · {property.property_owner}</>}
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
+          {[
+            { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
+            { label: t('property.size'), value: `${property.sq_ft}m²` },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+              <LtrSpan className="text-[13px] font-bold mt-0.5 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {String(value)}
+              </LtrSpan>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PropertyTab({ renter }: { renter: Renter }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [linking, setLinking] = useState(false);
+  const [selectedId, setSelectedId] = useState('');
   const p = renter.property;
   const { data: fullProp } = useProperty(p?.id ?? 0, { enabled: !!p?.id });
+  const { data: allProperties } = useProperties();
+  const updateRenter = useUpdateRenter(renter.id);
 
   if (!p) {
-    return <EmptyState icon={undefined} title={t('renter.noPropertyLinked')} description={t('renter.noPropertyLinkedDesc')} />;
-  }
-
-  const propBg = getPropertyColorBg(p.id, 0.25);
-  const parking = fullProp?.parking_numbers?.filter(Boolean).join(', ') ?? null;
-
-  return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
-      {/* Tinted card */}
-      <div className="rounded-[var(--radius-card)] p-6 flex flex-col gap-5" style={{ background: propBg, border: '1px solid var(--color-outline)' }}>
-        <div className="flex items-center justify-between">
-          <Pill tone="success">{t('property.occupancy.occupied')}</Pill>
-          <button
-            onClick={() => navigate(`/properties/${p.id}`)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium"
-            style={{ background: 'rgba(255,255,255,0.7)', color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer' }}
-          >
-            {t('renter.openProperty')} <ArrowRight size={12} />
-          </button>
-        </div>
-        <PropTile propertyId={p.id} size={80} />
-        <div>
-          <p className="text-[22px] font-bold" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.4px' }}>{p.address}</p>
-          <div className="flex items-center gap-1 mt-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
-            <MapPin size={12} /> {p.city}
+    if (linking) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <div className="w-full max-w-sm rounded-[var(--radius-card)] p-6 flex flex-col gap-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t('renter.linkProperty')}</p>
+            <FormSelect
+              value={selectedId}
+              onValueChange={setSelectedId}
+              options={(allProperties ?? []).map((prop) => ({ value: String(prop.id), label: `${prop.address}, ${prop.city}` }))}
+              placeholder={t('renter.selectProperty')}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setLinking(false); setSelectedId(''); }}
+                className="flex-1 py-2 rounded-[10px] text-[13px] font-medium"
+                style={{ background: 'var(--color-input-filled-background)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-outline)', cursor: 'pointer' }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                disabled={!selectedId || updateRenter.isPending}
+                onClick={() => updateRenter.mutate({ property_id: Number(selectedId) }, { onSuccess: () => { setLinking(false); setSelectedId(''); } })}
+                className="flex-1 py-2 rounded-[10px] text-[13px] font-medium"
+                style={{ background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: selectedId ? 'pointer' : 'not-allowed', opacity: selectedId ? 1 : 0.5 }}
+              >
+                {updateRenter.isPending ? '…' : t('renter.link')}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      );
+    }
+    return (
+      <EmptyState
+        icon={Building2}
+        title={t('renter.noPropertyLinked')}
+        description={t('renter.noPropertyLinkedDesc')}
+        action={
+          <button
+            onClick={() => setLinking(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[13px] font-medium"
+            style={{ background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: 'pointer' }}
+          >
+            {t('renter.linkProperty')}
+          </button>
+        }
+      />
+    );
+  }
 
-      <div className="flex flex-col gap-4">
-        <DetailPanel title={t('property.atAGlance')}>
-          <DetailRow icon={Building2} label={t('property.colType')} value={p.type} />
-          <DetailRow icon={Car} label={t('property.parking')} last value={parking} />
-        </DetailPanel>
-        <DetailPanel title={t('renter.metersPanel')}>
-          <DetailRow icon={Zap} label={t('property.electricMeter')} value={fullProp?.electricity_meter_number ?? null} />
-          <DetailRow icon={Droplets} label={t('property.waterMeter')} value={fullProp?.water_meter_number ?? null} last />
-        </DetailPanel>
-      </div>
+  const properties = fullProp ? [fullProp] : [];
+  const monthlyRent = getRenterMonthlyRent(renter);
+
+  return (
+    <div className="grid grid-cols-4 gap-4">
+      {properties.map((prop) => (
+        <RenterPropertyCard key={prop.id} property={prop} monthlyRent={monthlyRent} />
+      ))}
     </div>
   );
 }
