@@ -16,8 +16,10 @@ import type {
 } from '@/shared/types';
 import { getLeaseEndDate } from '@/shared/types';
 
-// Set to true to use in-memory mock data when no backend is available
-export const USE_MOCK_API = false;
+// Set to true to use in-memory mock data when no backend is available.
+// Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
+// Defaults to false when the var is unset, so production behavior is unchanged.
+export const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 function toPropertyBrief(p: Property): PropertyBrief {
   return { id: p.id, address: p.address, city: p.city, type: p.type };
@@ -472,6 +474,22 @@ export const mockExpenseCategoriesApi = {
   },
 };
 
+// Fill the denormalized display fields (property_name, renter_name, etc.) from the
+// other mock collections, mirroring what the real backend returns on a transaction.
+function enrichTransaction(t: Transaction): Transaction {
+  const prop = mockProperties.find((p) => p.id === t.property_id);
+  const renter = t.renter_id != null ? mockRenters.find((r) => r.id === t.renter_id) : null;
+  const cat = t.category_id != null ? mockExpenseCategories.find((c) => c.id === t.category_id) : null;
+  const supplier = t.supplier_id != null ? mockSuppliers.find((s) => s.id === t.supplier_id) : null;
+  return {
+    ...t,
+    property_name: prop?.address ?? t.property_name ?? '',
+    renter_name: renter ? `${renter.first_name} ${renter.last_name}`.trim() : t.renter_name ?? null,
+    category_name: cat ? cat.name ?? cat.key ?? null : t.category_name ?? null,
+    supplier_name: supplier?.name ?? t.supplier_name ?? null,
+  };
+}
+
 export const mockTransactionsApi = {
   getTransactions: async (params: {
     type?: 'revenue' | 'expense';
@@ -479,7 +497,7 @@ export const mockTransactionsApi = {
     renterId?: number;
     search?: string;
   } = {}): Promise<Transaction[]> => {
-    let list = mockTransactions;
+    let list = mockTransactions.map(enrichTransaction);
     if (params.type) {
       list = list.filter((t) => t.type === params.type);
     }
@@ -499,10 +517,58 @@ export const mockTransactionsApi = {
         (t.notes ?? '').toLowerCase().includes(q)
       );
     }
-    return [...list];
+    return list;
   },
-  addTransaction: (t: Transaction): void => {
-    mockTransactions.push({ ...t, id: nextTransactionId++ });
+  getTransactionById: async (id: number): Promise<Transaction> => {
+    const t = mockTransactions.find((x) => x.id === id);
+    if (!t) throw new Error('Transaction not found');
+    return enrichTransaction(t);
+  },
+  // Persist a new transaction and return it enriched (mirrors the real POST response).
+  addTransaction: (t: Omit<Transaction, 'id'>): Transaction => {
+    const created: Transaction = { ...(t as Transaction), id: nextTransactionId++ };
+    mockTransactions.push(created);
+    return enrichTransaction(created);
+  },
+  updateTransaction: async (id: number, data: Partial<Transaction>): Promise<Transaction> => {
+    const idx = mockTransactions.findIndex((x) => x.id === id);
+    if (idx < 0) throw new Error('Transaction not found');
+    mockTransactions[idx] = { ...mockTransactions[idx], ...data, id };
+    return enrichTransaction(mockTransactions[idx]);
+  },
+  deleteTransaction: async (id: number): Promise<void> => {
+    mockTransactions = mockTransactions.filter((x) => x.id !== id);
+  },
+  // 6-month buckets (oldest → newest, ending with the current month) computed from
+  // the in-memory transactions, so the Reports pages render real data under mock mode.
+  getSummary: async () => {
+    const now = new Date();
+    const buckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const inMonth = (dateStr: string | null) => {
+        if (!dateStr) return false;
+        const dt = new Date(dateStr);
+        return dt.getFullYear() === year && dt.getMonth() + 1 === month;
+      };
+      const revenue = mockTransactions
+        .filter((t) => t.type === 'revenue' && inMonth(t.date_of_payment))
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      const expenses = mockTransactions
+        .filter((t) => t.type === 'expense' && inMonth(t.date_of_payment))
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+      buckets.push({
+        key: `${year}-${String(month).padStart(2, '0')}`,
+        year,
+        month,
+        revenue,
+        expenses,
+        profit: revenue - expenses,
+      });
+    }
+    return { six_month_buckets: buckets };
   },
   getPropertyRenters: async (propertyId: number): Promise<PropertyRenterSummary[]> => {
     return mockRenters

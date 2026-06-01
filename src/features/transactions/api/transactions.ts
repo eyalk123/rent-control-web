@@ -77,7 +77,7 @@ export async function getTransactions(
 
 export async function getTransactionsSummary(): Promise<TransactionSummaryResponse> {
   if (USE_MOCK_API) {
-    return { six_month_buckets: [] };
+    return mockTransactionsApi.getSummary();
   }
   const response = await apiClient.get<TransactionSummaryResponse>('/transactions/summary');
   return response.data;
@@ -87,8 +87,7 @@ export async function createRevenueTransaction(
   payload: TransactionCreateRevenue,
 ): Promise<Transaction> {
   if (USE_MOCK_API) {
-    return {
-      id: Date.now(),
+    return mockTransactionsApi.addTransaction({
       type: 'revenue',
       property_id: payload.property_id,
       renter_id: payload.renter_id ?? null,
@@ -104,7 +103,7 @@ export async function createRevenueTransaction(
       renter_name: null,
       category_name: null,
       supplier_name: null,
-    };
+    });
   }
 
   const response = await apiClient.post<Transaction>(
@@ -118,8 +117,7 @@ export async function createExpenseTransaction(
   payload: TransactionCreateExpense,
 ): Promise<Transaction> {
   if (USE_MOCK_API) {
-    return {
-      id: Date.now(),
+    return mockTransactionsApi.addTransaction({
       type: 'expense',
       property_id: payload.property_id,
       renter_id: payload.renter_id ?? null,
@@ -136,7 +134,7 @@ export async function createExpenseTransaction(
       renter_name: null,
       category_name: null,
       supplier_name: null,
-    };
+    });
   }
 
   const response = await apiClient.post<Transaction>(
@@ -171,30 +169,34 @@ export async function createExpenseCategory(
 }
 
 export async function updateRevenueTransaction(id: number, payload: TransactionUpdateRevenue): Promise<Transaction> {
-  if (USE_MOCK_API) return getTransactionById(id);
+  if (USE_MOCK_API) return mockTransactionsApi.updateTransaction(id, payload);
   const response = await apiClient.patch<Transaction>(`/transactions/revenue/${id}`, payload);
   return response.data;
 }
 
 export async function updateExpenseTransaction(id: number, payload: TransactionUpdateExpense): Promise<Transaction> {
-  if (USE_MOCK_API) return getTransactionById(id);
+  if (USE_MOCK_API) {
+    const { category_ids, ...rest } = payload;
+    return mockTransactionsApi.updateTransaction(id, {
+      ...rest,
+      category_ids,
+      category_id: category_ids?.[0] ?? null,
+    });
+  }
   const response = await apiClient.patch<Transaction>(`/transactions/expense/${id}`, payload);
   return response.data;
 }
 
 export async function getTransactionById(id: number): Promise<Transaction> {
   if (USE_MOCK_API) {
-    const all = await mockTransactionsApi.getTransactions({});
-    const found = all.find((t) => t.id === id);
-    if (!found) throw new Error('Not found');
-    return found;
+    return mockTransactionsApi.getTransactionById(id);
   }
   const response = await apiClient.get<Transaction>(`/transactions/${id}`);
   return { ...response.data, amount: Number(response.data.amount) };
 }
 
 export async function deleteTransaction(id: number): Promise<void> {
-  if (USE_MOCK_API) return;
+  if (USE_MOCK_API) return mockTransactionsApi.deleteTransaction(id);
   await apiClient.delete(`/transactions/${id}`);
 }
 

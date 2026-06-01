@@ -51,8 +51,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const [landRegistryFile, setLandRegistryFile] = useState<File | null>(null);
 
   const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(propertyFormSchema),
-    defaultValues: { numberOfRooms: '', parkingNumbersStr: '' },
+    resolver: zodResolver(propertyFormSchema) as never,
+    defaultValues: { numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '' },
   });
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       });
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
-      reset({ numberOfRooms: '', parkingNumbersStr: '' });
+      reset({ numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '' });
       setImagePreview(null);
     }
   }, [existing, open, propertyId, reset]);

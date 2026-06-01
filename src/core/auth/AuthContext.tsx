@@ -20,11 +20,25 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// E2E-only: when VITE_E2E_AUTH_BYPASS is "true", skip Firebase entirely and act as a
+// signed-in user. Gated on an env var that is unset in normal builds, so the real
+// Firebase auth path below is untouched in dev/prod. Used together with VITE_USE_MOCK_API.
+const E2E_AUTH_BYPASS = import.meta.env.VITE_E2E_AUTH_BYPASS === 'true';
+const E2E_USER = {
+  uid: 'e2e-test-user',
+  email: 'e2e@test.local',
+  displayName: 'E2E Tester',
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [user, setUser] = useState<User | null>(E2E_AUTH_BYPASS ? E2E_USER : null);
+  const [isLoaded, setIsLoaded] = useState(E2E_AUTH_BYPASS);
 
   useEffect(() => {
+    if (E2E_AUTH_BYPASS) {
+      setAuthTokenGetter(() => Promise.resolve('e2e-test-token'));
+      return;
+    }
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsLoaded(true);
@@ -33,7 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getToken = useCallback(
-    () => (user ? getIdToken(user) : Promise.resolve(null)),
+    () =>
+      E2E_AUTH_BYPASS
+        ? Promise.resolve('e2e-test-token')
+        : user
+          ? getIdToken(user)
+          : Promise.resolve(null),
     [user],
   );
 

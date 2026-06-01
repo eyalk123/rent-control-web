@@ -40,9 +40,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [] },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '' },
   });
 
   const leaseStart = watch('leaseStart');
@@ -80,6 +80,8 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         leaseYears: [{ amount: '', type: 'contract' }],
         extraContacts: [],
         propertyId: initialPropertyId?.toString() ?? '',
+        paymentType: '',
+        paymentDayOfMonth: '',
       });
     }
   }, [existing, open, renterId, initialPropertyId, reset]);
@@ -151,7 +153,10 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         <button
           key="next"
           type="button"
-          onClick={() => setStep(2)}
+          onClick={async () => {
+            const ok = await trigger(['firstName', 'lastName', 'phone']);
+            if (ok) setStep(2);
+          }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
           style={{ background: 'var(--color-primary)' }}
         >
