@@ -43,6 +43,35 @@ test.describe('renters', () => {
     ).toBeVisible();
   });
 
+  // Regression: the payment-type select must use the renter domain (cash|wire_transfer|bit),
+  // not the transaction method domain. Renter #1 (Sarah Johnson) has payment_type
+  // 'wire_transfer', which renders as "Bank transfer".
+  test('edit drawer pre-fills the payment type', async ({ page }) => {
+    await page.goto('/renters/1');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(
+      page.getByRole('combobox').filter({ hasText: 'Bank transfer' })
+    ).toBeVisible();
+  });
+
+  // Regression: extra contacts must round-trip (they were being stripped before the
+  // PATCH/POST by the renter payload sanitizer).
+  test('saves and shows an extra contact', async ({ page }) => {
+    await page.goto('/renters/3');
+    await page.getByRole('button', { name: 'Edit' }).click();
+
+    await page.getByRole('button', { name: 'Add contact' }).click();
+    await page.getByPlaceholder('Name').fill('Dana Cohen');
+    await page.getByPlaceholder('Phone').fill('050-1234567');
+
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expectToast(page, 'Renter updated');
+    await expect(page.getByText('Dana Cohen')).toBeVisible();
+  });
+
   // Regression for H2: name + phone is enough to create a renter (optional Controller
   // fields no longer block submission, and the payment-day wheel is truly optional).
   test('can create a renter (round-trip)', async ({ page }) => {

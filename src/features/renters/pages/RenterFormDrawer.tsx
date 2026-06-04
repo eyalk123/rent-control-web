@@ -135,7 +135,14 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
     }
     return opts;
   })();
-  const paymentTypeOptions = ['cash', 'bank_transfer', 'bit', 'check'].map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
+  // Renter payment_type domain is cash | wire_transfer | bit (see mapPaymentType in
+  // AlertsPanel / NeedsAttentionSection and the renter.paymentType* i18n keys). Note this
+  // differs from the transaction payment-method domain (which uses 'bank_transfer').
+  const paymentTypeOptions = [
+    { value: 'cash', label: t('renter.paymentTypeCash') },
+    { value: 'wire_transfer', label: t('renter.paymentTypeWireTransfer') },
+    { value: 'bit', label: t('renter.paymentTypeBit') },
+  ];
   const paymentFrequencyOptions = [
     { value: 'monthly', label: t('renter.frequencyMonthly') },
     { value: 'quarterly', label: t('renter.frequencyQuarterly') },
@@ -210,11 +217,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <FormInput label={t('renter.phone')} type="tel" error={errors.phone?.message} {...register('phone')} />
             <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
             <Controller control={control} name="propertyId" render={({ field }) => (
-              // Ignore spurious empty emissions: Radix Select fires onValueChange('') for
-              // one render when a reset()-seeded value transitions before its Item registers,
-              // which would otherwise wipe the pre-selected property. No option uses '', so a
-              // legitimate change is always truthy.
-              <FormSelect label={t('renter.property')} value={field.value} onValueChange={(v) => { if (v) field.onChange(v); }} options={propertyOptions} placeholder={t('renter.selectProperty')} />
+              <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
             <Controller
               control={control}
