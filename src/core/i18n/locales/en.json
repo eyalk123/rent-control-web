@@ -244,6 +244,7 @@
     "monthlyRent": "Monthly rent",
     "totalRevenue": "Total revenue",
     "totalExpenses": "Total expenses",
+    "net": "Net",
     "utilitiesNumbers": "Utilities & numbers",
     "fees": "Fees",
     "inventoryNotesSection": "Inventory notes",
@@ -401,6 +402,7 @@
     "paymentMethod": "Method",
     "payDay": "Pay day",
     "payDayValue": "Day {{day}} of month",
+    "numberOfPayments": "Number of payments",
     "extraContactsPanel": "Extra contacts ({{count}})",
     "metersPanel": "Meters",
     "paymentsCount": "{{count}} payments",
@@ -728,7 +730,8 @@
     "uploading": "Uploading...",
     "uploadFailed": "Upload failed. Please try again.",
     "landRegistry": "Land Registry Extract",
-    "idImage": "Tenant ID Image"
+    "idImage": "Tenant ID Image",
+    "none": "No documents uploaded yet."
   },
   "permission": {
     "title": "Permission required",

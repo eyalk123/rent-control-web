@@ -18,10 +18,11 @@ export function PropertyDetailsTab({ property }: Props) {
       <DetailPanel title={t('property.basicInfo')}>
         <DetailRow icon={MapPin} label={t('property.address')} value={`${property.address}, ${property.city}${property.zip_code ? ` ${property.zip_code}` : ''}`} />
         <DetailRow icon={Receipt} label={t('property.type')} value={t(`property.type_${property.type}` as never, property.type)} />
-        <DetailRow icon={Users} label={t('property.owner')} value={property.property_owner} />
         <DetailRow icon={Receipt} label={t('property.size')} value={property.sq_ft ? `${property.sq_ft}m²` : null} />
         <DetailRow icon={Receipt} label={t('property.rooms')} value={property.number_of_rooms ? String(property.number_of_rooms) : null} />
-        <DetailRow icon={Receipt} label={t('property.floor')} value={property.floor != null ? String(property.floor) : null} last />
+        <DetailRow icon={Receipt} label={t('property.floor')} value={property.floor != null ? String(property.floor) : null} />
+        <DetailRow icon={Receipt} label={t('property.apartment')} value={property.apartment} />
+        <DetailRow icon={Users} label={t('property.owner')} value={property.property_owner} last />
       </DetailPanel>
 
       <DetailPanel title={t('property.utilitiesNumbers')}>

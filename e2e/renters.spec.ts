@@ -31,6 +31,18 @@ test.describe('renters', () => {
     await expect(page.getByText('Renter created')).toHaveCount(0);
   });
 
+  // Regression: opening the edit drawer for a renter with a connected property must show
+  // that property pre-selected. A Radix Select fires a spurious onValueChange('') for one
+  // render as the reset()-seeded value transitions, which used to wipe the selection and
+  // leave the field empty. Renter #6 (Robert Thompson) is linked to property #4.
+  test('edit drawer pre-fills the connected property', async ({ page }) => {
+    await page.goto('/renters/6');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(
+      page.getByRole('combobox').filter({ hasText: '321 Pine Road' })
+    ).toBeVisible();
+  });
+
   // Regression for H2: name + phone is enough to create a renter (optional Controller
   // fields no longer block submission, and the payment-day wheel is truly optional).
   test('can create a renter (round-trip)', async ({ page }) => {

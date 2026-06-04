@@ -62,7 +62,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         lastName: existing.last_name,
         phone: existing.phone,
         email: existing.email ?? '',
-        propertyId: existing.property_id?.toString() ?? '',
+        propertyId: (existing.property_id ?? existing.property?.id)?.toString() ?? '',
         leaseStart: existing.lease_start ?? '',
         leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
@@ -127,7 +127,14 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
     } catch (err) { console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
   });
 
-  const propertyOptions = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
+  const propertyOptions = (() => {
+    const opts = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
+    const linked = existing?.property;
+    if (linked && !opts.some((o) => o.value === String(linked.id))) {
+      opts.unshift({ value: String(linked.id), label: `${linked.address}, ${linked.city}` });
+    }
+    return opts;
+  })();
   const paymentTypeOptions = ['cash', 'bank_transfer', 'bit', 'check'].map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
   const paymentFrequencyOptions = [
     { value: 'monthly', label: t('renter.frequencyMonthly') },
@@ -203,7 +210,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <FormInput label={t('renter.phone')} type="tel" error={errors.phone?.message} {...register('phone')} />
             <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
             <Controller control={control} name="propertyId" render={({ field }) => (
-              <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
+              // Ignore spurious empty emissions: Radix Select fires onValueChange('') for
+              // one render when a reset()-seeded value transitions before its Item registers,
+              // which would otherwise wipe the pre-selected property. No option uses '', so a
+              // legitimate change is always truthy.
+              <FormSelect label={t('renter.property')} value={field.value} onValueChange={(v) => { if (v) field.onChange(v); }} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
             <Controller
               control={control}

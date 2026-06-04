@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useTransaction, useDeleteTransaction } from '../queries';
+import { useTransaction, useDeleteTransaction, useExpenseCategories } from '../queries';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -31,6 +31,7 @@ export function TransactionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const txId = Number(id);
   const { data: tx, isLoading } = useTransaction(txId);
+  const { data: categories = [] } = useExpenseCategories();
   const { mutateAsync: deleteTx } = useDeleteTransaction();
   const { showToast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
@@ -50,6 +51,20 @@ export function TransactionDetailPage() {
   const isRevenue = tx.type === 'revenue';
   const tintBg = isRevenue ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)';
   const tintFg = isRevenue ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)';
+
+  // Resolve all categories for multi-category expenses; fall back to the denormalized name.
+  const catIds = tx.category_ids ?? [];
+  let categoryDisplay: string | null = tx.category_name ? translateCategory(tx.category_name, t) : null;
+  if (catIds.length > 1 && categories.length) {
+    const names = catIds
+      .map((id) => {
+        const c = categories.find((cat) => cat.id === id);
+        if (!c) return null;
+        return c.key ? translateCategory(c.key, t) : (c.name ?? null);
+      })
+      .filter(Boolean);
+    if (names.length) categoryDisplay = names.join(', ');
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-8 py-8">
@@ -92,18 +107,24 @@ export function TransactionDetailPage() {
           <DetailRow icon={Building2} label={t('transactions.propertyLabel')} value={tx.property_name} />
           <DetailRow icon={User} label={t('transactions.renterLabel')} value={tx.renter_name} />
           {!isRevenue && <DetailRow icon={Store} label={t('transactions.supplierLabel')} value={tx.supplier_name} />}
-          {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={tx.category_name ? translateCategory(tx.category_name, t) : null} />}
-          <DetailRow icon={CreditCard} label={t('transactions.paymentMethodLabel')} value={tx.payment_method ? t(`transactions.paymentMethod_${tx.payment_method}`, { defaultValue: tx.payment_method }) : null} />
+          {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={categoryDisplay} />}
           {isRevenue && tx.month_for && <DetailRow icon={Calendar} label={t('transactions.monthForLabel2')} value={tx.month_for} />}
+          <DetailRow icon={CreditCard} label={t('transactions.paymentMethodLabel')} value={tx.payment_method ? t(`transactions.paymentMethod_${tx.payment_method}`, { defaultValue: tx.payment_method }) : null} />
           <DetailRow icon={Calendar} label={t('transactions.dateOfPaymentLabel')} value={tx.date_of_payment} />
           {tx.notes && <DetailRow icon={FileText} label={t('transactions.notesLabel')} value={tx.notes} />}
 
-          {/* Receipt placeholder */}
+          {/* Receipt */}
           <div className="p-4" style={{ borderTop: '1px solid var(--color-outline)' }}>
-            <div className="rounded-[12px] p-8 flex flex-col items-center gap-2" style={{ border: '1.5px dashed var(--color-outline)' }}>
-              <Receipt size={24} style={{ color: 'var(--color-text-secondary)' }} />
-              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('transactions.noReceipt')}</p>
-            </div>
+            {tx.receipt_image_url ? (
+              <a href={tx.receipt_image_url} target="_blank" rel="noopener noreferrer" className="block rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
+                <img src={tx.receipt_image_url} alt={t('transactions.receiptImage')} className="w-full max-h-[320px] object-contain" style={{ background: 'var(--color-input-filled-background)' }} />
+              </a>
+            ) : (
+              <div className="rounded-[12px] p-8 flex flex-col items-center gap-2" style={{ border: '1.5px dashed var(--color-outline)' }}>
+                <Receipt size={24} style={{ color: 'var(--color-text-secondary)' }} />
+                <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('transactions.noReceipt')}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

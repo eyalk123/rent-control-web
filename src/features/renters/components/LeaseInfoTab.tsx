@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { Phone, Mail, Shield, CreditCard, Calendar } from 'lucide-react';
+import { Phone, Mail, Shield, CreditCard, Calendar, Hash } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { DetailRow } from '@/shared/components/detail/DetailRow';
+import { DocRow } from '@/shared/components/detail/DocRow';
 import { LeaseTimeline } from './LeaseTimeline';
 import { formatMoney } from '@/shared/utils/money';
 import type { Renter } from '@/shared/types';
@@ -13,6 +14,9 @@ interface Props {
 export function LeaseInfoTab({ renter }: Props) {
   const { t } = useTranslation();
   const extras = renter.extra_contacts ?? [];
+  const docs: { label: string; url: string }[] = [];
+  if (renter.full_contract_url) docs.push({ label: t('documents.fullContract'), url: renter.full_contract_url });
+  if (renter.id_image_url) docs.push({ label: t('documents.idImage'), url: renter.id_image_url });
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
       {/* Left column */}
@@ -38,9 +42,20 @@ export function LeaseInfoTab({ renter }: Props) {
           <DetailRow icon={Mail} label={t('renter.email')} value={renter.email} href={`mailto:${renter.email}`} last />
         </DetailPanel>
 
+        <DetailPanel title={t('documents.title')}>
+          {docs.length === 0 ? (
+            <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('documents.none')}</p>
+          ) : (
+            <div className="p-2">
+              {docs.map((d, i) => <DocRow key={d.label} label={d.label} url={d.url} last={i === docs.length - 1} />)}
+            </div>
+          )}
+        </DetailPanel>
+
         <DetailPanel title={t('renter.paymentPanel')}>
           <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type} />
-          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} last />
+          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} />
+          <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
         </DetailPanel>
 
         <DetailPanel title={t('renter.extraContactsPanel', { count: extras.length })}>

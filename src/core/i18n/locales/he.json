@@ -245,6 +245,7 @@
     "monthlyRent": "שכר דירה חודשי",
     "totalRevenue": "סה״כ הכנסות",
     "totalExpenses": "סה״כ הוצאות",
+    "net": "נטו",
     "utilitiesNumbers": "מדי חשמל ומים",
     "fees": "תשלומים",
     "inventoryNotesSection": "הערות דירה",
@@ -402,6 +403,7 @@
     "paymentMethod": "שיטה",
     "payDay": "יום תשלום",
     "payDayValue": "יום {{day}} בחודש",
+    "numberOfPayments": "מספר תשלומים",
     "extraContactsPanel": "אנשי קשר נוספים ({{count}})",
     "metersPanel": "מונים",
     "paymentsCount": "{{count}} תשלומים",
@@ -729,7 +731,8 @@
     "uploading": "מעלה...",
     "uploadFailed": "ההעלאה נכשלה. נסה שוב.",
     "landRegistry": "נסח טאבו",
-    "idImage": "תמונת תעודת זהות"
+    "idImage": "תמונת תעודת זהות",
+    "none": "לא הועלו מסמכים עדיין."
   },
   "permission": {
     "title": "נדרשות הרשאות",

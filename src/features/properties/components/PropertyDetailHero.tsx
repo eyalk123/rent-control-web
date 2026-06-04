@@ -64,7 +64,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       {/* KPI strip */}
       <div className="grid grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
-        <HeroStat label={t('property.size')} value={property.sq_ft ? `${property.sq_ft}m²` : '—'} />
+        <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} />
         <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} />
         <HeroStat label={t('property.totalExpenses')} value={formatMoney(expTotal)} tone="danger" sub={t('common.allTime')} />
       </div>
