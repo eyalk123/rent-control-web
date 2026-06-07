@@ -242,6 +242,8 @@
     "fileFormats": "PDF, JPG, PNG עד 10 מגה",
     "ownedBy": "בבעלות {{owner}}",
     "allProperties": "כל הנכסים",
+    "renter": "שוכר",
+    "plusMoreRenters": "+{{count}} נוספים",
     "monthlyRent": "שכר דירה חודשי",
     "totalRevenue": "סה״כ הכנסות",
     "totalExpenses": "סה״כ הוצאות",

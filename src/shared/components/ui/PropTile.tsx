@@ -8,10 +8,11 @@ interface PropTileProps {
   size?: number;
   width?: number;
   height?: number;
+  fit?: 'contain' | 'cover';
   className?: string;
 }
 
-export function PropTile({ propertyId, imageUrl, size = 56, width, height, className = '' }: PropTileProps) {
+export function PropTile({ propertyId, imageUrl, size = 56, width, height, fit = 'contain', className = '' }: PropTileProps) {
   const color = getPropertyColor(propertyId);
   const bg = getPropertyColorBg(propertyId, 0.15);
   const w = width ?? size;
@@ -25,7 +26,7 @@ export function PropTile({ propertyId, imageUrl, size = 56, width, height, class
       style={{ width: w, height: h, background: bg }}
     >
       {imageSrc ? (
-        <img src={imageSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }} />
+        <img src={imageSrc} alt="" style={{ width: '100%', height: '100%', objectFit: fit, padding: fit === 'cover' ? 0 : '8px' }} />
       ) : (
         <Building2 size={iconSize} style={{ color }} strokeWidth={1.5} />
       )}

@@ -59,6 +59,8 @@ export function PropertyDetailPage() {
           monthlyRent={monthlyRent}
           revTotal={revTotal}
           expTotal={expTotal}
+          renterName={activeRenter ? `${activeRenter.first_name} ${activeRenter.last_name}` : null}
+          rentersCount={rentersCount}
           onEdit={() => setEditDrawerOpen(true)}
           onAddTransaction={() => setTxDrawerOpen(true)}
         />

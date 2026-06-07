@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Phone, Mail, Shield, CreditCard, Calendar, Hash } from 'lucide-react';
+import { Shield, CreditCard, Calendar, Hash } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { DetailRow } from '@/shared/components/detail/DetailRow';
 import { DocRow } from '@/shared/components/detail/DocRow';
@@ -18,10 +18,17 @@ export function LeaseInfoTab({ renter }: Props) {
   if (renter.full_contract_url) docs.push({ label: t('documents.fullContract'), url: renter.full_contract_url });
   if (renter.id_image_url) docs.push({ label: t('documents.idImage'), url: renter.id_image_url });
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
-      {/* Left column */}
-      <div className="flex flex-col gap-4">
-        <LeaseTimeline renter={renter} />
+    <div className="flex flex-col gap-4">
+      {/* Full-width lease timeline */}
+      <LeaseTimeline renter={renter} />
+
+      {/* Balanced card grid, ordered by relevance */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
+        <DetailPanel title={t('renter.paymentPanel')}>
+          <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type} />
+          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} />
+          <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
+        </DetailPanel>
 
         <DetailPanel title={t('renter.insurancePanel')}>
           {renter.insurance_type ? (
@@ -33,14 +40,6 @@ export function LeaseInfoTab({ renter }: Props) {
             <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('renter.noInsurance')}</p>
           )}
         </DetailPanel>
-      </div>
-
-      {/* Right column */}
-      <div className="flex flex-col gap-4">
-        <DetailPanel title={t('renter.contactPanel')}>
-          <DetailRow icon={Phone} label={t('renter.phone')} value={renter.phone} href={`tel:${renter.phone}`} />
-          <DetailRow icon={Mail} label={t('renter.email')} value={renter.email} href={`mailto:${renter.email}`} last />
-        </DetailPanel>
 
         <DetailPanel title={t('documents.title')}>
           {docs.length === 0 ? (
@@ -50,12 +49,6 @@ export function LeaseInfoTab({ renter }: Props) {
               {docs.map((d, i) => <DocRow key={d.label} label={d.label} url={d.url} last={i === docs.length - 1} />)}
             </div>
           )}
-        </DetailPanel>
-
-        <DetailPanel title={t('renter.paymentPanel')}>
-          <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type} />
-          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} />
-          <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
         </DetailPanel>
 
         <DetailPanel title={t('renter.extraContactsPanel', { count: extras.length })}>
@@ -70,9 +63,6 @@ export function LeaseInfoTab({ renter }: Props) {
                 <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{c.name}</p>
                 <p className="text-[11.5px]" style={{ color: 'var(--color-text-secondary)' }}>{c.phone}</p>
               </div>
-              <a href={`tel:${c.phone}`} className="flex h-8 w-8 items-center justify-center rounded-[8px]" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)' }}>
-                <Phone size={14} />
-              </a>
             </div>
           ))}
         </DetailPanel>

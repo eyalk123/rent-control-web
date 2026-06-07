@@ -11,11 +11,13 @@ interface Props {
   monthlyRent: number | null;
   revTotal: number;
   expTotal: number;
+  renterName: string | null;
+  rentersCount: number;
   onEdit: () => void;
   onAddTransaction: () => void;
 }
 
-export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, onEdit, onAddTransaction }: Props) {
+export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, onEdit, onAddTransaction }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -23,7 +25,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       {/* Header row */}
       <div className="flex items-start justify-between gap-6">
         <div className="flex gap-4 items-start">
-          <PropTile propertyId={property.id} imageUrl={property.image_url} width={160} height={120} />
+          <PropTile propertyId={property.id} imageUrl={property.image_url} width={200} height={150} fit="cover" className="shadow-lg ring-1 ring-black/5" />
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Pill tone={property.hasRenters ? 'success' : 'warning'} size="md">
@@ -62,7 +64,12 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="grid grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <HeroStat
+          label={t('property.renter')}
+          value={renterName ?? t('property.occupancy.vacant')}
+          sub={rentersCount > 1 ? t('property.plusMoreRenters', { count: rentersCount - 1 }) : undefined}
+        />
         <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
         <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} />
         <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} />

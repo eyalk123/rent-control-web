@@ -241,6 +241,8 @@
     "fileFormats": "PDF, JPG, PNG up to 10 MB",
     "ownedBy": "Owned by {{owner}}",
     "allProperties": "All properties",
+    "renter": "Renter",
+    "plusMoreRenters": "+{{count}} more",
     "monthlyRent": "Monthly rent",
     "totalRevenue": "Total revenue",
     "totalExpenses": "Total expenses",
