@@ -46,18 +46,18 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
       tabIndex={0}
       onClick={() => navigate(`/renters/${renter.id}`)}
       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/renters/${renter.id}`); }}
-      className="flex flex-col gap-3 rounded-[var(--radius-card)] p-4 cursor-pointer transition-all hover:-translate-y-px text-start"
+      className="flex flex-col gap-2.5 rounded-[var(--radius-card)] p-3 cursor-pointer transition-all hover:-translate-y-px text-start"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
     >
       {/* Avatar + name + status pill */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-3">
         <div className="relative shrink-0">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full text-[13px] font-bold" style={{ background: bg, color }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-bold" style={{ background: bg, color }}>
             {(renter.first_name[0] + renter.last_name[0]).toUpperCase()}
           </div>
           {/* status dot */}
           <span
-            className="absolute bottom-0 end-0 h-3.5 w-3.5 rounded-full border-2"
+            className="absolute bottom-0 end-0 h-3 w-3 rounded-full border-2"
             style={{
               background: status === 'overdue' ? 'var(--color-error)' : status === 'expiring' ? 'var(--color-warning)' : 'var(--color-success)',
               borderColor: 'var(--color-surface)',
@@ -65,7 +65,7 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>
+          <p className="text-[14px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>
             {renter.first_name} {renter.last_name}
           </p>
           <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
@@ -76,7 +76,7 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 pt-3" style={{ borderTop: '1px solid var(--color-outline)' }}>
+      <div className="grid grid-cols-3 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
         {[
           { label: t('property.rent'), value: <LtrSpan>{formatMoney(monthly)}</LtrSpan> },
           { label: t('renter.leaseEnds'), value: leaseEnd ?? '—' },
@@ -97,7 +97,7 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
           <a
             key={label}
             href={href}
-            className="flex flex-1 h-8 items-center justify-center gap-1.5 rounded-[8px] text-[12px] font-medium transition-colors hover:opacity-80"
+            className="flex flex-1 h-7 items-center justify-center gap-1.5 rounded-[8px] text-[12px] font-medium transition-colors hover:opacity-80"
             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}
           >
             <Icon size={13} /> {label}
@@ -321,7 +321,7 @@ export function RentersListPage() {
             }
           />
         ) : view === 'card' ? (
-          <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+          <div className="grid grid-cols-3 gap-3">
             {filtered.map((r) => <RenterCard key={r.id} renter={r} status={statusMap.get(r.id) ?? 'active'} />)}
           </div>
         ) : (
