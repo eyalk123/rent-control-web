@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { useToast } from '@/shared/components/ui/Toast';
-import { createRevenueTransaction } from '@/features/transactions/api/transactions';
+import { useCreateRevenueTransaction } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import type { PaymentMethod } from '@/shared/types';
 import type { OverdueRenter, ExpiringRenter } from '../api/homeApi';
@@ -26,20 +26,16 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { openPanel } = useAlertsPanel();
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const { openPanel, dismissedKeys, dismiss } = useAlertsPanel();
+  const createRevenue = useCreateRevenueTransaction();
   const [savingId, setSavingId] = useState<string | null>(null);
-
-  function dismiss(key: string) {
-    setDismissed((prev) => new Set(prev).add(key));
-  }
 
   async function handleMarkPaid(r: OverdueRenter) {
     if (!r.property_id) return;
     const key = `o-${r.renter_id}`;
     setSavingId(key);
     try {
-      await createRevenueTransaction({
+      await createRevenue.mutateAsync({
         property_id: r.property_id,
         renter_id: r.renter_id,
         amount: r.monthly_amount,
@@ -55,8 +51,8 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
     }
   }
 
-  const visibleOverdue = overdueRenters.filter((r) => !dismissed.has(`o-${r.renter_id}`));
-  const visibleExpiring = expiringRenters.filter((r) => !dismissed.has(`e-${r.renter_id}`));
+  const visibleOverdue = overdueRenters.filter((r) => !dismissedKeys.has(`o-${r.renter_id}`));
+  const visibleExpiring = expiringRenters.filter((r) => !dismissedKeys.has(`e-${r.renter_id}`));
 
   return (
     <div>

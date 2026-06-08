@@ -6,7 +6,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import { createRevenueTransaction } from '@/features/transactions/api/transactions';
+import { useCreateRevenueTransaction } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import { useAlertsPanel } from './AlertsPanelContext';
 import type { OverdueRenter } from '@/features/home/api/homeApi';
@@ -39,22 +39,18 @@ export function AlertsPanel() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { isOpen, closePanel, setHasAlerts } = useAlertsPanel();
+  const { isOpen, closePanel, setHasAlerts, dismissedKeys, dismiss } = useAlertsPanel();
 
   const { data: overdueRenters = [] } = useOverdueRenters();
   const { data: expiringRenters = [] } = useExpiringRenters(60);
+  const createRevenue = useCreateRevenueTransaction();
 
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
   const [seenIds, setSeenIds] = useState<Set<string>>(getSeenIds);
 
   useEffect(() => {
     setHasAlerts(overdueRenters.length > 0 || expiringRenters.length > 0);
   }, [overdueRenters, expiringRenters, setHasAlerts]);
-
-  function dismiss(key: string) {
-    setDismissed(prev => new Set(prev).add(key));
-  }
 
   function handleNavigate(renterId: number, key: string) {
     markSeen(key);
@@ -65,10 +61,10 @@ export function AlertsPanel() {
 
   async function handleMarkPaid(r: OverdueRenter) {
     if (!r.property_id) return;
-    const key = `o_${r.renter_id}`;
+    const key = `o-${r.renter_id}`;
     setSavingId(key);
     try {
-      await createRevenueTransaction({
+      await createRevenue.mutateAsync({
         property_id: r.property_id,
         renter_id: r.renter_id,
         amount: r.monthly_amount,
@@ -84,8 +80,8 @@ export function AlertsPanel() {
     }
   }
 
-  const visibleOverdue = overdueRenters.filter(r => !dismissed.has(`o_${r.renter_id}`));
-  const visibleExpiring = expiringRenters.filter(r => !dismissed.has(`e_${r.renter_id}`));
+  const visibleOverdue = overdueRenters.filter(r => !dismissedKeys.has(`o-${r.renter_id}`));
+  const visibleExpiring = expiringRenters.filter(r => !dismissedKeys.has(`e-${r.renter_id}`));
 
   return (
     <Drawer open={isOpen} onClose={closePanel} title={t('common.notifications')} width={420}>
@@ -100,7 +96,7 @@ export function AlertsPanel() {
             </div>
             <div className="space-y-2">
               {visibleOverdue.map(r => {
-                const key = `o_${r.renter_id}`;
+                const key = `o-${r.renter_id}`;
                 const saving = savingId === key;
                 const seen = seenIds.has(key);
                 return (
@@ -154,7 +150,7 @@ export function AlertsPanel() {
             </div>
             <div className="space-y-2">
               {visibleExpiring.map(r => {
-                const key = `e_${r.renter_id}`;
+                const key = `e-${r.renter_id}`;
                 const seen = seenIds.has(key);
                 return (
                   <div key={r.renter_id} className={`flex items-center gap-2 transition-opacity ${seen ? 'opacity-50' : ''}`}>

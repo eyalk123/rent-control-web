@@ -70,6 +70,7 @@ export function useCreateRevenueTransaction() {
     mutationFn: (data: TransactionCreateRevenue) => createRevenueTransaction(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: transactionKeys.all });
+      qc.invalidateQueries({ queryKey: ['home'] });
     },
   });
 }
