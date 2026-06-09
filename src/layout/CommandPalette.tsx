@@ -106,15 +106,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     <div className="fixed inset-0 z-[80] flex justify-center" style={{ paddingTop: '12vh' }}>
       <div onClick={onClose} className="absolute inset-0 bg-[rgba(15,23,42,0.36)]" aria-hidden />
 
-      <div className="relative w-[600px] max-w-[calc(100%-2rem)] max-h-[540px] bg-[var(--color-surface)] border border-[var(--color-outline)] rounded-[14px] overflow-hidden flex flex-col shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('common.palette.search')}
+        className="relative w-[600px] max-w-[calc(100%-2rem)] max-h-[540px] bg-[var(--color-surface)] border border-[var(--color-outline)] rounded-[14px] overflow-hidden flex flex-col shadow-2xl"
+      >
         {/* Input */}
         <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[var(--color-outline)]">
-          <Search size={16} className="text-[var(--color-text-secondary)] shrink-0" />
+          <Search size={16} className="text-[var(--color-text-secondary)] shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('common.palette.search')}
+            aria-label={t('common.palette.search')}
             className="flex-1 border-0 outline-none text-sm text-[var(--color-text-primary)] bg-transparent placeholder:text-[var(--color-placeholder)]"
           />
           <span className="text-[10px] font-medium text-[var(--color-text-secondary)] border border-[var(--color-outline)] rounded px-1.5 py-px">esc</span>
@@ -136,12 +142,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                     onClick={item.action}
                     className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-input-filled-background)] transition-colors text-start"
                   >
-                    <item.icon size={16} className="text-[var(--color-text-secondary)] shrink-0" />
+                    <item.icon size={16} className="text-[var(--color-text-secondary)] shrink-0" aria-hidden="true" />
                     <span className="flex-1 text-[13.5px] font-medium text-[var(--color-text-primary)]">{item.label}</span>
                     {item.sub && <span className="text-xs text-[var(--color-text-secondary)]">{item.sub}</span>}
                     {isRtl
-                      ? <ArrowLeft size={13} className="text-[var(--color-placeholder)] shrink-0" />
-                      : <ArrowRight size={13} className="text-[var(--color-placeholder)] shrink-0" />
+                      ? <ArrowLeft size={13} className="text-[var(--color-placeholder)] shrink-0" aria-hidden="true" />
+                      : <ArrowRight size={13} className="text-[var(--color-placeholder)] shrink-0" aria-hidden="true" />
                     }
                   </button>
                 ))}

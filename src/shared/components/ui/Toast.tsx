@@ -1,5 +1,6 @@
 import * as RadixToast from '@radix-ui/react-toast';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 
 type ToastVariant = 'default' | 'success' | 'error';
@@ -19,6 +20,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 let _id = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const showToast = useCallback((message: string, variant: ToastVariant = 'default') => {
@@ -39,16 +41,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       <RadixToast.Provider>
         {children}
-        {toasts.map((t) => (
+        {toasts.map((toast) => (
           <RadixToast.Root
-            key={t.id}
+            key={toast.id}
             open
-            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 shadow-md text-sm font-medium ${variantClass[t.variant]}`}
+            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 shadow-md text-sm font-medium ${variantClass[toast.variant]}`}
           >
-            <RadixToast.Description>{t.message}</RadixToast.Description>
+            <RadixToast.Description>{toast.message}</RadixToast.Description>
             <RadixToast.Close asChild>
-              <button className="shrink-0 opacity-70 hover:opacity-100">
-                <X size={14} />
+              <button className="shrink-0 opacity-70 hover:opacity-100" aria-label={t('a11y.close')}>
+                <X size={14} aria-hidden="true" />
               </button>
             </RadixToast.Close>
           </RadixToast.Root>

@@ -40,6 +40,7 @@ function IconNavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; l
       to={path}
       end={path === '/home'}
       title={t(labelKey)}
+      aria-label={t(labelKey)}
       className={({ isActive }) =>
         `flex h-11 w-11 items-center justify-center rounded-[9px] transition-colors ${
           isActive
@@ -48,7 +49,7 @@ function IconNavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; l
         }`
       }
     >
-      {({ isActive }) => <Icon size={19} strokeWidth={isActive ? 2 : 1.7} />}
+      {({ isActive }) => <Icon size={19} strokeWidth={isActive ? 2 : 1.7} aria-hidden="true" />}
     </NavLink>
   );
 }

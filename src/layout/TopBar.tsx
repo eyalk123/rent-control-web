@@ -34,17 +34,19 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
         <button
           onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
           title={t('common.toggleTheme')}
+          aria-label={t('common.toggleTheme')}
           className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          {isDark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
         </button>
 
         <button
           onClick={openPanel}
           title={t('common.notifications')}
+          aria-label={t('common.notifications')}
           className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
         >
-          <Bell size={16} />
+          <Bell size={16} aria-hidden="true" />
           {hasAlerts && <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />}
         </button>
 
