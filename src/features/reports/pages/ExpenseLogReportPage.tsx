@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
 import { downloadExpenseLogReport, type ReportFormat } from '../api/reports';
-import { getTransactions } from '@/features/transactions/api/transactions';
+import { getAllTransactions } from '@/features/transactions/api/transactions';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -18,7 +18,7 @@ import type { Transaction } from '@/shared/types';
 function useExpensesForYear(year: number) {
   return useQuery({
     queryKey: ['transactions', 'expenses-for-year', year],
-    queryFn: () => getTransactions({ type: 'expense', limit: 2000, offset: 0 }),
+    queryFn: () => getAllTransactions({ type: 'expense' }),
     select: (data: Transaction[]) => data.filter((tx) => tx.date_of_payment.startsWith(String(year))),
   });
 }
@@ -41,7 +41,7 @@ export function ExpenseLogReportPage() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isDownloading, setIsDownloading] = useState<ReportFormat | null>(null);
 
-  const { data: expenses = [], isLoading } = useExpensesForYear(selectedYear);
+  const { data: expenses = [], isLoading, isError, refetch } = useExpensesForYear(selectedYear);
 
   // Group by category
   const categoryMap = new Map<string, Transaction[]>();
@@ -117,6 +117,19 @@ export function ExpenseLogReportPage() {
       <div className="px-8 py-6">
         {isLoading ? (
           <PageLoader />
+        ) : isError ? (
+          <EmptyState
+            title={t('error.loadFailed')}
+            action={
+              <button
+                onClick={() => refetch()}
+                className="h-9 px-4 rounded-[9px] text-[13px] font-semibold text-white"
+                style={{ background: 'var(--color-primary)' }}
+              >
+                {t('common.retry')}
+              </button>
+            }
+          />
         ) : expenses.length === 0 ? (
           <EmptyState icon={undefined} title={t('reports.noExpenses')} description={t('reports.noExpensesForYear', { year: selectedYear })} />
         ) : (

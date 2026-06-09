@@ -5,11 +5,12 @@ import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
 import { downloadIncomeExpenseReport, type ReportFormat } from '../api/reports';
-import { getTransactions } from '@/features/transactions/api/transactions';
+import { getAllTransactions } from '@/features/transactions/api/transactions';
 import { useProperties } from '@/features/properties/queries';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { formatMoney } from '@/shared/utils/money';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -26,7 +27,7 @@ function formatK(v: number): string {
 function useAllTransactionsForYear(year: number) {
   return useQuery({
     queryKey: ['transactions', 'all-for-year', year],
-    queryFn: () => getTransactions({ limit: 2000, offset: 0 }),
+    queryFn: () => getAllTransactions(),
     select: (data: Transaction[]) => data.filter((tx) => tx.date_of_payment.startsWith(String(year))),
   });
 }
@@ -42,7 +43,7 @@ export function IncomeExpenseReportPage() {
   const [isDownloading, setIsDownloading] = useState<ReportFormat | null>(null);
 
   const { data: properties = [] } = useProperties();
-  const { data: transactions = [], isLoading } = useAllTransactionsForYear(selectedYear);
+  const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear);
 
   const monthsLocale = Array.from({ length: 12 }, (_, idx) =>
     new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(selectedYear, idx, 1))
@@ -136,7 +137,20 @@ export function IncomeExpenseReportPage() {
 
       {/* Matrix table */}
       <div className="px-8 py-6">
-        {isLoading ? <PageLoader /> : (
+        {isLoading ? <PageLoader /> : isError ? (
+          <EmptyState
+            title={t('error.loadFailed')}
+            action={
+              <button
+                onClick={() => refetch()}
+                className="h-9 px-4 rounded-[9px] text-[13px] font-semibold text-white"
+                style={{ background: 'var(--color-primary)' }}
+              >
+                {t('common.retry')}
+              </button>
+            }
+          />
+        ) : (
           <>
             <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header row */}

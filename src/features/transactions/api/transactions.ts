@@ -75,6 +75,22 @@ export async function getTransactions(
   return response.data.map((tx) => ({ ...tx, amount: Number(tx.amount) }));
 }
 
+// Fetch every transaction by paging with a backend-safe page size.
+// The list endpoint has no year/date filter, so reports must pull everything
+// and filter client-side. Paging avoids tripping the backend's max-limit cap.
+export async function getAllTransactions(
+  params: Omit<TransactionsListParams, 'limit' | 'offset'> = {},
+): Promise<Transaction[]> {
+  const PAGE = 100;
+  const all: Transaction[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await getTransactions({ ...params, limit: PAGE, offset });
+    all.push(...page);
+    if (page.length < PAGE) break;
+  }
+  return all;
+}
+
 export async function getTransactionsSummary(): Promise<TransactionSummaryResponse> {
   if (USE_MOCK_API) {
     return mockTransactionsApi.getSummary();
