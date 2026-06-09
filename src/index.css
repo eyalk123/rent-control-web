@@ -18,10 +18,11 @@
   --color-surface:                #FFFFFF;
   --color-card-background:        #FFFFFF;
 
-  /* Text */
+  /* Text — secondary/placeholder darkened to meet WCAG AA contrast on the
+     light page background (slate-600 / slate-500). */
   --color-text-primary:           rgba(15, 23, 42, 1);
-  --color-text-secondary:         rgba(100, 116, 139, 1);
-  --color-placeholder:            rgba(148, 163, 184, 1);
+  --color-text-secondary:         rgba(71, 85, 105, 1);
+  --color-placeholder:            rgba(100, 116, 139, 1);
 
   /* Inputs & borders */
   --color-input-background:       rgba(248, 250, 252, 1);
