@@ -82,7 +82,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
       showToast(t(isEditing ? 'suppliers.updateSuccess' : 'suppliers.createSuccess'), 'success');
       onClose();
     } catch (err) {
-      console.error('[SupplierFormDrawer] save failed:', err);
+      if (import.meta.env.DEV) console.error('[SupplierFormDrawer] save failed:', err);
       showToast(t('error.saveFailed'), 'error');
     }
   });

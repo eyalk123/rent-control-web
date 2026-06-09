@@ -124,7 +124,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
 
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
       onClose();
-    } catch (err) { console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
+    } catch (err) { if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
   });
 
   const propertyOptions = (() => {

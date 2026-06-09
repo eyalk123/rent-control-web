@@ -214,17 +214,9 @@ export function SettingsPage() {
               label={t('settings.currency')}
               hint={t('settings.currencyHint')}
               control={<span className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('settings.currencyValue')}</span>}
-            />
-            <SettingRow
-              label={t('settings.exportData')}
-              hint={t('settings.exportDataHint')}
-              control={
-                <button className="h-8 px-3 rounded-[8px] text-[12px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-                  {t('common.export')}
-                </button>
-              }
               last
             />
+            {/* "Export data" row hidden until the export feature is implemented (S3). */}
           </SettingsSection>
 
           {/* About */}

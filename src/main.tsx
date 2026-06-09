@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './core/i18n/index'
 import './index.css'
 import App from './App.tsx'
+import { initSentry } from './core/monitoring/sentry'
+
+initSentry()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

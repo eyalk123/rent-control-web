@@ -141,7 +141,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');
       onClose();
     } catch (err) {
-      console.error('[PropertyFormDrawer] save failed:', err);
+      if (import.meta.env.DEV) console.error('[PropertyFormDrawer] save failed:', err);
       showToast(t('error.saveFailed'), 'error');
     }
   });

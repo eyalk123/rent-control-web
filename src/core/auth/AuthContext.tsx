@@ -24,6 +24,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // signed-in user. Gated on an env var that is unset in normal builds, so the real
 // Firebase auth path below is untouched in dev/prod. Used together with VITE_USE_MOCK_API.
 const E2E_AUTH_BYPASS = import.meta.env.VITE_E2E_AUTH_BYPASS === 'true';
+
+// Safety guard: the E2E bypass and mock API must never be active in a production
+// build. If a prod environment is misconfigured with these flags, fail loudly at
+// startup instead of silently disabling auth / serving fake data.
+if (import.meta.env.PROD && (E2E_AUTH_BYPASS || import.meta.env.VITE_USE_MOCK_API === 'true')) {
+  throw new Error(
+    'VITE_E2E_AUTH_BYPASS / VITE_USE_MOCK_API are enabled in a production build — refusing to start.',
+  );
+}
+
 const E2E_USER = {
   uid: 'e2e-test-user',
   email: 'e2e@test.local',
