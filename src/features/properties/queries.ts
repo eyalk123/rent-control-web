@@ -6,6 +6,7 @@ import {
   updateProperty,
   deleteProperty,
 } from './api/properties';
+import { retryNon4xx } from '@/core/api/queryRetry';
 import type { PropertyUpdate } from '@/shared/types';
 
 export const propertyKeys = {
@@ -22,6 +23,7 @@ export function useProperty(id: number, options?: { enabled?: boolean }) {
     queryKey: propertyKeys.detail(id),
     queryFn: () => getPropertyById(id),
     enabled: (options?.enabled ?? true) && id > 0,
+    retry: retryNon4xx,
   });
 }
 

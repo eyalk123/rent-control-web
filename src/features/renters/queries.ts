@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getRenters, getRenterById, createRenter, updateRenter, deleteRenter } from './api/renters';
+import { retryNon4xx } from '@/core/api/queryRetry';
 import type { RenterCreate, RenterUpdate } from '@/shared/types';
 
 export const renterKeys = {
@@ -12,7 +13,12 @@ export function useRenters() {
 }
 
 export function useRenter(id: number) {
-  return useQuery({ queryKey: renterKeys.detail(id), queryFn: () => getRenterById(id) });
+  return useQuery({
+    queryKey: renterKeys.detail(id),
+    queryFn: () => getRenterById(id),
+    enabled: id > 0,
+    retry: retryNon4xx,
+  });
 }
 
 export function useCreateRenter() {

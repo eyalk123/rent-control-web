@@ -481,6 +481,8 @@
   },
   "common": {
     "back": "Back",
+    "goBack": "Go back",
+    "goHome": "Go home",
     "required": "Required",
     "mustBeNumber": "Must be a number",
     "optional": "Optional",
@@ -557,6 +559,7 @@
     "invalidPropertyId": "Invalid property ID",
     "invalidRenterId": "Invalid renter ID",
     "propertyNotFound": "Property not found",
+    "notFoundDetail": "This item doesn't exist or you don't have access to it.",
     "renterNotFound": "Renter not found",
     "saveTransactionFailed": "Failed to save transaction",
     "saveFailed": "Failed to save",

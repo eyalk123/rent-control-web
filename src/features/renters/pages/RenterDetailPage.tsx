@@ -8,6 +8,7 @@ import { useTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { RenterDetailHero } from '../components/RenterDetailHero';
@@ -32,7 +33,7 @@ export function RenterDetailPage() {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
 
-  const { data: renter, isLoading } = useRenter(renterId);
+  const { data: renter, isLoading, isError } = useRenter(renterId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
@@ -40,7 +41,8 @@ export function RenterDetailPage() {
   const transactions = txPages?.pages.flat() ?? [];
 
   if (isLoading) return <FullPageLoader />;
-  if (!renter) return null;
+  if (isError || !renter)
+    return <DetailNotFound title={t('error.renterNotFound')} detail={t('error.notFoundDetail')} />;
 
   // Derive status
   const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));

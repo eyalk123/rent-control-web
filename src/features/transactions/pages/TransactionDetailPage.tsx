@@ -7,6 +7,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useTransaction, useDeleteTransaction, useExpenseCategories } from '../queries';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
@@ -30,7 +31,7 @@ export function TransactionDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const txId = Number(id);
-  const { data: tx, isLoading } = useTransaction(txId);
+  const { data: tx, isLoading, isError } = useTransaction(txId);
   const { data: categories = [] } = useExpenseCategories();
   const { mutateAsync: deleteTx } = useDeleteTransaction();
   const { showToast } = useToast();
@@ -46,7 +47,8 @@ export function TransactionDetailPage() {
   };
 
   if (isLoading) return <FullPageLoader />;
-  if (!tx) return null;
+  if (isError || !tx)
+    return <DetailNotFound title={t('error.transactionNotFound')} detail={t('error.notFoundDetail')} />;
 
   const isRevenue = tx.type === 'revenue';
   const tintBg = isRevenue ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)';

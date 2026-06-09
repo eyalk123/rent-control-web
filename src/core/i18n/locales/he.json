@@ -482,6 +482,8 @@
   },
   "common": {
     "back": "חזרה",
+    "goBack": "חזרה",
+    "goHome": "לדף הבית",
     "required": "חובה",
     "mustBeNumber": "חייב להיות מספר",
     "optional": "אופציונלי",
@@ -558,6 +560,7 @@
     "invalidPropertyId": "מזהה נכס לא תקין",
     "invalidRenterId": "מזהה דייר לא תקין",
     "propertyNotFound": "הנכס לא נמצא",
+    "notFoundDetail": "הפריט לא קיים או שאין לך הרשאה לצפות בו.",
     "renterNotFound": "הדייר לא נמצא",
     "saveTransactionFailed": "שמירת התנועה נכשלה",
     "saveFailed": "השמירה נכשלה",

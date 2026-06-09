@@ -17,6 +17,7 @@ import {
   getExpenseCategories,
   createExpenseCategory,
 } from './api/transactions';
+import { retryNon4xx } from '@/core/api/queryRetry';
 import type { TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
 import type { TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
 
@@ -49,7 +50,12 @@ export function useTransactionSummary() {
 }
 
 export function useTransaction(id: number) {
-  return useQuery({ queryKey: transactionKeys.detail(id), queryFn: () => getTransactionById(id) });
+  return useQuery({
+    queryKey: transactionKeys.detail(id),
+    queryFn: () => getTransactionById(id),
+    enabled: id > 0,
+    retry: retryNon4xx,
+  });
 }
 
 export function useExpenseCategories() {

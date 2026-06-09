@@ -7,6 +7,7 @@ import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useProperty } from '../queries';
 import { useTransactions } from '@/features/transactions/queries';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { PropertyDetailHero } from '../components/PropertyDetailHero';
@@ -28,12 +29,13 @@ export function PropertyDetailPage() {
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
 
-  const { data: property, isLoading } = useProperty(propertyId);
+  const { data: property, isLoading, isError } = useProperty(propertyId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ propertyId });
   const transactions = txPages?.pages.flat() ?? [];
 
   if (isLoading) return <FullPageLoader />;
-  if (!property) return null;
+  if (isError || !property)
+    return <DetailNotFound title={t('error.propertyNotFound')} detail={t('error.notFoundDetail')} />;
 
   const activeRenter = property.renters?.[0];
   const monthlyRent = activeRenter ? getRenterMonthlyRent(activeRenter) : null;
