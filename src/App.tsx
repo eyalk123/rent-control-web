@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/core/auth/AuthContext';
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute';
@@ -7,6 +7,7 @@ import { AppShell } from '@/layout/AppShell';
 import { ToastProvider } from '@/shared/components/ui/Toast';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { RouteErrorPage } from '@/shared/components/ui/RouteErrorPage';
+import { AccessibilityWidget } from '@/shared/accessibility/AccessibilityWidget';
 import { useLanguage } from '@/hooks/useLanguage';
 
 const SignInPage = lazy(() => import('@/features/auth/SignInPage').then((m) => ({ default: m.SignInPage })));
@@ -32,34 +33,51 @@ const queryClient = new QueryClient({
   },
 });
 
+// Root layout rendered on every route: provides the always-available
+// accessibility widget (which needs router context for its links).
+function RootLayout() {
+  return (
+    <>
+      <Outlet />
+      <AccessibilityWidget />
+    </>
+  );
+}
+
 const router = createBrowserRouter([
-  { path: '/sign-in', element: <SignInPage />, errorElement: <RouteErrorPage /> },
-  // Public legal pages (must be reachable without authentication).
-  { path: '/privacy', element: <PrivacyPolicyPage />, errorElement: <RouteErrorPage /> },
-  { path: '/terms', element: <TermsOfServicePage />, errorElement: <RouteErrorPage /> },
-  { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
   {
-    path: '/',
+    element: <RootLayout />,
     errorElement: <RouteErrorPage />,
-    element: (
-      <ProtectedRoute>
-        <AppShell />
-      </ProtectedRoute>
-    ),
     children: [
-      { index: true, element: <Navigate to="/home" replace /> },
-      { path: 'home', element: <HomePage /> },
-      { path: 'properties', element: <PropertiesListPage /> },
-      { path: 'properties/:id', element: <PropertyDetailPage /> },
-      { path: 'renters', element: <RentersListPage /> },
-      { path: 'renters/:id', element: <RenterDetailPage /> },
-      { path: 'transactions', element: <TransactionsListPage /> },
-      { path: 'transactions/:id', element: <TransactionDetailPage /> },
-      { path: 'suppliers', element: <SuppliersListPage /> },
-      { path: 'reports', element: <ReportsHubPage /> },
-      { path: 'reports/income-expense', element: <IncomeExpenseReportPage /> },
-      { path: 'reports/expense-log', element: <ExpenseLogReportPage /> },
-      { path: 'settings', element: <SettingsPage /> },
+      { path: '/sign-in', element: <SignInPage />, errorElement: <RouteErrorPage /> },
+      // Public legal pages (must be reachable without authentication).
+      { path: '/privacy', element: <PrivacyPolicyPage />, errorElement: <RouteErrorPage /> },
+      { path: '/terms', element: <TermsOfServicePage />, errorElement: <RouteErrorPage /> },
+      { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
+      {
+        path: '/',
+        errorElement: <RouteErrorPage />,
+        element: (
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        ),
+        children: [
+          { index: true, element: <Navigate to="/home" replace /> },
+          { path: 'home', element: <HomePage /> },
+          { path: 'properties', element: <PropertiesListPage /> },
+          { path: 'properties/:id', element: <PropertyDetailPage /> },
+          { path: 'renters', element: <RentersListPage /> },
+          { path: 'renters/:id', element: <RenterDetailPage /> },
+          { path: 'transactions', element: <TransactionsListPage /> },
+          { path: 'transactions/:id', element: <TransactionDetailPage /> },
+          { path: 'suppliers', element: <SuppliersListPage /> },
+          { path: 'reports', element: <ReportsHubPage /> },
+          { path: 'reports/income-expense', element: <IncomeExpenseReportPage /> },
+          { path: 'reports/expense-log', element: <ExpenseLogReportPage /> },
+          { path: 'settings', element: <SettingsPage /> },
+        ],
+      },
     ],
   },
 ]);

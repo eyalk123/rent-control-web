@@ -8,6 +8,17 @@
     "lastUpdated": "Last updated",
     "open": "Open"
   },
+  "a11y": {
+    "openMenu": "Accessibility menu",
+    "title": "Accessibility",
+    "close": "Close",
+    "textSize": "Text size",
+    "increase": "Increase text size",
+    "decrease": "Decrease text size",
+    "highContrast": "High contrast",
+    "reduceMotion": "Reduce motion",
+    "reset": "Reset"
+  },
   "tabs": {
     "home": "Home",
     "properties": "Properties",

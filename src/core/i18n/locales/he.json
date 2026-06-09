@@ -8,6 +8,17 @@
     "lastUpdated": "עודכן לאחרונה",
     "open": "פתח"
   },
+  "a11y": {
+    "openMenu": "תפריט נגישות",
+    "title": "נגישות",
+    "close": "סגור",
+    "textSize": "גודל טקסט",
+    "increase": "הגדל טקסט",
+    "decrease": "הקטן טקסט",
+    "highContrast": "ניגודיות גבוהה",
+    "reduceMotion": "צמצום תנועה",
+    "reset": "איפוס"
+  },
   "tabs": {
     "home": "בית",
     "properties": "נכסים",

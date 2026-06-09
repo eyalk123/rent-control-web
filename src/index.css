@@ -157,6 +157,48 @@ body {
 
 #root { height: 100dvh; display: flex; flex-direction: column; }
 
+/* ── Accessibility: high-contrast overrides (set by AccessibilityWidget) ──── */
+html[data-a11y-contrast="true"] {
+  --color-text-primary:   #000000;
+  --color-text-secondary: #1f2937;
+  --color-placeholder:    #374151;
+  --color-outline:        #000000;
+  --color-input-border:   #000000;
+  --color-subtle-outline: #000000;
+  --color-background:     #ffffff;
+  --color-surface:        #ffffff;
+  --color-card-background:#ffffff;
+}
+html[data-a11y-contrast="true"][data-theme="dark"] {
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #f3f4f6;
+  --color-placeholder:    #d1d5db;
+  --color-outline:        #ffffff;
+  --color-input-border:   #ffffff;
+  --color-subtle-outline: #ffffff;
+  --color-background:     #000000;
+  --color-surface:        #0a0a0a;
+  --color-card-background:#0a0a0a;
+}
+
+/* ── Accessibility: reduce motion (user toggle + OS preference) ───────────── */
+html[data-a11y-reduce-motion="true"] *,
+html[data-a11y-reduce-motion="true"] *::before,
+html[data-a11y-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
