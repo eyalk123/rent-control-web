@@ -1,0 +1,49 @@
+# Caddy config for serving the rent-control-web SPA on Railway.
+# Binds to the port Railway injects via $PORT.
+
+{
+	# Railway terminates TLS at its edge; Caddy serves plain HTTP internally.
+	auto_https off
+	admin off
+}
+
+:{$PORT} {
+	root * /srv
+	encode gzip zstd
+
+	# SPA history fallback: any unknown path serves index.html so client-side
+	# routing (deep links, hard refresh) works instead of 404ing.
+	try_files {path} /index.html
+	file_server
+
+	# --- Security headers (B4) ---
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+		# Content-Security-Policy.
+		# - style-src allows 'unsafe-inline' because Radix UI / Recharts inject
+		#   inline styles for positioning; removing it breaks popovers/charts.
+		# - connect-src includes the backend origin (set $BACKEND_ORIGIN in Railway,
+		#   e.g. https://rent-control-backend.up.railway.app) plus Firebase endpoints.
+		# - frame-src allows the Firebase auth domain for popup/redirect sign-in.
+		# If something breaks on first deploy, temporarily rename this header to
+		# "Content-Security-Policy-Report-Only" to diagnose without blocking.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' {$BACKEND_ORIGIN} https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.web.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+		# Hide the server banner.
+		-Server
+	}
+
+	# --- Cache headers ---
+	# Vite emits content-hashed files under /assets — safe to cache forever.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	# index.html must always be revalidated so new deploys are picked up.
+	@html path /index.html /
+	header @html Cache-Control "no-cache"
+}

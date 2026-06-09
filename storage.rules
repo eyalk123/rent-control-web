@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Firebase Storage security rules for rent-control.
+//
+// Uploads happen directly from the browser (see src/shared/utils/firebaseUpload.ts)
+// to the path:  {entityType}/{ownerId}/{uuid}/{filename}
+// where ownerId is the uploader's Firebase Auth UID and entityType is one of
+// properties | renters | transactions.
+//
+// These rules are the ONLY thing protecting the bucket from an authenticated
+// user reading or overwriting other users' files, so keep them tight.
+//
+// NOTE: The backend uses the Admin SDK (service account) for cleanup, which
+// bypasses these rules entirely. App image display uses tokenized download URLs
+// (getDownloadURL), which also bypass read rules — so owner-only reads here do
+// not break the UI.
+//
+// To deploy:  firebase deploy --only storage   (or paste into the console).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // A signed-in user owns the path segment matching their UID.
+    function isOwner(ownerId) {
+      return request.auth != null && request.auth.uid == ownerId;
+    }
+
+    // Allowed upload types: images and PDFs only.
+    function isAllowedType() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType == 'application/pdf';
+    }
+
+    // Cap uploads at 10 MB.
+    function isUnderSizeLimit() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Per-user, per-entity uploads.
+    match /{entityType}/{ownerId}/{allPaths=**} {
+      allow read: if isOwner(ownerId);
+      allow write: if isOwner(ownerId)
+                   && entityType in ['properties', 'renters', 'transactions']
+                   && isAllowedType()
+                   && isUnderSizeLimit();
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
