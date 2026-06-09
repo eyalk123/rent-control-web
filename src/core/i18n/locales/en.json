@@ -17,7 +17,8 @@
     "decrease": "Decrease text size",
     "highContrast": "High contrast",
     "reduceMotion": "Reduce motion",
-    "reset": "Reset"
+    "reset": "Reset",
+    "remove": "Remove"
   },
   "tabs": {
     "home": "Home",

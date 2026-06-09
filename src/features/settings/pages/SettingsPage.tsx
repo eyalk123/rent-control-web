@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText } from 'lucide-react';
@@ -18,6 +18,21 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
   const canDelete = confirmText === 'DELETE';
+  const titleId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
+  // Dialog a11y: close on Escape, focus the input on open, restore focus on close.
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      restoreFocusRef.current?.focus?.();
+    };
+  }, [onClose]);
 
   const handleDelete = async () => {
     if (!canDelete) return;
@@ -33,8 +48,15 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
-      <div className="w-full max-w-[440px] rounded-[var(--radius-card)] p-6 shadow-2xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }} onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-[18px] font-bold mb-1" style={{ color: 'var(--color-error)' }}>{t('settings.deleteAccount')}</h2>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="w-full max-w-[440px] rounded-[var(--radius-card)] p-6 shadow-2xl"
+        style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id={titleId} className="text-[18px] font-bold mb-1" style={{ color: 'var(--color-error)' }}>{t('settings.deleteAccount')}</h2>
         <p className="text-[13.5px] mb-4 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           {t('settings.deleteAccountPermanent')}
         </p>
@@ -48,9 +70,11 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
         </ul>
         <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('settings.deleteAccountConfirmLabel')}</p>
         <input
+          ref={inputRef}
           value={confirmText}
           onChange={(e) => setConfirmText(e.target.value)}
           placeholder={t('settings.deleteAccountConfirmPlaceholder')}
+          aria-label={t('settings.deleteAccountConfirmLabel')}
           className="h-10 w-full rounded-[9px] px-3 text-sm outline-none mb-4 font-mono"
           style={{ background: 'var(--color-input-filled-background)', border: `1px solid ${canDelete ? 'var(--color-error)' : 'var(--color-outline)'}`, color: 'var(--color-text-primary)' }}
         />

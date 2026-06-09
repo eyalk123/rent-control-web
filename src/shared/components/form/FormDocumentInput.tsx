@@ -38,7 +38,7 @@ export function FormDocumentInput({
           className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 border"
           style={{ background: 'var(--color-input-bg)', borderColor: 'var(--color-input-border)' }}
         >
-          <FileText size={16} className="shrink-0 text-[var(--color-text-secondary)]" />
+          <FileText size={16} className="shrink-0 text-[var(--color-text-secondary)]" aria-hidden="true" />
           {existingUrl && !pendingFile ? (
             <a
               href={existingUrl}
@@ -63,9 +63,10 @@ export function FormDocumentInput({
                 onRemoveExisting?.();
               }
             }}
+            aria-label={t('a11y.remove')}
             className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full text-[var(--color-text-secondary)] hover:text-[var(--color-error)]"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -76,7 +77,7 @@ export function FormDocumentInput({
             error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'
           }`}
         >
-          <Upload size={16} className="text-[var(--color-text-secondary)]" />
+          <Upload size={16} className="text-[var(--color-text-secondary)]" aria-hidden="true" />
           <span className="text-sm text-[var(--color-text-secondary)]">{t('documents.upload')}</span>
         </button>
       )}

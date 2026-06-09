@@ -25,9 +25,10 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
           <button
             type="button"
             onClick={() => onChange(null)}
+            aria-label={t('a11y.remove')}
             className="absolute top-1.5 end-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-error)] text-white"
           >
-            <X size={12} />
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
       ) : (
@@ -38,7 +39,7 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
             error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'
           }`}
         >
-          <Upload size={20} className="text-[var(--color-text-secondary)]" />
+          <Upload size={20} className="text-[var(--color-text-secondary)]" aria-hidden="true" />
           <span className="text-sm text-[var(--color-text-secondary)]">
             {value ? value.name : t('common.clickToUpload')}
           </span>

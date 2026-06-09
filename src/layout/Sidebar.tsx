@@ -73,18 +73,20 @@ export function Sidebar() {
     <>
       {/* Wide sidebar — ≥1280px */}
       <aside className="hidden 2xl:flex flex-col w-[252px] shrink-0 h-screen sticky top-0 border-e border-[var(--color-outline)] bg-[var(--color-surface)]">
-        <div
+        <button
+          type="button"
           onClick={() => navigate('/home')}
-          className="flex items-center gap-2.5 px-4 py-5 cursor-pointer"
+          aria-label={t('tabs.home')}
+          className="flex w-full items-center gap-2.5 px-4 py-5 cursor-pointer text-start"
         >
-          <img src={logoImage} alt="Rent Control" className="h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
+          <img src={logoImage} alt="" className="h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
           <div>
             <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">Rent Control</div>
             <div className="text-[10.5px] text-[var(--color-text-secondary)]">
               {user?.displayName ?? user?.email?.split('@')[0]} · {t('common.personal')}
             </div>
           </div>
-        </div>
+        </button>
 
         <nav className="flex-1 flex flex-col gap-0.5 px-3.5 overflow-y-auto">
           {mainNavItems.map((item) => (
@@ -138,12 +140,14 @@ export function Sidebar() {
 
       {/* Icon sidebar — 1024px–1280px */}
       <aside className="hidden lg:flex 2xl:hidden flex-col w-16 shrink-0 h-screen sticky top-0 border-e border-[var(--color-outline)] bg-[var(--color-surface)] py-4">
-        <img
-          src={logoImage}
-          alt="Rent Control"
+        <button
+          type="button"
           onClick={() => navigate('/home')}
-          className="h-9 w-9 mx-auto mb-5 rounded-[9px] object-contain cursor-pointer"
-        />
+          aria-label={t('tabs.home')}
+          className="mx-auto mb-5 block"
+        >
+          <img src={logoImage} alt="" className="h-9 w-9 rounded-[9px] object-contain" />
+        </button>
 
         <nav className="flex flex-col gap-1 px-2.5 flex-1">
           {mainNavItems.map((item) => (
