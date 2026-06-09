@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
@@ -126,8 +126,12 @@ export function SettingsPage() {
     { key: 'appearance', label: t('settings.navAppearance'), icon: Sun },
     { key: 'language', label: t('settings.navLanguage'), icon: Globe },
     { key: 'data', label: t('settings.navData'), icon: Shield },
+    { key: 'legal', label: t('legal.sectionTitle'), icon: FileText },
     { key: 'about', label: t('settings.navAbout'), icon: Info },
   ];
+
+  const legalLinkClass = 'inline-flex items-center h-8 px-3 rounded-[8px] text-[12px] font-medium';
+  const legalLinkStyle: React.CSSProperties = { border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)', textDecoration: 'none' };
 
   return (
     <div className="max-w-[1100px] mx-auto px-8 py-8">
@@ -217,6 +221,23 @@ export function SettingsPage() {
               last
             />
             {/* "Export data" row hidden until the export feature is implemented (S3). */}
+          </SettingsSection>
+
+          {/* Legal & Privacy */}
+          <SettingsSection id="legal" title={t('legal.sectionTitle')}>
+            <SettingRow
+              label={t('legal.privacyPolicy')}
+              control={<Link to="/privacy" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
+            />
+            <SettingRow
+              label={t('legal.termsOfService')}
+              control={<Link to="/terms" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
+            />
+            <SettingRow
+              label={t('legal.accessibility')}
+              control={<Link to="/accessibility" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
+              last
+            />
           </SettingsSection>
 
           {/* About */}

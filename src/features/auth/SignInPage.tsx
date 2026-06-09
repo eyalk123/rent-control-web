@@ -16,6 +16,7 @@ import { Check } from 'lucide-react';
 import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTranslation } from 'react-i18next';
 import { getPropertyColor } from '@/shared/utils/propertyColor';
+import { LegalLinks } from '@/features/legal/LegalLayout';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof loginSchema>;
@@ -299,6 +300,8 @@ export function SignInPage() {
               </div>
             </div>
           )}
+
+          <LegalLinks className="mt-8 text-center text-[12px]" />
         </div>
       </div>
     </div>

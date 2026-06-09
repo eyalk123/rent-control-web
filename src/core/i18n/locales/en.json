@@ -1,4 +1,13 @@
 {
+  "legal": {
+    "sectionTitle": "Legal & Privacy",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "accessibility": "Accessibility Statement",
+    "backToSignIn": "Back to sign in",
+    "lastUpdated": "Last updated",
+    "open": "Open"
+  },
   "tabs": {
     "home": "Home",
     "properties": "Properties",

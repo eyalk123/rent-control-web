@@ -1,4 +1,13 @@
 {
+  "legal": {
+    "sectionTitle": "משפטי ופרטיות",
+    "privacyPolicy": "מדיניות פרטיות",
+    "termsOfService": "תנאי שימוש",
+    "accessibility": "הצהרת נגישות",
+    "backToSignIn": "חזרה להתחברות",
+    "lastUpdated": "עודכן לאחרונה",
+    "open": "פתח"
+  },
   "tabs": {
     "home": "בית",
     "properties": "נכסים",

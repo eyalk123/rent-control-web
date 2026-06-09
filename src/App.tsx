@@ -22,6 +22,9 @@ const ReportsHubPage = lazy(() => import('@/features/reports/pages/ReportsHubPag
 const IncomeExpenseReportPage = lazy(() => import('@/features/reports/pages/IncomeExpenseReportPage').then((m) => ({ default: m.IncomeExpenseReportPage })));
 const ExpenseLogReportPage = lazy(() => import('@/features/reports/pages/ExpenseLogReportPage').then((m) => ({ default: m.ExpenseLogReportPage })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
+const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +34,10 @@ const queryClient = new QueryClient({
 
 const router = createBrowserRouter([
   { path: '/sign-in', element: <SignInPage />, errorElement: <RouteErrorPage /> },
+  // Public legal pages (must be reachable without authentication).
+  { path: '/privacy', element: <PrivacyPolicyPage />, errorElement: <RouteErrorPage /> },
+  { path: '/terms', element: <TermsOfServicePage />, errorElement: <RouteErrorPage /> },
+  { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
   {
     path: '/',
     errorElement: <RouteErrorPage />,
