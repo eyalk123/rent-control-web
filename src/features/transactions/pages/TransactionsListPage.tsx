@@ -117,9 +117,9 @@ export function TransactionsListPage() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 space-y-5">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-4 gap-y-3 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.transactions')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -139,7 +139,7 @@ export function TransactionsListPage() {
 
       {/* Hero: chart + KPI tiles */}
       {summaryLoading ? (
-        <div className="grid gap-4" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1.6fr_1fr]">
           <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <div className="flex items-start justify-between mb-4">
               <div className="space-y-1.5">
@@ -159,7 +159,7 @@ export function TransactionsListPage() {
           </div>
         </div>
       ) : buckets.length > 0 && (
-        <div className="grid gap-4" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1.6fr_1fr]">
           {/* Chart card */}
           <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <div className="flex items-start justify-between mb-4">

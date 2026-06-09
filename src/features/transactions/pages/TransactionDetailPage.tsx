@@ -69,7 +69,7 @@ export function TransactionDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
       {/* Back + actions */}
       <div className="flex items-center justify-between gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>

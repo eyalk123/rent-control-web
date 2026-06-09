@@ -30,7 +30,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
   return (
     <>
       {/* Header row */}
-      <div className="flex items-start justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
         <div className="flex gap-4 items-start">
           {/* Large avatar */}
           <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center rounded-full text-[28px] font-bold" style={{ background: avatarBg, color: avatarColor }}>
@@ -43,10 +43,10 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
                 <Pill tone="neutral" size="md">{t('renter.since', { date: fmtDate(renter.lease_start) })}</Pill>
               )}
             </div>
-            <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
+            <h1 className="text-2xl sm:text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
               {renter.first_name} {renter.last_name}
             </h1>
-            <div className="flex items-center gap-4 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
               {renter.property && (
                 <span className="inline-flex items-center gap-1.5"><Building2 size={13} /> {renter.property.address}</span>
               )}
@@ -57,7 +57,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={onEdit}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
@@ -76,7 +76,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-3 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <HeroStat label={t('renter.monthlyRent')} value={formatMoney(monthly)} />
         <HeroStat
           label={t('renter.leaseEndsIn')}

@@ -54,7 +54,7 @@ export function PropertyDetailPage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)', padding: '24px 40px 0' }}>
+      <div className="px-4 pt-6 lg:px-10" style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)' }}>
         <DetailBackLink to="/properties" label={t('property.allProperties')} />
         <PropertyDetailHero
           property={property}
@@ -71,7 +71,7 @@ export function PropertyDetailPage() {
       </div>
 
       {/* Tab content */}
-      <div className="p-10">
+      <div className="p-4 lg:p-10">
         {tab === 'info' && <PropertyDetailsTab property={property} />}
         {tab === 'renters' && <PropertyRentersTab property={property} onAddRenter={() => setRenterDrawerOpen(true)} />}
         {tab === 'transactions' && <PropertyTransactionsTab transactions={transactions} />}

@@ -1,13 +1,19 @@
 interface Props {
   children: React.ReactNode;
   className?: string;
-  /** Constrain content to max-w-5xl (default) or full width */
-  fullWidth?: boolean;
+  /** Content max width. 'default' = max-w-5xl, 'wide' = max-w-6xl, 'full' = no constraint. */
+  width?: 'default' | 'wide' | 'full';
 }
 
-export function PageContainer({ children, className = '', fullWidth }: Props) {
+const WIDTH_CLASS: Record<NonNullable<Props['width']>, string> = {
+  default: 'max-w-5xl mx-auto',
+  wide: 'max-w-6xl mx-auto',
+  full: '',
+};
+
+export function PageContainer({ children, className = '', width = 'default' }: Props) {
   return (
-    <div className={`px-4 py-6 lg:px-8 lg:py-8 ${fullWidth ? '' : 'max-w-5xl mx-auto'} ${className}`}>
+    <div className={`px-4 py-6 lg:px-8 lg:py-8 ${WIDTH_CLASS[width]} ${className}`}>
       {children}
     </div>
   );

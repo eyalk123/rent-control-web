@@ -11,6 +11,7 @@ import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatMoney } from '@/shared/utils/money';
@@ -116,7 +117,7 @@ function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map
   const navigate = useNavigate();
 
   return (
-    <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+    <div className="rounded-[var(--radius-card)] overflow-x-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
@@ -189,6 +190,8 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Tables overflow on phones — force the card view below the desktop breakpoint.
+  const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -223,7 +226,7 @@ export function RentersListPage() {
   });
 
   if (error) return (
-    <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
       <EmptyState icon={undefined} title={t('error.loadFailed')} action={
         <button onClick={() => refetch()} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{t('common.retry')}</button>
       } />
@@ -238,7 +241,7 @@ export function RentersListPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 space-y-0">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-0">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
@@ -259,7 +262,7 @@ export function RentersListPage() {
       </div>
 
       {/* Status tabs + search + view toggle */}
-      <div className="flex items-center gap-0 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center gap-0 gap-y-2 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         {STATUS_TABS.map(({ key, label, tone }) => (
           <button
             key={key}
@@ -280,27 +283,29 @@ export function RentersListPage() {
           </button>
         ))}
         <div className="flex-1" />
-        <div className="flex items-center gap-2 pb-2">
+        <div className="flex items-center gap-2 pb-2 w-full sm:w-auto">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('renter.searchPlaceholder')}
-            className="h-9 rounded-[9px] px-3 text-sm w-[240px] outline-none"
+            className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-0 sm:flex-none sm:w-[240px] outline-none"
             style={{
               background: 'var(--color-input-filled-background)',
               border: '1px solid var(--color-outline)',
               color: 'var(--color-text-primary)',
             }}
           />
-          <SegToggle
-            value={view}
-            onChange={(v) => setView(v as ViewMode)}
-            options={[
-              { value: 'card', label: t('common.cardsView') },
-              { value: 'table', label: t('common.tableView') },
-            ]}
-            size="sm"
-          />
+          <div className="hidden lg:block">
+            <SegToggle
+              value={view}
+              onChange={(v) => setView(v as ViewMode)}
+              options={[
+                { value: 'card', label: t('common.cardsView') },
+                { value: 'table', label: t('common.tableView') },
+              ]}
+              size="sm"
+            />
+          </div>
         </div>
       </div>
 
@@ -324,8 +329,8 @@ export function RentersListPage() {
               ) : undefined
             }
           />
-        ) : view === 'card' ? (
-          <div className="grid grid-cols-3 gap-3">
+        ) : view === 'card' || isMobile ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map((r) => <RenterCard key={r.id} renter={r} status={statusMap.get(r.id) ?? 'active'} />)}
           </div>
         ) : (

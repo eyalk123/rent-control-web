@@ -14,6 +14,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Property } from '@/shared/types';
 
 import i18n from '@/core/i18n';
@@ -128,7 +129,7 @@ function PropertyTable({ properties }: { properties: Property[] }) {
   const navigate = useNavigate();
 
   return (
-    <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+    <div className="rounded-[var(--radius-card)] overflow-x-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
@@ -191,6 +192,8 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Tables overflow on phones — force the card view below the desktop breakpoint.
+  const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -212,7 +215,7 @@ export function PropertiesListPage() {
   }, 0);
 
   if (error) return (
-    <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
       <EmptyState icon={undefined} title={t('error.loadFailed')} action={
         <button onClick={() => refetch()} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{t('common.retry')}</button>
       } />
@@ -220,9 +223,9 @@ export function PropertiesListPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 space-y-5">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-4 gap-y-3 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.properties')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
@@ -264,15 +267,17 @@ export function PropertiesListPage() {
           }}
         />
         <div className="flex-1" />
-        <SegToggle
-          value={view}
-          onChange={(v) => setView(v as ViewMode)}
-          options={[
-            { value: 'card', label: t('common.cardsView') },
-            { value: 'table', label: t('common.tableView') },
-          ]}
-          size="sm"
-        />
+        <div className="hidden lg:block">
+          <SegToggle
+            value={view}
+            onChange={(v) => setView(v as ViewMode)}
+            options={[
+              { value: 'card', label: t('common.cardsView') },
+              { value: 'table', label: t('common.tableView') },
+            ]}
+            size="sm"
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -295,8 +300,8 @@ export function PropertiesListPage() {
             ) : undefined
           }
         />
-      ) : view === 'card' ? (
-        <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+      ) : view === 'card' || isMobile ? (
+        <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {filtered.map((p) => <PropertyCard key={p.id} property={p} />)}
         </div>
       ) : (

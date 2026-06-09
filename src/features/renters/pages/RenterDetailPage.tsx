@@ -68,7 +68,7 @@ export function RenterDetailPage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)', padding: '24px 40px 0' }}>
+      <div className="px-4 pt-6 lg:px-10" style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)' }}>
         <DetailBackLink to="/renters" label={t('renter.allRenters')} />
         <RenterDetailHero
           renter={renter}
@@ -87,7 +87,7 @@ export function RenterDetailPage() {
       </div>
 
       {/* Tab content */}
-      <div className="p-10">
+      <div className="p-4 lg:p-10">
         {tab === 'info' && <LeaseInfoTab renter={renter} />}
         {tab === 'property' && <RenterPropertyTab renter={renter} />}
         {tab === 'transactions' && <RenterTransactionsTab transactions={transactions} />}

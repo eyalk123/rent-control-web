@@ -25,8 +25,8 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
   return (
     <>
       {/* Header row */}
-      <div className="flex items-start justify-between gap-6">
-        <div className="flex gap-4 items-start">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
           <PropTile propertyId={property.id} imageUrl={property.image_url} width={200} height={150} fit="cover" className="shadow-lg ring-1 ring-black/5" />
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -35,10 +35,10 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
               </Pill>
               <Pill tone="neutral" size="md">{t(`property.type_${property.type}` as never, property.type)}</Pill>
             </div>
-            <h1 className="text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
+            <h1 className="text-2xl sm:text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
               {property.address}
             </h1>
-            <div className="flex items-center gap-1.5 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
               <MapPin size={13} />
               {property.city}{property.zip_code ? `, ${property.zip_code}` : ''}
               {property.property_owner && <> · {t('property.ownedBy', { owner: property.property_owner })}</>}
@@ -47,7 +47,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={onEdit}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
@@ -66,7 +66,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <HeroStat
           label={t('property.renter')}
           value={renterName ?? t('property.occupancy.vacant')}
