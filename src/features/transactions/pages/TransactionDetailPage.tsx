@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Pencil, Trash2, Building2, User, Store, Tag,
 import { useLanguage } from '@/hooks/useLanguage';
 import { useTransaction, useDeleteTransaction, useExpenseCategories } from '../queries';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
-import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
@@ -45,7 +45,7 @@ export function TransactionDetailPage() {
     } catch { showToast(t('error.deleteFailed'), 'error'); }
   };
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return <FullPageLoader />;
   if (!tx) return null;
 
   const isRevenue = tx.type === 'revenue';

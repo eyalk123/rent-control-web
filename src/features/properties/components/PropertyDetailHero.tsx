@@ -13,11 +13,13 @@ interface Props {
   expTotal: number;
   renterName: string | null;
   rentersCount: number;
+  /** Transaction totals (net/revenue/expenses) are still loading. */
+  statsLoading?: boolean;
   onEdit: () => void;
   onAddTransaction: () => void;
 }
 
-export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, onEdit, onAddTransaction }: Props) {
+export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, statsLoading, onEdit, onAddTransaction }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -71,9 +73,9 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
           sub={rentersCount > 1 ? t('property.plusMoreRenters', { count: rentersCount - 1 }) : undefined}
         />
         <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
-        <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} />
-        <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} />
-        <HeroStat label={t('property.totalExpenses')} value={formatMoney(expTotal)} tone="danger" sub={t('common.allTime')} />
+        <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} loading={statsLoading} />
+        <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} loading={statsLoading} />
+        <HeroStat label={t('property.totalExpenses')} value={formatMoney(expTotal)} tone="danger" sub={t('common.allTime')} loading={statsLoading} />
       </div>
     </>
   );

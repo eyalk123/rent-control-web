@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import type { Transaction } from '@/shared/types';
 
 interface Props {
   transactions: Transaction[];
+  loading?: boolean;
 }
 
-export function RecentTransactions({ transactions }: Props) {
+export function RecentTransactions({ transactions, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -29,7 +31,22 @@ export function RecentTransactions({ transactions }: Props) {
       </div>
 
       <div className="rounded-[var(--radius-card)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-        {transactions.length === 0 ? (
+        {loading ? (
+          [0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-full flex items-center gap-3 px-4 py-3.5"
+              style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+            >
+              <Skeleton width={32} height={32} className="shrink-0 rounded-lg" />
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <Skeleton width="40%" height={14} className="block" />
+                <Skeleton width="60%" height={11} className="block" />
+              </div>
+              <Skeleton width={64} height={14} />
+            </div>
+          ))
+        ) : transactions.length === 0 ? (
           <div className="p-6 text-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             {t('empty.transactions')}
           </div>

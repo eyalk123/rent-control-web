@@ -7,7 +7,7 @@ import { useRenter } from '../queries';
 import { useTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
-import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { RenterDetailHero } from '../components/RenterDetailHero';
@@ -33,13 +33,13 @@ export function RenterDetailPage() {
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
 
   const { data: renter, isLoading } = useRenter(renterId);
-  const { data: txPages } = useTransactions({ renterId });
+  const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
 
   const transactions = txPages?.pages.flat() ?? [];
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return <FullPageLoader />;
   if (!renter) return null;
 
   // Derive status
@@ -60,7 +60,7 @@ export function RenterDetailPage() {
   const TABS: { id: TabId; label: string }[] = [
     { id: 'info', label: t('renter.tabLeaseInfo') },
     { id: 'property', label: t('renter.tabProperty') },
-    { id: 'transactions', label: t('renter.tabTransactionsCount', { count: transactions.length }) },
+    { id: 'transactions', label: txLoading ? t('renter.tabTransactions') : t('renter.tabTransactionsCount', { count: transactions.length }) },
   ];
 
   return (
@@ -77,6 +77,7 @@ export function RenterDetailPage() {
           leaseEnd={leaseEnd}
           totalPaid={totalPaid}
           paymentsCount={paymentsCount}
+          statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onRecordPayment={() => setTxDrawerOpen(true)}
         />

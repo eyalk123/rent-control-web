@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { MobileBottomBar } from './MobileBottomBar';
 import { TopBar } from './TopBar';
 import { CommandPalette } from './CommandPalette';
+import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { AuthTokenSync } from '@/core/auth/AuthTokenSync';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { AlertsPanelProvider } from '@/features/alerts/AlertsPanelContext';
@@ -44,7 +45,9 @@ export function AppShell() {
             onOpenPalette={() => setPaletteOpen(true)}
           />
           <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-            <Outlet />
+            <Suspense fallback={<FullPageLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
         <MobileBottomBar />

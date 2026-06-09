@@ -16,11 +16,13 @@ interface Props {
   leaseEnd: Date | null;
   totalPaid: number;
   paymentsCount: number;
+  /** Payment totals are still loading. */
+  statsLoading?: boolean;
   onEdit: () => void;
   onRecordPayment: () => void;
 }
 
-export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalPaid, paymentsCount, onEdit, onRecordPayment }: Props) {
+export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalPaid, paymentsCount, statsLoading, onEdit, onRecordPayment }: Props) {
   const { t } = useTranslation();
   const avatarColor = getPropertyColor(renter.id);
   const avatarBg = getPropertyColorBg(renter.id, 0.18);
@@ -82,7 +84,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
           tone={days != null && days < 90 ? 'warning' : undefined}
         />
-        <HeroStat label={t('renter.totalPaid')} value={formatMoney(totalPaid)} sub={t('renter.paymentsCount', { count: paymentsCount })} tone="success" />
+        <HeroStat label={t('renter.totalPaid')} value={formatMoney(totalPaid)} sub={t('renter.paymentsCount', { count: paymentsCount })} tone="success" loading={statsLoading} />
       </div>
     </>
   );

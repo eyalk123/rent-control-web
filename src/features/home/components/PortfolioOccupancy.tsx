@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import type { Property } from '@/shared/types';
 
 interface Props {
   properties: Property[];
+  loading?: boolean;
 }
 
-export function PortfolioOccupancy({ properties }: Props) {
+export function PortfolioOccupancy({ properties, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -20,10 +22,19 @@ export function PortfolioOccupancy({ properties }: Props) {
   return (
     <div className="rounded-[var(--radius-card)] p-6 flex flex-col" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
       <p className="text-[10px] font-semibold uppercase tracking-widest opacity-75 mb-2">{t('home.portfolioOccupancy')}</p>
-      <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: occupancyColor }}>
-        {occupancyPct}%
-      </p>
-      <p className="text-sm opacity-65 mt-1">{t('home.occupancyMeta', { occupied: occupiedCount, total: properties.length })}</p>
+      {loading ? (
+        <>
+          <Skeleton width={120} height={52} className="opacity-30" />
+          <Skeleton width={160} height={16} className="mt-2 opacity-30" />
+        </>
+      ) : (
+        <>
+          <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: occupancyColor }}>
+            {occupancyPct}%
+          </p>
+          <p className="text-sm opacity-65 mt-1">{t('home.occupancyMeta', { occupied: occupiedCount, total: properties.length })}</p>
+        </>
+      )}
 
       <div className="flex gap-1.5 mt-auto pt-5">
         {properties.slice(0, 8).map((p) => (

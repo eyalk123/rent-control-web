@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useCreateRevenueTransaction } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
@@ -13,6 +14,7 @@ import type { OverdueRenter, ExpiringRenter } from '../api/homeApi';
 interface Props {
   overdueRenters: OverdueRenter[];
   expiringRenters: ExpiringRenter[];
+  loading?: boolean;
 }
 
 function mapPaymentType(type?: string | null): PaymentMethod {
@@ -22,7 +24,7 @@ function mapPaymentType(type?: string | null): PaymentMethod {
   return 'cash';
 }
 
-export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props) {
+export function NeedsAttentionSection({ overdueRenters, expiringRenters, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -60,7 +62,20 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
         {t('home.needsAttention')}
       </p>
       <div className="space-y-3">
-        {visibleOverdue.length > 0 && (
+        {loading && (
+          <div className="rounded-[var(--radius-card)] p-4 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+            {[0, 1].map((i) => (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton width="45%" height={14} className="block" />
+                  <Skeleton width="65%" height={11} className="block" />
+                </div>
+                <Skeleton width={64} height={14} />
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && visibleOverdue.length > 0 && (
           <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-exp-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle size={15} style={{ color: 'var(--color-exp-fg)' }} />
@@ -178,7 +193,7 @@ export function NeedsAttentionSection({ overdueRenters, expiringRenters }: Props
           </div>
         )}
 
-        {visibleOverdue.length === 0 && visibleExpiring.length === 0 && (
+        {!loading && visibleOverdue.length === 0 && visibleExpiring.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

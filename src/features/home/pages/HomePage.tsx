@@ -13,11 +13,11 @@ import { RecentTransactions } from '../components/RecentTransactions';
 export function HomePage() {
   const navigate = useNavigate();
 
-  const { data: overdueRenters = [] } = useOverdueRenters();
-  const { data: expiringRenters = [] } = useExpiringRenters(60);
-  const { data: summary } = useTransactionSummary();
-  const { data: properties = [] } = useProperties();
-  const { data: recentTxPages } = useTransactions({});
+  const { data: overdueRenters = [], isLoading: overdueLoading } = useOverdueRenters();
+  const { data: expiringRenters = [], isLoading: expiringLoading } = useExpiringRenters(60);
+  const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
+  const { data: properties = [], isLoading: propsLoading } = useProperties();
+  const { data: recentTxPages, isLoading: recentLoading } = useTransactions({});
   const recentTransactions = recentTxPages?.pages[0]?.slice(0, 5) ?? [];
 
   const currentBucket = summary?.six_month_buckets?.at(-1);
@@ -27,18 +27,18 @@ export function HomePage() {
       <HomeGreeting />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <NetProfitCard currentBucket={currentBucket} />
-        <CashFlowCard buckets={summary?.six_month_buckets} />
+        <NetProfitCard currentBucket={currentBucket} loading={summaryLoading} />
+        <CashFlowCard buckets={summary?.six_month_buckets} loading={summaryLoading} />
       </div>
 
       <QuickActions onNavigate={navigate} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <NeedsAttentionSection overdueRenters={overdueRenters} expiringRenters={expiringRenters} />
-        <PortfolioOccupancy properties={properties} />
+        <NeedsAttentionSection overdueRenters={overdueRenters} expiringRenters={expiringRenters} loading={overdueLoading || expiringLoading} />
+        <PortfolioOccupancy properties={properties} loading={propsLoading} />
       </div>
 
-      <RecentTransactions transactions={recentTransactions} />
+      <RecentTransactions transactions={recentTransactions} loading={recentLoading} />
     </div>
   );
 }

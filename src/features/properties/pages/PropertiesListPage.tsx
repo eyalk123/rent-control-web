@@ -13,6 +13,7 @@ import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatMoney } from '@/shared/utils/money';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import type { Property } from '@/shared/types';
 
 import i18n from '@/core/i18n';
@@ -224,8 +225,14 @@ export function PropertiesListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.properties')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('property.headerMeta', { total: filtered.length, occupied })}
-            {totalMonthly > 0 && <> · <LtrSpan>{formatMoney(totalMonthly)}</LtrSpan>{t('common.perMonth')}</>}
+            {isLoading ? (
+              <Skeleton width={220} height={14} />
+            ) : (
+              <>
+                {t('property.headerMeta', { total: filtered.length, occupied })}
+                {totalMonthly > 0 && <> · <LtrSpan>{formatMoney(totalMonthly)}</LtrSpan>{t('common.perMonth')}</>}
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

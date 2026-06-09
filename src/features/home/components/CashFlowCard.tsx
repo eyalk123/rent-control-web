@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import type { MonthSummaryItem } from '@/features/transactions/api/transactions';
 import i18n from '@/core/i18n';
 
@@ -10,9 +11,10 @@ function bucketToChartPoint(b: MonthSummaryItem) {
 
 interface Props {
   buckets: MonthSummaryItem[] | undefined;
+  loading?: boolean;
 }
 
-export function CashFlowCard({ buckets }: Props) {
+export function CashFlowCard({ buckets, loading }: Props) {
   const { t } = useTranslation();
   const chartData = (buckets ?? []).map(bucketToChartPoint);
 
@@ -29,7 +31,9 @@ export function CashFlowCard({ buckets }: Props) {
           </span>
         </div>
       </div>
-      {chartData.length > 0 ? (
+      {loading ? (
+        <Skeleton className="block w-full" height={180} />
+      ) : chartData.length > 0 ? (
         <CashFlowChart data={chartData} height={180} />
       ) : (
         <div className="h-44 flex items-center justify-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>

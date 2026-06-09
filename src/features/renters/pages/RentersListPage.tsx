@@ -9,6 +9,7 @@ import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi'
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
@@ -242,7 +243,9 @@ export function RentersListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.renters')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('renter.headerMeta', { count: renters.length, expiring: counts.expiring, overdue: counts.overdue })}
+            {isLoading
+              ? <Skeleton width={200} height={14} />
+              : t('renter.headerMeta', { count: renters.length, expiring: counts.expiring, overdue: counts.overdue })}
           </p>
         </div>
         <button
@@ -272,7 +275,7 @@ export function RentersListPage() {
             }}
           >
             {label}
-            <Pill tone={statusFilter === key ? tone : 'neutral'} size="sm">{counts[key]}</Pill>
+            <Pill tone={statusFilter === key ? tone : 'neutral'} size="sm">{isLoading ? <Skeleton width={8} height={10} /> : counts[key]}</Pill>
           </button>
         ))}
         <div className="flex-1" />

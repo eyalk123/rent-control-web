@@ -8,6 +8,7 @@ import { useTransactions, useTransactionSummary } from '../queries';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
@@ -86,7 +87,7 @@ export function TransactionsListPage() {
 
   const queryFilters = filter === 'all' ? {} : { type: filter as 'revenue' | 'expense' };
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(queryFilters);
-  const { data: summary } = useTransactionSummary();
+  const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
 
   const transactions = data?.pages.flat() ?? [];
   const filtered = search
@@ -121,7 +122,9 @@ export function TransactionsListPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.transactions')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('transactions.headerMeta', { count: filtered.length })}
+            {isLoading
+              ? <Skeleton width={160} height={14} />
+              : t('transactions.headerMeta', { count: filtered.length })}
           </p>
         </div>
         <button
@@ -134,7 +137,27 @@ export function TransactionsListPage() {
       </div>
 
       {/* Hero: chart + KPI tiles */}
-      {buckets.length > 0 && (
+      {summaryLoading ? (
+        <div className="grid gap-4" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
+          <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="space-y-1.5">
+                <Skeleton width={120} height={14} className="block" />
+                <Skeleton width={80} height={11} className="block" />
+              </div>
+            </div>
+            <Skeleton className="block w-full" height={180} />
+          </div>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rounded-[var(--radius-md)] p-4 flex-1" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+                <Skeleton width="60%" height={11} className="block" />
+                <Skeleton width="50%" height={22} className="block mt-2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : buckets.length > 0 && (
         <div className="grid gap-4" style={{ gridTemplateColumns: '1.6fr 1fr' }}>
           {/* Chart card */}
           <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>

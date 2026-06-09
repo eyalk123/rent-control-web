@@ -7,6 +7,7 @@ import { TrendingUp } from 'lucide-react';
 import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTransactionSummary } from '@/features/transactions/queries';
 import { formatMoney } from '@/shared/utils/money';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 
 function NavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; labelKey: string; path: string }) {
   const { t } = useTranslation();
@@ -56,7 +57,7 @@ export function Sidebar() {
   const { t } = useTranslation();
   const { user } = useAppAuth();
   const navigate = useNavigate();
-  const { data: summary } = useTransactionSummary();
+  const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
 
   const bucket = summary?.six_month_buckets?.at(-1);
   const profit = bucket ? bucket.revenue - bucket.expenses : null;
@@ -96,7 +97,13 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {profit !== null && (
+        {summaryLoading ? (
+          <div className="mx-3.5 mb-3 rounded-[10px] bg-[var(--color-input-filled-background)] p-3">
+            <Skeleton width="55%" height={10} className="block" />
+            <Skeleton width="70%" height={22} className="block mt-2" />
+            <Skeleton width="45%" height={11} className="block mt-2" />
+          </div>
+        ) : profit !== null && (
           <div className="mx-3.5 mb-3 rounded-[10px] bg-[var(--color-input-filled-background)] p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">
               {t('home.thisMonthPL')}

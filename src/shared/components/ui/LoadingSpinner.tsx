@@ -11,3 +11,12 @@ export function PageLoader() {
     </div>
   );
 }
+
+/** Fills the content area and centers — keeps the spinner in the same spot as the AppShell chunk fallback. */
+export function FullPageLoader() {
+  return (
+    <div className="h-full min-h-64 flex items-center justify-center">
+      <LoadingSpinner className="h-8 w-8" />
+    </div>
+  );
+}

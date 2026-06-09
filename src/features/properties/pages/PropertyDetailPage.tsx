@@ -6,7 +6,7 @@ import { TransactionFormDrawer } from '@/features/transactions/pages/Transaction
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useProperty } from '../queries';
 import { useTransactions } from '@/features/transactions/queries';
-import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { PropertyDetailHero } from '../components/PropertyDetailHero';
@@ -29,10 +29,10 @@ export function PropertyDetailPage() {
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
 
   const { data: property, isLoading } = useProperty(propertyId);
-  const { data: txPages } = useTransactions({ propertyId });
+  const { data: txPages, isLoading: txLoading } = useTransactions({ propertyId });
   const transactions = txPages?.pages.flat() ?? [];
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return <FullPageLoader />;
   if (!property) return null;
 
   const activeRenter = property.renters?.[0];
@@ -45,7 +45,7 @@ export function PropertyDetailPage() {
   const TABS: { id: TabId; label: string }[] = [
     { id: 'info', label: t('property.tabDetails') },
     { id: 'renters', label: t('property.tabRentersCount', { count: rentersCount }) },
-    { id: 'transactions', label: t('property.tabTransactionsCount', { count: transactions.length }) },
+    { id: 'transactions', label: txLoading ? t('property.tabTransactions') : t('property.tabTransactionsCount', { count: transactions.length }) },
     { id: 'documents', label: t('property.tabDocuments') },
   ];
 
@@ -61,6 +61,7 @@ export function PropertyDetailPage() {
           expTotal={expTotal}
           renterName={activeRenter ? `${activeRenter.first_name} ${activeRenter.last_name}` : null}
           rentersCount={rentersCount}
+          statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onAddTransaction={() => setTxDrawerOpen(true)}
         />
