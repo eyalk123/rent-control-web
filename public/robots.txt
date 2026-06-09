@@ -1,0 +1,3 @@
+# Rent Control is a private, login-gated application. Keep it out of search indexes.
+User-agent: *
+Disallow: /

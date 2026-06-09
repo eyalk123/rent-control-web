@@ -1,73 +1,71 @@
-# React + TypeScript + Vite
+# Rent Control — Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web client for **Rent Control**, a property-management app for landlords (Hebrew/RTL + English). It is the web port of the rent-control mobile app and talks to the separate FastAPI backend (`../rent-control-backend`).
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **TypeScript** + **Vite**
+- **React Router v7** (`createBrowserRouter`)
+- **TanStack React Query** for server state
+- **react-hook-form** + **zod** for forms/validation
+- **Tailwind CSS v4** + Radix UI primitives
+- **Firebase** Auth (email/password + Google) and Storage (direct browser uploads)
+- **i18next** / react-i18next (en + he)
+- **Recharts** for charts
+- **Sentry** for production error monitoring
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env   # then fill in the values
+npm run dev            # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Environment variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+All client vars are `VITE_*` and are **inlined at build time** (Firebase web config is public by design).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Variable | Purpose |
+|---|---|
+| `VITE_API_URL` | Backend base URL (e.g. `http://localhost:8000`) |
+| `VITE_FIREBASE_API_KEY` | Firebase web config |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase web config |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase web config |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase web config |
+| `VITE_FIREBASE_APP_ID` | Firebase web config |
+| `VITE_SENTRY_DSN` | Optional; enables Sentry in **prod builds** only |
+
+> **Test-only flags** (never set in production): `VITE_USE_MOCK_API` (in-memory mock API) and `VITE_E2E_AUTH_BYPASS` (skips Firebase auth). They live in `.env.test` and the app **throws on startup** if they are enabled in a production build.
+
+## Scripts
+
+```bash
+npm run dev        # dev server
+npm run build      # type-check (tsc -b) + production build to dist/
+npm run preview    # preview the production build
+npm run lint       # eslint
+npm run test:e2e   # Playwright end-to-end tests (run offline via mock + auth bypass)
 ```
+
+## Deployment (Railway)
+
+The frontend is served as a static SPA via a multi-stage **Docker** build:
+
+- `Dockerfile` — builds with Node, serves `dist/` with **Caddy**.
+- `Caddyfile` — SPA history fallback, security headers (HSTS, CSP, X-Frame-Options, …), and cache headers (`immutable` for `/assets/*`, `no-cache` for `index.html`). Binds to `:{$PORT}`.
+- `railway.toml` — Dockerfile builder, healthcheck `/`.
+
+Set the `VITE_*` variables (above) as **service variables** on the Railway frontend service; the `Dockerfile` declares each as an `ARG` so Vite inlines them at build time. Set `BACKEND_ORIGIN` too — the Caddyfile injects it into the CSP `connect-src`.
+
+After deploying, on the **backend** set `CORS_ORIGINS` to the frontend origin, and add the frontend domain to **Firebase → Auth → Authorized domains**.
+
+### Firebase Storage rules
+
+`storage.rules` (deployed via `firebase deploy --only storage`) restricts uploads to the owner's path, images/PDF only, ≤ 10 MB, with a default-deny.
+
+## Accessibility & legal
+
+- Public legal pages live under `/privacy`, `/terms`, `/accessibility` (`src/features/legal/`).
+- A native accessibility panel (text size, high contrast, reduced motion) is in `src/shared/accessibility/`.
+- Targets WCAG 2.0 AA / IS 5568; see `DEPLOYMENT_CHECKLIST.md` for the full pre-launch checklist.

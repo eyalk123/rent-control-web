@@ -8,6 +8,7 @@ import { ToastProvider } from '@/shared/components/ui/Toast';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { RouteErrorPage } from '@/shared/components/ui/RouteErrorPage';
 import { AccessibilityWidget } from '@/shared/accessibility/AccessibilityWidget';
+import { AppErrorBoundary } from '@/shared/components/ui/AppErrorBoundary';
 import { useLanguage } from '@/hooks/useLanguage';
 
 const SignInPage = lazy(() => import('@/features/auth/SignInPage').then((m) => ({ default: m.SignInPage })));
@@ -85,14 +86,16 @@ const router = createBrowserRouter([
 export default function App() {
   useLanguage();
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <Suspense fallback={<PageLoader />}>
-            <RouterProvider router={router} />
-          </Suspense>
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <Suspense fallback={<PageLoader />}>
+              <RouterProvider router={router} />
+            </Suspense>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 }

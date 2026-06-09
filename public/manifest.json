@@ -1,29 +1,29 @@
 {
-  "name": "rent-control",
-  "short_name": "rent-control",
-  "description": "Property management app",
+  "name": "Rent Control",
+  "short_name": "Rent Control",
+  "description": "Property management for landlords",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAF7F0",
+  "background_color": "#1E3A5F",
   "theme_color": "#1E3A5F",
   "icons": [
     {
-      "src": "/rent-control-icon-no-text.png",
+      "src": "/icons/icon-192.png",
       "type": "image/png",
-      "sizes": "1049x754",
+      "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "/rent-control-icon-padded.png",
+      "src": "/icons/icon-512.png",
       "type": "image/png",
-      "sizes": "1169x874",
-      "purpose": "maskable"
+      "sizes": "512x512",
+      "purpose": "any"
     },
     {
-      "src": "/rent-control-icon-android-foreground.png",
+      "src": "/icons/maskable-512.png",
       "type": "image/png",
-      "sizes": "1024x1024",
-      "purpose": "any maskable"
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ]
 }
