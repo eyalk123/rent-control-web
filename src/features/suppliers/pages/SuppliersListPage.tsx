@@ -122,7 +122,7 @@ export function SuppliersListPage() {
       ) : suppliers.length === 0 ? (
         <EmptyState
           icon={undefined}
-          title={search ? t('empty.noResults') : t('empty.suppliers', 'No suppliers found')}
+          title={search ? t('empty.noResults') : t('empty.suppliers')}
           action={
             !search ? (
               <button

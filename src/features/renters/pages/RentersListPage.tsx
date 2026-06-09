@@ -196,6 +196,7 @@ export function RentersListPage() {
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: consume the ?new query param once
   }, []);
 
   // Build status map

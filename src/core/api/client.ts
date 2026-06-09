@@ -48,12 +48,17 @@ function getDetailMessage(detail: unknown): string | null {
   return null;
 }
 
+let _signingOut = false;
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Auto sign-out on 401
-    if (error.response?.status === 401) {
-      signOut(auth).catch(() => {});
+    // Auto sign-out on 401. Guard against concurrent 401s each firing signOut.
+    if (error.response?.status === 401 && !_signingOut) {
+      _signingOut = true;
+      signOut(auth)
+        .catch(() => {})
+        .finally(() => { _signingOut = false; });
     }
     const detail = error.response?.data?.detail;
     const userMessage = getDetailMessage(detail);

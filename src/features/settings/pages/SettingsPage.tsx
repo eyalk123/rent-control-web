@@ -136,7 +136,7 @@ export function SettingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleSignOut = async () => {
-    if (!confirm(t('settings.signOutConfirm', 'Sign out?'))) return;
+    if (!confirm(t('settings.signOutConfirm'))) return;
     try {
       await signOut();
       navigate('/sign-in', { replace: true });

@@ -198,6 +198,7 @@ export function PropertiesListPage() {
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: consume the ?new query param once
   }, []);
 
   const filtered = (properties ?? []).filter((p) =>

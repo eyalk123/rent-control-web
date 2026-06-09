@@ -337,8 +337,8 @@ const seedTransactions: Transaction[] = [
 
 let mockProperties: Property[] = [...seedProperties];
 let mockRenters: Renter[] = [...seedRenters];
-let mockExpenseCategories: ExpenseCategory[] = [...seedExpenseCategories];
-let mockSuppliers: Supplier[] = [...seedSuppliers];
+const mockExpenseCategories: ExpenseCategory[] = [...seedExpenseCategories];
+const mockSuppliers: Supplier[] = [...seedSuppliers];
 let mockTransactions: Transaction[] = [...seedTransactions];
 let nextPropertyId = 6;
 let nextRenterId = 7;

@@ -69,7 +69,7 @@ export function IncomeExpenseReportPage() {
     setIsDownloading(fmt);
     try {
       await downloadIncomeExpenseReport(selectedYear, fmt);
-      showToast(t('reports.downloadSuccess', 'Report downloaded'), 'success');
+      showToast(t('reports.downloadSuccess'), 'success');
     } catch {
       showToast(t('error.saveFailed'), 'error');
     } finally {

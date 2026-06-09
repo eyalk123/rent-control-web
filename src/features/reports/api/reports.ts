@@ -30,7 +30,8 @@ async function triggerDownload(
   const response = await apiClient.get<Blob>(endpoint, {
     params: { year, format },
     responseType: 'blob',
-    timeout: 30000,
+    // Generous timeout — large PDF/CSV reports can take a while to generate.
+    timeout: 60000,
   });
 
   const url = URL.createObjectURL(response.data);

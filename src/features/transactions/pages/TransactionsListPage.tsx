@@ -83,6 +83,7 @@ export function TransactionsListPage() {
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: consume the ?new query param once
   }, []);
 
   const queryFilters = filter === 'all' ? {} : { type: filter as 'revenue' | 'expense' };

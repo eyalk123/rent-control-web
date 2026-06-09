@@ -150,6 +150,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
     if (!bulkPayment && enriched.length > 0 && enriched[0].payment_type) {
       setBulkPayment(enriched[0].payment_type);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- bulkPayment is a one-time default; re-running on its change would override the user's choice
   }, [selectedPropertyIds, properties]);
 
   const allRenterIds = allRenters.map((r) => r.id);
@@ -311,7 +312,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       {periodType === 'custom' && (
         <MonthGridPicker
           selectedMonths={customMonths}
-          onToggle={(m) => setCustomMonths((prev) => { const next = new Set(prev); next.has(m) ? next.delete(m) : next.add(m); return next; })}
+          onToggle={(m) => setCustomMonths((prev) => { const next = new Set(prev); if (next.has(m)) next.delete(m); else next.add(m); return next; })}
           gridYear={gridYear}
           onGridYearChange={setGridYear}
         />
@@ -512,6 +513,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
       ? [transaction.category_id]
       : [];
     setSelectedCategoryIds(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-seed categories only when a different transaction loads
   }, [transaction?.id]);
 
   // ── Create mode state ──────────────────────────────────────────────────────

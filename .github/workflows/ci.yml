@@ -27,9 +27,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Non-blocking for now: there are known pre-existing lint findings to clean up.
       - name: Lint
-        continue-on-error: true
         run: npm run lint
 
   e2e:

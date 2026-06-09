@@ -149,10 +149,10 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
     >
       <form id="supplier-form" onSubmit={onSubmit} className="space-y-4">
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-          <FormInput label={t('suppliers.name', 'Name')} error={errors.name?.message} {...register('name')} />
-          <FormInput label={t('suppliers.phone', 'Phone')} type="tel" {...register('phone')} />
-          <FormInput label={t('suppliers.email', 'Email')} type="email" {...register('email')} />
-          <FormInput label={t('suppliers.notes', 'Notes')} {...register('notes')} />
+          <FormInput label={t('suppliers.name')} error={errors.name?.message} {...register('name')} />
+          <FormInput label={t('suppliers.phone')} type="tel" {...register('phone')} />
+          <FormInput label={t('suppliers.email')} type="email" {...register('email')} />
+          <FormInput label={t('suppliers.notes')} {...register('notes')} />
 
           <div>
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.category')}</p>

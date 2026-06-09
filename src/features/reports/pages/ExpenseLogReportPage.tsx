@@ -57,7 +57,7 @@ export function ExpenseLogReportPage() {
     setIsDownloading(fmt);
     try {
       await downloadExpenseLogReport(selectedYear, fmt);
-      showToast(t('reports.downloadSuccess', 'Report downloaded'), 'success');
+      showToast(t('reports.downloadSuccess'), 'success');
     } catch {
       showToast(t('error.saveFailed'), 'error');
     } finally {
