@@ -158,7 +158,7 @@ export function SettingsPage() {
   const legalLinkStyle: React.CSSProperties = { border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)', textDecoration: 'none' };
 
   return (
-    <div className="max-w-[1100px] mx-auto px-8 py-8">
+    <div className="max-w-[1100px] mx-auto px-4 py-6 lg:px-8 lg:py-8">
       {/* Header */}
       <div className="pb-4 mb-6" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.settings')}</h1>

@@ -68,7 +68,7 @@ export function ExpenseLogReportPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between px-8 pt-6 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-y-3 px-4 lg:px-8 pt-6 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <button
             onClick={() => navigate('/reports')}
@@ -103,7 +103,7 @@ export function ExpenseLogReportPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-4 px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center gap-4 px-4 lg:px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.year')}</span>
         <SegToggle
           value={String(selectedYear)}
@@ -114,7 +114,7 @@ export function ExpenseLogReportPage() {
       </div>
 
       {/* Content */}
-      <div className="px-8 py-6">
+      <div className="px-4 lg:px-8 py-6">
         {isLoading ? (
           <PageLoader />
         ) : isError ? (

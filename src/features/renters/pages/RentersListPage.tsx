@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Mail } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Plus, Mail, CheckSquare } from 'lucide-react';
 import { RenterFormDrawer } from './RenterFormDrawer';
-import { useRenters } from '../queries';
+import { useRenters, renterKeys } from '../queries';
+import { deleteRenter } from '../api/renters';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -11,6 +13,12 @@ import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { SelectionToolbar } from '@/shared/components/ui/SelectionToolbar';
+import { TriStateCheckbox } from '@/shared/components/ui/TriStateCheckbox';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { useSelectMode } from '@/hooks/useSelectMode';
+import { useLongPress } from '@/hooks/useLongPress';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatMoney } from '@/shared/utils/money';
@@ -31,7 +39,16 @@ type RenterStatus = 'active' | 'expiring' | 'overdue';
 
 // ─── card ────────────────────────────────────────────────────────────────────
 
-function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }) {
+interface RenterCardProps {
+  renter: Renter;
+  status: RenterStatus;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onToggle: (id: number) => void;
+  onLongPress: (id: number) => void;
+}
+
+function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLongPress }: RenterCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
@@ -40,18 +57,26 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
   const leaseEnd = fmtLeaseEnd(renter);
   const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
   const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
+  const longPress = useLongPress(() => onLongPress(renter.id));
+
+  const activate = () => {
+    if (isSelectMode) onToggle(renter.id);
+    else navigate(`/renters/${renter.id}`);
+  };
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/renters/${renter.id}`)}
-      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/renters/${renter.id}`); }}
+      onClick={activate}
+      onKeyDown={(e) => { if (e.key === 'Enter') activate(); }}
+      {...longPress}
       className="flex flex-col gap-2.5 rounded-[var(--radius-card)] p-3 cursor-pointer transition-all hover:-translate-y-px text-start"
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
+      style={{ background: 'var(--color-surface)', border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-outline)'}`, boxShadow: isSelected ? '0 0 0 1px var(--color-primary)' : undefined }}
     >
       {/* Avatar + name + status pill */}
       <div className="flex items-center gap-3">
+        {isSelectMode && <TriStateCheckbox checked={isSelected} />}
         <div className="relative shrink-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-bold" style={{ background: bg, color }}>
             {(renter.first_name[0] + renter.last_name[0]).toUpperCase()}
@@ -111,15 +136,33 @@ function RenterCard({ renter, status }: { renter: Renter; status: RenterStatus }
 
 // ─── table ───────────────────────────────────────────────────────────────────
 
-function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map<number, RenterStatus> }) {
+interface RenterTableProps {
+  renters: Renter[];
+  statusMap: Map<number, RenterStatus>;
+  isSelectMode: boolean;
+  selectedIds: Set<number>;
+  allSelected: boolean;
+  someSelected: boolean;
+  onToggle: (id: number) => void;
+  onToggleAll: () => void;
+}
+
+function RenterTable({ renters, statusMap, isSelectMode, selectedIds, allSelected, someSelected, onToggle, onToggleAll }: RenterTableProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
-    <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+    <div className="rounded-[var(--radius-card)] overflow-x-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
+            {isSelectMode && (
+              <th className="px-4 py-3 w-px">
+                <button type="button" onClick={onToggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  <TriStateCheckbox checked={allSelected} indeterminate={someSelected} />
+                </button>
+              </th>
+            )}
             {[
               t('renter.colRenter'), t('property.colProperty'), t('renter.colPhone'),
               t('property.rent'), t('renter.leaseEnds'), t('property.colStatus'),
@@ -139,14 +182,18 @@ function RenterTable({ renters, statusMap }: { renters: Renter[]; statusMap: Map
             const status = statusMap.get(r.id) ?? 'active';
             const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
             const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
+            const selected = selectedIds.has(r.id);
 
             return (
               <tr
                 key={r.id}
-                onClick={() => navigate(`/renters/${r.id}`)}
+                onClick={() => isSelectMode ? onToggle(r.id) : navigate(`/renters/${r.id}`)}
                 className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
-                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none', background: selected ? 'var(--color-input-filled-background)' : undefined }}
               >
+                {isSelectMode && (
+                  <td className="px-4 py-3"><TriStateCheckbox checked={selected} /></td>
+                )}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: bg, color }}>
@@ -189,6 +236,8 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('card');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Tables overflow on phones — force the card view below the desktop breakpoint.
+  const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -222,8 +271,15 @@ export function RentersListPage() {
     return true;
   });
 
+  const qc = useQueryClient();
+  const sel = useSelectMode({
+    items: filtered,
+    deleteItem: deleteRenter,
+    onDeleted: () => qc.invalidateQueries({ queryKey: renterKeys.all }),
+  });
+
   if (error) return (
-    <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
       <EmptyState icon={undefined} title={t('error.loadFailed')} action={
         <button onClick={() => refetch()} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>{t('common.retry')}</button>
       } />
@@ -238,7 +294,7 @@ export function RentersListPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 space-y-0">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-0">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
@@ -249,17 +305,41 @@ export function RentersListPage() {
               : t('renter.headerMeta', { count: renters.length, expiring: counts.expiring, overdue: counts.overdue })}
           </p>
         </div>
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
-          style={{ background: 'var(--color-primary)' }}
-        >
-          <Plus size={14} /> {t('property.addRenterAction')}
-        </button>
+        {sel.isSelectMode ? (
+          <div className="flex-1 min-w-[260px]">
+            <SelectionToolbar
+              allSelected={sel.allSelected}
+              someSelected={sel.someSelected}
+              selectedCount={sel.selectedCount}
+              deleting={sel.deleting}
+              onToggleAll={sel.toggleAll}
+              onDelete={sel.requestDelete}
+              onCancel={sel.cancel}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => sel.enter()}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
+              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+            >
+              <CheckSquare size={14} /> {t('common.select')}
+            </button>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Plus size={14} /> {t('property.addRenterAction')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Status tabs + search + view toggle */}
-      <div className="flex items-center gap-0 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center gap-0 gap-y-2 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         {STATUS_TABS.map(({ key, label, tone }) => (
           <button
             key={key}
@@ -280,27 +360,29 @@ export function RentersListPage() {
           </button>
         ))}
         <div className="flex-1" />
-        <div className="flex items-center gap-2 pb-2">
+        <div className="flex items-center gap-2 pb-2 w-full sm:w-auto">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('renter.searchPlaceholder')}
-            className="h-9 rounded-[9px] px-3 text-sm w-[240px] outline-none"
+            className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-0 sm:flex-none sm:w-[240px] outline-none"
             style={{
               background: 'var(--color-input-filled-background)',
               border: '1px solid var(--color-outline)',
               color: 'var(--color-text-primary)',
             }}
           />
-          <SegToggle
-            value={view}
-            onChange={(v) => setView(v as ViewMode)}
-            options={[
-              { value: 'card', label: t('common.cardsView') },
-              { value: 'table', label: t('common.tableView') },
-            ]}
-            size="sm"
-          />
+          <div className="hidden lg:block">
+            <SegToggle
+              value={view}
+              onChange={(v) => setView(v as ViewMode)}
+              options={[
+                { value: 'card', label: t('common.cardsView') },
+                { value: 'table', label: t('common.tableView') },
+              ]}
+              size="sm"
+            />
+          </div>
         </div>
       </div>
 
@@ -324,16 +406,43 @@ export function RentersListPage() {
               ) : undefined
             }
           />
-        ) : view === 'card' ? (
-          <div className="grid grid-cols-3 gap-3">
-            {filtered.map((r) => <RenterCard key={r.id} renter={r} status={statusMap.get(r.id) ?? 'active'} />)}
+        ) : view === 'card' || isMobile ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filtered.map((r) => (
+              <RenterCard
+                key={r.id}
+                renter={r}
+                status={statusMap.get(r.id) ?? 'active'}
+                isSelectMode={sel.isSelectMode}
+                isSelected={sel.selectedIds.has(r.id)}
+                onToggle={sel.toggle}
+                onLongPress={sel.enter}
+              />
+            ))}
           </div>
         ) : (
-          <RenterTable renters={filtered} statusMap={statusMap} />
+          <RenterTable
+            renters={filtered}
+            statusMap={statusMap}
+            isSelectMode={sel.isSelectMode}
+            selectedIds={sel.selectedIds}
+            allSelected={sel.allSelected}
+            someSelected={sel.someSelected}
+            onToggle={sel.toggle}
+            onToggleAll={sel.toggleAll}
+          />
         )}
       </div>
 
       <RenterFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <ConfirmDialog
+        open={sel.confirmOpen}
+        title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}
+        message={t('bulkDelete.deleteConfirmMessage')}
+        loading={sel.deleting}
+        onConfirm={sel.performDelete}
+        onClose={() => sel.setConfirmOpen(false)}
+      />
     </div>
   );
 }

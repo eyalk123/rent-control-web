@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
-import { useRenter } from '../queries';
+import { useRenter, useDeleteRenter } from '../queries';
+import { useToast } from '@/shared/components/ui/Toast';
 import { useTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { RenterDetailHero } from '../components/RenterDetailHero';
@@ -27,11 +29,15 @@ function daysUntil(d: Date | null): number | null {
 
 export function RenterDetailPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const renterId = Number(id);
+  const { mutateAsync: deleteRenter, isPending: isDeleting } = useDeleteRenter();
+  const { showToast } = useToast();
   const [tab, setTab] = useState<TabId>('info');
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { data: renter, isLoading, isError } = useRenter(renterId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
@@ -39,6 +45,17 @@ export function RenterDetailPage() {
   const { data: expiringList = [] } = useExpiringRenters();
 
   const transactions = txPages?.pages.flat() ?? [];
+
+  const handleDelete = async () => {
+    try {
+      await deleteRenter(renterId);
+      showToast(t('renter.deleteSuccess'), 'success');
+      navigate('/renters', { replace: true });
+    } catch {
+      setConfirmDeleteOpen(false);
+      showToast(t('error.deleteFailed'), 'error');
+    }
+  };
 
   if (isLoading) return <FullPageLoader />;
   if (isError || !renter)
@@ -68,7 +85,7 @@ export function RenterDetailPage() {
   return (
     <div>
       {/* Hero */}
-      <div style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)', padding: '24px 40px 0' }}>
+      <div className="px-4 pt-6 lg:px-10" style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)' }}>
         <DetailBackLink to="/renters" label={t('renter.allRenters')} />
         <RenterDetailHero
           renter={renter}
@@ -82,12 +99,13 @@ export function RenterDetailPage() {
           statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onRecordPayment={() => setTxDrawerOpen(true)}
+          onDelete={() => setConfirmDeleteOpen(true)}
         />
         <DetailTabBar tabs={TABS} activeId={tab} onChange={setTab} />
       </div>
 
       {/* Tab content */}
-      <div className="p-10">
+      <div className="p-4 lg:p-10">
         {tab === 'info' && <LeaseInfoTab renter={renter} />}
         {tab === 'property' && <RenterPropertyTab renter={renter} />}
         {tab === 'transactions' && <RenterTransactionsTab transactions={transactions} />}
@@ -95,6 +113,14 @@ export function RenterDetailPage() {
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
       <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialType="revenue" />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title={t('renter.deleteConfirmTitle')}
+        message={t('renter.deleteConfirm')}
+        loading={isDeleting}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

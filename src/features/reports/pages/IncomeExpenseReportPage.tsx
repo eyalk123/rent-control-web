@@ -80,7 +80,7 @@ export function IncomeExpenseReportPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between px-8 pt-6 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-y-3 px-4 lg:px-8 pt-6 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <button
             onClick={() => navigate('/reports')}
@@ -113,7 +113,7 @@ export function IncomeExpenseReportPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-4 px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-center gap-4 px-4 lg:px-8 py-3.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.year')}</span>
         <SegToggle
           value={String(selectedYear)}
@@ -136,7 +136,7 @@ export function IncomeExpenseReportPage() {
       </div>
 
       {/* Matrix table */}
-      <div className="px-8 py-6">
+      <div className="px-4 lg:px-8 py-6">
         {isLoading ? <PageLoader /> : isError ? (
           <EmptyState
             title={t('error.loadFailed')}
@@ -152,7 +152,8 @@ export function IncomeExpenseReportPage() {
           />
         ) : (
           <>
-            <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
+            <div className="overflow-x-auto">
+            <div className="rounded-[var(--radius-card)] overflow-hidden min-w-[900px]" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header row */}
               <div className="flex items-center px-4 py-3 gap-1 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
                 <div className="flex-[2.4] min-w-0">{t('reports.property')}</div>
@@ -215,6 +216,7 @@ export function IncomeExpenseReportPage() {
                   {formatMoney(grand.rev - grand.exp)}
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Per-property summary cards */}

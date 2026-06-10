@@ -810,7 +810,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
       footer={footer}
     >
       {!txType ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={() => setTxType('revenue')}
             className="flex flex-col items-center gap-3 rounded-2xl p-6 transition-colors"

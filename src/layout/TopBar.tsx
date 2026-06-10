@@ -16,7 +16,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   return (
-    <div className="flex items-center justify-between px-8 py-3.5 border-b border-[var(--color-outline)] bg-[var(--color-surface)] shrink-0 gap-3">
+    <div className="flex items-center justify-between px-4 lg:px-8 py-3.5 border-b border-[var(--color-outline)] bg-[var(--color-surface)] shrink-0 gap-3">
       {/* Search trigger */}
       <button
         onClick={onOpenPalette}

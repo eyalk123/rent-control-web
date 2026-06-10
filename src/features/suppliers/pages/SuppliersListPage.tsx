@@ -76,9 +76,9 @@ export function SuppliersListPage() {
   const activeCount = (suppliers as Supplier[]).filter((s) => s.is_active).length;
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 space-y-5">
+    <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-4 gap-y-3 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.suppliers')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>

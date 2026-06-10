@@ -210,7 +210,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       <form id="renter-form" onSubmit={onSubmit} className="flex flex-col gap-4">
         {step === 1 ? (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('renter.firstName')} error={errors.firstName?.message} {...register('firstName')} />
               <FormInput label={t('renter.lastName')} error={errors.lastName?.message} {...register('lastName')} />
             </div>
@@ -283,7 +283,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="paymentFrequency" render={({ field }) => (
               <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} placeholder={t('renter.selectPaymentFrequency')} />
             )} />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} />
               )} />
