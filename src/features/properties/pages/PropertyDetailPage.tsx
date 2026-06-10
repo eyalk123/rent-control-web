@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
-import { useProperty } from '../queries';
+import { useProperty, useDeleteProperty } from '../queries';
+import { useToast } from '@/shared/components/ui/Toast';
 import { useTransactions } from '@/features/transactions/queries';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { PropertyDetailHero } from '../components/PropertyDetailHero';
@@ -22,16 +24,31 @@ type TabId = 'info' | 'renters' | 'transactions' | 'documents';
 
 export function PropertyDetailPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const propertyId = Number(id);
+  const { mutateAsync: deleteProperty, isPending: isDeleting } = useDeleteProperty();
+  const { showToast } = useToast();
   const [tab, setTab] = useState<TabId>('info');
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { data: property, isLoading, isError } = useProperty(propertyId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ propertyId });
   const transactions = txPages?.pages.flat() ?? [];
+
+  const handleDelete = async () => {
+    try {
+      await deleteProperty(propertyId);
+      showToast(t('property.deleteSuccess'), 'success');
+      navigate('/properties', { replace: true });
+    } catch {
+      setConfirmDeleteOpen(false);
+      showToast(t('error.deleteFailed'), 'error');
+    }
+  };
 
   if (isLoading) return <FullPageLoader />;
   if (isError || !property)
@@ -66,6 +83,7 @@ export function PropertyDetailPage() {
           statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onAddTransaction={() => setTxDrawerOpen(true)}
+          onDelete={() => setConfirmDeleteOpen(true)}
         />
         <DetailTabBar tabs={TABS} activeId={tab} onChange={setTab} />
       </div>
@@ -81,6 +99,14 @@ export function PropertyDetailPage() {
       <PropertyFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} propertyId={propertyId} />
       <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialPropertyId={propertyId} />
       <RenterFormDrawer open={renterDrawerOpen} onClose={() => setRenterDrawerOpen(false)} initialPropertyId={propertyId} />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title={t('property.deleteConfirmTitle')}
+        message={t('property.deleteConfirm')}
+        loading={isDeleting}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

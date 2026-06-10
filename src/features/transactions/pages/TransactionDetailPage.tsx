@@ -8,6 +8,7 @@ import { useTransaction, useDeleteTransaction, useExpenseCategories } from '../q
 import { TransactionFormDrawer } from './TransactionFormDrawer';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
@@ -33,17 +34,20 @@ export function TransactionDetailPage() {
   const txId = Number(id);
   const { data: tx, isLoading, isError } = useTransaction(txId);
   const { data: categories = [] } = useExpenseCategories();
-  const { mutateAsync: deleteTx } = useDeleteTransaction();
+  const { mutateAsync: deleteTx, isPending: isDeleting } = useDeleteTransaction();
   const { showToast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm(t('transactions.deleteConfirm'))) return;
     try {
       await deleteTx(txId);
       showToast(t('transactions.deleteSuccess'), 'success');
       navigate('/transactions', { replace: true });
-    } catch { showToast(t('error.deleteFailed'), 'error'); }
+    } catch {
+      setConfirmDeleteOpen(false);
+      showToast(t('error.deleteFailed'), 'error');
+    }
   };
 
   if (isLoading) return <FullPageLoader />;
@@ -79,7 +83,7 @@ export function TransactionDetailPage() {
           <button onClick={() => setEditOpen(true)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
             <Pencil size={14} /> {t('common.edit')}
           </button>
-          <button onClick={handleDelete} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}>
+          <button onClick={() => setConfirmDeleteOpen(true)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}>
             <Trash2 size={14} /> {t('common.delete')}
           </button>
         </div>
@@ -131,6 +135,14 @@ export function TransactionDetailPage() {
         </div>
       </div>
       <TransactionFormDrawer open={editOpen} onClose={() => setEditOpen(false)} transaction={tx} />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title={t('transactions.deleteConfirmTitle')}
+        message={t('transactions.deleteConfirm')}
+        loading={isDeleting}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }

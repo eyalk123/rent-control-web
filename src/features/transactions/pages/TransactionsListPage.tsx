@@ -1,10 +1,12 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { translateCategory } from '@/shared/utils/categories';
 import i18n from '@/core/i18n';
-import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
-import { useTransactions, useTransactionSummary } from '../queries';
+import { Plus, TrendingUp, TrendingDown, CheckSquare } from 'lucide-react';
+import { useTransactions, useTransactionSummary, transactionKeys } from '../queries';
+import { deleteTransaction } from '../api/transactions';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
@@ -13,6 +15,11 @@ import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
+import { SelectionToolbar } from '@/shared/components/ui/SelectionToolbar';
+import { TriStateCheckbox } from '@/shared/components/ui/TriStateCheckbox';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { useSelectMode } from '@/hooks/useSelectMode';
+import { useLongPress } from '@/hooks/useLongPress';
 import type { Transaction } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -37,20 +44,42 @@ function fmtMonthKey(key: string): string {
 
 // ─── TxRow ───────────────────────────────────────────────────────────────────
 
-function TxRow({ tx }: { tx: Transaction }) {
+interface TxRowProps {
+  tx: Transaction;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onToggle: (id: number) => void;
+  onLongPress: (id: number) => void;
+}
+
+function TxRow({ tx, isSelectMode, isSelected, onToggle, onLongPress }: TxRowProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isRev = tx.type === 'revenue';
+  const longPress = useLongPress(() => onLongPress(tx.id));
+
+  const activate = () => {
+    if (isSelectMode) onToggle(tx.id);
+    else navigate(`/transactions/${tx.id}`);
+  };
+
   return (
     <button
-      onClick={() => navigate(`/transactions/${tx.id}`)}
+      onClick={activate}
+      {...longPress}
       className="flex items-center gap-3 w-full px-4 py-3 text-start transition-colors hover:bg-[var(--color-input-filled-background)]"
-      style={{ borderBottom: '1px solid var(--color-outline)' }}
+      style={{ borderBottom: '1px solid var(--color-outline)', background: isSelected ? 'var(--color-input-filled-background)' : undefined }}
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]"
-        style={{ background: isRev ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)', color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}>
-        {isRev ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-      </div>
+      {isSelectMode ? (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+          <TriStateCheckbox checked={isSelected} />
+        </div>
+      ) : (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]"
+          style={{ background: isRev ? 'var(--color-rev-bg)' : 'var(--color-exp-bg)', color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' }}>
+          {isRev ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
           {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
@@ -95,6 +124,16 @@ export function TransactionsListPage() {
     ? transactions.filter((tx) => `${tx.renter_name ?? ''} ${tx.supplier_name ?? ''} ${tx.category_name ?? ''} ${tx.property_name}`.toLowerCase().includes(search.toLowerCase()))
     : transactions;
 
+  const qc = useQueryClient();
+  const sel = useSelectMode({
+    items: filtered,
+    deleteItem: deleteTransaction,
+    onDeleted: () => {
+      qc.invalidateQueries({ queryKey: transactionKeys.all });
+      qc.invalidateQueries({ queryKey: ['home'] });
+    },
+  });
+
   const grouped = groupByMonth(filtered);
   const months = [...grouped.keys()].sort().reverse();
 
@@ -128,13 +167,37 @@ export function TransactionsListPage() {
               : t('transactions.headerMeta', { count: filtered.length })}
           </p>
         </div>
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity shrink-0"
-          style={{ background: 'var(--color-primary)' }}
-        >
-          <Plus size={14} /> {t('transactions.addTransactionBtn')}
-        </button>
+        {sel.isSelectMode ? (
+          <div className="flex-1 min-w-[260px]">
+            <SelectionToolbar
+              allSelected={sel.allSelected}
+              someSelected={sel.someSelected}
+              selectedCount={sel.selectedCount}
+              deleting={sel.deleting}
+              onToggleAll={sel.toggleAll}
+              onDelete={sel.requestDelete}
+              onCancel={sel.cancel}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => sel.enter()}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
+              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+            >
+              <CheckSquare size={14} /> {t('common.select')}
+            </button>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Plus size={14} /> {t('transactions.addTransactionBtn')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Hero: chart + KPI tiles */}
@@ -258,7 +321,16 @@ export function TransactionsListPage() {
                 </div>
                 {/* Transaction list */}
                 <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-                  {txs.map((tx) => <TxRow key={tx.id} tx={tx} />)}
+                  {txs.map((tx) => (
+                    <TxRow
+                      key={tx.id}
+                      tx={tx}
+                      isSelectMode={sel.isSelectMode}
+                      isSelected={sel.selectedIds.has(tx.id)}
+                      onToggle={sel.toggle}
+                      onLongPress={sel.enter}
+                    />
+                  ))}
                 </div>
               </div>
             );
@@ -270,6 +342,14 @@ export function TransactionsListPage() {
       )}
 
       <TransactionFormDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); setInitialTxType(undefined); }} initialType={initialTxType} />
+      <ConfirmDialog
+        open={sel.confirmOpen}
+        title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}
+        message={t('bulkDelete.deleteConfirmMessage')}
+        loading={sel.deleting}
+        onConfirm={sel.performDelete}
+        onClose={() => sel.setConfirmOpen(false)}
+      />
     </div>
   );
 }

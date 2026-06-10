@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pencil, Plus, MapPin } from 'lucide-react';
+import { Pencil, Plus, MapPin, Trash2 } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
@@ -17,9 +17,10 @@ interface Props {
   statsLoading?: boolean;
   onEdit: () => void;
   onAddTransaction: () => void;
+  onDelete: () => void;
 }
 
-export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, statsLoading, onEdit, onAddTransaction }: Props) {
+export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -54,6 +55,13 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
           >
             <Pencil size={14} /> {t('common.edit')}
+          </button>
+          <button
+            onClick={onDelete}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
+            style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}
+          >
+            <Trash2 size={14} /> {t('common.delete')}
           </button>
           <button
             onClick={onAddTransaction}
