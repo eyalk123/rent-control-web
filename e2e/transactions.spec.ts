@@ -36,9 +36,9 @@ test.describe('transactions', () => {
   });
 
   test('can delete a transaction (round-trip)', async ({ page }) => {
-    page.on('dialog', (d) => d.accept()); // confirm() on delete
     await page.goto('/transactions/1');
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('button', { name: 'Delete' }).click(); // opens the confirm dialog
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
     await expectToast(page, 'Transaction deleted');
     await expect(page).toHaveURL(/\/transactions$/);
   });
