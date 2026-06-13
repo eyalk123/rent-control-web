@@ -19,6 +19,14 @@ import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
+const EMPTY_FORM: FormData = {
+  address: '', city: '', zipCode: '', type: '' as FormData['type'],
+  sqFt: '', numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '',
+  inventoryNotes: '', electricityMeterNumber: '', electricityAccountNumber: '',
+  waterMeterNumber: '', waterAccountNumber: '', propertyTax: '', houseCommittee: '',
+  floor: '', apartment: '', basicContractUrl: undefined, landRegistryUrl: undefined,
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -52,7 +60,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
   const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema) as never,
-    defaultValues: { numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '' },
+    defaultValues: EMPTY_FORM,
   });
 
   useEffect(() => {
@@ -84,7 +92,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       });
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
-      reset({ numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '' });
+      reset(EMPTY_FORM);
       setImagePreview(null);
     }
   }, [existing, open, propertyId, reset]);
@@ -136,6 +144,13 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         await updateMutation.mutateAsync(payload);
       } else {
         await createMutation.mutateAsync(payload);
+        // Start clean for the next "Add property" — the drawer stays mounted, so without
+        // this the previous values would persist.
+        reset(EMPTY_FORM);
+        setImageFile(null);
+        setBasicContractFile(null);
+        setLandRegistryFile(null);
+        setImagePreview(null);
       }
 
       showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');
@@ -207,7 +222,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
       <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
         {step === 1 ? (
-          <>
+          <div key="step-1" className="flex flex-col gap-4">
             <FormInput label={t('property.address')} error={errors.address?.message} {...register('address')} />
             <FormInput label={t('property.city')} error={errors.city?.message} {...register('city')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -255,9 +270,9 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
               onChange={handleImageChange}
               preview={imagePreview}
             />
-          </>
+          </div>
         ) : (
-          <>
+          <div key="step-2" className="flex flex-col gap-4">
             <FormCreatableSelect
                 control={control}
                 name="propertyOwner"
@@ -312,7 +327,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
                 />
               )}
             />
-          </>
+          </div>
         )}
       </form>
     </Drawer>
