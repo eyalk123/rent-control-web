@@ -177,6 +177,8 @@
     "leaseInfo": "Extra Details",
     "address": "Address",
     "city": "City",
+    "block": "Block",
+    "plot": "Plot",
     "propertyOwner": "Property owner",
     "ownerPlaceholder": "Select an owner",
     "ownerCreate": "Add new owner...",

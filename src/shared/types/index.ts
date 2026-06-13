@@ -33,6 +33,8 @@ export interface Property {
   land_registry_url?: string | null;
   floor?: number | null;
   apartment?: string | null;
+  block?: string | null;
+  plot?: string | null;
   renters: Renter[] | null;
   /** Enriched on list when renters are fetched; used for occupancy display */
   hasRenters?: boolean;
@@ -219,6 +221,8 @@ export interface PropertyCreate {
   land_registry_url?: string | null;
   floor?: number | null;
   apartment?: string | null;
+  block?: string | null;
+  plot?: string | null;
 }
 
 // Update payload (PATCH /properties/{id}) - all fields optional
@@ -243,6 +247,8 @@ export interface PropertyUpdate {
   land_registry_url?: string | null;
   floor?: number | null;
   apartment?: string | null;
+  block?: string | null;
+  plot?: string | null;
 }
 
 // Create payload (POST /renters)

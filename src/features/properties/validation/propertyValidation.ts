@@ -24,6 +24,8 @@ const optionalNumericString = z
 export const propertyFormSchema = z.object({
   address: nonEmptyTrimmed,
   city: nonEmptyTrimmed,
+  block: optionalNumericString,
+  plot: optionalNumericString,
   zipCode: optionalString,
   type: z.custom<PropertyType>((val) => typeof val === 'string' && PROPERTY_TYPES.includes(val as PropertyType), {
     message: 'common.required',

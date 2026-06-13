@@ -178,6 +178,8 @@
     "leaseInfo": "פרטים נוספים",
     "address": "כתובת",
     "city": "עיר",
+    "block": "גוש",
+    "plot": "חלקה",
     "propertyOwner": "בעל הנכס",
     "ownerPlaceholder": "בחר בעלים",
     "ownerCreate": "הוסף בעלים חדש...",

@@ -57,6 +57,8 @@ function sanitizePropertyCreate(data: PropertyCreate): PropertyCreate {
   if (land_registry_url !== undefined) out.land_registry_url = land_registry_url;
   if (data.floor !== undefined) out.floor = data.floor;
   if (data.apartment !== undefined) out.apartment = data.apartment;
+  if (data.block !== undefined) out.block = data.block;
+  if (data.plot !== undefined) out.plot = data.plot;
   return out;
 }
 
@@ -82,6 +84,8 @@ function sanitizePropertyUpdate(data: PropertyUpdate): Record<string, unknown> {
     'land_registry_url',
     'floor',
     'apartment',
+    'block',
+    'plot',
   ];
   const out: Record<string, unknown> = {};
   for (const key of allowed) {

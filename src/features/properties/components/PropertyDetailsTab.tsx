@@ -22,6 +22,8 @@ export function PropertyDetailsTab({ property }: Props) {
         <DetailRow icon={Receipt} label={t('property.rooms')} value={property.number_of_rooms ? String(property.number_of_rooms) : null} />
         <DetailRow icon={Receipt} label={t('property.floor')} value={property.floor != null ? String(property.floor) : null} />
         <DetailRow icon={Receipt} label={t('property.apartment')} value={property.apartment} />
+        <DetailRow icon={MapPin} label={t('property.block')} value={property.block} />
+        <DetailRow icon={MapPin} label={t('property.plot')} value={property.plot} />
         <DetailRow icon={Users} label={t('property.owner')} value={property.property_owner} last />
       </DetailPanel>
 

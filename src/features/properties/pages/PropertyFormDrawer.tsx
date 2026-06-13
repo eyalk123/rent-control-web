@@ -20,7 +20,7 @@ import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 type FormData = z.infer<typeof propertyFormSchema>;
 
 const EMPTY_FORM: FormData = {
-  address: '', city: '', zipCode: '', type: '' as FormData['type'],
+  address: '', city: '', block: '', plot: '', zipCode: '', type: '' as FormData['type'],
   sqFt: '', numberOfRooms: '', parkingNumbersStr: '', propertyOwner: '',
   inventoryNotes: '', electricityMeterNumber: '', electricityAccountNumber: '',
   waterMeterNumber: '', waterAccountNumber: '', propertyTax: '', houseCommittee: '',
@@ -72,6 +72,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       reset({
         address: existing.address,
         city: existing.city,
+        block: existing.block ?? '',
+        plot: existing.plot ?? '',
         zipCode: existing.zip_code ?? '',
         type: existing.type,
         sqFt: existing.sq_ft?.toString() ?? '',
@@ -118,6 +120,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       const payload = {
         address: data.address,
         city: data.city,
+        block: data.block || undefined,
+        plot: data.plot || undefined,
         zip_code: data.zipCode || '',
         type: data.type,
         sq_ft: data.sqFt ? Number(data.sqFt) : 0,
@@ -224,7 +228,15 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
             <FormInput label={t('property.address')} error={errors.address?.message} {...register('address')} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
+              <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
+            </div>
             <FormInput label={t('property.city')} error={errors.city?.message} {...register('city')} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={t('property.block')} inputMode="numeric" error={errors.block?.message} {...register('block')} />
+              <FormInput label={t('property.plot')} inputMode="numeric" error={errors.plot?.message} {...register('plot')} />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />
               <FormInput label={t('property.sqFt')} type="number" error={errors.sqFt?.message} {...register('sqFt')} />
@@ -258,10 +270,6 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
                   />
                 )}
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
-              <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
             </div>
             <FormFileInput
               label={t('property.image')}
