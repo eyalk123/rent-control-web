@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { translateCategory } from '@/shared/utils/categories';
 import { AddCategoryModal } from './AddCategoryModal';
+import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import type { ExpenseCategory } from '@/shared/types';
 
 interface Props {
@@ -11,9 +12,10 @@ interface Props {
   selectedIds: number[];
   onChange: (ids: number[]) => void;
   error?: string;
+  required?: boolean;
 }
 
-export function CategoryMultiSelect({ label, categories, selectedIds, onChange, error }: Props) {
+export function CategoryMultiSelect({ label, categories, selectedIds, onChange, error, required }: Props) {
   const { t } = useTranslation();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -28,7 +30,7 @@ export function CategoryMultiSelect({ label, categories, selectedIds, onChange, 
       <div className="flex flex-col gap-1.5">
         {label && (
           <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-            {label}
+            {label}{required && <RequiredMark />}
           </label>
         )}
         {error && <p className="text-xs" style={{ color: 'var(--color-error)' }}>{error}</p>}

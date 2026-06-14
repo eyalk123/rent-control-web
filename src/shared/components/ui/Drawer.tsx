@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,6 +19,9 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  // Track the visual viewport so the panel (and its pinned footer) stays above the
+  // on-screen keyboard / browser chrome on mobile. Falls back to the `h-dvh` class.
+  const [vv, setVv] = useState<{ height: number; top: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -30,6 +33,21 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const v = window.visualViewport;
+    if (!v) return;
+    const update = () => setVv({ height: v.height, top: v.offsetTop });
+    update();
+    v.addEventListener('resize', update);
+    v.addEventListener('scroll', update);
+    return () => {
+      v.removeEventListener('resize', update);
+      v.removeEventListener('scroll', update);
+      setVv(null);
+    };
   }, [open]);
 
   // Focus management: focus the panel on open, trap Tab within it, and restore
@@ -65,7 +83,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
   const slideIn = isRtl ? 'slideInLeft' : 'slideInRight';
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[55]">
       {/* Scrim — full screen */}
       <div
         className="absolute inset-0 bg-black/40"
@@ -81,9 +99,13 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`absolute top-0 bottom-0 flex flex-col bg-[var(--color-surface)] shadow-2xl outline-none ${isRtl ? 'left-0' : 'right-0'}`}
+        className={`absolute flex flex-col bg-[var(--color-surface)] shadow-2xl outline-none w-full sm:w-[var(--drawer-w)] sm:max-w-full ${isRtl ? 'left-0' : 'right-0'}`}
         style={{
-          width: Math.min(width, window.innerWidth),
+          ['--drawer-w' as string]: `${width}px`,
+          // Explicit height (not a Tailwind class) so the panel is always bounded and the
+          // pinned footer stays on-screen. `vv` tracks the keyboard; `100dvh` is the fallback.
+          top: vv ? vv.top : 0,
+          height: vv ? vv.height : '100dvh',
           animation: `${slideIn} 0.22s cubic-bezier(.2,.7,.2,1) backwards`,
         }}
       >
@@ -107,7 +129,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
 
         {/* Footer */}
         {footer && (
-          <div className="shrink-0 border-t border-[var(--color-outline)] px-6 py-4">
+          <div className="shrink-0 border-t border-[var(--color-outline)] px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {footer}
           </div>
         )}

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check } from 'lucide-react';
+import { RequiredMark } from './RequiredMark';
 
 interface Option {
   value: number;
@@ -15,9 +16,10 @@ interface Props {
   error?: string;
   disabled?: boolean;
   placeholder?: string;
+  required?: boolean;
 }
 
-export function PropertyMultiSelect({ label, options, selectedIds, onChange, error, disabled, placeholder }: Props) {
+export function PropertyMultiSelect({ label, options, selectedIds, onChange, error, disabled, placeholder, required }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
 
   return (
     <div className="flex flex-col gap-1.5" ref={containerRef}>
-      {label && <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>}
+      {label && <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>}
       <div className="relative">
         <button
           type="button"

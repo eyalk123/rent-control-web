@@ -246,6 +246,7 @@ export function SignInPage() {
                 <FormInput
                   label={t('auth.emailLabel')}
                   type="email"
+                  required
                   dir="ltr"
                   autoComplete="email"
                   placeholder={t('auth.emailPlaceholder')}
@@ -256,6 +257,7 @@ export function SignInPage() {
                   <FormInput
                     label={t('auth.passwordLabel')}
                     type="password"
+                    required
                     dir="ltr"
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                     placeholder={t('auth.passwordPlaceholder')}

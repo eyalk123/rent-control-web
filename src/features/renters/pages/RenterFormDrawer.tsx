@@ -15,6 +15,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
+import { getApiErrorMessage } from '@/core/api/client';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof renterFormSchema>;
@@ -124,7 +125,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
 
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
       onClose();
-    } catch (err) { if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err); showToast(t('error.saveFailed'), 'error'); }
+    } catch (err) { if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err); showToast(getApiErrorMessage(err, t('error.saveFailed')), 'error'); }
   });
 
   const propertyOptions = (() => {
@@ -211,10 +212,10 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         {step === 1 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('renter.firstName')} error={errors.firstName?.message} {...register('firstName')} />
-              <FormInput label={t('renter.lastName')} error={errors.lastName?.message} {...register('lastName')} />
+              <FormInput label={t('renter.firstName')} required error={errors.firstName?.message} {...register('firstName')} />
+              <FormInput label={t('renter.lastName')} required error={errors.lastName?.message} {...register('lastName')} />
             </div>
-            <FormInput label={t('renter.phone')} type="tel" error={errors.phone?.message} {...register('phone')} />
+            <FormInput label={t('renter.phone')} type="tel" required error={errors.phone?.message} {...register('phone')} />
             <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />

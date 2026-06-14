@@ -227,12 +227,12 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
-            <FormInput label={t('property.address')} error={errors.address?.message} {...register('address')} />
+            <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
               <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
             </div>
-            <FormInput label={t('property.city')} error={errors.city?.message} {...register('city')} />
+            <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.block')} inputMode="numeric" error={errors.block?.message} {...register('block')} />
               <FormInput label={t('property.plot')} inputMode="numeric" error={errors.plot?.message} {...register('plot')} />
@@ -247,6 +247,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
               render={({ field }) => (
                 <FormSelect
                   label={t('property.type')}
+                  required
                   value={field.value}
                   onValueChange={field.onChange}
                   options={propertyTypeOptions}

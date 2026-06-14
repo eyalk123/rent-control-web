@@ -20,6 +20,7 @@ import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { PropertyMultiSelect } from '@/shared/components/form/PropertyMultiSelect';
+import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { MonthGridPicker } from '@/shared/components/ui/MonthGridPicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
@@ -256,12 +257,12 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
         <Controller control={control} name="renterId" render={({ field }) => (
           <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...renterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
-        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
+        <FormInput label={t('transactions.amount')} type="number" step="0.01" required error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
         <Controller control={control} name="monthFor" rules={{ required: t('common.required') }} render={({ field }) => (
-          <WheelDatePicker mode="month" label={t('transactions.monthFor')} value={field.value} onChange={field.onChange} error={errors.monthFor?.message} />
+          <WheelDatePicker mode="month" label={t('transactions.monthFor')} required value={field.value} onChange={field.onChange} error={errors.monthFor?.message} />
         )} />
         <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
-          <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
+          <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
         <Controller control={control} name="paymentMethod" render={({ field }) => (
           <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
@@ -333,6 +334,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       {/* Properties */}
       <PropertyMultiSelect
         label={t('transactions.property')}
+        required
         options={filteredPropertyOptions}
         selectedIds={selectedPropertyIds}
         onChange={(ids) => { setSelectedPropertyIds(ids); setSelectedRenterIds(new Set()); setOverrideAmounts({}); setOverriddenIds(new Set()); }}
@@ -344,6 +346,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       <WheelDatePicker
         mode="date"
         label={t('transactions.date')}
+        required
         value={bulkDate}
         onChange={(v) => { setBulkDate(v as string); setBulkDateError(''); }}
         error={bulkDateError}
@@ -365,7 +368,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
       {selectedPropertyIds.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.tenantsSection')}</span>
+            <span className="text-sm font-semibold text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.tenantsSection')}<RequiredMark /></span>
             {allRenters.length > 0 && (
               <button type="button" onClick={toggleAllRenters} className="text-[12px] font-medium" style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 {selectedRenterIds.size === allRenters.length ? t('transactions.bulkRevenue.deselectAll') : t('transactions.bulkRevenue.selectAll')}
@@ -634,12 +637,13 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
         <Controller control={control} name="renterId" render={({ field }) => (
           <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...editRenterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
-        <FormInput label={t('transactions.amount')} type="number" step="0.01" error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
+        <FormInput label={t('transactions.amount')} type="number" step="0.01" required error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
         <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
-          <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
+          <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
         <CategoryMultiSelect
           label={t('transactions.category')}
+          required
           categories={categories ?? []}
           selectedIds={selectedCategoryIds}
           onChange={handleCategoryChange}
@@ -650,8 +654,8 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
             <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
           )} />
         )}
-        <Controller control={control} name="paymentMethod" render={({ field }) => (
-          <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
+        <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
+          <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
         )} />
         <FormInput label={t('transactions.notes')} {...register('notes')} />
         <FormFileInput
@@ -675,6 +679,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
     <form id="transaction-form" onSubmit={handleBulkCreate} className="space-y-4">
       <PropertyMultiSelect
         label={t('transactions.property')}
+        required
         options={propertyOptions}
         selectedIds={selectedPropertyIds}
         onChange={(ids) => { setSelectedPropertyIds(ids); setPropertyError(''); }}
@@ -687,6 +692,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
           label={t('transactions.amount')}
           type="number"
           step="0.01"
+          required
           error={errors.amount?.message}
           {...register('amount', { required: t('common.required') })}
         />
@@ -714,10 +720,11 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
       </div>
 
       <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
-        <WheelDatePicker mode="date" label={t('transactions.date')} value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
+        <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
       )} />
       <CategoryMultiSelect
         label={t('transactions.category')}
+        required
         categories={categories ?? []}
         selectedIds={selectedCategoryIds}
         onChange={handleCategoryChange}
@@ -728,8 +735,8 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
           <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
         )} />
       )}
-      <Controller control={control} name="paymentMethod" render={({ field }) => (
-        <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
+      <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
+        <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
       <FormFileInput

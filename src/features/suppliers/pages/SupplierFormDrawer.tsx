@@ -8,6 +8,7 @@ import { supplierFormSchema, type SupplierFormValues } from '../validation/suppl
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
+import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -149,13 +150,13 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
     >
       <form id="supplier-form" onSubmit={onSubmit} className="space-y-4">
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-          <FormInput label={t('suppliers.name')} error={errors.name?.message} {...register('name')} />
+          <FormInput label={t('suppliers.name')} required error={errors.name?.message} {...register('name')} />
           <FormInput label={t('suppliers.phone')} type="tel" {...register('phone')} />
           <FormInput label={t('suppliers.email')} type="email" {...register('email')} />
           <FormInput label={t('suppliers.notes')} {...register('notes')} />
 
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.category')}</p>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.category')}<RequiredMark /></p>
             {errors.categoryIds && <p className="text-xs mb-2" style={{ color: 'var(--color-error)' }}>{t(errors.categoryIds.message!, { defaultValue: errors.categoryIds.message })}</p>}
             <div className="flex flex-wrap gap-2">
               {activeCategories.map((c) => {

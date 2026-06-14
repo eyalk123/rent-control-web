@@ -2,6 +2,7 @@ import Picker from 'react-mobile-picker';
 import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
 import type { PickerValue } from 'react-mobile-picker';
+import { RequiredMark } from './RequiredMark';
 
 export type WheelDatePickerMode = 'date' | 'month' | 'day';
 type PickerState = Record<string, number>;
@@ -14,6 +15,7 @@ interface Props {
   error?: string;
   minYear?: number;
   maxYear?: number;
+  required?: boolean;
 }
 
 const THIS_YEAR = new Date().getFullYear();
@@ -58,6 +60,7 @@ export function WheelDatePicker({
   error,
   minYear = THIS_YEAR - 5,
   maxYear = THIS_YEAR + 10,
+  required,
 }: Props) {
   const { t, i18n } = useTranslation();
 
@@ -97,7 +100,7 @@ export function WheelDatePicker({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
+        <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>
       )}
       <div
         dir="ltr"
