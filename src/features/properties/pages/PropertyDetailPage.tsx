@@ -18,7 +18,7 @@ import { PropertyRentersTab } from '../components/PropertyRentersTab';
 import { PropertyTransactionsTab } from '../components/PropertyTransactionsTab';
 import { PropertyDocumentsTab } from '../components/PropertyDocumentsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getRenterMonthlyRent } from '@/shared/types';
+import { getTotalMonthlyRent } from '@/shared/types';
 
 type TabId = 'info' | 'renters' | 'transactions' | 'documents';
 
@@ -55,7 +55,7 @@ export function PropertyDetailPage() {
     return <DetailNotFound title={t('error.propertyNotFound')} detail={t('error.notFoundDetail')} />;
 
   const activeRenter = property.renters?.[0];
-  const monthlyRent = activeRenter ? getRenterMonthlyRent(activeRenter) : null;
+  const monthlyRent = property.renters?.length ? getTotalMonthlyRent(property.renters) : null;
   const revTotal = transactions.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
   const expTotal = transactions.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(property.id, 0.12);

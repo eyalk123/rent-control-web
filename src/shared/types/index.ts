@@ -85,6 +85,12 @@ export function getRenterMonthlyRent(renter: Renter): number {
   return first.amount;
 }
 
+/** Total monthly rent across all renters of a property. */
+export function getTotalMonthlyRent(renters: Renter[] | null | undefined): number {
+  if (!renters?.length) return 0;
+  return renters.reduce((sum, r) => sum + getRenterMonthlyRent(r), 0);
+}
+
 /** Lease end date calculated from lease_start + number of contract (non-option) years. */
 export function getLeaseEndDate(renter: Renter): Date | null {
   if (!renter.lease_start || !renter.lease_years?.length) return null;
