@@ -83,7 +83,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
   const slideIn = isRtl ? 'slideInLeft' : 'slideInRight';
 
   return (
-    <div className="fixed inset-0 z-[55]">
+    <div className="fixed inset-0 z-50">
       {/* Scrim — full screen */}
       <div
         className="absolute inset-0 bg-black/40"
