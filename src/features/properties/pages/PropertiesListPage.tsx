@@ -17,6 +17,7 @@ import { useSelectMode } from '@/hooks/useSelectMode';
 import { useLongPress } from '@/hooks/useLongPress';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { formatMoney } from '@/shared/utils/money';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -101,6 +102,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
       <div className="p-3">
         <p className="text-[14px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
           {property.address}
+          <span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(property, t)}</span>
         </p>
         <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
           <MapPin size={10} />
@@ -203,7 +205,7 @@ function PropertyTable({ properties, isSelectMode, selectedIds, allSelected, som
                   <td className="px-4 py-3"><TriStateCheckbox checked={selected} /></td>
                 )}
                 <td className="px-4 py-3">
-                  <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{p.address}</p>
+                  <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(p, t)}</span></p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{p.city}</p>
                 </td>
                 <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>

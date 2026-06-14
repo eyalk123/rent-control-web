@@ -4,6 +4,7 @@ import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
 import { formatMoney } from '@/shared/utils/money';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Property } from '@/shared/types';
 
 interface Props {
@@ -38,6 +39,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
             </div>
             <h1 className="text-2xl sm:text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
               {property.address}
+              <span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(property, t)}</span>
             </h1>
             <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
               <MapPin size={13} />

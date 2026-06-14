@@ -5,6 +5,7 @@ import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getPropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
 import type { Property } from '@/shared/types';
 
@@ -48,6 +49,7 @@ export function RenterPropertyCard({ property, monthlyRent }: Props) {
       <div className="p-3">
         <p className="text-[14px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
           {property.address}
+          <span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(property, t)}</span>
         </p>
         <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
           <MapPin size={10} />
