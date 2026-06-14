@@ -5,6 +5,7 @@ import { HeroStat } from '@/shared/components/detail/HeroStat';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -49,7 +50,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
               {renter.property && (
-                <span className="inline-flex items-center gap-1.5"><Building2 size={13} /> {renter.property.address}</span>
+                <span className="inline-flex items-center gap-1.5"><Building2 size={13} /> {renter.property.address}{formatFloorApartment(renter.property, t)}</span>
               )}
               <span className="inline-flex items-center gap-1.5"><Phone size={13} /> {renter.phone}</span>
               <span className="inline-flex items-center gap-1.5"><Mail size={13} /> {renter.email}</span>

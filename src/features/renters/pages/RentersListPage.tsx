@@ -22,6 +22,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatMoney } from '@/shared/utils/money';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 
@@ -95,7 +96,7 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
             {renter.first_name} {renter.last_name}
           </p>
           <p className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-            {renter.property?.address ?? '—'}
+            {renter.property ? `${renter.property.address}${formatFloorApartment(renter.property, t)}` : '—'}
           </p>
         </div>
         <Pill tone={pillTone}>{pillLabel}</Pill>
@@ -205,7 +206,7 @@ function RenterTable({ renters, statusMap, isSelectMode, selectedIds, allSelecte
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{r.property?.address ?? '—'}</td>
+                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{r.property ? `${r.property.address}${formatFloorApartment(r.property, t)}` : '—'}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{r.phone}</td>
                 <td className="px-4 py-3 text-sm font-semibold">
                   <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(monthly)}</LtrSpan>

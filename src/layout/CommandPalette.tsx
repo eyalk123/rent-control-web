@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
 import { useLanguage } from '@/hooks/useLanguage';
+import { formatPropertyAddress, formatFloorApartment } from '@/shared/utils/propertyAddress';
 
 interface PaletteItem {
   group: string;
@@ -75,7 +76,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
     ...properties.map((p) => ({
       group: propertiesGroup,
-      label: p.address,
+      label: formatPropertyAddress(p, t),
       sub: p.city,
       icon: Building2 as LucideIcon,
       action: () => go(`/properties/${p.id}`),
@@ -84,7 +85,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     ...renters.map((r) => ({
       group: rentersGroup,
       label: `${r.first_name} ${r.last_name}`,
-      sub: r.property?.address,
+      sub: r.property ? `${r.property.address}${formatFloorApartment(r.property, t)}` : undefined,
       icon: Users as LucideIcon,
       action: () => go(`/renters/${r.id}`),
     })),

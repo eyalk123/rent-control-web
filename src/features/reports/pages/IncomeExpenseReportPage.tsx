@@ -13,6 +13,7 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { formatMoney } from '@/shared/utils/money';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { Transaction } from '@/shared/types';
 
@@ -168,7 +169,7 @@ export function IncomeExpenseReportPage() {
                   <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
                     <PropTile propertyId={r.p.id} size={28} />
                     <div>
-                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}</p>
+                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
                       {r.p.property_owner && <p className="text-[10.5px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
                     </div>
                   </div>
@@ -188,7 +189,7 @@ export function IncomeExpenseReportPage() {
                   <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
                     <PropTile propertyId={r.p.id} size={28} />
                     <div>
-                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}</p>
+                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
                       {r.p.property_owner && <p className="text-[10.5px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
                     </div>
                   </div>
@@ -226,7 +227,7 @@ export function IncomeExpenseReportPage() {
                   <div className="flex items-center gap-2.5 mb-3">
                     <PropTile propertyId={r.p.id} size={32} />
                     <div>
-                      <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}</p>
+                      <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
                       {r.p.property_owner && <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
                     </div>
                   </div>

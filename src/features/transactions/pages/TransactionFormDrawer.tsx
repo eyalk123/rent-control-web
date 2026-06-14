@@ -27,6 +27,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { PAYMENT_METHOD_VALUES } from '@/shared/constants/paymentMethods';
 import { formatMoney } from '@/shared/utils/money';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
 import {
   type PeriodType,
@@ -137,14 +138,14 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   const filteredPropertyOptions = useMemo(() => {
     const all = properties ?? [];
     const filtered = ownerFilter ? all.filter((p) => p.property_owner === ownerFilter) : all;
-    return filtered.map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
-  }, [properties, ownerFilter]);
+    return filtered.map((p) => ({ value: p.id, label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
+  }, [properties, ownerFilter, t]);
 
   useEffect(() => {
     if (selectedPropertyIds.length === 0) { setAllRenters([]); return; }
     const enriched = selectedPropertyIds.flatMap((pid) => {
       const prop = (properties ?? []).find((p) => p.id === pid);
-      const label = prop ? `${prop.address}, ${prop.city}` : `#${pid}`;
+      const label = prop ? `${prop.address}${formatFloorApartment(prop, t)}, ${prop.city}` : `#${pid}`;
       return (prop?.renters ?? []).map((r) => ({ ...r, propertyId: pid, propertyLabel: label }));
     });
     setAllRenters(enriched);
@@ -548,7 +549,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
     ? (allSuppliers ?? []).filter((s) => s.category_ids.some((id) => selectedCategoryIds.includes(id)))
     : [];
 
-  const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}, ${p.city}` }));
+  const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
   const supplierOptions = suppliers.map((s) => ({ value: s.id.toString(), label: s.name }));
   const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 

@@ -15,6 +15,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
 import type { z } from 'zod';
 
@@ -129,10 +130,10 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   });
 
   const propertyOptions = (() => {
-    const opts = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}, ${p.city}` }));
+    const opts = (properties ?? []).map((p) => ({ value: p.id.toString(), label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
     const linked = existing?.property;
     if (linked && !opts.some((o) => o.value === String(linked.id))) {
-      opts.unshift({ value: String(linked.id), label: `${linked.address}, ${linked.city}` });
+      opts.unshift({ value: String(linked.id), label: `${linked.address}${formatFloorApartment(linked, t)}, ${linked.city}` });
     }
     return opts;
   })();

@@ -7,6 +7,8 @@ export interface PropertyBrief {
   address: string;
   city: string;
   type: PropertyType;
+  floor?: number | null;
+  apartment?: string | null;
 }
 
 // Property - matches backend

@@ -7,6 +7,7 @@ import { RenterPropertyCard } from './RenterPropertyCard';
 import { useUpdateRenter } from '../queries';
 import { useProperty, useProperties } from '@/features/properties/queries';
 import { getRenterMonthlyRent } from '@/shared/types';
+import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -31,7 +32,7 @@ export function RenterPropertyTab({ renter }: Props) {
             <FormSelect
               value={selectedId}
               onValueChange={setSelectedId}
-              options={(allProperties ?? []).map((prop) => ({ value: String(prop.id), label: `${prop.address}, ${prop.city}` }))}
+              options={(allProperties ?? []).map((prop) => ({ value: String(prop.id), label: `${prop.address}${formatFloorApartment(prop, t)}, ${prop.city}` }))}
               placeholder={t('renter.selectProperty')}
             />
             <div className="flex gap-2">

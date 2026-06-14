@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { formatPropertyAddress } from '@/shared/utils/propertyAddress';
 import type { Property } from '@/shared/types';
 
 interface Props {
@@ -41,7 +42,7 @@ export function PortfolioOccupancy({ properties, loading }: Props) {
           <button
             key={p.id}
             onClick={() => navigate(`/properties/${p.id}`)}
-            title={p.address}
+            title={formatPropertyAddress(p, t)}
             className="flex-1 h-6 rounded-[4px] min-w-0 transition-opacity hover:opacity-80"
             style={{ background: p.hasRenters ? '#4ADE80' : 'rgba(255,255,255,0.15)' }}
           />
