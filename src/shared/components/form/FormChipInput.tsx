@@ -8,13 +8,17 @@ interface Props {
   placeholder?: string;
   value: string;
   onChange: (v: string) => void;
+  /** Restrict entry to non-negative integers and de-duplicate (e.g. reminder offsets). */
+  numeric?: boolean;
+  /** Keep chips sorted ascending (numerically when `numeric`, else lexically). */
+  sort?: boolean;
 }
 
 function parseChips(value: string): string[] {
   return value.split(',').map((v) => v.trim()).filter(Boolean);
 }
 
-export function FormChipInput({ label, error, placeholder, value, onChange }: Props) {
+export function FormChipInput({ label, error, placeholder, value, onChange, numeric, sort }: Props) {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +28,16 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
   function commitChip(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
-    const next = [...chips, trimmed];
+    if (numeric) {
+      const n = parseInt(trimmed, 10);
+      if (Number.isNaN(n) || n < 0 || chips.includes(String(n))) return;
+    }
+    let next = [...chips, trimmed];
+    if (sort) {
+      next = numeric
+        ? next.sort((a, b) => Number(a) - Number(b))
+        : [...next].sort();
+    }
     onChange(next.join(', '));
   }
 
@@ -33,7 +46,8 @@ export function FormChipInput({ label, error, placeholder, value, onChange }: Pr
     onChange(next.join(', '));
   }
 
-  function handleChange(text: string) {
+  function handleChange(rawText: string) {
+    const text = numeric ? rawText.replace(/[^0-9,]/g, '') : rawText;
     if (text.includes(',')) {
       const parts = text.split(',');
       const toCommit = parts[0]?.trim() ?? '';

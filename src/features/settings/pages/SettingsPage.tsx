@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
@@ -147,6 +147,7 @@ export function SettingsPage() {
 
   const NAV_ITEMS = [
     { key: 'account', label: t('settings.navAccount'), icon: User },
+    { key: 'notifications', label: t('common.notifications'), icon: Bell },
     { key: 'appearance', label: t('settings.navAppearance'), icon: Sun },
     { key: 'language', label: t('settings.navLanguage'), icon: Globe },
     { key: 'data', label: t('settings.navData'), icon: Shield },
@@ -194,6 +195,16 @@ export function SettingsPage() {
                 <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{user?.email}</p>
               </div>
             </div>
+          </SettingsSection>
+
+          {/* Notifications */}
+          <SettingsSection id="notifications" title={t('common.notifications')} subtitle={t('notifications.subtitle')}>
+            <SettingRow
+              label={t('notifications.manageTitle')}
+              hint={t('notifications.manageHint')}
+              control={<Link to="/settings/notifications" className={legalLinkClass} style={legalLinkStyle}>{t('notifications.manage')}</Link>}
+              last
+            />
           </SettingsSection>
 
           {/* Appearance */}

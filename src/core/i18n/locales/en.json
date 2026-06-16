@@ -426,7 +426,6 @@
     "leaseTimeline": "Lease timeline",
     "yearsCount": "{{count}} year",
     "yearsCount_plural": "{{count}} years",
-    "currentLease": "Current",
     "insurancePanel": "Insurance",
     "insuranceTypeLabel": "Type",
     "insuranceAmountLabel": "Amount",
@@ -435,7 +434,6 @@
     "paymentMethod": "Method",
     "payDay": "Pay day",
     "payDayValue": "Day {{day}} of month",
-    "numberOfPayments": "Number of payments",
     "extraContactsPanel": "Extra contacts ({{count}})",
     "metersPanel": "Meters",
     "paymentsCount": "{{count}} payments",
@@ -536,7 +534,8 @@
       "pagesGroup": "Pages",
       "actionsGroup": "Actions",
       "noMatches": "No matches."
-    }
+    },
+    "loading": "Loading…"
   },
   "validation": {
     "title": "Validation",
@@ -882,5 +881,54 @@
     "brandHeadline": "Track rent, expenses & leases without spreadsheets.",
     "brandDescription": "Built for small landlords. Multi-year leases with automatic escalation, supplier-linked expenses, and annual reports in one click.",
     "brandPlatforms": "iOS · Android · Web"
+  },
+  "notifications": {
+    "subtitle": "Choose which alerts you receive and when.",
+    "manage": "Open",
+    "manageTitle": "Manage notifications",
+    "manageHint": "Create rules for overdue rent and expiring leases.",
+    "master": "Enable notifications",
+    "masterHint": "Master switch for all push and in-app alerts.",
+    "event": {
+      "overdue": "Rent due",
+      "lease_expiring": "Lease expiring"
+    },
+    "usingDefault": "Using default reminders",
+    "default": {
+      "overdue": "On the due date, and 3 days after if unpaid · all properties",
+      "lease_expiring": "90 and 30 days before the lease ends · all properties"
+    },
+    "customize": "Customize",
+    "addRule": "Add rule",
+    "newRule": "New rule",
+    "editRule": "Edit rule",
+    "ruleName": "Name",
+    "ruleNamePlaceholder": "e.g. Cohen renewals",
+    "remindBefore": "Remind me before (days)",
+    "remindAfter": "Remind me after (days)",
+    "offsetPlaceholder": "Add days…",
+    "offsetHint": "Type a number and press Enter.",
+    "appliesTo": "Applies to",
+    "scopeAll": "All properties",
+    "scopeOwners": "Specific property owners",
+    "scopeProperties": "Specific properties",
+    "scopeRenters": "Specific renters",
+    "noOwners": "No property owners set on your properties yet.",
+    "scopeSearch": "Search…",
+    "scopeNoMatches": "No matches.",
+    "scopeCountProperties": "{{count}} properties",
+    "scopeCountRenters": "{{count}} renters",
+    "summaryBefore": "{{days}} days before",
+    "summaryAfter": "{{days}} days after",
+    "preview": "Matches {{renters}} renters · ~{{alerts}} reminders",
+    "previewLoading": "Calculating…",
+    "previewEmpty": "Add at least one reminder day to see an estimate.",
+    "saveRule": "Save rule",
+    "savedToast": "Notification rule saved",
+    "deletedToast": "Rule deleted",
+    "untitledRule": "Untitled rule",
+    "ruleEnabled": "Rule enabled",
+    "deleteRuleTitle": "Delete rule?",
+    "deleteRuleMessage": "This notification rule will be permanently removed."
   }
 }

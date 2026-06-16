@@ -605,6 +605,7 @@ export const mockHomeApi = {
           property_owner: prop?.property_owner ?? null,
           monthly_amount: monthly,
           payment_day_of_month: payDay,
+          payment_type: r.payment_type ?? null,
           days_overdue: daysOverdue,
         };
       })
@@ -634,6 +635,129 @@ export const mockHomeApi = {
       });
     }
     return results;
+  },
+};
+
+// ── notifications (feed + preferences) ──────────────────────────────────────
+// A lightweight in-memory stand-in so mock/E2E mode exercises the same UI. The
+// feed is derived from the mock overdue/expiring computations; read/dismissed
+// state and rules live in module-scoped state for the session.
+
+type MockEvent = 'overdue' | 'lease_expiring';
+
+interface MockRule {
+  id: number;
+  event_type: MockEvent;
+  label: string | null;
+  enabled: boolean;
+  offsets: number[];
+  scope_property_ids: number[];
+  scope_property_owners: string[];
+  scope_renter_ids: number[];
+}
+
+const mockNotifSettings = {
+  master_enabled: true,
+  muted_events: [] as MockEvent[],
+};
+let mockNotifRules: MockRule[] = [];
+let nextRuleId = 1;
+const notifRead = new Set<number>();
+const notifDismissed = new Set<number>();
+
+async function buildMockFeed() {
+  const items = [];
+  const muted = new Set(mockNotifSettings.muted_events);
+  if (mockNotifSettings.master_enabled && !muted.has('overdue')) {
+    for (const r of await mockHomeApi.getOverdueRenters()) {
+      items.push({
+        id: r.renter_id * 10, // stable synthetic id (offset 0)
+        type: 'overdue' as MockEvent,
+        renter_id: r.renter_id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        property_id: r.property_id,
+        property_address: r.property_address,
+        payment_type: r.payment_type ?? null,
+        offset: 0,
+        data: { days_overdue: r.days_overdue, amount: r.monthly_amount, offset: 0 },
+        read: false,
+        dismissed: false,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+  if (mockNotifSettings.master_enabled && !muted.has('lease_expiring')) {
+    for (const r of await mockHomeApi.getExpiringRenters({ days_until: 90 })) {
+      items.push({
+        id: r.renter_id * 10 + 1, // stable synthetic id (offset 90)
+        type: 'lease_expiring' as MockEvent,
+        renter_id: r.renter_id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        property_id: r.property_id,
+        property_address: r.property_address,
+        payment_type: null,
+        offset: 90,
+        data: { days_until_expiry: r.days_until_expiry, offset: 90 },
+        read: false,
+        dismissed: false,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+  return items
+    .filter((i) => !notifDismissed.has(i.id))
+    .map((i) => ({ ...i, read: notifRead.has(i.id) }));
+}
+
+export const mockNotificationsApi = {
+  getNotifications: async (status: 'unread' | 'all' = 'all') => {
+    const feed = await buildMockFeed();
+    return status === 'unread' ? feed.filter((i) => !i.read) : feed;
+  },
+  markRead: async (id: number) => { notifRead.add(id); },
+  markAllRead: async () => {
+    for (const i of await buildMockFeed()) notifRead.add(i.id);
+  },
+  dismiss: async (id: number) => { notifDismissed.add(id); },
+};
+
+export const mockPreferencesApi = {
+  getPreferences: async () => ({
+    settings: { ...mockNotifSettings, muted_events: [...mockNotifSettings.muted_events] },
+    rules: mockNotifRules.map((r) => ({ ...r })),
+  }),
+  updateSettings: async (patch: Partial<typeof mockNotifSettings>) => {
+    Object.assign(mockNotifSettings, patch);
+    return { ...mockNotifSettings, muted_events: [...mockNotifSettings.muted_events] };
+  },
+  createRule: async (draft: Partial<MockRule> & { event_type: MockEvent }) => {
+    const rule: MockRule = {
+      id: nextRuleId++,
+      event_type: draft.event_type,
+      label: draft.label ?? null,
+      enabled: draft.enabled ?? true,
+      offsets: draft.offsets ?? [],
+      scope_property_ids: draft.scope_property_ids ?? [],
+      scope_property_owners: draft.scope_property_owners ?? [],
+      scope_renter_ids: draft.scope_renter_ids ?? [],
+    };
+    mockNotifRules.push(rule);
+    return { ...rule };
+  },
+  updateRule: async (id: number, patch: Partial<MockRule>) => {
+    const idx = mockNotifRules.findIndex((r) => r.id === id);
+    if (idx < 0) throw new Error('Rule not found');
+    mockNotifRules[idx] = { ...mockNotifRules[idx], ...patch };
+    return { ...mockNotifRules[idx] };
+  },
+  deleteRule: async (id: number) => {
+    mockNotifRules = mockNotifRules.filter((r) => r.id !== id);
+  },
+  previewRule: async (draft: { offsets: number[] }) => {
+    const matched = mockRenters.filter((r) => r.property_id != null).length;
+    return { matched_renters: matched, estimated_alerts: matched * (draft.offsets?.length ?? 0) };
   },
 };
 

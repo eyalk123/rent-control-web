@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useOverdueRenters, useExpiringRenters } from '../queries';
 import { useTransactionSummary, useTransactions } from '@/features/transactions/queries';
 import { useProperties } from '@/features/properties/queries';
 import { HomeGreeting } from '../components/HomeGreeting';
@@ -13,8 +12,6 @@ import { RecentTransactions } from '../components/RecentTransactions';
 export function HomePage() {
   const navigate = useNavigate();
 
-  const { data: overdueRenters = [], isLoading: overdueLoading } = useOverdueRenters();
-  const { data: expiringRenters = [], isLoading: expiringLoading } = useExpiringRenters(60);
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
   const { data: properties = [], isLoading: propsLoading } = useProperties();
   const { data: recentTxPages, isLoading: recentLoading } = useTransactions({});
@@ -34,7 +31,7 @@ export function HomePage() {
       <QuickActions onNavigate={navigate} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <NeedsAttentionSection overdueRenters={overdueRenters} expiringRenters={expiringRenters} loading={overdueLoading || expiringLoading} />
+        <NeedsAttentionSection />
         <PortfolioOccupancy properties={properties} loading={propsLoading} />
       </div>
 

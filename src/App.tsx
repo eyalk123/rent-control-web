@@ -24,6 +24,7 @@ const ReportsHubPage = lazy(() => import('@/features/reports/pages/ReportsHubPag
 const IncomeExpenseReportPage = lazy(() => import('@/features/reports/pages/IncomeExpenseReportPage').then((m) => ({ default: m.IncomeExpenseReportPage })));
 const ExpenseLogReportPage = lazy(() => import('@/features/reports/pages/ExpenseLogReportPage').then((m) => ({ default: m.ExpenseLogReportPage })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const NotificationsSettingsPage = lazy(() => import('@/features/notifications/pages/NotificationsSettingsPage').then((m) => ({ default: m.NotificationsSettingsPage })));
 const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
           { path: 'reports/income-expense', element: <IncomeExpenseReportPage /> },
           { path: 'reports/expense-log', element: <ExpenseLogReportPage /> },
           { path: 'settings', element: <SettingsPage /> },
+          { path: 'settings/notifications', element: <NotificationsSettingsPage /> },
         ],
       },
     ],

@@ -427,7 +427,6 @@
     "leaseTimeline": "ציר הזמן של החוזה",
     "yearsCount": "{{count}} שנה",
     "yearsCount_plural": "{{count}} שנים",
-    "currentLease": "נוכחי",
     "insurancePanel": "ביטוח",
     "insuranceTypeLabel": "סוג",
     "insuranceAmountLabel": "סכום",
@@ -436,7 +435,6 @@
     "paymentMethod": "שיטה",
     "payDay": "יום תשלום",
     "payDayValue": "יום {{day}} בחודש",
-    "numberOfPayments": "מספר תשלומים",
     "extraContactsPanel": "אנשי קשר נוספים ({{count}})",
     "metersPanel": "מונים",
     "paymentsCount": "{{count}} תשלומים",
@@ -537,7 +535,8 @@
       "pagesGroup": "עמודים",
       "actionsGroup": "פעולות",
       "noMatches": "לא נמצאו תוצאות."
-    }
+    },
+    "loading": "טוען…"
   },
   "validation": {
     "title": "אימות",
@@ -883,5 +882,54 @@
     "brandHeadline": "עקוב אחר שכר דירה, הוצאות וחוזים — בלי גיליונות אלקטרוניים.",
     "brandDescription": "נבנה עבור משכירים קטנים. חוזים רב-שנתיים עם הצמדה אוטומטית, הוצאות מקושרות לספקים, ודוחות שנתיים בלחיצה אחת.",
     "brandPlatforms": "iOS · Android · Web"
+  },
+  "notifications": {
+    "subtitle": "בחרו אילו התראות תקבלו ומתי.",
+    "manage": "פתיחה",
+    "manageTitle": "ניהול התראות",
+    "manageHint": "צרו כללים לשכר דירה באיחור ולחוזים שמסתיימים.",
+    "master": "הפעלת התראות",
+    "masterHint": "מתג ראשי לכל ההתראות (פוש ובאפליקציה).",
+    "event": {
+      "overdue": "תשלום שכר דירה",
+      "lease_expiring": "חוזה מסתיים"
+    },
+    "usingDefault": "שימוש בתזכורות ברירת המחדל",
+    "default": {
+      "overdue": "ביום התשלום, ושלושה ימים אחריו אם לא שולם · כל הנכסים",
+      "lease_expiring": "90 ו-30 ימים לפני סיום החוזה · כל הנכסים"
+    },
+    "customize": "התאמה אישית",
+    "addRule": "הוספת כלל",
+    "newRule": "כלל חדש",
+    "editRule": "עריכת כלל",
+    "ruleName": "שם",
+    "ruleNamePlaceholder": "לדוגמה: חידושים של כהן",
+    "remindBefore": "תזכורת לפני (ימים)",
+    "remindAfter": "תזכורת אחרי (ימים)",
+    "offsetPlaceholder": "הוספת ימים…",
+    "offsetHint": "הקלידו מספר ולחצו Enter.",
+    "appliesTo": "חל על",
+    "scopeAll": "כל הנכסים",
+    "scopeOwners": "בעלי נכסים מסוימים",
+    "scopeProperties": "נכסים מסוימים",
+    "scopeRenters": "דיירים מסוימים",
+    "noOwners": "עדיין לא הוגדרו בעלי נכסים.",
+    "scopeSearch": "חיפוש…",
+    "scopeNoMatches": "אין תוצאות.",
+    "scopeCountProperties": "{{count}} נכסים",
+    "scopeCountRenters": "{{count}} דיירים",
+    "summaryBefore": "{{days}} ימים לפני",
+    "summaryAfter": "{{days}} ימים אחרי",
+    "preview": "תואם ל-{{renters}} דיירים · ~{{alerts}} תזכורות",
+    "previewLoading": "מחשב…",
+    "previewEmpty": "הוסיפו לפחות יום תזכורת אחד כדי לראות הערכה.",
+    "saveRule": "שמירת כלל",
+    "savedToast": "כלל ההתראה נשמר",
+    "deletedToast": "הכלל נמחק",
+    "untitledRule": "כלל ללא שם",
+    "ruleEnabled": "כלל פעיל",
+    "deleteRuleTitle": "למחוק את הכלל?",
+    "deleteRuleMessage": "כלל ההתראה יימחק לצמיתות."
   }
 }
