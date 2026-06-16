@@ -22,14 +22,14 @@ interface Props<T extends string> {
 export function FormSelect<T extends string>({
   label, error, value, onValueChange, options, placeholder, disabled, required,
 }: Props<T>) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <div className="flex flex-col gap-1.5">
       {label && <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>}
       {/* Ignore spurious empty emissions: Radix fires onValueChange('') for one render when
           a programmatically-set (e.g. RHF reset) value transitions before its Item registers,
           which would wipe the selection. No Item uses '', so a real change is always truthy. */}
-      <Select.Root value={value} onValueChange={(v) => { if (v) onValueChange(v as T); }} disabled={disabled}>
+      <Select.Root value={value} onValueChange={(v) => { if (v) onValueChange(v as T); }} disabled={disabled} dir={i18n.dir()}>
         <Select.Trigger aria-required={required || undefined} className={`flex items-center justify-between w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
           <Select.Value placeholder={placeholder} />
           <Select.Icon>
