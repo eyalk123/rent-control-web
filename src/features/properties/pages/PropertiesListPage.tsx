@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
+import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { useProperties, propertyKeys } from '../queries';
 import { deleteProperty } from '../api/properties';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
@@ -23,9 +26,11 @@ import { getTotalMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import type { Property } from '@/shared/types';
+import type { Property, PropertyType } from '@/shared/types';
 
 import i18n from '@/core/i18n';
+
+const PROPERTY_TYPES: PropertyType[] = ['apartment', 'house', 'commercial', 'garden_apartment'];
 import type { Renter } from '@/shared/types';
 
 function fmtLeaseDate(renter: Renter | undefined): string | null {
@@ -153,93 +158,101 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   );
 }
 
-interface PropertyTableProps {
-  properties: Property[];
-  isSelectMode: boolean;
-  selectedIds: Set<number>;
-  allSelected: boolean;
-  someSelected: boolean;
-  onToggle: (id: number) => void;
-  onToggleAll: () => void;
-}
-
-function PropertyTable({ properties, isSelectMode, selectedIds, allSelected, someSelected, onToggle, onToggleAll }: PropertyTableProps) {
+function usePropertyColumns(): ColumnDef<Property, unknown>[] {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  return (
-    <div className="rounded-[var(--radius-card)] overflow-x-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
-            {isSelectMode && (
-              <th className="px-4 py-3 w-px">
-                <button type="button" onClick={onToggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  <TriStateCheckbox checked={allSelected} indeterminate={someSelected} />
-                </button>
-              </th>
-            )}
-            {[
-              t('property.colProperty'), t('property.colType'), t('property.colOwner'),
-              t('property.renters'), t('property.rent'), t('property.colStatus'),
-            ].map((h) => (
-              <th key={h} className="px-4 py-3 text-start text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {properties.map((p, i) => {
-            const monthlyRent = p.renters?.length ? getTotalMonthlyRent(p.renters) : null;
-            const selected = selectedIds.has(p.id);
-            return (
-              <tr
-                key={p.id}
-                onClick={() => isSelectMode ? onToggle(p.id) : navigate(`/properties/${p.id}`)}
-                className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
-                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none', background: selected ? 'var(--color-input-filled-background)' : undefined }}
-              >
-                {isSelectMode && (
-                  <td className="px-4 py-3"><TriStateCheckbox checked={selected} /></td>
-                )}
-                <td className="px-4 py-3">
-                  <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(p, t)}</span></p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{p.city}</p>
-                </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {t(`property.type_${p.type}` as never, p.type)}
-                </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  {p.property_owner ?? '—'}
-                </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-primary)' }}>
-                  {p.renters?.length ?? 0}
-                </td>
-                <td className="px-4 py-3 text-sm font-medium">
-                  <LtrSpan style={{ color: 'var(--color-text-primary)' }}>
-                    {monthlyRent ? formatMoney(monthlyRent) : '—'}
-                  </LtrSpan>
-                </td>
-                <td className="px-4 py-3">
-                  <StatusPill hasRenters={!!p.hasRenters} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  return useMemo<ColumnDef<Property, unknown>[]>(() => [
+    {
+      id: 'property',
+      header: t('property.colProperty'),
+      accessorFn: (p) => `${p.address} ${p.city}`,
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('property.colProperty') },
+      cell: ({ row }) => {
+        const p = row.original;
+        return (
+          <div>
+            <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              {p.address}
+              <span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(p, t)}</span>
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{p.city}</p>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'type',
+      header: t('property.colType'),
+      accessorFn: (p) => p.type,
+      filterFn: 'equalsString',
+      meta: {
+        filter: 'select',
+        filterPlaceholder: t('common.all'),
+        filterOptions: PROPERTY_TYPES.map((ty) => ({ value: ty, label: t(`property.type_${ty}` as never, ty) })),
+      },
+      cell: ({ row }) => (
+        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {t(`property.type_${row.original.type}` as never, row.original.type)}
+        </span>
+      ),
+    },
+    {
+      id: 'owner',
+      header: t('property.colOwner'),
+      accessorFn: (p) => p.property_owner ?? '',
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('property.colOwner') },
+      cell: ({ row }) => (
+        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{row.original.property_owner ?? '—'}</span>
+      ),
+    },
+    {
+      id: 'renters',
+      header: t('property.renters'),
+      accessorFn: (p) => p.renters?.length ?? 0,
+      enableColumnFilter: false,
+      cell: ({ row }) => (
+        <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{row.original.renters?.length ?? 0}</span>
+      ),
+    },
+    {
+      id: 'rent',
+      header: t('property.rent'),
+      accessorFn: (p) => getTotalMonthlyRent(p.renters),
+      enableColumnFilter: false,
+      cell: ({ row }) => {
+        const rent = getTotalMonthlyRent(row.original.renters);
+        return (
+          <span className="text-sm font-medium">
+            <LtrSpan style={{ color: 'var(--color-text-primary)' }}>{rent > 0 ? formatMoney(rent) : '—'}</LtrSpan>
+          </span>
+        );
+      },
+    },
+    {
+      id: 'status',
+      header: t('property.colStatus'),
+      accessorFn: (p) => (p.hasRenters ? 'occupied' : 'vacant'),
+      filterFn: 'equalsString',
+      meta: {
+        filter: 'select',
+        filterPlaceholder: t('common.all'),
+        filterOptions: [
+          { value: 'occupied', label: t('property.occupancy.occupied') },
+          { value: 'vacant', label: t('property.occupancy.vacant') },
+        ],
+      },
+      cell: ({ row }) => <StatusPill hasRenters={!!row.original.hasRenters} />,
+    },
+  ], [t]);
 }
-
-type ViewMode = 'card' | 'table';
 
 export function PropertiesListPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
   const [search, setSearch] = useState('');
-  const [view, setView] = useState<ViewMode>('card');
+  const [view, setView] = useViewMode('properties');
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
@@ -253,13 +266,23 @@ export function PropertiesListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: consume the ?new query param once
   }, []);
 
-  const filtered = (properties ?? []).filter((p) =>
-    `${p.address} ${p.city} ${p.property_owner ?? ''}`.toLowerCase().includes(search.toLowerCase()),
+  // Memoized so the `data` reference passed to useReactTable is stable across renders;
+  // an always-new array sends TanStack into an infinite re-render loop that freezes the tab.
+  const filtered = useMemo(
+    () => (properties ?? []).filter((p) =>
+      `${p.address} ${p.city} ${p.property_owner ?? ''}`.toLowerCase().includes(search.toLowerCase()),
+    ),
+    [properties, search],
   );
+
+  const columns = usePropertyColumns();
+  const { table } = useDataTable(columns, filtered);
+  // Rows currently visible after column filters + sort — selection acts on these.
+  const visibleRows = table.getRowModel().rows.map((r) => r.original);
 
   const qc = useQueryClient();
   const sel = useSelectMode({
-    items: filtered,
+    items: visibleRows,
     deleteItem: deleteProperty,
     onDeleted: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
   });
@@ -342,7 +365,7 @@ export function PropertiesListPage() {
           }}
         />
         <div className="flex-1" />
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center gap-2">
           <SegToggle
             value={view}
             onChange={(v) => setView(v as ViewMode)}
@@ -389,8 +412,10 @@ export function PropertiesListPage() {
           ))}
         </div>
       ) : (
-        <PropertyTable
-          properties={filtered}
+        <DataTable
+          table={table}
+          rowId={(p) => p.id}
+          onRowClick={(p) => navigate(`/properties/${p.id}`)}
           isSelectMode={sel.isSelectMode}
           selectedIds={sel.selectedIds}
           allSelected={sel.allSelected}

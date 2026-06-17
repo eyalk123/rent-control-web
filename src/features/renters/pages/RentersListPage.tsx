@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Mail, CheckSquare } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
+import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { useRenters, renterKeys } from '../queries';
+import { useProperties } from '@/features/properties/queries';
 import { deleteRenter } from '../api/renters';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
@@ -137,105 +141,123 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
 
 // ─── table ───────────────────────────────────────────────────────────────────
 
-interface RenterTableProps {
-  renters: Renter[];
-  statusMap: Map<number, RenterStatus>;
-  isSelectMode: boolean;
-  selectedIds: Set<number>;
-  allSelected: boolean;
-  someSelected: boolean;
-  onToggle: (id: number) => void;
-  onToggleAll: () => void;
-}
-
-function RenterTable({ renters, statusMap, isSelectMode, selectedIds, allSelected, someSelected, onToggle, onToggleAll }: RenterTableProps) {
+function useRenterColumns(
+  statusMap: Map<number, RenterStatus>,
+  ownerByProperty: Map<number, string>,
+): ColumnDef<Renter, unknown>[] {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  return (
-    <div className="rounded-[var(--radius-card)] overflow-x-auto" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
-            {isSelectMode && (
-              <th className="px-4 py-3 w-px">
-                <button type="button" onClick={onToggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  <TriStateCheckbox checked={allSelected} indeterminate={someSelected} />
-                </button>
-              </th>
-            )}
-            {[
-              t('renter.colRenter'), t('property.colProperty'), t('renter.colPhone'),
-              t('property.rent'), t('renter.leaseEnds'), t('property.colStatus'),
-            ].map((h) => (
-              <th key={h} className="px-4 py-3 text-start text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {renters.map((r, i) => {
-            const color = getPropertyColor(r.id);
-            const bg = getPropertyColorBg(r.id);
-            const monthly = getRenterMonthlyRent(r);
-            const leaseEnd = fmtLeaseEnd(r);
-            const status = statusMap.get(r.id) ?? 'active';
-            const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-            const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
-            const selected = selectedIds.has(r.id);
-
-            return (
-              <tr
-                key={r.id}
-                onClick={() => isSelectMode ? onToggle(r.id) : navigate(`/renters/${r.id}`)}
-                className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
-                style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none', background: selected ? 'var(--color-input-filled-background)' : undefined }}
-              >
-                {isSelectMode && (
-                  <td className="px-4 py-3"><TriStateCheckbox checked={selected} /></td>
-                )}
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: bg, color }}>
-                      {(r.first_name[0] + r.last_name[0]).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{r.email}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{r.property ? `${r.property.address}${formatFloorApartment(r.property, t)}` : '—'}</td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{r.phone}</td>
-                <td className="px-4 py-3 text-sm font-semibold">
-                  <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(monthly)}</LtrSpan>
-                </td>
-                <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{leaseEnd ?? '—'}</td>
-                <td className="px-4 py-3"><Pill tone={pillTone}>{pillLabel}</Pill></td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  return useMemo<ColumnDef<Renter, unknown>[]>(() => {
+    const ownerOf = (r: Renter) => ownerByProperty.get(r.property?.id ?? r.property_id ?? -1) ?? '';
+    return [
+    {
+      id: 'renter',
+      header: t('renter.colRenter'),
+      accessorFn: (r) => `${r.first_name} ${r.last_name} ${r.email}`,
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('renter.colRenter') },
+      cell: ({ row }) => {
+        const r = row.original;
+        const color = getPropertyColor(r.id);
+        const bg = getPropertyColorBg(r.id);
+        return (
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style={{ background: bg, color }}>
+              {(r.first_name[0] + r.last_name[0]).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.first_name} {r.last_name}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{r.email}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'property',
+      header: t('property.colProperty'),
+      accessorFn: (r) => r.property?.address ?? '',
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('property.colProperty') },
+      cell: ({ row }) => {
+        const r = row.original;
+        return (
+          <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            {r.property ? `${r.property.address}${formatFloorApartment(r.property, t)}` : '—'}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'owner',
+      header: t('property.colOwner'),
+      accessorFn: (r) => ownerOf(r),
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('property.colOwner') },
+      cell: ({ row }) => {
+        const owner = ownerOf(row.original);
+        return <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{owner || '—'}</span>;
+      },
+    },
+    {
+      id: 'phone',
+      header: t('renter.colPhone'),
+      accessorFn: (r) => r.phone,
+      filterFn: 'includesString',
+      meta: { filter: 'text', filterPlaceholder: t('renter.colPhone') },
+      cell: ({ row }) => (
+        <span className="text-sm" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{row.original.phone}</span>
+      ),
+    },
+    {
+      id: 'rent',
+      header: t('property.rent'),
+      accessorFn: (r) => getRenterMonthlyRent(r),
+      enableColumnFilter: false,
+      cell: ({ row }) => (
+        <span className="text-sm font-semibold">
+          <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(getRenterMonthlyRent(row.original))}</LtrSpan>
+        </span>
+      ),
+    },
+    {
+      id: 'leaseEnds',
+      header: t('renter.leaseEnds'),
+      accessorFn: (r) => getLeaseEndDate(r)?.getTime() ?? 0,
+      enableColumnFilter: false,
+      cell: ({ row }) => (
+        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{fmtLeaseEnd(row.original) ?? '—'}</span>
+      ),
+    },
+    {
+      id: 'status',
+      header: t('property.colStatus'),
+      accessorFn: (r) => statusMap.get(r.id) ?? 'active',
+      enableColumnFilter: false, // status already filtered via the tab bar
+      cell: ({ row }) => {
+        const status = statusMap.get(row.original.id) ?? 'active';
+        const tone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
+        const label = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
+        return <Pill tone={tone}>{label}</Pill>;
+      },
+    },
+    ];
+  }, [t, statusMap, ownerByProperty]);
 }
 
 // ─── main page ───────────────────────────────────────────────────────────────
 
 type StatusFilter = 'all' | 'active' | 'expiring' | 'overdue';
-type ViewMode = 'card' | 'table';
 
 export function RentersListPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: renters = [], isLoading, error, refetch } = useRenters();
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
-  const [view, setView] = useState<ViewMode>('card');
+  const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
@@ -249,12 +271,14 @@ export function RentersListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: consume the ?new query param once
   }, []);
 
-  // Build status map
-  const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
-  const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
-  const statusMap = new Map<number, RenterStatus>(
-    renters.map((r) => [r.id, overdueIds.has(r.id) ? 'overdue' : expiringIds.has(r.id) ? 'expiring' : 'active'])
-  );
+  // Build status map (memoized so the table's columns stay stable across renders)
+  const statusMap = useMemo(() => {
+    const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
+    const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
+    return new Map<number, RenterStatus>(
+      renters.map((r) => [r.id, overdueIds.has(r.id) ? 'overdue' : expiringIds.has(r.id) ? 'expiring' : 'active'])
+    );
+  }, [renters, overdueList, expiringList]);
 
   const counts = {
     all: renters.length,
@@ -263,18 +287,36 @@ export function RentersListPage() {
     overdue: renters.filter((r) => statusMap.get(r.id) === 'overdue').length,
   };
 
-  const filtered = renters.filter((r) => {
-    if (search) {
-      const q = search.toLowerCase();
-      if (!`${r.first_name} ${r.last_name} ${r.phone} ${r.email}`.toLowerCase().includes(q)) return false;
-    }
-    if (statusFilter !== 'all' && statusMap.get(r.id) !== statusFilter) return false;
-    return true;
-  });
+  // Memoized so the `data` reference passed to useReactTable is stable across renders;
+  // an always-new array sends TanStack into an infinite re-render loop that freezes the tab.
+  const filtered = useMemo(
+    () => renters.filter((r) => {
+      if (search) {
+        const q = search.toLowerCase();
+        if (!`${r.first_name} ${r.last_name} ${r.phone} ${r.email}`.toLowerCase().includes(q)) return false;
+      }
+      if (statusFilter !== 'all' && statusMap.get(r.id) !== statusFilter) return false;
+      return true;
+    }),
+    [renters, search, statusFilter, statusMap],
+  );
+
+  // Owner lives on the full Property (not the nested PropertyBrief), so join against
+  // the properties list by id. Memoized to keep the table columns referentially stable.
+  const { data: properties = [] } = useProperties();
+  const ownerByProperty = useMemo(
+    () => new Map<number, string>(properties.map((p) => [p.id, p.property_owner ?? ''])),
+    [properties],
+  );
+
+  const columns = useRenterColumns(statusMap, ownerByProperty);
+  const { table } = useDataTable(columns, filtered);
+  // Rows currently visible after column filters + sort — selection acts on these.
+  const visibleRows = table.getRowModel().rows.map((r) => r.original);
 
   const qc = useQueryClient();
   const sel = useSelectMode({
-    items: filtered,
+    items: visibleRows,
     deleteItem: deleteRenter,
     onDeleted: () => qc.invalidateQueries({ queryKey: renterKeys.all }),
   });
@@ -373,7 +415,7 @@ export function RentersListPage() {
               color: 'var(--color-text-primary)',
             }}
           />
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex items-center gap-2">
             <SegToggle
               value={view}
               onChange={(v) => setView(v as ViewMode)}
@@ -422,9 +464,10 @@ export function RentersListPage() {
             ))}
           </div>
         ) : (
-          <RenterTable
-            renters={filtered}
-            statusMap={statusMap}
+          <DataTable
+            table={table}
+            rowId={(r) => r.id}
+            onRowClick={(r) => navigate(`/renters/${r.id}`)}
             isSelectMode={sel.isSelectMode}
             selectedIds={sel.selectedIds}
             allSelected={sel.allSelected}

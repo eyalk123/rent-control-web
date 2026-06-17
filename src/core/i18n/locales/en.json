@@ -520,6 +520,8 @@
     "addButton": "Add",
     "status": "Status",
     "export": "Export",
+    "filter": "Filter",
+    "all": "All",
     "allTime": "all time",
     "download": "Download",
     "cardsView": "Cards",
