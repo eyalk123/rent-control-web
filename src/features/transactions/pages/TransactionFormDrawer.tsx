@@ -668,11 +668,25 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
           onChange={handleCategoryChange}
           error={categoryError}
         />
-        {selectedCategoryIds.length > 0 && supplierOptions.length > 0 && (
+        <div className="flex flex-col gap-1">
           <Controller control={control} name="supplierId" render={({ field }) => (
-            <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
+            <FormSelect
+              label={t('transactions.supplier')}
+              value={field.value}
+              onValueChange={field.onChange}
+              options={supplierOptions}
+              placeholder={t('transactions.selectSupplier')}
+              disabled={supplierOptions.length === 0}
+            />
           )} />
-        )}
+          {supplierOptions.length === 0 && (
+            <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+              {selectedCategoryIds.length === 0
+                ? t('transactions.supplierSelectCategoryHint')
+                : t('transactions.supplierNoMatchHint')}
+            </p>
+          )}
+        </div>
         <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
           <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
         )} />
@@ -749,11 +763,25 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
         onChange={handleCategoryChange}
         error={categoryError}
       />
-      {selectedCategoryIds.length > 0 && supplierOptions.length > 0 && (
+      <div className="flex flex-col gap-1">
         <Controller control={control} name="supplierId" render={({ field }) => (
-          <FormSelect label={t('transactions.supplier')} value={field.value} onValueChange={field.onChange} options={supplierOptions} placeholder={t('transactions.selectSupplier')} />
+          <FormSelect
+            label={t('transactions.supplier')}
+            value={field.value}
+            onValueChange={field.onChange}
+            options={supplierOptions}
+            placeholder={t('transactions.selectSupplier')}
+            disabled={supplierOptions.length === 0}
+          />
         )} />
-      )}
+        {supplierOptions.length === 0 && (
+          <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+            {selectedCategoryIds.length === 0
+              ? t('transactions.supplierSelectCategoryHint')
+              : t('transactions.supplierNoMatchHint')}
+          </p>
+        )}
+      </div>
       <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
         <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
       )} />

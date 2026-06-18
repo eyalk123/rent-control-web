@@ -637,6 +637,8 @@
     "selectCategory": "בחר קטגוריה",
     "selectProperty": "בחר נכס",
     "selectSupplier": "בחר ספק",
+    "supplierSelectCategoryHint": "בחר קטגוריה כדי לבחור ספק",
+    "supplierNoMatchHint": "אין ספקים התואמים לקטגוריה שנבחרה",
     "selectPaymentMethod": "בחר אמצעי תשלום",
     "addNew": "הוסף תנועה",
     "date": "תאריך תשלום",

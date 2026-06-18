@@ -46,6 +46,7 @@ export async function createSupplier(data: SupplierCreate): Promise<Supplier> {
     phone: data.phone ?? null,
     email: data.email ?? null,
     notes: data.notes ?? null,
+    bank_account: data.bank_account ?? null,
     category_ids: data.category_ids,
   };
 
@@ -66,6 +67,7 @@ export async function updateSupplier(
   if (data.phone !== undefined) payload.phone = data.phone ?? null;
   if (data.email !== undefined) payload.email = data.email ?? null;
   if (data.notes !== undefined) payload.notes = data.notes ?? null;
+  if (data.bank_account !== undefined) payload.bank_account = data.bank_account ?? null;
   if (data.category_ids !== undefined) payload.category_ids = data.category_ids;
   if (data.is_active !== undefined) payload.is_active = data.is_active;
 

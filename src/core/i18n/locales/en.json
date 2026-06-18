@@ -636,6 +636,8 @@
     "selectCategory": "Select category",
     "selectProperty": "Select property",
     "selectSupplier": "Select supplier",
+    "supplierSelectCategoryHint": "Select a category to choose a supplier",
+    "supplierNoMatchHint": "No suppliers match the selected category",
     "selectPaymentMethod": "Select payment method",
     "addNew": "Add transaction",
     "date": "Payment Date",

@@ -798,6 +798,7 @@ export const mockSuppliersApi = {
       phone: data.phone ?? null,
       email: data.email ?? null,
       notes: data.notes ?? null,
+      bank_account: data.bank_account ?? null,
       is_active: true,
     };
     mockSuppliers.push(newSupplier);
