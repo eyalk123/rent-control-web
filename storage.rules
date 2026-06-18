@@ -25,10 +25,13 @@ service firebase.storage {
       return request.auth != null && request.auth.uid == ownerId;
     }
 
-    // Allowed upload types: images and PDFs only.
+    // Allowed upload types: images, PDFs, and Word documents.
+    // Mirror src/shared/utils/firebaseUpload.ts isAllowedType().
     function isAllowedType() {
       return request.resource.contentType.matches('image/.*')
-          || request.resource.contentType == 'application/pdf';
+          || request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     }
 
     // Cap uploads at 10 MB.

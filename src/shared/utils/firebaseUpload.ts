@@ -5,8 +5,15 @@ import { storage } from '@/core/auth/firebase';
 // these client-side checks give faster, friendlier feedback).
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
+// Non-image upload types we accept. Mirror these in storage.rules' isAllowedType().
+const ALLOWED_DOC_TYPES = new Set([
+  'application/pdf',
+  'application/msword', // legacy .doc
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+]);
+
 function isAllowedType(type: string): boolean {
-  return type.startsWith('image/') || type === 'application/pdf';
+  return type.startsWith('image/') || ALLOWED_DOC_TYPES.has(type);
 }
 
 export class UploadValidationError extends Error {}
@@ -18,7 +25,7 @@ export async function uploadToFirebase(
 ): Promise<string> {
   if (!isAllowedType(file.type)) {
     throw new UploadValidationError(
-      `Unsupported file type: ${file.type || 'unknown'}. Only images and PDF files are allowed.`,
+      `Unsupported file type: ${file.type || 'unknown'}. Only images, PDF, and Word documents are allowed.`,
     );
   }
   if (file.size > MAX_UPLOAD_BYTES) {
