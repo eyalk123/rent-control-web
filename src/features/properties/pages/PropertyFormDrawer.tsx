@@ -12,12 +12,21 @@ import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
 import { Drawer } from '@/shared/components/ui/Drawer';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 
 type FormData = z.infer<typeof propertyFormSchema>;
+
+// Every field rendered on step 1 — validated together on "Next" so invalid values
+// (e.g. a non-numeric block/plot) surface inline at the page transition instead of
+// silently failing on Save from a hidden step.
+const STEP_1_FIELDS = [
+  'address', 'floor', 'apartment', 'city', 'block', 'plot',
+  'zipCode', 'sqFt', 'type', 'numberOfRooms', 'parkingNumbersStr',
+] as const satisfies readonly (keyof FormData)[];
 
 const EMPTY_FORM: FormData = {
   address: '', city: '', block: '', plot: '', zipCode: '', type: '' as FormData['type'],
@@ -53,19 +62,24 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
+  const [showDiscard, setShowDiscard] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [basicContractFile, setBasicContractFile] = useState<File | null>(null);
   const [landRegistryFile, setLandRegistryFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema) as never,
     defaultValues: EMPTY_FORM,
   });
 
   useEffect(() => {
-    if (!open) { setStep(1); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); }
+    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); }
   }, [open]);
+
+  // Files live outside RHF, so isDirty alone misses them.
+  const dirty = isDirty || !!imageFile || !!basicContractFile || !!landRegistryFile;
+  const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
     if (existing && open) {
@@ -174,7 +188,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
     <div className="flex gap-3">
       <button
         type="button"
-        onClick={step === 2 ? () => setStep(1) : onClose}
+        onClick={step === 2 ? () => setStep(1) : attemptClose}
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
@@ -185,7 +199,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
           key="next"
           type="button"
           onClick={async () => {
-            const ok = await trigger(['address', 'city', 'type']);
+            const ok = await trigger(STEP_1_FIELDS);
             if (ok) setStep(2);
           }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
@@ -209,9 +223,11 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   );
 
   return (
+    <>
     <Drawer
       open={open}
       onClose={onClose}
+      onRequestClose={attemptClose}
       title={isEditing ? t('property.editTitle') : t('property.addTitle')}
       width={620}
       footer={footer}
@@ -234,8 +250,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
             </div>
             <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.block')} inputMode="numeric" error={errors.block?.message} {...register('block')} />
-              <FormInput label={t('property.plot')} inputMode="numeric" error={errors.plot?.message} {...register('plot')} />
+              <FormInput label={t('property.block')} type="number" error={errors.block?.message} {...register('block')} />
+              <FormInput label={t('property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />
@@ -340,5 +356,15 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         )}
       </form>
     </Drawer>
+    <ConfirmDialog
+      open={showDiscard}
+      tone="primary"
+      title={t('common.discardChanges')}
+      message={t('common.discardChangesMessage')}
+      confirmLabel={t('common.discard')}
+      onConfirm={() => { setShowDiscard(false); onClose(); }}
+      onClose={() => setShowDiscard(false)}
+    />
+    </>
   );
 }

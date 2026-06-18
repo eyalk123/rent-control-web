@@ -24,6 +24,7 @@ import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { MonthGridPicker } from '@/shared/components/ui/MonthGridPicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { PAYMENT_METHOD_VALUES } from '@/shared/constants/paymentMethods';
 import { formatMoney } from '@/shared/utils/money';
@@ -62,9 +63,10 @@ interface RevenueEditFields {
 interface RevenueFormProps {
   onClose: () => void;
   transaction?: Transaction;
+  onDirtyChange: (dirty: boolean) => void;
 }
 
-function RevenueForm({ onClose, transaction }: RevenueFormProps) {
+function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const qc = useQueryClient();
@@ -73,7 +75,7 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
   const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null);
-  const { register, handleSubmit, control, formState: { errors } } = useForm<RevenueEditFields>({
+  const { register, handleSubmit, control, formState: { errors, isDirty } } = useForm<RevenueEditFields>({
     defaultValues: {
       renterId: transaction?.renter_id?.toString() ?? '__none__',
       amount: transaction?.amount?.toString() ?? '',
@@ -120,6 +122,14 @@ function RevenueForm({ onClose, transaction }: RevenueFormProps) {
   const [propertyError, setPropertyError] = useState('');
   const [renterError, setRenterError] = useState('');
   const [bulkDateError, setBulkDateError] = useState('');
+
+  // Report unsaved-changes state up to the drawer. Edit mode tracks the RHF form;
+  // bulk-create tracks the property/renter selection and bulk fields (held outside RHF).
+  const isEdit = !!transaction;
+  const revenueDirty = isEdit
+    ? isDirty
+    : selectedPropertyIds.length > 0 || selectedRenterIds.size > 0 || !!bulkDate || !!bulkNotes;
+  useEffect(() => { onDirtyChange(revenueDirty); }, [revenueDirty, onDirtyChange]);
 
   useEffect(() => {
     if (periodType !== 'custom') setPeriodValue(getCurrentPeriodValue(periodType));
@@ -488,9 +498,10 @@ interface ExpenseEditFields {
 interface ExpenseFormProps {
   onClose: () => void;
   transaction?: Transaction;
+  onDirtyChange: (dirty: boolean) => void;
 }
 
-function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
+function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const { data: categories } = useExpenseCategories();
@@ -530,7 +541,7 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   // ── Edit mode renter data ──────────────────────────────────────────────────
   const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null);
 
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm<ExpenseEditFields>({
+  const { register, handleSubmit, control, watch, setValue, formState: { errors, isDirty } } = useForm<ExpenseEditFields>({
     defaultValues: {
       renterId: transaction?.renter_id?.toString() ?? '__none__',
       amount: transaction?.amount?.toString() ?? '',
@@ -542,6 +553,13 @@ function ExpenseForm({ onClose, transaction }: ExpenseFormProps) {
   });
 
   const watchedAmount = watch('amount');
+
+  // Report unsaved-changes state up to the drawer. Categories are seeded from the
+  // transaction in edit mode, so only count them as dirty in create mode.
+  const isEdit = !!transaction;
+  const baseDirty = isDirty || receiptFile !== null || selectedPropertyIds.length > 0;
+  const expenseDirty = isEdit ? baseDirty : baseDirty || selectedCategoryIds.length > 0;
+  useEffect(() => { onDirtyChange(expenseDirty); }, [expenseDirty, onDirtyChange]);
 
   // Fetch all suppliers, filter client-side by selected categories (intersection)
   const { data: allSuppliers } = useSuppliers({});
@@ -765,11 +783,21 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
   const { t } = useTranslation();
   const editType = transaction?.type as TxType | undefined;
   const [txType, setTxType] = useState<TxType | null>(editType ?? initialType ?? null);
+  // The active child form reports its dirty state up so the guard can live at the
+  // Drawer boundary regardless of revenue/expense mode.
+  const [dirty, setDirty] = useState(false);
+  const [showDiscard, setShowDiscard] = useState(false);
 
   useEffect(() => {
     if (!open) setTxType(editType ?? initialType ?? null);
     else if (editType ?? initialType) setTxType(editType ?? initialType ?? null);
   }, [open, initialType, editType]);
+
+  // Reset the dirty signal whenever the drawer opens/closes or the type changes —
+  // the freshly mounted child re-reports its own state.
+  useEffect(() => { setDirty(false); setShowDiscard(false); }, [open, txType]);
+
+  const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   const isEditing = !!transaction;
   const isBulkRevenue = !isEditing && txType === 'revenue';
@@ -790,7 +818,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
     <div className="flex gap-3">
       <button
         type="button"
-        onClick={() => { if (isEditing || initialType) onClose(); else setTxType(null); }}
+        onClick={() => { if (isEditing || initialType) attemptClose(); else setTxType(null); }}
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
@@ -801,7 +829,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
   ) : (
     <button
       type="button"
-      onClick={onClose}
+      onClick={attemptClose}
       className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
       style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
     >
@@ -810,9 +838,11 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
   );
 
   return (
+    <>
     <Drawer
       open={open}
       onClose={onClose}
+      onRequestClose={attemptClose}
       title={isEditing ? t('transactions.editTransaction') : t('transactions.addNew')}
       width={640}
       footer={footer}
@@ -841,10 +871,20 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
           </button>
         </div>
       ) : txType === 'revenue' ? (
-        <RevenueForm onClose={onClose} transaction={transaction} />
+        <RevenueForm onClose={onClose} transaction={transaction} onDirtyChange={setDirty} />
       ) : (
-        <ExpenseForm onClose={onClose} transaction={transaction} />
+        <ExpenseForm onClose={onClose} transaction={transaction} onDirtyChange={setDirty} />
       )}
     </Drawer>
+    <ConfirmDialog
+      open={showDiscard}
+      tone="primary"
+      title={t('common.discardChanges')}
+      message={t('common.discardChangesMessage')}
+      confirmLabel={t('common.discard')}
+      onConfirm={() => { setShowDiscard(false); onClose(); }}
+      onClose={() => setShowDiscard(false)}
+    />
+    </>
   );
 }

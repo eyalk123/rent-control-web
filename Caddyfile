@@ -29,10 +29,12 @@
 		#   inline styles for positioning; removing it breaks popovers/charts.
 		# - connect-src includes the backend origin (set $BACKEND_ORIGIN in Railway,
 		#   e.g. https://rent-control-backend.up.railway.app) plus Firebase endpoints.
+		# - img-src allows blob: for local file previews (URL.createObjectURL) shown
+		#   before upload, e.g. the property image and expense receipt thumbnails.
 		# - frame-src allows the Firebase auth domain for popup/redirect sign-in.
 		# If something breaks on first deploy, temporarily rename this header to
 		# "Content-Security-Policy-Report-Only" to diagnose without blocking.
-		Content-Security-Policy "default-src 'self'; script-src 'self' https://apis.google.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' {$BACKEND_ORIGIN} https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.sentry.io; frame-src 'self' https://*.firebaseapp.com https://*.web.app https://apis.google.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://apis.google.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' {$BACKEND_ORIGIN} https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.sentry.io; frame-src 'self' https://*.firebaseapp.com https://*.web.app https://apis.google.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 		# Hide the server banner.
 		-Server

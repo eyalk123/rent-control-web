@@ -5,6 +5,12 @@ import { useTranslation } from 'react-i18next';
 interface DrawerProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * Intercepts "soft" dismissals (scrim click, Escape, X button) so the parent can,
+   * e.g., confirm discarding unsaved changes. When omitted, soft dismissals call
+   * `onClose` directly (unchanged behavior). `onClose` is still the actual close.
+   */
+  onRequestClose?: () => void;
   title: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -14,8 +20,9 @@ interface DrawerProps {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function Drawer({ open, onClose, title, children, footer, width = 560 }: DrawerProps) {
+export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560 }: DrawerProps) {
   const { t } = useTranslation();
+  const requestClose = onRequestClose ?? onClose;
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -25,10 +32,10 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') requestClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -88,7 +95,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
       <div
         className="absolute inset-0 bg-black/40"
         style={{ animation: 'fadeIn 0.18s ease backwards' }}
-        onClick={onClose}
+        onClick={requestClose}
         aria-hidden
       />
 
@@ -114,7 +121,7 @@ export function Drawer({ open, onClose, title, children, footer, width = 560 }: 
           <h2 id={titleId} className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label={t('a11y.close')}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
           >

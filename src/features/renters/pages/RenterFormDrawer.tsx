@@ -12,6 +12,7 @@ import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
@@ -20,6 +21,12 @@ import { getApiErrorMessage } from '@/core/api/client';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof renterFormSchema>;
+
+// Every field rendered on step 1 — validated together on "Next" so invalid values
+// surface inline at the page transition instead of silently failing on Save.
+const STEP_1_FIELDS = [
+  'firstName', 'lastName', 'phone', 'email', 'propertyId', 'extraContacts',
+] as const satisfies readonly (keyof FormData)[];
 
 interface Props {
   open: boolean;
@@ -39,10 +46,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const updateMutation = useUpdateRenter(renterId ?? 0);
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
+  const [showDiscard, setShowDiscard] = useState(false);
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
     defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '' },
   });
@@ -52,8 +60,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
 
   useEffect(() => {
-    if (!open) { setStep(1); setIdImageFile(null); setFullContractFile(null); }
+    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setFullContractFile(null); }
   }, [open]);
+
+  // Files live outside RHF, so isDirty alone misses them.
+  const dirty = isDirty || !!idImageFile || !!fullContractFile;
+  const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
     if (existing && open) {
@@ -159,7 +171,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
     <div className="flex gap-3">
       <button
         type="button"
-        onClick={step === 2 ? () => setStep(1) : onClose}
+        onClick={step === 2 ? () => setStep(1) : attemptClose}
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
@@ -170,7 +182,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
           key="next"
           type="button"
           onClick={async () => {
-            const ok = await trigger(['firstName', 'lastName', 'phone']);
+            const ok = await trigger(STEP_1_FIELDS);
             if (ok) setStep(2);
           }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
@@ -194,9 +206,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   );
 
   return (
+    <>
     <Drawer
       open={open}
       onClose={onClose}
+      onRequestClose={attemptClose}
       title={isEditing ? t('renter.editTitle') : t('renter.addTitle')}
       width={640}
       footer={footer}
@@ -308,5 +322,15 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         )}
       </form>
     </Drawer>
+    <ConfirmDialog
+      open={showDiscard}
+      tone="primary"
+      title={t('common.discardChanges')}
+      message={t('common.discardChangesMessage')}
+      confirmLabel={t('common.discard')}
+      onConfirm={() => { setShowDiscard(false); onClose(); }}
+      onClose={() => setShowDiscard(false)}
+    />
+    </>
   );
 }

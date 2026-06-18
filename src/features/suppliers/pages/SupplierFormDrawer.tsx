@@ -11,6 +11,7 @@ import { FormInput } from '@/shared/components/form/FormInput';
 import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
 import { Drawer } from '@/shared/components/ui/Drawer';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { AddCategoryModal } from '@/features/transactions/components/AddCategoryModal';
 
@@ -30,13 +31,20 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
   const updateMutation = useUpdateSupplier(supplierId ?? 0);
   const { showToast } = useToast();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [showDiscard, setShowDiscard] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting } } = useForm<SupplierFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting, isDirty } } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema) as never,
     defaultValues: { name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' } },
   });
 
   const selectedCategoryIds = watch('categoryIds') ?? [];
+
+  const attemptClose = () => { if (isDirty) setShowDiscard(true); else onClose(); };
+
+  useEffect(() => {
+    if (!open) setShowDiscard(false);
+  }, [open]);
 
   useEffect(() => {
     if (!open && !supplierId) {
@@ -122,7 +130,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
       )}
       <button
         type="button"
-        onClick={onClose}
+        onClick={attemptClose}
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium ms-auto"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
@@ -141,9 +149,11 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
   );
 
   return (
+    <>
     <Drawer
       open={open}
       onClose={onClose}
+      onRequestClose={attemptClose}
       title={isEditing ? t('suppliers.editTitle') : t('suppliers.addTitle')}
       width={620}
       footer={footer}
@@ -218,5 +228,15 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
         </div>
       </form>
     </Drawer>
+    <ConfirmDialog
+      open={showDiscard}
+      tone="primary"
+      title={t('common.discardChanges')}
+      message={t('common.discardChangesMessage')}
+      confirmLabel={t('common.discard')}
+      onConfirm={() => { setShowDiscard(false); onClose(); }}
+      onClose={() => setShowDiscard(false)}
+    />
+    </>
   );
 }
