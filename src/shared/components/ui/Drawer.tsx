@@ -15,12 +15,18 @@ interface DrawerProps {
   children: ReactNode;
   footer?: ReactNode;
   width?: number;
+  /**
+   * Whether the scrim fades in on open. Defaults to `true`. Set `false` when this
+   * drawer opens in place of another one that just closed (e.g. detail → edit), so
+   * the shade stays continuous instead of flashing transparent for a frame.
+   */
+  animateScrim?: boolean;
 }
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560 }: DrawerProps) {
+export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560, animateScrim = true }: DrawerProps) {
   const { t } = useTranslation();
   const requestClose = onRequestClose ?? onClose;
   const titleId = useId();
@@ -94,7 +100,7 @@ export function Drawer({ open, onClose, onRequestClose, title, children, footer,
       {/* Scrim — full screen */}
       <div
         className="absolute inset-0 bg-black/40"
-        style={{ animation: 'fadeIn 0.18s ease backwards' }}
+        style={animateScrim ? { animation: 'fadeIn 0.18s ease backwards' } : undefined}
         onClick={requestClose}
         aria-hidden
       />

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trash2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { supplierFormSchema, type SupplierFormValues } from '../validation/supplierValidation';
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
@@ -96,18 +96,6 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
     }
   });
 
-  const handleDeactivate = async () => {
-    if (!supplierId) return;
-    if (!confirm(t('suppliers.deactivateConfirm'))) return;
-    try {
-      await updateMutation.mutateAsync({ is_active: false });
-      showToast(t('suppliers.deactivateSuccess'), 'success');
-      onClose();
-    } catch {
-      showToast(t('error.saveFailed'), 'error');
-    }
-  };
-
   const toggleCategory = (catId: number) => {
     const current = selectedCategoryIds;
     const updated = current.includes(catId) ? current.filter((c) => c !== catId) : [...current, catId];
@@ -118,16 +106,6 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
 
   const footer = (
     <div className="flex items-center gap-3">
-      {isEditing && existing?.is_active !== false && (
-        <button
-          type="button"
-          onClick={handleDeactivate}
-          className="flex items-center gap-1.5 h-10 px-3 rounded-[9px] text-[13px] font-medium"
-          style={{ color: 'var(--color-error)', border: '1px solid var(--color-error)', background: 'transparent' }}
-        >
-          <Trash2 size={14} />{t('suppliers.deactivate')}
-        </button>
-      )}
       <button
         type="button"
         onClick={attemptClose}
@@ -157,6 +135,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
       title={isEditing ? t('suppliers.editTitle') : t('suppliers.addTitle')}
       width={620}
       footer={footer}
+      animateScrim={false}
     >
       <form id="supplier-form" onSubmit={onSubmit} className="space-y-4">
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>

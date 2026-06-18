@@ -483,6 +483,7 @@
     "owner": "Owner",
     "category": "Category",
     "supplier": "Supplier",
+    "name": "Name",
     "clear": "Clear filter"
   },
   "common": {
@@ -759,6 +760,7 @@
     "createSuccess": "Supplier created",
     "deactivate": "Deactivate",
     "deactivateConfirm": "Deactivate this supplier?",
+    "deactivateMessage": "This supplier will be hidden from active lists. You can reactivate it later by editing.",
     "deactivateSuccess": "Supplier deactivated"
   },
   "documents": {

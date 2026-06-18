@@ -484,6 +484,7 @@
     "owner": "בעלים",
     "category": "קטגוריה",
     "supplier": "ספק",
+    "name": "שם",
     "clear": "נקה סינון"
   },
   "common": {
@@ -760,6 +761,7 @@
     "createSuccess": "הספק נוצר",
     "deactivate": "בטל פעילות",
     "deactivateConfirm": "לבטל את פעילות הספק?",
+    "deactivateMessage": "הספק יוסתר מהרשימות הפעילות. ניתן להפעיל אותו מחדש על ידי עריכה.",
     "deactivateSuccess": "הספק בוטל"
   },
   "documents": {
