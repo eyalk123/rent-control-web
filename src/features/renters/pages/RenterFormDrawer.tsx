@@ -4,7 +4,8 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
-import { getLeaseYearLabel } from '@/shared/utils/leaseYear';
+import { reconstructIntentFromLeaseYears } from '@/shared/utils/leaseSchedule';
+import { LeaseTermBuilder } from '../components/LeaseTermBuilder';
 import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -50,13 +51,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, watch, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '' },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '', contractTermYears: '', optionYears: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
   });
 
-  const leaseStart = watch('leaseStart');
-  const { fields: leaseYearFields, append: addYear, remove: removeYear } = useFieldArray({ control, name: 'leaseYears' });
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
 
   useEffect(() => {
@@ -71,6 +70,33 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
     if (existing && open) {
       const numPayments = existing.number_of_payments;
       const paymentFrequency = numPayments === 12 ? 'monthly' : numPayments === 4 ? 'quarterly' : numPayments === 1 ? 'yearly' : undefined;
+      // Prefer the structured intent the backend persisted; otherwise infer it from
+      // the materialized lease_years so the builder re-opens sensibly.
+      const intent =
+        existing.contract_term_years != null
+          ? {
+              contractTermYears: String(existing.contract_term_years ?? 0),
+              optionYears: String(existing.option_years ?? 0),
+              baseRent:
+                existing.base_rent != null
+                  ? String(existing.base_rent)
+                  : existing.lease_years[0]?.amount != null
+                  ? String(existing.lease_years[0].amount)
+                  : '',
+              escalationMode: existing.rent_escalation_mode ?? 'none',
+              escalationValue:
+                existing.rent_escalation_value != null ? String(existing.rent_escalation_value) : '',
+            }
+          : (() => {
+              const r = reconstructIntentFromLeaseYears(existing.lease_years);
+              return {
+                contractTermYears: r.contractTermYears ? String(r.contractTermYears) : '',
+                optionYears: r.optionYears ? String(r.optionYears) : '',
+                baseRent: r.baseRent ? String(r.baseRent) : '',
+                escalationMode: r.escalationMode,
+                escalationValue: '',
+              };
+            })();
       reset({
         firstName: existing.first_name,
         lastName: existing.last_name,
@@ -78,6 +104,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         email: existing.email ?? '',
         propertyId: (existing.property_id ?? existing.property?.id)?.toString() ?? '',
         leaseStart: existing.lease_start ?? '',
+        ...intent,
         leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
         paymentType: existing.payment_type ?? undefined,
@@ -96,6 +123,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         propertyId: initialPropertyId?.toString() ?? '',
         paymentType: '',
         paymentDayOfMonth: '',
+        contractTermYears: '',
+        optionYears: '',
+        baseRent: '',
+        escalationMode: 'none',
+        escalationValue: '',
       });
     }
   }, [existing, open, renterId, initialPropertyId, reset]);
@@ -112,6 +144,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         if (fullContractFile) fullContractUrl = await uploadToFirebase(fullContractFile, 'renters', user.uid);
       }
 
+      const toNumOrUndef = (v?: string) => {
+        if (!v) return undefined;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : undefined;
+      };
+
       const payload = {
         first_name: data.firstName,
         last_name: data.lastName,
@@ -120,6 +158,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         property_id: data.propertyId ? Number(data.propertyId) : null,
         lease_start: data.leaseStart || undefined,
         lease_years: (data.leaseYears ?? []).map((ly: { amount: string; type?: 'option' | 'contract' }) => ({ amount: Number(ly.amount) || 0, type: ly.type ?? 'contract' })),
+        contract_term_years: toNumOrUndef(data.contractTermYears),
+        option_years: toNumOrUndef(data.optionYears),
+        base_rent: toNumOrUndef(data.baseRent),
+        rent_escalation_mode: data.escalationMode ?? 'none',
+        rent_escalation_value: toNumOrUndef(data.escalationValue),
         payment_day_of_month: data.paymentDayOfMonth ? Number(data.paymentDayOfMonth) : undefined,
         payment_type: data.paymentType || undefined,
         number_of_payments: freqToPayments(data.paymentFrequency),
@@ -270,26 +313,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="leaseStart" render={({ field }) => (
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
             )} />
-            <div>
-              <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.leaseYears')}</p>
-              <div className="space-y-2">
-                {leaseYearFields.map((f, i) => (
-                  <div key={f.id} className="flex items-center gap-2">
-                    <span className="text-xs font-medium w-12 text-center shrink-0" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, i)}</span>
-                    <FormInput type="number" placeholder={t('renter.amount')} {...register(`leaseYears.${i}.amount`)} className="flex-1" />
-                    <Controller control={control} name={`leaseYears.${i}.type`} render={({ field }) => (
-                      <FormSelect value={field.value} onValueChange={field.onChange} options={[{ value: 'contract', label: t('renter.contract') }, { value: 'option', label: t('renter.option') }]} />
-                    )} />
-                    {leaseYearFields.length > 1 && (
-                      <button type="button" onClick={() => removeYear(i)} style={{ color: 'var(--color-error)' }}><X size={16} /></button>
-                    )}
-                  </div>
-                ))}
-                <button type="button" onClick={() => addYear({ amount: '', type: 'contract' })} className="flex items-center gap-1 text-sm hover:opacity-80" style={{ color: 'var(--color-primary)' }}>
-                  <Plus size={14} />{t('renter.addYear')}
-                </button>
-              </div>
-            </div>
+            <LeaseTermBuilder control={control} />
             <Controller control={control} name="paymentDayOfMonth" render={({ field }) => (
               <WheelDatePicker mode="day" label={t('renter.paymentDay')} value={field.value ? Number(field.value) : undefined} onChange={(v) => field.onChange(String(v))} error={errors.paymentDayOfMonth?.message} />
             )} />

@@ -28,6 +28,7 @@ export function SegToggle<T extends string>({
         return (
           <button
             key={opt.value}
+            type="button"
             onClick={() => onChange(opt.value)}
             className={`inline-flex items-center gap-1.5 rounded-[9px] font-medium transition-colors ${padClass} ${
               active

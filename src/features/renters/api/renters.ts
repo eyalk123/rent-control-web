@@ -32,6 +32,11 @@ function sanitizeRenterCreate(data: RenterCreate): RenterCreate {
     extra_contacts,
     full_contract_url,
     id_image_url,
+    contract_term_years,
+    option_years,
+    base_rent,
+    rent_escalation_mode,
+    rent_escalation_value,
   } = data;
   const out: RenterCreate = {
     property_id: property_id ?? null,
@@ -43,6 +48,11 @@ function sanitizeRenterCreate(data: RenterCreate): RenterCreate {
     lease_start,
   };
   if (number_of_payments !== undefined) out.number_of_payments = number_of_payments;
+  if (contract_term_years !== undefined) out.contract_term_years = contract_term_years;
+  if (option_years !== undefined) out.option_years = option_years;
+  if (base_rent !== undefined) out.base_rent = base_rent;
+  if (rent_escalation_mode !== undefined) out.rent_escalation_mode = rent_escalation_mode;
+  if (rent_escalation_value !== undefined) out.rent_escalation_value = rent_escalation_value;
   if (payment_type !== undefined) out.payment_type = payment_type;
   if (payment_day_of_month !== undefined) out.payment_day_of_month = payment_day_of_month;
   if (insurance_type !== undefined) out.insurance_type = insurance_type;
@@ -72,6 +82,11 @@ function sanitizeRenterUpdate(data: RenterUpdate): Record<string, unknown> {
     'extra_contacts',
     'full_contract_url',
     'id_image_url',
+    'contract_term_years',
+    'option_years',
+    'base_rent',
+    'rent_escalation_mode',
+    'rent_escalation_value',
   ];
   const out: Record<string, unknown> = {};
   for (const key of allowed) {

@@ -55,8 +55,25 @@ export interface LeaseYear {
   type: LeaseYearType;
 }
 
+/** How the monthly rent changes from one lease year to the next. */
+export type RentEscalationMode = 'none' | 'percent' | 'fixed' | 'custom';
+
+/**
+ * Structured lease-term intent. `lease_years` remains the source of truth for all
+ * rent math; these optional fields let the renter form round-trip the higher-level
+ * intent (term length, renewal options, escalation rule) so an edit re-opens with
+ * the same controls the user originally chose.
+ */
+export interface LeaseTermIntent {
+  contract_term_years?: number | null;
+  option_years?: number | null;
+  base_rent?: number | null;
+  rent_escalation_mode?: RentEscalationMode | null;
+  rent_escalation_value?: number | null;
+}
+
 // Renter - matches backend
-export interface Renter {
+export interface Renter extends LeaseTermIntent {
   id: number;
   property_id: number | null;
   first_name: string;
@@ -260,7 +277,7 @@ export interface PropertyUpdate {
 }
 
 // Create payload (POST /renters)
-export interface RenterCreate {
+export interface RenterCreate extends LeaseTermIntent {
   property_id?: number | null;
   first_name: string;
   last_name: string;
@@ -280,7 +297,7 @@ export interface RenterCreate {
 }
 
 // Update payload (PATCH /renters/{id}) - all fields optional
-export interface RenterUpdate {
+export interface RenterUpdate extends LeaseTermIntent {
   property_id?: number | null;
   first_name?: string;
   last_name?: string;
