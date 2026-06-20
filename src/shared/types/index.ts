@@ -81,7 +81,7 @@ export interface Renter extends LeaseTermIntent {
   phone: string;
   email: string;
   lease_years: LeaseYear[];
-  lease_start: string;
+  lease_start: string | null;
   number_of_payments?: number | null;
   payment_type?: string | null;
   payment_day_of_month?: number | null;

@@ -17,6 +17,10 @@ export function LeaseInfoTab({ renter }: Props) {
   const docs: { label: string; url: string }[] = [];
   if (renter.full_contract_url) docs.push({ label: t('documents.fullContract'), url: renter.full_contract_url });
   if (renter.id_image_url) docs.push({ label: t('documents.idImage'), url: renter.id_image_url });
+  const insuranceTypeLabels: Record<string, string> = {
+    wire_transfer: t('renter.insuranceTypeWireTransfer'),
+    bank_guarantee: t('renter.insuranceTypeBankGuarantee'),
+  };
   return (
     <div className="flex flex-col gap-4">
       {/* Full-width lease timeline */}
@@ -33,7 +37,7 @@ export function LeaseInfoTab({ renter }: Props) {
         <DetailPanel title={t('renter.insurancePanel')}>
           {renter.insurance_type ? (
             <div>
-              <DetailRow icon={Shield} label={t('renter.insuranceTypeLabel')} value={renter.insurance_type} />
+              <DetailRow icon={Shield} label={t('renter.insuranceTypeLabel')} value={insuranceTypeLabels[renter.insurance_type] ?? renter.insurance_type} />
               <DetailRow icon={CreditCard} label={t('renter.insuranceAmountLabel')} value={renter.insurance_amount ? formatMoney(renter.insurance_amount) : null} last />
             </div>
           ) : (
