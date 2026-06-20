@@ -10,6 +10,7 @@ import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
+import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
@@ -49,6 +50,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const [step, setStep] = useState(1);
   const [showDiscard, setShowDiscard] = useState(false);
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
+  const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
   const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
@@ -59,7 +61,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setFullContractFile(null); }
+    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); }
   }, [open]);
 
   // Files live outside RHF, so isDirty alone misses them.
@@ -115,7 +117,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         idImageUrl: existing.id_image_url ?? undefined,
         fullContractUrl: existing.full_contract_url ?? undefined,
       });
+      setIdImagePreview(existing.id_image_url ?? null);
     } else if (!renterId && open) {
+      setIdImagePreview(null);
       reset({
         leaseStart: '',
         leaseYears: [{ amount: '', type: 'contract' }],
@@ -131,6 +135,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       });
     }
   }, [existing, open, renterId, initialPropertyId, reset]);
+
+  const handleIdImageChange = (file: File | null) => {
+    setIdImageFile(file);
+    setIdImagePreview(file ? URL.createObjectURL(file) : (existing?.id_image_url ?? null));
+  };
 
   const freqToPayments = (freq?: string) => freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : undefined;
 
@@ -154,7 +163,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         first_name: data.firstName,
         last_name: data.lastName,
         phone: data.phone,
-        email: data.email || undefined,
+        // Send the email even when blank ('') so clearing it actually persists; collapsing
+        // to undefined would make sanitizeRenterUpdate drop the key and keep the old value.
+        email: data.email ?? '',
         property_id: data.propertyId ? Number(data.propertyId) : null,
         lease_start: data.leaseStart || undefined,
         lease_years: (data.leaseYears ?? []).map((ly: { amount: string; type?: 'option' | 'contract' }) => ({ amount: Number(ly.amount) || 0, type: ly.type ?? 'contract' })),
@@ -278,19 +289,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
-            <Controller
-              control={control}
-              name="idImageUrl"
-              render={({ field }) => (
-                <FormDocumentInput
-                  label={t('documents.idImage')}
-                  accept="image/*,.pdf"
-                  existingUrl={field.value ?? null}
-                  pendingFile={idImageFile}
-                  onChange={(f) => { setIdImageFile(f); if (f) field.onChange(undefined); }}
-                  onRemoveExisting={() => field.onChange(null)}
-                />
-              )}
+            <FormFileInput
+              label={t('documents.idImage')}
+              accept="image/*"
+              value={idImageFile}
+              onChange={handleIdImageChange}
+              preview={idImagePreview}
             />
             <div>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.extraContacts')}</p>
@@ -314,9 +318,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
             )} />
             <LeaseTermBuilder control={control} />
-            <Controller control={control} name="paymentDayOfMonth" render={({ field }) => (
-              <WheelDatePicker mode="day" label={t('renter.paymentDay')} value={field.value ? Number(field.value) : undefined} onChange={(v) => field.onChange(String(v))} error={errors.paymentDayOfMonth?.message} />
-            )} />
+            <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} />
             )} />

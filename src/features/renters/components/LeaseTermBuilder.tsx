@@ -235,42 +235,47 @@ export function LeaseTermBuilder({ control }: Props) {
                   </div>
 
                   {isCustom ? (
-                    <div className="flex-1 py-2 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-bold text-[var(--color-text-primary)]">
-                          {getLeaseYearLabel(leaseStart, index)}
-                        </span>
-                        <span
-                          className="text-[13px] font-semibold"
-                          style={{
-                            color:
-                              yearType === 'option'
-                                ? 'var(--color-warning)'
-                                : 'var(--color-text-secondary)',
-                          }}
-                        >
-                          {yearType === 'contract' ? t('renter.contract') : t('renter.option')}
-                        </span>
-                        {isCurrent && (
-                          <Pill tone="revenue" size="sm">
-                            {t('renter.currentLease')}
-                          </Pill>
-                        )}
-                      </div>
+                    <div className="flex-1 flex items-center gap-3 py-2">
+                      <span
+                        className={`text-[15px] min-w-[52px] text-[var(--color-text-primary)] ${
+                          isCurrent ? 'font-extrabold' : 'font-semibold'
+                        }`}
+                      >
+                        {getLeaseYearLabel(leaseStart, index)}
+                      </span>
                       <Controller
                         control={control}
                         name={`leaseYears.${index}.amount`}
                         render={({ field }) => (
-                          <FormInput
+                          <input
                             type="number"
+                            dir="ltr"
                             placeholder={t('renter.amount')}
                             value={field.value ?? ''}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
                             name={field.name}
+                            className="flex-1 min-w-0 rounded-lg border bg-[var(--color-input-bg)] px-2.5 h-9 text-sm text-[var(--color-text-primary)] outline-none transition-colors focus:border-[var(--color-primary)]"
+                            style={{ borderColor: 'var(--color-input-border)' }}
                           />
                         )}
                       />
+                      <span
+                        className="text-[13px] font-semibold"
+                        style={{
+                          color:
+                            yearType === 'option'
+                              ? 'var(--color-warning)'
+                              : 'var(--color-text-secondary)',
+                        }}
+                      >
+                        {yearType === 'contract' ? t('renter.contract') : t('renter.option')}
+                      </span>
+                      {isCurrent && (
+                        <Pill tone="revenue" size="sm">
+                          {t('renter.currentLease')}
+                        </Pill>
+                      )}
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center gap-3 py-2.5">
