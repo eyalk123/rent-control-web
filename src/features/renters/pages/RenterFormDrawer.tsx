@@ -141,7 +141,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
     setIdImagePreview(file ? URL.createObjectURL(file) : (existing?.id_image_url ?? null));
   };
 
-  const freqToPayments = (freq?: string) => freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : undefined;
+  const freqToPayments = (freq?: string) => freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : null;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -153,10 +153,12 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         if (fullContractFile) fullContractUrl = await uploadToFirebase(fullContractFile, 'renters', user.uid);
       }
 
-      const toNumOrUndef = (v?: string) => {
-        if (!v) return undefined;
+      // Cleared optionals must serialize as null (not undefined) so they survive
+      // sanitizeRenterUpdate and actually clear the column on edit.
+      const toNumOrNull = (v?: string) => {
+        if (!v) return null;
         const n = Number(v);
-        return Number.isFinite(n) ? n : undefined;
+        return Number.isFinite(n) ? n : null;
       };
 
       const payload = {
@@ -167,21 +169,21 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         // to undefined would make sanitizeRenterUpdate drop the key and keep the old value.
         email: data.email ?? '',
         property_id: data.propertyId ? Number(data.propertyId) : null,
-        lease_start: data.leaseStart || undefined,
+        lease_start: data.leaseStart || null,
         lease_years: (data.leaseYears ?? []).map((ly: { amount: string; type?: 'option' | 'contract' }) => ({ amount: Number(ly.amount) || 0, type: ly.type ?? 'contract' })),
-        contract_term_years: toNumOrUndef(data.contractTermYears),
-        option_years: toNumOrUndef(data.optionYears),
-        base_rent: toNumOrUndef(data.baseRent),
+        contract_term_years: toNumOrNull(data.contractTermYears),
+        option_years: toNumOrNull(data.optionYears),
+        base_rent: toNumOrNull(data.baseRent),
         rent_escalation_mode: data.escalationMode ?? 'none',
-        rent_escalation_value: toNumOrUndef(data.escalationValue),
-        payment_day_of_month: data.paymentDayOfMonth ? Number(data.paymentDayOfMonth) : undefined,
-        payment_type: data.paymentType || undefined,
+        rent_escalation_value: toNumOrNull(data.escalationValue),
+        payment_day_of_month: data.paymentDayOfMonth ? Number(data.paymentDayOfMonth) : null,
+        payment_type: data.paymentType || null,
         number_of_payments: freqToPayments(data.paymentFrequency),
         extra_contacts: data.extraContacts ?? [],
-        insurance_type: data.insuranceType || undefined,
-        insurance_amount: data.insuranceAmount ? Number(data.insuranceAmount) : undefined,
-        id_image_url: idImageUrl || undefined,
-        full_contract_url: fullContractUrl || undefined,
+        insurance_type: data.insuranceType || null,
+        insurance_amount: data.insuranceAmount ? Number(data.insuranceAmount) : null,
+        id_image_url: idImageUrl || null,
+        full_contract_url: fullContractUrl || null,
       };
 
       if (isEditing && renterId) {

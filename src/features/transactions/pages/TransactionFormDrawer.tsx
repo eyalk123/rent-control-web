@@ -96,7 +96,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         amount: Number(data.amount),
         date_of_payment: data.dateOfPayment,
         month_for: data.monthFor ? `${data.monthFor}-01` : undefined,
-        payment_method: (data.paymentMethod || undefined) as never,
+        payment_method: (data.paymentMethod || null) as never,
         notes: data.notes || null,
       });
       showToast(t('transactions.updateSuccess'), 'success');

@@ -122,8 +122,8 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
   const onSubmit = handleSubmit(async (data) => {
     try {
       let imageUrl: string | undefined;
-      let basicContractUrl = data.basicContractUrl || undefined;
-      let landRegistryUrl = data.landRegistryUrl || undefined;
+      let basicContractUrl = data.basicContractUrl ?? null;
+      let landRegistryUrl = data.landRegistryUrl ?? null;
 
       if (user) {
         if (imageFile) imageUrl = await uploadToFirebase(imageFile, 'properties', user.uid);
@@ -134,25 +134,25 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       const payload = {
         address: data.address,
         city: data.city,
-        block: data.block || undefined,
-        plot: data.plot || undefined,
+        block: data.block || null,
+        plot: data.plot || null,
         zip_code: data.zipCode || '',
         type: data.type,
         sq_ft: data.sqFt ? Number(data.sqFt) : 0,
-        property_owner: data.propertyOwner || undefined,
-        inventory_notes: data.inventoryNotes || undefined,
-        floor: data.floor ? Number(data.floor) : undefined,
-        apartment: data.apartment || undefined,
-        property_tax: data.propertyTax ? Number(data.propertyTax) : undefined,
-        house_committee: data.houseCommittee ? Number(data.houseCommittee) : undefined,
-        electricity_meter_number: data.electricityMeterNumber || undefined,
-        electricity_account_number: data.electricityAccountNumber || undefined,
-        water_meter_number: data.waterMeterNumber || undefined,
-        water_account_number: data.waterAccountNumber || undefined,
-        number_of_rooms: data.numberOfRooms ? Number(data.numberOfRooms) : undefined,
+        property_owner: data.propertyOwner || null,
+        inventory_notes: data.inventoryNotes || null,
+        floor: data.floor ? Number(data.floor) : null,
+        apartment: data.apartment || null,
+        property_tax: data.propertyTax ? Number(data.propertyTax) : null,
+        house_committee: data.houseCommittee ? Number(data.houseCommittee) : null,
+        electricity_meter_number: data.electricityMeterNumber || null,
+        electricity_account_number: data.electricityAccountNumber || null,
+        water_meter_number: data.waterMeterNumber || null,
+        water_account_number: data.waterAccountNumber || null,
+        number_of_rooms: data.numberOfRooms ? Number(data.numberOfRooms) : null,
         parking_numbers: data.parkingNumbersStr
           ? data.parkingNumbersStr.split(',').map((s) => s.trim()).filter(Boolean)
-          : undefined,
+          : null,
         image_url: imageUrl,
         basic_contract_url: basicContractUrl,
         land_registry_url: landRegistryUrl,
