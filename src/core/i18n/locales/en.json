@@ -194,6 +194,7 @@
     "typeHouse": "House",
     "typeCommercial": "Commercial",
     "typeGardenApartment": "Garden Apartment",
+    "typeHousingUnit": "Housing Unit",
     "occupancy": {
       "occupied": "Occupied",
       "vacant": "Vacant"
@@ -251,6 +252,7 @@
     "type_house": "House",
     "type_commercial": "Commercial",
     "type_garden_apartment": "Garden Apartment",
+    "type_housing_unit": "Housing Unit",
     "rentersCount": "renter(s)",
     "total": "properties",
     "image": "Photo",

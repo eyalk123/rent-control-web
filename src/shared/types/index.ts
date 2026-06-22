@@ -1,5 +1,5 @@
 // Property type - backend expects lowercase
-export type PropertyType = 'apartment' | 'house' | 'commercial' | 'garden_apartment';
+export type PropertyType = 'apartment' | 'house' | 'commercial' | 'garden_apartment' | 'housing_unit';
 
 // Brief property shape (for nested in renter responses)
 export interface PropertyBrief {
