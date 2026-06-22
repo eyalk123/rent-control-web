@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Users, Building2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Building2, Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -10,6 +10,7 @@ const ACTIONS = [
   { labelKey: 'home.recordExpense', icon: TrendingDown, to: '/transactions?new=expense', color: 'var(--color-exp-fg)', bg: 'var(--color-exp-bg)' },
   { labelKey: 'screens.addRenter', icon: Users, to: '/renters?new=true', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
   { labelKey: 'screens.addProperty', icon: Building2, to: '/properties?new=true', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
+  { labelKey: 'tabs.suppliers', icon: Store, to: '/suppliers', color: 'var(--color-primary)', bg: 'var(--color-primary-container)' },
 ] as const;
 
 export function QuickActions({ onNavigate }: Props) {
@@ -20,7 +21,7 @@ export function QuickActions({ onNavigate }: Props) {
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.quickActions')}
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         {ACTIONS.map(({ labelKey, icon: Icon, to, color, bg }) => (
           <button
             key={labelKey}
