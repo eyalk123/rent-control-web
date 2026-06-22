@@ -148,6 +148,9 @@ function useRenterColumns(
   const { t } = useTranslation();
   return useMemo<ColumnDef<Renter, unknown>[]>(() => {
     const ownerOf = (r: Renter) => ownerByProperty.get(r.property?.id ?? r.property_id ?? -1) ?? '';
+    const ownerOptions = Array.from(
+      new Set(Array.from(ownerByProperty.values()).map((o) => o.trim()).filter(Boolean)),
+    ).sort();
     return [
     {
       id: 'renter',
@@ -191,8 +194,12 @@ function useRenterColumns(
       id: 'owner',
       header: t('property.colOwner'),
       accessorFn: (r) => ownerOf(r),
-      filterFn: 'includesString',
-      meta: { filter: 'text', filterPlaceholder: t('property.colOwner') },
+      filterFn: 'equalsString',
+      meta: {
+        filter: 'select',
+        filterPlaceholder: t('common.all'),
+        filterOptions: ownerOptions.map((o) => ({ value: o, label: o })),
+      },
       cell: ({ row }) => {
         const owner = ownerOf(row.original);
         return <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{owner || '—'}</span>;

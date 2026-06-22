@@ -158,7 +158,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   );
 }
 
-function usePropertyColumns(): ColumnDef<Property, unknown>[] {
+function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown>[] {
   const { t } = useTranslation();
   return useMemo<ColumnDef<Property, unknown>[]>(() => [
     {
@@ -200,8 +200,12 @@ function usePropertyColumns(): ColumnDef<Property, unknown>[] {
       id: 'owner',
       header: t('property.colOwner'),
       accessorFn: (p) => p.property_owner ?? '',
-      filterFn: 'includesString',
-      meta: { filter: 'text', filterPlaceholder: t('property.colOwner') },
+      filterFn: 'equalsString',
+      meta: {
+        filter: 'select',
+        filterPlaceholder: t('common.all'),
+        filterOptions: ownerOptions.map((o) => ({ value: o, label: o })),
+      },
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{row.original.property_owner ?? '—'}</span>
       ),
@@ -244,7 +248,7 @@ function usePropertyColumns(): ColumnDef<Property, unknown>[] {
       },
       cell: ({ row }) => <StatusPill hasRenters={!!row.original.hasRenters} />,
     },
-  ], [t]);
+  ], [t, ownerOptions]);
 }
 
 export function PropertiesListPage() {
@@ -275,7 +279,18 @@ export function PropertiesListPage() {
     [properties, search],
   );
 
-  const columns = usePropertyColumns();
+  // Distinct, sorted owners across all properties — drives the Owner column's
+  // dropdown filter (same dedupe/sort pattern as PropertyFormDrawer).
+  const ownerOptions = useMemo(
+    () => Array.from(new Set(
+      (properties ?? [])
+        .map((p) => p.property_owner?.trim())
+        .filter((o): o is string => !!o),
+    )).sort(),
+    [properties],
+  );
+
+  const columns = usePropertyColumns(ownerOptions);
   const { table } = useDataTable(columns, filtered);
   // Rows currently visible after column filters + sort — selection acts on these.
   const visibleRows = table.getRowModel().rows.map((r) => r.original);
