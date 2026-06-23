@@ -13,6 +13,8 @@ import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
+import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
@@ -63,6 +65,9 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
   const [step, setStep] = useState(1);
   const [showDiscard, setShowDiscard] = useState(false);
+  const [showRenterPrompt, setShowRenterPrompt] = useState(false);
+  const [createdPropertyId, setCreatedPropertyId] = useState<number | null>(null);
+  const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [basicContractFile, setBasicContractFile] = useState<File | null>(null);
@@ -160,8 +165,10 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
 
       if (isEditing && propertyId) {
         await updateMutation.mutateAsync(payload);
+        showToast(t('property.updateSuccess'), 'success');
+        onClose();
       } else {
-        await createMutation.mutateAsync(payload);
+        const created = await createMutation.mutateAsync(payload);
         // Start clean for the next "Add property" — the drawer stays mounted, so without
         // this the previous values would persist.
         reset(EMPTY_FORM);
@@ -169,10 +176,11 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         setBasicContractFile(null);
         setLandRegistryFile(null);
         setImagePreview(null);
+        showToast(t('property.createSuccess'), 'success');
+        // Prompt to add a renter for the new property (over the still-open drawer).
+        setCreatedPropertyId(created.id);
+        setShowRenterPrompt(true);
       }
-
-      showToast(t(isEditing ? 'property.updateSuccess' : 'property.createSuccess'), 'success');
-      onClose();
     } catch (err) {
       if (import.meta.env.DEV) console.error('[PropertyFormDrawer] save failed:', err);
       showToast(t('error.saveFailed'), 'error');
@@ -364,6 +372,16 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       confirmLabel={t('common.discard')}
       onConfirm={() => { setShowDiscard(false); onClose(); }}
       onClose={() => setShowDiscard(false)}
+    />
+    <PropertyCreatedPrompt
+      open={showRenterPrompt}
+      onAddRenter={() => { setShowRenterPrompt(false); onClose(); setRenterDrawerOpen(true); }}
+      onSkip={() => { setShowRenterPrompt(false); onClose(); }}
+    />
+    <RenterFormDrawer
+      open={renterDrawerOpen}
+      initialPropertyId={createdPropertyId ?? undefined}
+      onClose={() => { setRenterDrawerOpen(false); setCreatedPropertyId(null); }}
     />
     </>
   );
