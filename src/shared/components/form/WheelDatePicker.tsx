@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Calendar, Lock, Pencil } from 'lucide-react';
 import type { PickerValue } from 'react-mobile-picker';
 import { RequiredMark } from './RequiredMark';
+import { FieldReviewBadge, FieldReviewSource, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
 
 export type WheelDatePickerMode = 'date' | 'month' | 'day';
 type PickerState = Record<string, number>;
@@ -17,6 +18,8 @@ interface Props {
   minYear?: number;
   maxYear?: number;
   required?: boolean;
+  /** RHF field name, set only when this picker should participate in document-scan review. */
+  reviewName?: string;
 }
 
 const THIS_YEAR = new Date().getFullYear();
@@ -62,8 +65,12 @@ export function WheelDatePicker({
   minYear = THIS_YEAR - 5,
   maxYear = THIS_YEAR + 10,
   required,
+  reviewName,
 }: Props) {
   const { t, i18n } = useTranslation();
+  const review = useFieldReview(reviewName);
+  const dismissReview = useDismissFieldReview();
+  const flagged = !!review && !error;
 
   // Start locked when a value already exists (editing) so stray scrolls can't change it;
   // start unlocked for new/empty records so the user can pick straight away.
@@ -116,6 +123,7 @@ export function WheelDatePicker({
       if (s.day > max) s.day = max;
     }
     onChange(formatValue(s, mode));
+    if (reviewName) dismissReview?.(reviewName);
   }
 
   function toggleLock() {
@@ -147,10 +155,10 @@ export function WheelDatePicker({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5" id={reviewName ? `scan-field-${reviewName}` : undefined}>
       <div className="flex items-center justify-between gap-2">
         {label ? (
-          <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>
+          <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}{flagged && <FieldReviewBadge />}</label>
         ) : (
           <span />
         )}
@@ -290,6 +298,7 @@ export function WheelDatePicker({
         </>
       )}
       {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
+      {flagged && <FieldReviewSource source={review!.source} />}
     </div>
   );
 }

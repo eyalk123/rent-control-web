@@ -601,7 +601,8 @@
     "transactionNotFound": "התנועה לא נמצאה",
     "deleteTransactionFailed": "מחיקת התנועה נכשלה",
     "updateTransactionFailed": "עדכון התנועה נכשל",
-    "deleteFailed": "המחיקה נכשלה"
+    "deleteFailed": "המחיקה נכשלה",
+    "extractionFailed": "לא הצלחנו לקרוא את המסמך. נסו קובץ אחר או מלאו את הטופס ידנית."
   },
   "transactions": {
     "addTransaction": "הוספת תנועה",
@@ -796,6 +797,30 @@
     "landRegistry": "נסח טאבו",
     "idImage": "תמונת תעודת זהות",
     "none": "לא הועלו מסמכים עדיין."
+  },
+  "documentScan": {
+    "action": "סריקת מסמך",
+    "title": "סריקת מסמך",
+    "uploadPrompt": "העלו חוזה כתמונה, PDF או קובץ Word. נקרא אותו ונמלא עבורכם את טופסי הנכס והדייר לבדיקה.",
+    "extracting": "קורא את המסמך…",
+    "extractAction": "חילוץ הפרטים",
+    "addPage": "הוספת עמוד נוסף",
+    "removePage": "הסרה",
+    "selectedPages": "{{count}} עמודים — הם יאוחדו למסמך אחד",
+    "mixedFilesError": "הוסיפו קובץ PDF/Word אחד או תמונה אחת או יותר, לא שילוב של השניים.",
+    "reviewTitle": "נא לבדוק את הערכים שמילאנו:",
+    "reviewFields": "בדקו את השדות הבאים לפני השמירה: {{fields}}",
+    "reviewCount": "בדקו {{count}} שדה שחולץ — הקישו למעבר",
+    "reviewCount_other": "בדקו {{count}} שדות שחולצו — הקישו למעבר",
+    "reviewBadge": "לבדיקה",
+    "jumpToField": "מעבר לשדה",
+    "foundIn": "נמצא ב: \"{{snippet}}\"",
+    "progress": {
+      "merging": "מאחד עמודים…",
+      "uploading": "מעלה את המסמך…",
+      "reading": "קורא את המסמך…",
+      "extracting": "מחלץ את הפרטים…"
+    }
   },
   "permission": {
     "title": "נדרשות הרשאות",

@@ -20,6 +20,10 @@ import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
+import { ReviewBanner } from '@/features/document-scan/components/ReviewBanner';
+import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
+import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof renterFormSchema>;
@@ -35,9 +39,26 @@ interface Props {
   onClose: () => void;
   renterId?: number;
   initialPropertyId?: number;
+  /** Document-scan prefill: renter values, review items (uncertain fields) to flag, and
+   *  the scanned lease to attach as the full contract on submit. */
+  logId?: number;
+  prefill?: Partial<FormData>;
+  reviewItems?: ReviewItem[];
+  provenance?: ProvenanceItem[];
+  pendingContractFile?: File | null;
 }
 
-export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }: Props) {
+export function RenterFormDrawer({
+  open,
+  onClose,
+  renterId,
+  initialPropertyId,
+  logId,
+  prefill,
+  reviewItems,
+  provenance,
+  pendingContractFile,
+}: Props) {
   const { t } = useTranslation();
   const isEditing = !!renterId;
 
@@ -132,9 +153,11 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         baseRent: '',
         escalationMode: 'none',
         escalationValue: '',
+        ...(prefill ?? {}),
       });
+      setFullContractFile(pendingContractFile ?? null);
     }
-  }, [existing, open, renterId, initialPropertyId, reset]);
+  }, [existing, open, renterId, initialPropertyId, reset, prefill, pendingContractFile]);
 
   const handleIdImageChange = (file: File | null) => {
     setIdImageFile(file);
@@ -189,7 +212,16 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
       if (isEditing && renterId) {
         await updateMutation.mutateAsync(payload);
       } else {
-        await createMutation.mutateAsync(payload as never);
+        const created = await createMutation.mutateAsync(payload as never);
+        // Audit: record renter creation + which prefilled fields changed + the kept contract URL.
+        if (logId && provenance) {
+          updateExtractionLog(logId, {
+            entity_type: 'renter',
+            created_id: (created as { id?: number })?.id ?? null,
+            contract_url: fullContractUrl ?? null,
+            ...diffProvenance(provenance, data as Record<string, unknown>),
+          });
+        }
       }
 
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
@@ -279,7 +311,9 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
       </div>
 
+      <FieldReviewProvider items={reviewItems}>
       <form id="renter-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        {step === 1 && <ReviewBanner items={reviewItems} />}
         {step === 1 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -317,19 +351,19 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
         ) : (
           <>
             <Controller control={control} name="leaseStart" render={({ field }) => (
-              <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} />
+              <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} reviewName="leaseStart" />
             )} />
             <LeaseTermBuilder control={control} />
             <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
-              <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} />
+              <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
             )} />
             <Controller control={control} name="paymentFrequency" render={({ field }) => (
-              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} placeholder={t('renter.selectPaymentFrequency')} />
+              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} placeholder={t('renter.selectPaymentFrequency')} reviewName="paymentFrequency" />
             )} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
-                <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} />
+                <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />
               )} />
               <FormInput label={t('renter.insuranceAmount')} type="number" {...register('insuranceAmount')} />
             </div>
@@ -349,6 +383,7 @@ export function RenterFormDrawer({ open, onClose, renterId, initialPropertyId }:
           </>
         )}
       </form>
+      </FieldReviewProvider>
     </Drawer>
     <ConfirmDialog
       open={showDiscard}

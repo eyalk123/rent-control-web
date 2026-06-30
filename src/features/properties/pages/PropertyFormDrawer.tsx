@@ -19,6 +19,11 @@ import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
+import { ReviewBanner } from '@/features/document-scan/components/ReviewBanner';
+import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
+import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
+import type { RenterFormValues } from '@/features/renters/validation/renterValidation';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
@@ -42,9 +47,31 @@ interface Props {
   open: boolean;
   onClose: () => void;
   propertyId?: number;
+  /** Document-scan prefill: property values + review items (uncertain fields) to flag,
+   *  plus renter values forwarded to the chained renter drawer after creation. */
+  logId?: number;
+  prefill?: Partial<FormData>;
+  reviewItems?: ReviewItem[];
+  provenance?: ProvenanceItem[];
+  renterPrefill?: Partial<RenterFormValues>;
+  renterReviewItems?: ReviewItem[];
+  renterProvenance?: ProvenanceItem[];
+  renterContractFile?: File | null;
 }
 
-export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
+export function PropertyFormDrawer({
+  open,
+  onClose,
+  propertyId,
+  logId,
+  prefill,
+  reviewItems,
+  provenance,
+  renterPrefill,
+  renterReviewItems,
+  renterProvenance,
+  renterContractFile,
+}: Props) {
   const { t } = useTranslation();
   const isEditing = !!propertyId;
 
@@ -113,10 +140,10 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       });
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
-      reset(EMPTY_FORM);
+      reset({ ...EMPTY_FORM, ...(prefill ?? {}) });
       setImagePreview(null);
     }
-  }, [existing, open, propertyId, reset]);
+  }, [existing, open, propertyId, reset, prefill]);
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
@@ -169,6 +196,14 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         onClose();
       } else {
         const created = await createMutation.mutateAsync(payload);
+        // Audit: record which prefilled fields the user changed on this property (scan flow only).
+        if (logId && provenance) {
+          updateExtractionLog(logId, {
+            entity_type: 'property',
+            created_id: created.id,
+            ...diffProvenance(provenance, data as Record<string, unknown>),
+          });
+        }
         // Start clean for the next "Add property" — the drawer stays mounted, so without
         // this the previous values would persist.
         reset(EMPTY_FORM);
@@ -248,7 +283,9 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
       </div>
 
+      <FieldReviewProvider items={reviewItems}>
       <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        {step === 1 && <ReviewBanner items={reviewItems} />}
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
             <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
@@ -277,6 +314,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
                   options={propertyTypeOptions}
                   placeholder={t('property.selectType')}
                   error={errors.type?.message}
+                  reviewName="type"
                 />
               )}
             />
@@ -363,6 +401,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
           </div>
         )}
       </form>
+      </FieldReviewProvider>
     </Drawer>
     <ConfirmDialog
       open={showDiscard}
@@ -381,6 +420,11 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
     <RenterFormDrawer
       open={renterDrawerOpen}
       initialPropertyId={createdPropertyId ?? undefined}
+      logId={logId}
+      prefill={renterPrefill}
+      reviewItems={renterReviewItems}
+      provenance={renterProvenance}
+      pendingContractFile={renterContractFile ?? null}
       onClose={() => { setRenterDrawerOpen(false); setCreatedPropertyId(null); }}
     />
     </>

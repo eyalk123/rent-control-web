@@ -600,7 +600,8 @@
     "transactionNotFound": "Transaction not found",
     "deleteTransactionFailed": "Failed to delete transaction",
     "updateTransactionFailed": "Failed to update transaction",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "extractionFailed": "Couldn't read the document. Try another file or fill the form manually."
   },
   "transactions": {
     "addTransaction": "Add transaction",
@@ -795,6 +796,30 @@
     "landRegistry": "Land Registry Extract",
     "idImage": "Tenant ID Image",
     "none": "No documents uploaded yet."
+  },
+  "documentScan": {
+    "action": "Scan document",
+    "title": "Scan a document",
+    "uploadPrompt": "Upload a lease as an image, PDF, or Word file. We'll read it and pre-fill the property and renter forms for you to review.",
+    "extracting": "Reading the document…",
+    "extractAction": "Extract details",
+    "addPage": "Add another page",
+    "removePage": "Remove",
+    "selectedPages": "{{count}} pages — they'll be combined into one document",
+    "mixedFilesError": "Add either one PDF/Word file or one or more images, not a mix.",
+    "reviewTitle": "Please review the values we filled in:",
+    "reviewFields": "Double-check these fields before saving: {{fields}}",
+    "reviewCount": "Review {{count}} extracted field — tap to jump",
+    "reviewCount_other": "Review {{count}} extracted fields — tap to jump",
+    "reviewBadge": "check",
+    "jumpToField": "Jump to field",
+    "foundIn": "Found in: \"{{snippet}}\"",
+    "progress": {
+      "merging": "Combining pages…",
+      "uploading": "Uploading the document…",
+      "reading": "Reading the document…",
+      "extracting": "Extracting the details…"
+    }
   },
   "permission": {
     "title": "Permission required",
