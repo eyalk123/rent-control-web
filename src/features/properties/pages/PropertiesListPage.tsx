@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, MapPin, AlertCircle, Download, CheckSquare, ScanLine } from 'lucide-react';
+import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
@@ -12,6 +12,7 @@ import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
 import type { MappedExtraction } from '@/features/document-scan/utils/mapExtraction';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
@@ -364,20 +365,11 @@ export function PropertiesListPage() {
             >
               <CheckSquare size={14} /> {t('common.select')}
             </button>
-            <button
-              onClick={() => setScanOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
-              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
-            >
-              <ScanLine size={14} /> {t('documentScan.action')}
-            </button>
-            <button
-              onClick={openBlankPropertyForm}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              <Plus size={14} /> {t('property.addPropertyAction')}
-            </button>
+            <AddMenu
+              label={t('property.addPropertyAction')}
+              onManual={openBlankPropertyForm}
+              onScan={() => setScanOpen(true)}
+            />
           </div>
         )}
       </div>

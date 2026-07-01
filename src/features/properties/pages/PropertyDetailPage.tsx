@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
+import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
+import type { MappedExtraction } from '@/features/document-scan/utils/mapExtraction';
 import { useProperty, useDeleteProperty } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useTransactions } from '@/features/transactions/queries';
@@ -33,6 +35,9 @@ export function PropertyDetailPage() {
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  // Document-scan (renter target) for THIS property — property is fixed, so no matching.
+  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; file: File } | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { data: property, isLoading, isError } = useProperty(propertyId);
@@ -91,14 +96,39 @@ export function PropertyDetailPage() {
       {/* Tab content */}
       <div className="p-4 lg:p-10">
         {tab === 'info' && <PropertyDetailsTab property={property} />}
-        {tab === 'renters' && <PropertyRentersTab property={property} onAddRenter={() => setRenterDrawerOpen(true)} />}
+        {tab === 'renters' && (
+          <PropertyRentersTab
+            property={property}
+            onAddRenter={() => { setScan(null); setRenterDrawerOpen(true); }}
+            onScanRenter={() => setScanOpen(true)}
+          />
+        )}
         {tab === 'transactions' && <PropertyTransactionsTab transactions={transactions} />}
         {tab === 'documents' && <PropertyDocumentsTab property={property} />}
       </div>
 
       <PropertyFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} propertyId={propertyId} />
       <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialPropertyId={propertyId} />
-      <RenterFormDrawer open={renterDrawerOpen} onClose={() => setRenterDrawerOpen(false)} initialPropertyId={propertyId} />
+      <RenterFormDrawer
+        open={renterDrawerOpen}
+        onClose={() => setRenterDrawerOpen(false)}
+        initialPropertyId={propertyId}
+        logId={scan?.logId}
+        prefill={scan?.mapped.renterPrefill}
+        reviewItems={scan?.mapped.renterReview}
+        provenance={scan?.mapped.renterProvenance}
+        pendingContractFile={scan?.file ?? null}
+        scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city } : undefined}
+      />
+      <DocumentScanDrawer
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onExtracted={(logId, mapped, file) => {
+          setScan({ logId, mapped, file });
+          setScanOpen(false);
+          setRenterDrawerOpen(true);
+        }}
+      />
       <ConfirmDialog
         open={confirmDeleteOpen}
         title={t('property.deleteConfirmTitle')}

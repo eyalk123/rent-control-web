@@ -7,6 +7,11 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { RenterFormDrawer } from './RenterFormDrawer';
+import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
+import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
+import { AddMenu } from '@/shared/components/ui/AddMenu';
+import { matchProperty, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
+import type { MappedExtraction } from '@/features/document-scan/utils/mapExtraction';
 import { useRenters, renterKeys } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { deleteRenter } from '../api/renters';
@@ -266,12 +271,24 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
+  // Document-scan (renter target) result: renter prefill + which existing property it matched.
+  const [scan, setScan] = useState<{
+    logId: number;
+    mapped: MappedExtraction;
+    file: File;
+    matchedPropertyId: number | null;
+    matchStatus: PropertyMatchStatus;
+  } | null>(null);
+  const openBlankRenterForm = () => { setScan(null); setDrawerOpen(true); };
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
+      setScan(null);
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
@@ -377,13 +394,11 @@ export function RentersListPage() {
             >
               <CheckSquare size={14} /> {t('common.select')}
             </button>
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              <Plus size={14} /> {t('property.addRenterAction')}
-            </button>
+            <AddMenu
+              label={t('property.addRenterAction')}
+              onManual={openBlankRenterForm}
+              onScan={() => setScanOpen(true)}
+            />
           </div>
         )}
       </div>
@@ -447,7 +462,7 @@ export function RentersListPage() {
             action={
               !search && statusFilter === 'all' ? (
                 <button
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={openBlankRenterForm}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                   style={{ background: 'var(--color-primary)' }}
                 >
@@ -485,7 +500,44 @@ export function RentersListPage() {
         )}
       </div>
 
-      <RenterFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <RenterFormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        logId={scan?.logId}
+        prefill={scan?.mapped.renterPrefill}
+        reviewItems={scan?.mapped.renterReview}
+        provenance={scan?.mapped.renterProvenance}
+        pendingContractFile={scan?.file ?? null}
+        initialPropertyId={scan?.matchedPropertyId ?? undefined}
+        matchStatus={scan?.matchStatus}
+        scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city } : undefined}
+        onCreatePropertyFromScan={
+          scan ? () => { setDrawerOpen(false); setPropertyDrawerOpen(true); } : undefined
+        }
+      />
+      {/* "Create property from lease" pivot — reuses the property+renter chain with the same scan. */}
+      <PropertyFormDrawer
+        open={propertyDrawerOpen}
+        onClose={() => setPropertyDrawerOpen(false)}
+        logId={scan?.logId}
+        prefill={scan?.mapped.propertyPrefill}
+        reviewItems={scan?.mapped.propertyReview}
+        provenance={scan?.mapped.propertyProvenance}
+        renterPrefill={scan?.mapped.renterPrefill}
+        renterReviewItems={scan?.mapped.renterReview}
+        renterProvenance={scan?.mapped.renterProvenance}
+        renterContractFile={scan?.file ?? null}
+      />
+      <DocumentScanDrawer
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onExtracted={(logId, mapped, file) => {
+          const m = matchProperty(mapped.propertyPrefill, properties);
+          setScan({ logId, mapped, file, matchedPropertyId: m.propertyId, matchStatus: m.status });
+          setScanOpen(false);
+          setDrawerOpen(true);
+        }}
+      />
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

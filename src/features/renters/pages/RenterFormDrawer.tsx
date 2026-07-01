@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
@@ -22,6 +22,7 @@ import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
 import { ReviewBanner } from '@/features/document-scan/components/ReviewBanner';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
 import type { z } from 'zod';
@@ -46,6 +47,11 @@ interface Props {
   reviewItems?: ReviewItem[];
   provenance?: ProvenanceItem[];
   pendingContractFile?: File | null;
+  /** Document-scan (renter target) property association. When set, the drawer shows the
+   *  match hint / soft mismatch warning and, for `none`, a "create property from lease" action. */
+  matchStatus?: PropertyMatchStatus;
+  scannedLeaseAddress?: { address?: string | null; city?: string | null };
+  onCreatePropertyFromScan?: () => void;
 }
 
 export function RenterFormDrawer({
@@ -58,6 +64,9 @@ export function RenterFormDrawer({
   reviewItems,
   provenance,
   pendingContractFile,
+  matchStatus,
+  scannedLeaseAddress,
+  onCreatePropertyFromScan,
 }: Props) {
   const { t } = useTranslation();
   const isEditing = !!renterId;
@@ -80,6 +89,17 @@ export function RenterFormDrawer({
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
+
+  // Document-scan property association: warn (softly) when the chosen property's address
+  // doesn't match the scanned lease. The dropdown always stays the source of truth.
+  const selectedPropertyId = useWatch({ control, name: 'propertyId' });
+  const propertyMismatch =
+    !!scannedLeaseAddress?.address && !!selectedPropertyId
+      ? (() => {
+          const p = (properties ?? []).find((pp) => String(pp.id) === String(selectedPropertyId));
+          return p ? !addressesMatch(p, scannedLeaseAddress) : false;
+        })()
+      : false;
 
   useEffect(() => {
     if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); }
@@ -325,6 +345,27 @@ export function RenterFormDrawer({
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
+            {matchStatus === 'none' && !selectedPropertyId && (
+              <div className="flex flex-col gap-1.5 -mt-2">
+                <p className="text-xs" style={{ color: 'var(--color-warning)' }}>⚠ {t('documentScan.couldntMatch')}</p>
+                {onCreatePropertyFromScan && (
+                  <button
+                    type="button"
+                    onClick={onCreatePropertyFromScan}
+                    className="self-start text-xs font-medium hover:underline"
+                    style={{ color: 'var(--color-primary)' }}
+                  >
+                    {t('documentScan.createPropertyFromLease')}
+                  </button>
+                )}
+              </div>
+            )}
+            {matchStatus === 'matched' && !!selectedPropertyId && !propertyMismatch && (
+              <p className="text-xs -mt-2" style={{ color: 'var(--color-text-secondary)' }}>ⓘ {t('documentScan.matchedFromLease')}</p>
+            )}
+            {propertyMismatch && (
+              <p className="text-xs -mt-2" style={{ color: 'var(--color-warning)' }}>⚠ {t('documentScan.propertyMismatchWarning')}</p>
+            )}
             <FormFileInput
               label={t('documents.idImage')}
               accept="image/*"

@@ -1,15 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { RenterMiniCard } from './RenterMiniCard';
 import type { Property } from '@/shared/types';
 
 interface Props {
   property: Property;
   onAddRenter: () => void;
+  /** When provided, the empty-state add action becomes a chooser (manual / scan a lease). */
+  onScanRenter?: () => void;
 }
 
-export function PropertyRentersTab({ property, onAddRenter }: Props) {
+export function PropertyRentersTab({ property, onAddRenter, onScanRenter }: Props) {
   const { t } = useTranslation();
   const renters = property.renters ?? [];
 
@@ -20,13 +23,17 @@ export function PropertyRentersTab({ property, onAddRenter }: Props) {
         title={t('property.noRentersYet')}
         description={t('property.noRentersDesc')}
         action={
-          <button
-            onClick={onAddRenter}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
-            style={{ background: 'var(--color-primary)' }}
-          >
-            <Plus size={14} /> {t('property.addRenterAction')}
-          </button>
+          onScanRenter ? (
+            <AddMenu label={t('property.addRenterAction')} onManual={onAddRenter} onScan={onScanRenter} />
+          ) : (
+            <button
+              onClick={onAddRenter}
+              className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              <Plus size={14} /> {t('property.addRenterAction')}
+            </button>
+          )
         }
       />
     );
