@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Calendar, Lock, Pencil } from 'lucide-react';
 import type { PickerValue } from 'react-mobile-picker';
 import { RequiredMark } from './RequiredMark';
-import { FieldReviewBadge, FieldReviewSource, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
+import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
 
 export type WheelDatePickerMode = 'date' | 'month' | 'day';
 type PickerState = Record<string, number>;
@@ -155,10 +155,10 @@ export function WheelDatePicker({
   }
 
   return (
-    <div className="flex flex-col gap-1.5" id={reviewName ? `scan-field-${reviewName}` : undefined}>
+    <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
         {label ? (
-          <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}{flagged && <FieldReviewBadge />}</label>
+          <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>
         ) : (
           <span />
         )}
@@ -298,7 +298,7 @@ export function WheelDatePicker({
         </>
       )}
       {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
-      {flagged && <FieldReviewSource source={review!.source} />}
+      {flagged && <FieldReviewNotice source={review!.source} />}
     </div>
   );
 }

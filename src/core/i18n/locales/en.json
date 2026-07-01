@@ -819,6 +819,7 @@
     "reviewCount_other": "Review {{count}} extracted fields — tap to jump",
     "reviewBadge": "check",
     "jumpToField": "Jump to field",
+    "doubleCheck": "Double-check this auto-filled value",
     "foundIn": "Found in: \"{{snippet}}\"",
     "progress": {
       "merging": "Combining pages…",

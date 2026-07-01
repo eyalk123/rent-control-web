@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import type { ChangeEvent, InputHTMLAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
-import { FieldReviewBadge, FieldReviewSource, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
+import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -32,7 +32,6 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
           <label htmlFor={inputId} className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">
             {label}
             {required && <RequiredMark />}
-            {flagged && <FieldReviewBadge />}
           </label>
         )}
         <input
@@ -41,18 +40,14 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
           aria-required={required || undefined}
           dir={(rest.type === 'number' || rest.type === 'tel') ? 'ltr' : undefined}
           className={`w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-placeholder)] outline-none transition-colors focus:border-[var(--color-primary)] ${
-            error
-              ? 'border-[var(--color-error)]'
-              : flagged
-              ? 'border-[var(--color-warning,#eab308)]'
-              : 'border-[var(--color-input-border)]'
+            error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'
           } ${className}`}
           {...rest}
           onChange={handleChange}
         />
         {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
         {hint && !error && <p className="text-xs text-[var(--color-text-secondary)]">{hint}</p>}
-        {flagged && <FieldReviewSource source={review!.source} />}
+        {flagged && <FieldReviewNotice source={review!.source} />}
       </div>
     );
   },

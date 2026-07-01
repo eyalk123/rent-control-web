@@ -2,7 +2,7 @@ import * as Select from '@radix-ui/react-select';
 import { ChevronDown, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
-import { FieldReviewBadge, FieldReviewSource, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
+import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
 
 export interface SelectOption<T extends string = string> {
   label: string;
@@ -31,12 +31,12 @@ export function FormSelect<T extends string>({
   const flagged = !!review && !error;
   return (
     <div className="flex flex-col gap-1.5">
-      {label && <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}{flagged && <FieldReviewBadge />}</label>}
+      {label && <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>}
       {/* Ignore spurious empty emissions: Radix fires onValueChange('') for one render when
           a programmatically-set (e.g. RHF reset) value transitions before its Item registers,
           which would wipe the selection. No Item uses '', so a real change is always truthy. */}
       <Select.Root value={value} onValueChange={(v) => { if (v) { onValueChange(v as T); if (reviewName) dismissReview?.(reviewName); } }} disabled={disabled} dir={i18n.dir()}>
-        <Select.Trigger id={reviewName ? `scan-field-${reviewName}` : undefined} aria-required={required || undefined} className={`flex items-center justify-between w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${error ? 'border-[var(--color-error)]' : flagged ? 'border-[var(--color-warning,#eab308)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
+        <Select.Trigger id={reviewName ? `scan-field-${reviewName}` : undefined} aria-required={required || undefined} className={`flex items-center justify-between w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
           <Select.Value placeholder={placeholder} />
           <Select.Icon>
             <ChevronDown size={16} className="text-[var(--color-text-secondary)]" />
@@ -62,7 +62,7 @@ export function FormSelect<T extends string>({
         </Select.Portal>
       </Select.Root>
       {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
-      {flagged && <FieldReviewSource source={review!.source} />}
+      {flagged && <FieldReviewNotice source={review!.source} />}
     </div>
   );
 }

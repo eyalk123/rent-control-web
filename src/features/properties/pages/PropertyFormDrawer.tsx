@@ -19,7 +19,6 @@ import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
-import { ReviewBanner } from '@/features/document-scan/components/ReviewBanner';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
@@ -212,9 +211,16 @@ export function PropertyFormDrawer({
         setLandRegistryFile(null);
         setImagePreview(null);
         showToast(t('property.createSuccess'), 'success');
-        // Prompt to add a renter for the new property (over the still-open drawer).
         setCreatedPropertyId(created.id);
-        setShowRenterPrompt(true);
+        if (logId) {
+          // Scan flow: the renter was already extracted — continue straight into the renter
+          // form instead of interrupting with the "add a renter?" prompt.
+          onClose();
+          setRenterDrawerOpen(true);
+        } else {
+          // Manual add: ask whether to add a renter (over the still-open drawer).
+          setShowRenterPrompt(true);
+        }
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[PropertyFormDrawer] save failed:', err);
@@ -285,7 +291,6 @@ export function PropertyFormDrawer({
 
       <FieldReviewProvider items={reviewItems}>
       <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
-        {step === 1 && <ReviewBanner items={reviewItems} />}
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
             <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />

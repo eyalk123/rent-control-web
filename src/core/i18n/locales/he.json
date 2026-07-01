@@ -820,6 +820,7 @@
     "reviewCount_other": "בדקו {{count}} שדות שחולצו — הקישו למעבר",
     "reviewBadge": "לבדיקה",
     "jumpToField": "מעבר לשדה",
+    "doubleCheck": "כדאי לבדוק את הערך שמולא אוטומטית",
     "foundIn": "נמצא ב: \"{{snippet}}\"",
     "progress": {
       "merging": "מאחד עמודים…",

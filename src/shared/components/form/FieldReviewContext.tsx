@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 /** One field the document scanner was unsure about — keyed by its RHF field name so a
  *  form control can decorate itself. Structurally a subset of document-scan's `ReviewItem`,
@@ -61,27 +61,24 @@ export function useDismissFieldReview(): ((name: string) => void) | undefined {
   return useContext(FieldReviewContext)?.dismiss;
 }
 
-/** Small inline chip placed next to a flagged field's label. */
-export function FieldReviewBadge() {
+/** Inline notice shown beneath a flagged field: a "double-check this auto-filled value" prompt
+ *  plus the exact line from the lease the value came from, so the user can verify it in place. */
+export function FieldReviewNotice({ source }: { source: string | null }) {
   const { t } = useTranslation();
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-      style={{ background: 'var(--color-warning-bg, rgba(234,179,8,0.16))', color: 'var(--color-warning, #b45309)' }}
+    <div
+      className="flex items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs"
+      style={{ background: 'var(--color-warning-bg, rgba(234,179,8,0.12))' }}
     >
-      <AlertCircle size={11} aria-hidden="true" />
-      {t('documentScan.reviewBadge')}
-    </span>
-  );
-}
-
-/** Source snippet shown beneath a flagged field. */
-export function FieldReviewSource({ source }: { source: string | null }) {
-  const { t } = useTranslation();
-  if (!source) return null;
-  return (
-    <p className="text-xs break-words" style={{ color: 'var(--color-text-secondary)' }}>
-      ↳ {t('documentScan.foundIn', { snippet: source })}
-    </p>
+      <AlertTriangle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }} aria-hidden="true" />
+      <span className="min-w-0">
+        <span className="font-medium" style={{ color: 'var(--color-warning)' }}>{t('documentScan.doubleCheck')}</span>
+        {source && (
+          <span className="mt-0.5 block break-words" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('documentScan.foundIn', { snippet: source })}
+          </span>
+        )}
+      </span>
+    </div>
   );
 }

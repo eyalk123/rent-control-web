@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, X } from 'lucide-react';
+import { AlertTriangle, Info, Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
 import { reconstructIntentFromLeaseYears } from '@/shared/utils/leaseSchedule';
 import { LeaseTermBuilder } from '../components/LeaseTermBuilder';
@@ -20,7 +20,6 @@ import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
-import { ReviewBanner } from '@/features/document-scan/components/ReviewBanner';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
@@ -332,22 +331,24 @@ export function RenterFormDrawer({
       </div>
 
       <FieldReviewProvider items={reviewItems}>
-      <form id="renter-form" onSubmit={onSubmit} className="flex flex-col gap-4">
-        {step === 1 && <ReviewBanner items={reviewItems} />}
+      <form id="renter-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('renter.firstName')} required error={errors.firstName?.message} {...register('firstName')} />
-              <FormInput label={t('renter.lastName')} required error={errors.lastName?.message} {...register('lastName')} />
+              <FormInput label={t('renter.firstName')} required autoComplete="off" error={errors.firstName?.message} {...register('firstName')} />
+              <FormInput label={t('renter.lastName')} required autoComplete="off" error={errors.lastName?.message} {...register('lastName')} />
             </div>
-            <FormInput label={t('renter.phone')} type="tel" required error={errors.phone?.message} {...register('phone')} />
-            <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
+            <FormInput label={t('renter.phone')} type="tel" required autoComplete="off" error={errors.phone?.message} {...register('phone')} />
+            <FormInput label={t('renter.email')} type="email" autoComplete="off" error={errors.email?.message} {...register('email')} />
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
             {matchStatus === 'none' && !selectedPropertyId && (
               <div className="flex flex-col gap-1.5 -mt-2">
-                <p className="text-xs" style={{ color: 'var(--color-warning)' }}>⚠ {t('documentScan.couldntMatch')}</p>
+                <p className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-warning)' }}>
+                  <AlertTriangle size={13} className="shrink-0" aria-hidden="true" />
+                  <span>{t('documentScan.couldntMatch')}</span>
+                </p>
                 {onCreatePropertyFromScan && (
                   <button
                     type="button"
@@ -361,10 +362,16 @@ export function RenterFormDrawer({
               </div>
             )}
             {matchStatus === 'matched' && !!selectedPropertyId && !propertyMismatch && (
-              <p className="text-xs -mt-2" style={{ color: 'var(--color-text-secondary)' }}>ⓘ {t('documentScan.matchedFromLease')}</p>
+              <p className="flex items-center gap-1 text-xs -mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+                <Info size={13} className="shrink-0" aria-hidden="true" />
+                <span>{t('documentScan.matchedFromLease')}</span>
+              </p>
             )}
             {propertyMismatch && (
-              <p className="text-xs -mt-2" style={{ color: 'var(--color-warning)' }}>⚠ {t('documentScan.propertyMismatchWarning')}</p>
+              <p className="flex items-center gap-1 text-xs -mt-2" style={{ color: 'var(--color-warning)' }}>
+                <AlertTriangle size={13} className="shrink-0" aria-hidden="true" />
+                <span>{t('documentScan.propertyMismatchWarning')}</span>
+              </p>
             )}
             <FormFileInput
               label={t('documents.idImage')}
@@ -378,8 +385,8 @@ export function RenterFormDrawer({
               <div className="space-y-2">
                 {contactFields.map((f, i) => (
                   <div key={f.id} className="flex items-center gap-2">
-                    <FormInput placeholder={t('renter.contactName')} {...register(`extraContacts.${i}.name`)} className="flex-1" />
-                    <FormInput placeholder={t('renter.contactPhone')} {...register(`extraContacts.${i}.phone`)} className="flex-1" />
+                    <FormInput placeholder={t('renter.contactName')} autoComplete="off" {...register(`extraContacts.${i}.name`)} className="flex-1" />
+                    <FormInput placeholder={t('renter.contactPhone')} autoComplete="off" {...register(`extraContacts.${i}.phone`)} className="flex-1" />
                     <button type="button" onClick={() => removeContact(i)} style={{ color: 'var(--color-error)' }}><X size={16} /></button>
                   </div>
                 ))}
