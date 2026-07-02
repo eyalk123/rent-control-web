@@ -10,7 +10,8 @@ import { useProperties, propertyKeys } from '../queries';
 import { deleteProperty } from '../api/properties';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
-import type { MappedExtraction } from '@/features/document-scan/utils/mapExtraction';
+import { ScanSummaryDrawer } from '@/features/document-scan/pages/ScanSummaryDrawer';
+import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -262,10 +263,12 @@ export function PropertiesListPage() {
   const [view, setView] = useViewMode('properties');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   // Document-scan result driving the (persistent) property form's prefill. Kept until the
   // next blank "Add property" — NOT cleared on the drawer's onClose, so the chained renter
-  // form keeps its prefill when the property drawer hides on "Add renter".
-  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; file: File } | null>(null);
+  // form keeps its prefill when the property drawer hides on "Add renter". `renters` is the
+  // finalised per-renter queue (joint-rent split applied on the summary screen).
+  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
   const openBlankPropertyForm = () => { setScan(null); setDrawerOpen(true); };
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
@@ -455,16 +458,27 @@ export function PropertiesListPage() {
         prefill={scan?.mapped.propertyPrefill}
         reviewItems={scan?.mapped.propertyReview}
         provenance={scan?.mapped.propertyProvenance}
-        renterPrefill={scan?.mapped.renterPrefill}
-        renterReviewItems={scan?.mapped.renterReview}
-        renterProvenance={scan?.mapped.renterProvenance}
+        addressEvidence={scan?.mapped.addressEvidence}
+        renterQueue={scan?.renters}
         renterContractFile={scan?.file ?? null}
       />
       <DocumentScanDrawer
         open={scanOpen}
         onClose={() => setScanOpen(false)}
-        onExtracted={(logId, mapped, file) => { setScan({ logId, mapped, file }); setScanOpen(false); setDrawerOpen(true); }}
+        onExtracted={(logId, mapped, file) => { setScan({ logId, mapped, renters: mapped.renters, file }); setScanOpen(false); setSummaryOpen(true); }}
       />
+      {scan && (
+        <ScanSummaryDrawer
+          open={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          mapped={scan.mapped}
+          onContinue={(renters) => {
+            setScan((prev) => (prev ? { ...prev, renters } : prev));
+            setSummaryOpen(false);
+            setDrawerOpen(true);
+          }}
+        />
+      )}
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

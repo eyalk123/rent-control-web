@@ -21,8 +21,8 @@ import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
+import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
-import type { RenterFormValues } from '@/features/renters/validation/renterValidation';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
@@ -52,9 +52,12 @@ interface Props {
   prefill?: Partial<FormData>;
   reviewItems?: ReviewItem[];
   provenance?: ProvenanceItem[];
-  renterPrefill?: Partial<RenterFormValues>;
-  renterReviewItems?: ReviewItem[];
-  renterProvenance?: ProvenanceItem[];
+  /** Debug hint: the verbatim clause the scan based the property address on. Shown under the
+   *  address field for scanned entries so a wrong address can be diagnosed. */
+  addressEvidence?: string | null;
+  /** Document-scan renter queue forwarded to the chained renter drawer after the property
+   *  is created (one entry per co-tenant; verified in sequence). */
+  renterQueue?: MappedRenter[];
   renterContractFile?: File | null;
 }
 
@@ -66,9 +69,8 @@ export function PropertyFormDrawer({
   prefill,
   reviewItems,
   provenance,
-  renterPrefill,
-  renterReviewItems,
-  renterProvenance,
+  addressEvidence,
+  renterQueue,
   renterContractFile,
 }: Props) {
   const { t } = useTranslation();
@@ -290,10 +292,17 @@ export function PropertyFormDrawer({
       </div>
 
       <FieldReviewProvider items={reviewItems}>
-      <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form id="property-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
-            <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
+            <div className="flex flex-col gap-1">
+              <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
+              {!isEditing && addressEvidence && (
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t('documentScan.addressEvidence', { snippet: addressEvidence })}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
               <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
@@ -426,9 +435,7 @@ export function PropertyFormDrawer({
       open={renterDrawerOpen}
       initialPropertyId={createdPropertyId ?? undefined}
       logId={logId}
-      prefill={renterPrefill}
-      reviewItems={renterReviewItems}
-      provenance={renterProvenance}
+      renterQueue={renterQueue}
       pendingContractFile={renterContractFile ?? null}
       onClose={() => { setRenterDrawerOpen(false); setCreatedPropertyId(null); }}
     />

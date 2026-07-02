@@ -9,9 +9,10 @@ import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
 import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
+import { ScanSummaryDrawer } from '@/features/document-scan/pages/ScanSummaryDrawer';
 import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { matchProperty, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
-import type { MappedExtraction } from '@/features/document-scan/utils/mapExtraction';
+import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useRenters, renterKeys } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { deleteRenter } from '../api/renters';
@@ -272,11 +273,14 @@ export function RentersListPage() {
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
-  // Document-scan (renter target) result: renter prefill + which existing property it matched.
+  // Document-scan (renter target) result: the mapped extraction, the finalised per-renter
+  // queue (joint-rent split applied), and which existing property it matched.
   const [scan, setScan] = useState<{
     logId: number;
     mapped: MappedExtraction;
+    renters: MappedRenter[];
     file: File;
     matchedPropertyId: number | null;
     matchStatus: PropertyMatchStatus;
@@ -504,9 +508,7 @@ export function RentersListPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         logId={scan?.logId}
-        prefill={scan?.mapped.renterPrefill}
-        reviewItems={scan?.mapped.renterReview}
-        provenance={scan?.mapped.renterProvenance}
+        renterQueue={scan?.renters}
         pendingContractFile={scan?.file ?? null}
         initialPropertyId={scan?.matchedPropertyId ?? undefined}
         matchStatus={scan?.matchStatus}
@@ -523,9 +525,8 @@ export function RentersListPage() {
         prefill={scan?.mapped.propertyPrefill}
         reviewItems={scan?.mapped.propertyReview}
         provenance={scan?.mapped.propertyProvenance}
-        renterPrefill={scan?.mapped.renterPrefill}
-        renterReviewItems={scan?.mapped.renterReview}
-        renterProvenance={scan?.mapped.renterProvenance}
+        addressEvidence={scan?.mapped.addressEvidence}
+        renterQueue={scan?.renters}
         renterContractFile={scan?.file ?? null}
       />
       <DocumentScanDrawer
@@ -533,11 +534,23 @@ export function RentersListPage() {
         onClose={() => setScanOpen(false)}
         onExtracted={(logId, mapped, file) => {
           const m = matchProperty(mapped.propertyPrefill, properties);
-          setScan({ logId, mapped, file, matchedPropertyId: m.propertyId, matchStatus: m.status });
+          setScan({ logId, mapped, renters: mapped.renters, file, matchedPropertyId: m.propertyId, matchStatus: m.status });
           setScanOpen(false);
-          setDrawerOpen(true);
+          setSummaryOpen(true);
         }}
       />
+      {scan && (
+        <ScanSummaryDrawer
+          open={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          mapped={scan.mapped}
+          onContinue={(renters) => {
+            setScan((prev) => (prev ? { ...prev, renters } : prev));
+            setSummaryOpen(false);
+            setDrawerOpen(true);
+          }}
+        />
+      )}
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

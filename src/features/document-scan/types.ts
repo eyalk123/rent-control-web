@@ -15,6 +15,8 @@ export interface ExtraContactGuess {
 }
 
 export interface ExtractedProperty {
+  /** The verbatim clause the model based the property address on (debug/grounding only). */
+  address_evidence: string | null;
   address: string | null;
   city: string | null;
   zip_code: string | null;
@@ -60,13 +62,21 @@ export interface ExtractedRenter {
 export interface FieldNote {
   section: 'property' | 'renter';
   field: string;
+  /** Which renter the note refers to (index into `renters`); null for property notes. */
+  renter_index: number | null;
   confidence: Confidence;
   source_text: string | null;
 }
 
 export interface LeaseExtraction {
   property: ExtractedProperty;
-  renter: ExtractedRenter;
+  /** One or more co-tenants who signed the same lease. */
+  renters: ExtractedRenter[];
+  /** When true, the lease states a single joint rent for all tenants together and
+   *  `joint_monthly_rent` holds that first-year monthly total (each renter's own
+   *  `base_rent` is null); the client lets the user split it across the renters. */
+  rent_is_joint: boolean;
+  joint_monthly_rent: number | null;
   notes: FieldNote[];
 }
 

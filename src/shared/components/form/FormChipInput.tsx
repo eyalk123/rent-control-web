@@ -112,6 +112,9 @@ export function FormChipInput({ label, error, placeholder, value, onChange, nume
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           placeholder={chips.length === 0 ? placeholder : undefined}
+          autoComplete="off-chip-input"
+          data-1p-ignore
+          data-lpignore="true"
           className="flex-1 min-w-[80px] bg-transparent outline-none focus-visible:outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]"
         />
       </div>

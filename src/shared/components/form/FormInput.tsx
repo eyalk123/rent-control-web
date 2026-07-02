@@ -20,6 +20,10 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
     // Don't double-decorate when the field is also in an error state.
     const flagged = !!review && !error;
     const inputId = id ?? `fi-${label?.replace(/\s+/g, '-').toLowerCase()}`;
+    // Chrome ignores autoComplete="off" for known field types; a unique, unrecognized token
+    // reliably suppresses both profile autofill and the typed-history dropdown. Callers can
+    // still opt in (e.g. sign-in sets "email"/"current-password").
+    const autoCompleteValue = rest.autoComplete ?? (fieldName ? `off-${fieldName}` : 'off');
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
       rest.onChange?.(e);
@@ -42,7 +46,10 @@ export const FormInput = forwardRef<HTMLInputElement, Props>(
           className={`w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-placeholder)] outline-none transition-colors focus:border-[var(--color-primary)] ${
             error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'
           } ${className}`}
+          data-1p-ignore
+          data-lpignore="true"
           {...rest}
+          autoComplete={autoCompleteValue}
           onChange={handleChange}
         />
         {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}

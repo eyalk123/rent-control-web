@@ -22,6 +22,7 @@ import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
+import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
 import type { z } from 'zod';
@@ -45,6 +46,10 @@ interface Props {
   prefill?: Partial<FormData>;
   reviewItems?: ReviewItem[];
   provenance?: ProvenanceItem[];
+  /** Document-scan multi-renter queue: one entry per co-tenant on the lease. When provided,
+   *  the drawer verifies each renter in turn (saving one advances to the next) and closes
+   *  only after the last. Overrides the singular `prefill`/`reviewItems`/`provenance`. */
+  renterQueue?: MappedRenter[];
   pendingContractFile?: File | null;
   /** Document-scan (renter target) property association. When set, the drawer shows the
    *  match hint / soft mismatch warning and, for `none`, a "create property from lease" action. */
@@ -62,6 +67,7 @@ export function RenterFormDrawer({
   prefill,
   reviewItems,
   provenance,
+  renterQueue,
   pendingContractFile,
   matchStatus,
   scannedLeaseAddress,
@@ -69,6 +75,16 @@ export function RenterFormDrawer({
 }: Props) {
   const { t } = useTranslation();
   const isEditing = !!renterId;
+
+  // Multi-renter scan queue: which co-tenant we're currently verifying. Saving one advances
+  // the cursor to the next; the drawer closes only after the last renter is saved.
+  const [queueIndex, setQueueIndex] = useState(0);
+  const queueTotal = renterQueue?.length ?? 0;
+  const queued = queueTotal > queueIndex ? renterQueue![queueIndex] : undefined;
+  const effPrefill = queued ? queued.prefill : prefill;
+  const effReview = queued ? queued.review : reviewItems;
+  const effProvenance = queued ? queued.provenance : provenance;
+  const hasNextRenter = queueTotal > 0 && queueIndex < queueTotal - 1;
 
   const { data: existing } = useRenter(renterId ?? 0);
   const { data: properties } = useProperties();
@@ -101,7 +117,7 @@ export function RenterFormDrawer({
       : false;
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); }
+    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); setQueueIndex(0); }
   }, [open]);
 
   // Files live outside RHF, so isDirty alone misses them.
@@ -159,6 +175,7 @@ export function RenterFormDrawer({
       });
       setIdImagePreview(existing.id_image_url ?? null);
     } else if (!renterId && open) {
+      setIdImageFile(null);
       setIdImagePreview(null);
       reset({
         leaseStart: '',
@@ -172,11 +189,12 @@ export function RenterFormDrawer({
         baseRent: '',
         escalationMode: 'none',
         escalationValue: '',
-        ...(prefill ?? {}),
+        ...(effPrefill ?? {}),
       });
       setFullContractFile(pendingContractFile ?? null);
     }
-  }, [existing, open, renterId, initialPropertyId, reset, prefill, pendingContractFile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- effPrefill tracked via queueIndex; re-runs to load each queued renter
+  }, [existing, open, renterId, initialPropertyId, reset, prefill, queueIndex, renterQueue, pendingContractFile]);
 
   const handleIdImageChange = (file: File | null) => {
     setIdImageFile(file);
@@ -233,18 +251,24 @@ export function RenterFormDrawer({
       } else {
         const created = await createMutation.mutateAsync(payload as never);
         // Audit: record renter creation + which prefilled fields changed + the kept contract URL.
-        if (logId && provenance) {
+        if (logId && effProvenance) {
           updateExtractionLog(logId, {
             entity_type: 'renter',
             created_id: (created as { id?: number })?.id ?? null,
             contract_url: fullContractUrl ?? null,
-            ...diffProvenance(provenance, data as Record<string, unknown>),
+            ...diffProvenance(effProvenance, data as Record<string, unknown>),
           });
         }
       }
 
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
-      onClose();
+      // Multi-renter scan: advance to the next co-tenant instead of closing.
+      if (!isEditing && hasNextRenter) {
+        setStep(1);
+        setQueueIndex((i) => i + 1);
+      } else {
+        onClose();
+      }
     } catch (err) { if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err); showToast(getApiErrorMessage(err, t('error.saveFailed')), 'error'); }
   });
 
@@ -306,7 +330,7 @@ export function RenterFormDrawer({
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
           style={{ background: 'var(--color-primary)' }}
         >
-          {isSubmitting ? '...' : t('common.save')}
+          {isSubmitting ? '...' : hasNextRenter ? t('documentScan.saveAndNextRenter') : t('common.save')}
         </button>
       )}
     </div>
@@ -322,6 +346,13 @@ export function RenterFormDrawer({
       width={640}
       footer={footer}
     >
+      {/* Multi-renter scan progress (which co-tenant of N we're verifying) */}
+      {queueTotal > 1 && (
+        <p className="text-xs font-medium mb-2" style={{ color: 'var(--color-primary)' }}>
+          {t('documentScan.renterProgress', { current: queueIndex + 1, total: queueTotal })}
+        </p>
+      )}
+
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
@@ -330,16 +361,16 @@ export function RenterFormDrawer({
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
       </div>
 
-      <FieldReviewProvider items={reviewItems}>
+      <FieldReviewProvider items={effReview}>
       <form id="renter-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('renter.firstName')} required autoComplete="off" error={errors.firstName?.message} {...register('firstName')} />
-              <FormInput label={t('renter.lastName')} required autoComplete="off" error={errors.lastName?.message} {...register('lastName')} />
+              <FormInput label={t('renter.firstName')} required error={errors.firstName?.message} {...register('firstName')} />
+              <FormInput label={t('renter.lastName')} required error={errors.lastName?.message} {...register('lastName')} />
             </div>
-            <FormInput label={t('renter.phone')} type="tel" required autoComplete="off" error={errors.phone?.message} {...register('phone')} />
-            <FormInput label={t('renter.email')} type="email" autoComplete="off" error={errors.email?.message} {...register('email')} />
+            <FormInput label={t('renter.phone')} type="tel" required error={errors.phone?.message} {...register('phone')} />
+            <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />
@@ -385,8 +416,8 @@ export function RenterFormDrawer({
               <div className="space-y-2">
                 {contactFields.map((f, i) => (
                   <div key={f.id} className="flex items-center gap-2">
-                    <FormInput placeholder={t('renter.contactName')} autoComplete="off" {...register(`extraContacts.${i}.name`)} className="flex-1" />
-                    <FormInput placeholder={t('renter.contactPhone')} autoComplete="off" {...register(`extraContacts.${i}.phone`)} className="flex-1" />
+                    <FormInput placeholder={t('renter.contactName')} {...register(`extraContacts.${i}.name`)} className="flex-1" />
+                    <FormInput placeholder={t('renter.contactPhone')} {...register(`extraContacts.${i}.phone`)} className="flex-1" />
                     <button type="button" onClick={() => removeContact(i)} style={{ color: 'var(--color-error)' }}><X size={16} /></button>
                   </div>
                 ))}
