@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Mail, CheckSquare } from 'lucide-react';
@@ -8,8 +8,7 @@ import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
-import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
-import { ScanSummaryDrawer } from '@/features/document-scan/pages/ScanSummaryDrawer';
+import { useScanSession } from '@/features/document-scan/ScanContext';
 import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { matchProperty, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
@@ -272,11 +271,10 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
   const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
   // Document-scan (renter target) result: the mapped extraction, the finalised per-renter
-  // queue (joint-rent split applied), and which existing property it matched.
+  // queue (joint-rent split applied), and which existing property it matched. Populated from
+  // the app-global scan session once the user continues out of the summary.
   const [scan, setScan] = useState<{
     logId: number;
     mapped: MappedExtraction;
@@ -286,6 +284,8 @@ export function RentersListPage() {
     matchStatus: PropertyMatchStatus;
   } | null>(null);
   const openBlankRenterForm = () => { setScan(null); setDrawerOpen(true); };
+  const location = useLocation();
+  const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -336,6 +336,26 @@ export function RentersListPage() {
     () => new Map<number, string>(properties.map((p) => [p.id, p.property_owner ?? ''])),
     [properties],
   );
+
+  // Pick up the scan handoff: match the lease against existing properties (as the inline
+  // onExtracted did) and open the renter form pre-filled.
+  useEffect(() => {
+    if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
+      const result = consumeScan();
+      if (result) {
+        const m = matchProperty(result.mapped.propertyPrefill, properties);
+        setScan({
+          logId: result.logId,
+          mapped: result.mapped,
+          renters: result.renters,
+          file: result.file,
+          matchedPropertyId: m.propertyId,
+          matchStatus: m.status,
+        });
+        setDrawerOpen(true);
+      }
+    }
+  }, [scanView, scanSession, location.pathname, consumeScan, properties]);
 
   const columns = useRenterColumns(statusMap, ownerByProperty);
   const { table } = useDataTable(columns, filtered);
@@ -401,7 +421,7 @@ export function RentersListPage() {
             <AddMenu
               label={t('property.addRenterAction')}
               onManual={openBlankRenterForm}
-              onScan={() => setScanOpen(true)}
+              onScan={() => beginScan({ target: 'renter', originPath: location.pathname })}
             />
           </div>
         )}
@@ -529,28 +549,6 @@ export function RentersListPage() {
         renterQueue={scan?.renters}
         renterContractFile={scan?.file ?? null}
       />
-      <DocumentScanDrawer
-        open={scanOpen}
-        onClose={() => setScanOpen(false)}
-        onExtracted={(logId, mapped, file) => {
-          const m = matchProperty(mapped.propertyPrefill, properties);
-          setScan({ logId, mapped, renters: mapped.renters, file, matchedPropertyId: m.propertyId, matchStatus: m.status });
-          setScanOpen(false);
-          setSummaryOpen(true);
-        }}
-      />
-      {scan && (
-        <ScanSummaryDrawer
-          open={summaryOpen}
-          onClose={() => setSummaryOpen(false)}
-          mapped={scan.mapped}
-          onContinue={(renters) => {
-            setScan((prev) => (prev ? { ...prev, renters } : prev));
-            setSummaryOpen(false);
-            setDrawerOpen(true);
-          }}
-        />
-      )}
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

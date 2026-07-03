@@ -843,6 +843,13 @@
       "uploading": "Uploading the document…",
       "reading": "Reading the document…",
       "extracting": "Extracting the details…"
+    },
+    "pill": {
+      "scanning": "Scanning document…",
+      "ready": "Scan ready — tap to continue",
+      "error": "Scan failed — tap to retry",
+      "restore": "Open the active scan",
+      "cancel": "Cancel scan"
     }
   },
   "permission": {

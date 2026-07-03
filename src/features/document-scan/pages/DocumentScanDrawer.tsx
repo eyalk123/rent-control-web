@@ -2,19 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, FileText, Loader2, Upload, X } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
-import { getApiErrorMessage } from '@/core/api/client';
-import { useExtractLease } from '../queries';
-import { mapExtraction, type MappedExtraction } from '../utils/mapExtraction';
+import { useScanSession } from '../ScanContext';
 import { mergeImagesToPdf } from '../utils/mergeImagesToPdf';
-
-interface Props {
-  open: boolean;
-  onClose: () => void;
-  /** Called once extraction succeeds. The parent opens its persistent property form
-   *  (pre-filled), which chains into the renter form. The file passed is the document that
-   *  was actually sent (a merged PDF when multiple pages were captured). */
-  onExtracted: (logId: number, mapped: MappedExtraction, file: File) => void;
-}
 
 const ACCEPT = 'image/*,application/pdf,.pdf,.docx';
 const isImage = (f: File) => f.type.startsWith('image/');
@@ -52,15 +41,19 @@ function useStagedProgress(active: boolean, merging: boolean): string {
 /** Scan-a-document entry: pick/confirm one or more files, then press Extract to run the
  *  backend extraction. Multiple images are merged into a single PDF first; the resulting file
  *  is handed to the parent (and later stored as the renter's contract). */
-export function DocumentScanDrawer({ open, onClose, onExtracted }: Props) {
+export function DocumentScanDrawer() {
   const { t } = useTranslation();
-  const extract = useExtractLease();
+  const { view, session, startExtraction, dismissScan } = useScanSession();
+  const open = view === 'scan';
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [merging, setMerging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const processing = extract.isPending || merging;
+  // The extraction request itself lives in the provider (so it survives this drawer being
+  // minimized); the drawer only reflects its status.
+  const scanning = session?.status === 'scanning';
+  const processing = scanning || merging;
   const stage = useStagedProgress(processing, merging);
 
   useEffect(() => {
@@ -68,10 +61,12 @@ export function DocumentScanDrawer({ open, onClose, onExtracted }: Props) {
       setFiles([]);
       setError(null);
       setMerging(false);
-      extract.reset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when the drawer closes
   }, [open]);
+
+  // Surface an extraction error raised by the provider (it owns the request).
+  const sessionError = session?.status === 'error' ? session.error ?? null : null;
+  const shownError = error ?? sessionError;
 
   const validationError = validate(files);
   const allImages = files.length > 0 && files.every(isImage);
@@ -97,28 +92,28 @@ export function DocumentScanDrawer({ open, onClose, onExtracted }: Props) {
   const handleExtract = async () => {
     if (!canExtract) return;
     setError(null);
-    try {
-      let file = files[0];
-      if (files.length > 1 && allImages) {
-        setMerging(true);
-        try {
-          file = await mergeImagesToPdf(files);
-        } finally {
-          setMerging(false);
-        }
+    let file = files[0];
+    if (files.length > 1 && allImages) {
+      setMerging(true);
+      try {
+        file = await mergeImagesToPdf(files);
+      } catch {
+        setMerging(false);
+        setError('error.extractionFailed');
+        return;
       }
-      const { logId, extraction } = await extract.mutateAsync(file);
-      onExtracted(logId, mapExtraction(extraction), file);
-    } catch (err) {
-      setError(getApiErrorMessage(err, t('error.extractionFailed')));
+      setMerging(false);
     }
+    // Hand the document to the provider, which owns the (abortable) request so it keeps
+    // running — and its result stays reachable — even if this drawer is dismissed.
+    void startExtraction(file);
   };
 
   const footer = (
     <div className="flex gap-3">
       <button
         type="button"
-        onClick={onClose}
+        onClick={dismissScan}
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
@@ -137,7 +132,7 @@ export function DocumentScanDrawer({ open, onClose, onExtracted }: Props) {
   );
 
   return (
-    <Drawer open={open} onClose={onClose} title={t('documentScan.title')} width={520} footer={footer}>
+    <Drawer open={open} onClose={dismissScan} onRequestClose={dismissScan} title={t('documentScan.title')} width={520} footer={footer}>
       <div className="flex flex-col gap-4">
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
           {t('documentScan.uploadPrompt')}
@@ -200,7 +195,7 @@ export function DocumentScanDrawer({ open, onClose, onExtracted }: Props) {
           </>
         )}
 
-        {error && <p className="text-sm" style={{ color: 'var(--color-error)' }}>{t(error, { defaultValue: error })}</p>}
+        {shownError && <p className="text-sm" style={{ color: 'var(--color-error)' }}>{t(shownError, { defaultValue: shownError })}</p>}
       </div>
     </Drawer>
   );

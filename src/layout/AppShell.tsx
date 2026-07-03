@@ -9,6 +9,8 @@ import { AuthTokenSync } from '@/core/auth/AuthTokenSync';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { AlertsPanelProvider } from '@/features/alerts/AlertsPanelContext';
 import { AlertsPanel } from '@/features/alerts/AlertsPanel';
+import { ScanProvider } from '@/features/document-scan/ScanContext';
+import { ScanSurfaces } from '@/features/document-scan/ScanSurfaces';
 
 function useDocumentTitle() {
   const { pathname } = useLocation();
@@ -37,24 +39,28 @@ export function AppShell() {
 
   return (
     <AlertsPanelProvider>
-      <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
-        <AuthTokenSync />
-        <Sidebar />
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <TopBar
-            onOpenPalette={() => setPaletteOpen(true)}
-          />
-          <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-            <Suspense fallback={<FullPageLoader />}>
-              <Outlet />
-            </Suspense>
-          </div>
-        </main>
-        <MobileBottomBar />
-        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-        <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} />
-        <AlertsPanel />
-      </div>
+      <ScanProvider>
+        <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
+          <AuthTokenSync />
+          <Sidebar />
+          <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+            <TopBar
+              onOpenPalette={() => setPaletteOpen(true)}
+            />
+            <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+              <Suspense fallback={<FullPageLoader />}>
+                <Outlet />
+              </Suspense>
+            </div>
+          </main>
+          <MobileBottomBar />
+          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+          <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} />
+          <AlertsPanel />
+          {/* App-global scan drawers + floating "active scan" pill. */}
+          <ScanSurfaces />
+        </div>
+      </ScanProvider>
     </AlertsPanelProvider>
   );
 }

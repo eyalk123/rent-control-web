@@ -15,6 +15,7 @@ import type {
   PropertyRenterSummary,
 } from '@/shared/types';
 import { getLeaseEndDate } from '@/shared/types';
+import type { LeaseExtraction } from '@/features/document-scan/types';
 
 // Set to true to use in-memory mock data when no backend is available.
 // Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
@@ -818,5 +819,57 @@ export const mockSuppliersApi = {
       category_ids: data.category_ids ?? mockSuppliers[idx].category_ids,
     };
     return { ...mockSuppliers[idx] };
+  },
+};
+
+// ─── Document scan (lease extraction) ─────────────────────────────────────────
+// A canned extraction so the scan flow — and the "active scan" pill — work offline / in E2E
+// without the real vision backend. The delay makes the "scanning…" state (and the pill)
+// observable, and honours the abort signal so cancelling the pill rejects promptly.
+export const mockDocumentScanApi = {
+  extractLease: async (
+    _file: File,
+    signal?: AbortSignal,
+  ): Promise<{ logId: number; extraction: LeaseExtraction }> => {
+    await new Promise<void>((resolve, reject) => {
+      const id = setTimeout(resolve, 2500);
+      signal?.addEventListener('abort', () => {
+        clearTimeout(id);
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    });
+    const extraction: LeaseExtraction = {
+      property: {
+        address_evidence: 'הנכס ברחוב הרצל 42, תל אביב',
+        address: 'Herzl 42', city: 'Tel Aviv', zip_code: '6100000', type: null,
+        sq_ft: 85, number_of_rooms: 3, parking_numbers: ['12'], floor: 3, apartment: '9',
+        block: null, plot: null, property_owner: 'Dana Levi',
+        electricity_meter_number: null, electricity_account_number: null,
+        water_meter_number: null, water_account_number: null,
+        property_tax: null, house_committee: 250, inventory_notes: null,
+      },
+      renters: [
+        {
+          first_name: 'Noa', last_name: 'Cohen', phone: '050-1234567', email: 'noa@example.com',
+          lease_start: '2025-08-01', lease_years: null, contract_term_years: 1, option_years: 1,
+          base_rent: null, rent_escalation_mode: 'none', rent_escalation_value: null,
+          number_of_payments: 12, payment_type: null, payment_day_of_month: 1,
+          insurance_type: null, insurance_amount: null, extra_contacts: null,
+        },
+        {
+          first_name: 'Amir', last_name: 'Katz', phone: '052-7654321', email: null,
+          lease_start: '2025-08-01', lease_years: null, contract_term_years: 1, option_years: 1,
+          base_rent: null, rent_escalation_mode: 'none', rent_escalation_value: null,
+          number_of_payments: 12, payment_type: null, payment_day_of_month: 1,
+          insurance_type: null, insurance_amount: null, extra_contacts: null,
+        },
+      ],
+      rent_is_joint: true,
+      joint_monthly_rent: 6000,
+      notes: [
+        { section: 'property', field: 'house_committee', renter_index: null, confidence: 'low', source_text: 'ועד בית ~250 ₪' },
+      ],
+    };
+    return { logId: Date.now(), extraction };
   },
 };

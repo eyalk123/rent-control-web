@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
@@ -9,8 +9,7 @@ import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { useProperties, propertyKeys } from '../queries';
 import { deleteProperty } from '../api/properties';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
-import { DocumentScanDrawer } from '@/features/document-scan/pages/DocumentScanDrawer';
-import { ScanSummaryDrawer } from '@/features/document-scan/pages/ScanSummaryDrawer';
+import { useScanSession } from '@/features/document-scan/ScanContext';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { AddMenu } from '@/shared/components/ui/AddMenu';
@@ -262,14 +261,27 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useViewMode('properties');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
   // Document-scan result driving the (persistent) property form's prefill. Kept until the
   // next blank "Add property" — NOT cleared on the drawer's onClose, so the chained renter
   // form keeps its prefill when the property drawer hides on "Add renter". `renters` is the
-  // finalised per-renter queue (joint-rent split applied on the summary screen).
+  // finalised per-renter queue (joint-rent split applied on the summary screen). Populated
+  // from the app-global scan session once the user continues out of the summary.
   const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
   const openBlankPropertyForm = () => { setScan(null); setDrawerOpen(true); };
+  const location = useLocation();
+  const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
+
+  // Pick up the scan handoff: when the user continues out of the (global) summary drawer,
+  // populate the local prefill and open the property form, exactly as the inline flow did.
+  useEffect(() => {
+    if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
+      const result = consumeScan();
+      if (result) {
+        setScan({ logId: result.logId, mapped: result.mapped, renters: result.renters, file: result.file });
+        setDrawerOpen(true);
+      }
+    }
+  }, [scanView, scanSession, location.pathname, consumeScan]);
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -371,7 +383,7 @@ export function PropertiesListPage() {
             <AddMenu
               label={t('property.addPropertyAction')}
               onManual={openBlankPropertyForm}
-              onScan={() => setScanOpen(true)}
+              onScan={() => beginScan({ target: 'property', originPath: location.pathname })}
             />
           </div>
         )}
@@ -462,23 +474,6 @@ export function PropertiesListPage() {
         renterQueue={scan?.renters}
         renterContractFile={scan?.file ?? null}
       />
-      <DocumentScanDrawer
-        open={scanOpen}
-        onClose={() => setScanOpen(false)}
-        onExtracted={(logId, mapped, file) => { setScan({ logId, mapped, renters: mapped.renters, file }); setScanOpen(false); setSummaryOpen(true); }}
-      />
-      {scan && (
-        <ScanSummaryDrawer
-          open={summaryOpen}
-          onClose={() => setSummaryOpen(false)}
-          mapped={scan.mapped}
-          onContinue={(renters) => {
-            setScan((prev) => (prev ? { ...prev, renters } : prev));
-            setSummaryOpen(false);
-            setDrawerOpen(true);
-          }}
-        />
-      )}
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}
