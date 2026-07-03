@@ -258,7 +258,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
   if (transaction) {
     const propertyLabel = transaction.property_name || `#${transaction.property_id}`;
     return (
-      <form id="transaction-form" onSubmit={onEditSubmit} className="space-y-4">
+      <form id="transaction-form" onSubmit={onEditSubmit} autoComplete="off" className="space-y-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.property')}</label>
           <div className="flex items-center h-[42px] rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 text-sm text-[var(--color-text-secondary)]">
@@ -646,7 +646,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
   if (transaction) {
     const propertyLabel = transaction.property_name || `#${transaction.property_id}`;
     return (
-      <form id="transaction-form" onSubmit={onEditSubmit} className="space-y-4">
+      <form id="transaction-form" onSubmit={onEditSubmit} autoComplete="off" className="space-y-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.property')}</label>
           <div className="flex items-center h-[42px] rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 text-sm text-[var(--color-text-secondary)]">
@@ -709,7 +709,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
   const renterDisabled = selectedPropertyIds.length !== 1;
 
   return (
-    <form id="transaction-form" onSubmit={handleBulkCreate} className="space-y-4">
+    <form id="transaction-form" onSubmit={handleBulkCreate} autoComplete="off" className="space-y-4">
       <PropertyMultiSelect
         label={t('transactions.property')}
         required

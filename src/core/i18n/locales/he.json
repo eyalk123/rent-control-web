@@ -312,6 +312,7 @@
     "noInventoryNotes": "אין הערות מלאי עדיין."
   },
   "renter": {
+    "renter": "שוכר",
     "basicInfo": "מידע בסיסי",
     "leaseInfo": "מידע שכירות",
     "firstName": "שם פרטי",
@@ -515,6 +516,7 @@
     "discardChangesMessage": "יש שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?",
     "discard": "עזוב בלי לשמור",
     "cancel": "ביטול",
+    "continue": "המשך",
     "next": "הבא",
     "tryAgain": "נסה שוב",
     "create": "צור",
@@ -601,7 +603,8 @@
     "transactionNotFound": "התנועה לא נמצאה",
     "deleteTransactionFailed": "מחיקת התנועה נכשלה",
     "updateTransactionFailed": "עדכון התנועה נכשל",
-    "deleteFailed": "המחיקה נכשלה"
+    "deleteFailed": "המחיקה נכשלה",
+    "extractionFailed": "לא הצלחנו לקרוא את המסמך. נסו קובץ אחר או מלאו את הטופס ידנית."
   },
   "transactions": {
     "addTransaction": "הוספת תנועה",
@@ -796,6 +799,59 @@
     "landRegistry": "נסח טאבו",
     "idImage": "תמונת תעודת זהות",
     "none": "לא הועלו מסמכים עדיין."
+  },
+  "documentScan": {
+    "action": "סריקת מסמך",
+    "title": "סריקת מסמך",
+    "uploadPrompt": "העלו חוזה כתמונה, PDF או קובץ Word. נקרא אותו ונמלא עבורכם את טופסי הנכס והדייר לבדיקה.",
+    "extracting": "קורא את המסמך…",
+    "addManually": "הזנה ידנית",
+    "scanLease": "סריקת חוזה",
+    "matchedFromLease": "הנכס זוהה מתוך החוזה",
+    "couldntMatch": "לא נמצא נכס תואם — נא לבחור נכס.",
+    "propertyMismatchWarning": "נראה שהחוזה שייך לכתובת שונה מהנכס שנבחר.",
+    "createPropertyFromLease": "יצירת נכס זה מתוך החוזה",
+    "extractAction": "חילוץ הפרטים",
+    "summaryTitle": "מה שמצאנו",
+    "summarySubtitle": "בדקו את תוצאות הסריקה לפני אימות כל טופס.",
+    "summaryProperty": "נכס {{count}}",
+    "summaryProperty_other": "{{count}} נכסים",
+    "summaryRenters": "שוכר {{count}}",
+    "summaryRenters_other": "{{count}} שוכרים",
+    "summaryNoAddress": "לא נמצאה כתובת נכס",
+    "jointRentTitle": "שכר דירה משותף",
+    "jointRentHint": "בחוזה זה יש שכר דירה משותף אחד של {{amount}} לכל השוכרים. בחרו כיצד לחלק אותו ביניהם.",
+    "splitEqual": "חלוקה שווה",
+    "splitCustom": "מותאם אישית",
+    "splitSum": "הוזן {{sum}} מתוך {{total}}",
+    "renterProgress": "שוכר {{current}} מתוך {{total}}",
+    "saveAndNextRenter": "שמירה והשוכר הבא",
+    "addressEvidence": "נסרק מתוך: «{{snippet}}»",
+    "addPage": "הוספת עמוד נוסף",
+    "removePage": "הסרה",
+    "selectedPages": "{{count}} עמודים — הם יאוחדו למסמך אחד",
+    "mixedFilesError": "הוסיפו קובץ PDF/Word אחד או תמונה אחת או יותר, לא שילוב של השניים.",
+    "reviewTitle": "נא לבדוק את הערכים שמילאנו:",
+    "reviewFields": "בדקו את השדות הבאים לפני השמירה: {{fields}}",
+    "reviewCount": "בדקו {{count}} שדה שחולץ — הקישו למעבר",
+    "reviewCount_other": "בדקו {{count}} שדות שחולצו — הקישו למעבר",
+    "reviewBadge": "לבדיקה",
+    "jumpToField": "מעבר לשדה",
+    "doubleCheck": "כדאי לבדוק את הערך שמולא אוטומטית",
+    "foundIn": "נמצא ב: \"{{snippet}}\"",
+    "progress": {
+      "merging": "מאחד עמודים…",
+      "uploading": "מעלה את המסמך…",
+      "reading": "קורא את המסמך…",
+      "extracting": "מחלץ את הפרטים…"
+    },
+    "pill": {
+      "scanning": "סורק מסמך…",
+      "ready": "הסריקה מוכנה — הקישו כדי להמשיך",
+      "error": "הסריקה נכשלה — הקישו כדי לנסות שוב",
+      "restore": "פתחו את הסריקה הפעילה",
+      "cancel": "ביטול הסריקה"
+    }
   },
   "permission": {
     "title": "נדרשות הרשאות",

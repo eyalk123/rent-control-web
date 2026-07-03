@@ -19,6 +19,10 @@ import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
+import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
+import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
+import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
@@ -42,9 +46,33 @@ interface Props {
   open: boolean;
   onClose: () => void;
   propertyId?: number;
+  /** Document-scan prefill: property values + review items (uncertain fields) to flag,
+   *  plus renter values forwarded to the chained renter drawer after creation. */
+  logId?: number;
+  prefill?: Partial<FormData>;
+  reviewItems?: ReviewItem[];
+  provenance?: ProvenanceItem[];
+  /** Debug hint: the verbatim clause the scan based the property address on. Shown under the
+   *  address field for scanned entries so a wrong address can be diagnosed. */
+  addressEvidence?: string | null;
+  /** Document-scan renter queue forwarded to the chained renter drawer after the property
+   *  is created (one entry per co-tenant; verified in sequence). */
+  renterQueue?: MappedRenter[];
+  renterContractFile?: File | null;
 }
 
-export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
+export function PropertyFormDrawer({
+  open,
+  onClose,
+  propertyId,
+  logId,
+  prefill,
+  reviewItems,
+  provenance,
+  addressEvidence,
+  renterQueue,
+  renterContractFile,
+}: Props) {
   const { t } = useTranslation();
   const isEditing = !!propertyId;
 
@@ -113,10 +141,10 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
       });
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
-      reset(EMPTY_FORM);
+      reset({ ...EMPTY_FORM, ...(prefill ?? {}) });
       setImagePreview(null);
     }
-  }, [existing, open, propertyId, reset]);
+  }, [existing, open, propertyId, reset, prefill]);
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
@@ -169,6 +197,14 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         onClose();
       } else {
         const created = await createMutation.mutateAsync(payload);
+        // Audit: record which prefilled fields the user changed on this property (scan flow only).
+        if (logId && provenance) {
+          updateExtractionLog(logId, {
+            entity_type: 'property',
+            created_id: created.id,
+            ...diffProvenance(provenance, data as Record<string, unknown>),
+          });
+        }
         // Start clean for the next "Add property" — the drawer stays mounted, so without
         // this the previous values would persist.
         reset(EMPTY_FORM);
@@ -177,9 +213,16 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         setLandRegistryFile(null);
         setImagePreview(null);
         showToast(t('property.createSuccess'), 'success');
-        // Prompt to add a renter for the new property (over the still-open drawer).
         setCreatedPropertyId(created.id);
-        setShowRenterPrompt(true);
+        if (logId) {
+          // Scan flow: the renter was already extracted — continue straight into the renter
+          // form instead of interrupting with the "add a renter?" prompt.
+          onClose();
+          setRenterDrawerOpen(true);
+        } else {
+          // Manual add: ask whether to add a renter (over the still-open drawer).
+          setShowRenterPrompt(true);
+        }
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[PropertyFormDrawer] save failed:', err);
@@ -248,10 +291,18 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
       </div>
 
-      <form id="property-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FieldReviewProvider items={reviewItems}>
+      <form id="property-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
-            <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
+            <div className="flex flex-col gap-1">
+              <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
+              {!isEditing && addressEvidence && (
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t('documentScan.addressEvidence', { snippet: addressEvidence })}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
               <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
@@ -277,6 +328,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
                   options={propertyTypeOptions}
                   placeholder={t('property.selectType')}
                   error={errors.type?.message}
+                  reviewName="type"
                 />
               )}
             />
@@ -363,6 +415,7 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
           </div>
         )}
       </form>
+      </FieldReviewProvider>
     </Drawer>
     <ConfirmDialog
       open={showDiscard}
@@ -381,6 +434,9 @@ export function PropertyFormDrawer({ open, onClose, propertyId }: Props) {
     <RenterFormDrawer
       open={renterDrawerOpen}
       initialPropertyId={createdPropertyId ?? undefined}
+      logId={logId}
+      renterQueue={renterQueue}
+      pendingContractFile={renterContractFile ?? null}
       onClose={() => { setRenterDrawerOpen(false); setCreatedPropertyId(null); }}
     />
     </>

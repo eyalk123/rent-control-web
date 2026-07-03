@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Mail, CheckSquare } from 'lucide-react';
@@ -7,6 +7,11 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { RenterFormDrawer } from './RenterFormDrawer';
+import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
+import { useScanSession } from '@/features/document-scan/ScanContext';
+import { AddMenu } from '@/shared/components/ui/AddMenu';
+import { matchProperty, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
+import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useRenters, renterKeys } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { deleteRenter } from '../api/renters';
@@ -266,12 +271,28 @@ export function RentersListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
+  // Document-scan (renter target) result: the mapped extraction, the finalised per-renter
+  // queue (joint-rent split applied), and which existing property it matched. Populated from
+  // the app-global scan session once the user continues out of the summary.
+  const [scan, setScan] = useState<{
+    logId: number;
+    mapped: MappedExtraction;
+    renters: MappedRenter[];
+    file: File;
+    matchedPropertyId: number | null;
+    matchStatus: PropertyMatchStatus;
+  } | null>(null);
+  const openBlankRenterForm = () => { setScan(null); setDrawerOpen(true); };
+  const location = useLocation();
+  const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
+      setScan(null);
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
@@ -315,6 +336,26 @@ export function RentersListPage() {
     () => new Map<number, string>(properties.map((p) => [p.id, p.property_owner ?? ''])),
     [properties],
   );
+
+  // Pick up the scan handoff: match the lease against existing properties (as the inline
+  // onExtracted did) and open the renter form pre-filled.
+  useEffect(() => {
+    if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
+      const result = consumeScan();
+      if (result) {
+        const m = matchProperty(result.mapped.propertyPrefill, properties);
+        setScan({
+          logId: result.logId,
+          mapped: result.mapped,
+          renters: result.renters,
+          file: result.file,
+          matchedPropertyId: m.propertyId,
+          matchStatus: m.status,
+        });
+        setDrawerOpen(true);
+      }
+    }
+  }, [scanView, scanSession, location.pathname, consumeScan, properties]);
 
   const columns = useRenterColumns(statusMap, ownerByProperty);
   const { table } = useDataTable(columns, filtered);
@@ -377,13 +418,11 @@ export function RentersListPage() {
             >
               <CheckSquare size={14} /> {t('common.select')}
             </button>
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              <Plus size={14} /> {t('property.addRenterAction')}
-            </button>
+            <AddMenu
+              label={t('property.addRenterAction')}
+              onManual={openBlankRenterForm}
+              onScan={() => beginScan({ target: 'renter', originPath: location.pathname })}
+            />
           </div>
         )}
       </div>
@@ -447,7 +486,7 @@ export function RentersListPage() {
             action={
               !search && statusFilter === 'all' ? (
                 <button
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={openBlankRenterForm}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                   style={{ background: 'var(--color-primary)' }}
                 >
@@ -485,7 +524,31 @@ export function RentersListPage() {
         )}
       </div>
 
-      <RenterFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <RenterFormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        logId={scan?.logId}
+        renterQueue={scan?.renters}
+        pendingContractFile={scan?.file ?? null}
+        initialPropertyId={scan?.matchedPropertyId ?? undefined}
+        matchStatus={scan?.matchStatus}
+        scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city } : undefined}
+        onCreatePropertyFromScan={
+          scan ? () => { setDrawerOpen(false); setPropertyDrawerOpen(true); } : undefined
+        }
+      />
+      {/* "Create property from lease" pivot — reuses the property+renter chain with the same scan. */}
+      <PropertyFormDrawer
+        open={propertyDrawerOpen}
+        onClose={() => setPropertyDrawerOpen(false)}
+        logId={scan?.logId}
+        prefill={scan?.mapped.propertyPrefill}
+        reviewItems={scan?.mapped.propertyReview}
+        provenance={scan?.mapped.propertyProvenance}
+        addressEvidence={scan?.mapped.addressEvidence}
+        renterQueue={scan?.renters}
+        renterContractFile={scan?.file ?? null}
+      />
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
@@ -9,7 +9,10 @@ import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
 import { useProperties, propertyKeys } from '../queries';
 import { deleteProperty } from '../api/properties';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
+import { useScanSession } from '@/features/document-scan/ScanContext';
+import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
@@ -258,12 +261,34 @@ export function PropertiesListPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useViewMode('properties');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Document-scan result driving the (persistent) property form's prefill. Kept until the
+  // next blank "Add property" — NOT cleared on the drawer's onClose, so the chained renter
+  // form keeps its prefill when the property drawer hides on "Add renter". `renters` is the
+  // finalised per-renter queue (joint-rent split applied on the summary screen). Populated
+  // from the app-global scan session once the user continues out of the summary.
+  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
+  const openBlankPropertyForm = () => { setScan(null); setDrawerOpen(true); };
+  const location = useLocation();
+  const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
+
+  // Pick up the scan handoff: when the user continues out of the (global) summary drawer,
+  // populate the local prefill and open the property form, exactly as the inline flow did.
+  useEffect(() => {
+    if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
+      const result = consumeScan();
+      if (result) {
+        setScan({ logId: result.logId, mapped: result.mapped, renters: result.renters, file: result.file });
+        setDrawerOpen(true);
+      }
+    }
+  }, [scanView, scanSession, location.pathname, consumeScan]);
   // Tables overflow on phones — force the card view below the desktop breakpoint.
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (searchParams.get('new') === 'true') {
+      setScan(null);
       setDrawerOpen(true);
       setSearchParams({}, { replace: true });
     }
@@ -355,13 +380,11 @@ export function PropertiesListPage() {
             >
               <CheckSquare size={14} /> {t('common.select')}
             </button>
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              <Plus size={14} /> {t('property.addPropertyAction')}
-            </button>
+            <AddMenu
+              label={t('property.addPropertyAction')}
+              onManual={openBlankPropertyForm}
+              onScan={() => beginScan({ target: 'property', originPath: location.pathname })}
+            />
           </div>
         )}
       </div>
@@ -404,7 +427,7 @@ export function PropertiesListPage() {
           action={
             !search ? (
               <button
-                onClick={() => setDrawerOpen(true)}
+                onClick={openBlankPropertyForm}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
                 style={{ background: 'var(--color-primary)' }}
               >
@@ -440,7 +463,17 @@ export function PropertiesListPage() {
         />
       )}
 
-      <PropertyFormDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <PropertyFormDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        logId={scan?.logId}
+        prefill={scan?.mapped.propertyPrefill}
+        reviewItems={scan?.mapped.propertyReview}
+        provenance={scan?.mapped.propertyProvenance}
+        addressEvidence={scan?.mapped.addressEvidence}
+        renterQueue={scan?.renters}
+        renterContractFile={scan?.file ?? null}
+      />
       <ConfirmDialog
         open={sel.confirmOpen}
         title={t('bulkDelete.deleteConfirmTitle', { count: sel.selectedCount })}

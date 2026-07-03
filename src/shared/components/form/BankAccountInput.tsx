@@ -173,6 +173,9 @@ export function BankAccountInput({
           disabled={disabled}
           autoFocus={autoFocus}
           aria-label="Bank code"
+          autoComplete="off-bank-code"
+          data-1p-ignore
+          data-lpignore="true"
           className={`${inputBase} w-14 py-2.5`}
         />
         <div className="w-px self-stretch bg-[var(--color-outline)]" />
@@ -188,6 +191,9 @@ export function BankAccountInput({
           maxLength={3}
           disabled={disabled}
           aria-label="Branch code"
+          autoComplete="off-branch-code"
+          data-1p-ignore
+          data-lpignore="true"
           className={`${inputBase} w-16 py-2.5`}
         />
         <div className="w-px self-stretch bg-[var(--color-outline)]" />
@@ -203,6 +209,9 @@ export function BankAccountInput({
           maxLength={9}
           disabled={disabled}
           aria-label="Account number"
+          autoComplete="off-account-number"
+          data-1p-ignore
+          data-lpignore="true"
           className={`${inputBase} flex-1 py-2.5`}
         />
       </div>

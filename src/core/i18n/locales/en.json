@@ -311,6 +311,7 @@
     "noInventoryNotes": "No inventory notes yet."
   },
   "renter": {
+    "renter": "Renter",
     "basicInfo": "Basic Information",
     "leaseInfo": "Lease Information",
     "firstName": "First Name",
@@ -514,6 +515,7 @@
     "discardChangesMessage": "You have unsaved changes. Are you sure you want to leave?",
     "discard": "Discard",
     "cancel": "Cancel",
+    "continue": "Continue",
     "next": "Next",
     "tryAgain": "Try Again",
     "create": "Create",
@@ -600,7 +602,8 @@
     "transactionNotFound": "Transaction not found",
     "deleteTransactionFailed": "Failed to delete transaction",
     "updateTransactionFailed": "Failed to update transaction",
-    "deleteFailed": "Failed to delete"
+    "deleteFailed": "Failed to delete",
+    "extractionFailed": "Couldn't read the document. Try another file or fill the form manually."
   },
   "transactions": {
     "addTransaction": "Add transaction",
@@ -795,6 +798,59 @@
     "landRegistry": "Land Registry Extract",
     "idImage": "Tenant ID Image",
     "none": "No documents uploaded yet."
+  },
+  "documentScan": {
+    "action": "Scan document",
+    "title": "Scan a document",
+    "uploadPrompt": "Upload a lease as an image, PDF, or Word file. We'll read it and pre-fill the property and renter forms for you to review.",
+    "extracting": "Reading the document…",
+    "addManually": "Enter manually",
+    "scanLease": "Scan a lease",
+    "matchedFromLease": "Property matched from the lease",
+    "couldntMatch": "Couldn't match a property — please choose one.",
+    "propertyMismatchWarning": "This lease looks like it's for a different address than the selected property.",
+    "createPropertyFromLease": "Create this property from the lease",
+    "extractAction": "Extract details",
+    "summaryTitle": "Review what we found",
+    "summarySubtitle": "Check the scan results before verifying each form.",
+    "summaryProperty": "{{count}} property",
+    "summaryProperty_other": "{{count}} properties",
+    "summaryRenters": "{{count}} renter",
+    "summaryRenters_other": "{{count}} renters",
+    "summaryNoAddress": "No property address found",
+    "jointRentTitle": "Shared rent",
+    "jointRentHint": "This lease has one joint rent of {{amount}} for all tenants. Choose how to split it between them.",
+    "splitEqual": "Split equally",
+    "splitCustom": "Custom",
+    "splitSum": "Entered {{sum}} of {{total}}",
+    "renterProgress": "Renter {{current}} of {{total}}",
+    "saveAndNextRenter": "Save & next renter",
+    "addressEvidence": "Scanned from: “{{snippet}}”",
+    "addPage": "Add another page",
+    "removePage": "Remove",
+    "selectedPages": "{{count}} pages — they'll be combined into one document",
+    "mixedFilesError": "Add either one PDF/Word file or one or more images, not a mix.",
+    "reviewTitle": "Please review the values we filled in:",
+    "reviewFields": "Double-check these fields before saving: {{fields}}",
+    "reviewCount": "Review {{count}} extracted field — tap to jump",
+    "reviewCount_other": "Review {{count}} extracted fields — tap to jump",
+    "reviewBadge": "check",
+    "jumpToField": "Jump to field",
+    "doubleCheck": "Double-check this auto-filled value",
+    "foundIn": "Found in: \"{{snippet}}\"",
+    "progress": {
+      "merging": "Combining pages…",
+      "uploading": "Uploading the document…",
+      "reading": "Reading the document…",
+      "extracting": "Extracting the details…"
+    },
+    "pill": {
+      "scanning": "Scanning document…",
+      "ready": "Scan ready — tap to continue",
+      "error": "Scan failed — tap to retry",
+      "restore": "Open the active scan",
+      "cancel": "Cancel scan"
+    }
   },
   "permission": {
     "title": "Permission required",
