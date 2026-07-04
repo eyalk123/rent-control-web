@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Controller, useFieldArray, useWatch, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, TrendingUp } from 'lucide-react';
 import type { LeaseYearType, RentEscalationMode } from '@/shared/types';
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
@@ -34,6 +34,11 @@ export function LeaseTermBuilder({ control }: Props) {
 
   const { replace } = useFieldArray({ control, name: 'leaseYears' });
 
+  // Set when the user actively switches *into* CPI via the escalation toggle (never
+  // on edit-hydration, which flows through form reset()). Signals the effect to drop
+  // the outgoing mode's amounts and project the flat base instead of preserving them.
+  const cpiSwitchRef = useRef(false);
+
   // Materialize the lease_years array whenever the term intent changes. Length and
   // types always follow the steppers; amounts are formula-driven except in
   // "custom" mode, where existing per-year amounts/types are preserved. The effect
@@ -42,6 +47,8 @@ export function LeaseTermBuilder({ control }: Props) {
   // `leaseYears` it reads is the fresh value from whichever render last changed a
   // scalar — exactly the rows we want to preserve.
   useEffect(() => {
+    const resetCpiAmounts = cpiSwitchRef.current;
+    cpiSwitchRef.current = false;
     const next = buildLeaseYears(
       {
         contractYears: Number(contractStr) || 0,
@@ -54,6 +61,7 @@ export function LeaseTermBuilder({ control }: Props) {
         amount: Number(r?.amount) || 0,
         type: r?.type ?? 'contract',
       })),
+      { resetCpiAmounts },
     );
     const same =
       next.length === leaseYears.length &&
@@ -73,6 +81,7 @@ export function LeaseTermBuilder({ control }: Props) {
     { value: 'none', label: t('renter.rentChangeSame') },
     { value: 'percent', label: t('renter.rentChangePercent') },
     { value: 'fixed', label: t('renter.rentChangeFixed') },
+    { value: 'cpi', label: t('renter.rentChangeCpi') },
     { value: 'custom', label: t('renter.rentChangeCustom') },
   ];
 
@@ -144,12 +153,21 @@ export function LeaseTermBuilder({ control }: Props) {
           render={({ field }) => (
             <SegToggle
               value={(field.value as RentEscalationMode) ?? 'none'}
-              onChange={(v) => field.onChange(v)}
+              onChange={(v) => {
+                if (v === 'cpi') cpiSwitchRef.current = true;
+                field.onChange(v);
+              }}
               options={escalationSegments}
             />
           )}
         />
       </div>
+
+      {escMode === 'cpi' ? (
+        <p className="text-[13px] leading-snug text-[var(--color-text-secondary)]">
+          {t('renter.rentChangeCpiNote')}
+        </p>
+      ) : null}
 
       {escMode === 'percent' || escMode === 'fixed' ? (
         <div className="flex items-center gap-2">
@@ -199,6 +217,8 @@ export function LeaseTermBuilder({ control }: Props) {
               const amountNum = Number(row?.amount) || 0;
               const isFirst = index === 0;
               const isLast = index === leaseYears.length - 1;
+              // Year 1 is the known base; later CPI years are index-linked projections.
+              const isCpiProjected = escMode === 'cpi' && index > 0;
 
               return (
                 <div
@@ -286,12 +306,28 @@ export function LeaseTermBuilder({ control }: Props) {
                       >
                         {getLeaseYearLabel(leaseStart, index)}
                       </span>
-                      <LtrSpan
-                        className="flex-1 text-[15px] font-semibold text-[var(--color-text-primary)]"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {amountNum > 0 ? formatMoney(amountNum) : '—'}
-                      </LtrSpan>
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        {/* CPI amounts past year 1 are index-linked projections the
+                            client can't know exactly — mark them approximate/muted. */}
+                        <LtrSpan
+                          className={`text-[15px] font-semibold ${
+                            isCpiProjected
+                              ? 'text-[var(--color-text-secondary)]'
+                              : 'text-[var(--color-text-primary)]'
+                          }`}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {amountNum > 0
+                            ? `${isCpiProjected ? '≈ ' : ''}${formatMoney(amountNum)}`
+                            : '—'}
+                        </LtrSpan>
+                        {isCpiProjected && (
+                          <Pill tone="info" size="sm" className="gap-1">
+                            <TrendingUp size={12} />
+                            {t('renter.rentChangeCpi')}
+                          </Pill>
+                        )}
+                      </div>
                       <span
                         className="text-[13px] font-semibold"
                         style={{

@@ -202,7 +202,15 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
             {/* Increment for new years */}
             <div className="flex flex-col gap-1.5 mt-4">
               <span className="text-sm font-medium text-[var(--color-text-primary)]">{t('renter.newYearIncrement')}</span>
-              <SegToggle value={mode} onChange={setMode} options={incrementSegments} />
+              {mode === 'cpi' ? (
+                // CPI-linked lease: linkage is preserved and priced server-side; no
+                // manual increment choice here.
+                <p className="text-[13px] leading-snug text-[var(--color-text-secondary)]">
+                  {t('renter.rentChangeCpiNote')}
+                </p>
+              ) : (
+                <SegToggle value={mode} onChange={setMode} options={incrementSegments} />
+              )}
             </div>
             {(mode === 'percent' || mode === 'fixed') && (
               <div className="flex items-center gap-2 mt-3">

@@ -44,8 +44,12 @@ export function rentForYear(
       return Math.round(base * Math.pow(1 + step / 100, index));
     case 'fixed':
       return Math.round(base + step * index);
+    // "none"/"custom" carry flat or hand-edited amounts; "cpi" amounts are computed
+    // server-side from the published index, so the client projects a flat base rent
+    // until the server fills real amounts in.
     case 'none':
     case 'custom':
+    case 'cpi':
     default:
       return base;
   }
@@ -61,6 +65,7 @@ export function rentForYear(
 export function buildLeaseYears(
   input: LeaseScheduleInput,
   existingRows?: LeaseYear[],
+  opts?: { resetCpiAmounts?: boolean },
 ): LeaseYear[] {
   const contract = toCount(input.contractYears);
   const option = toCount(input.optionYears);
@@ -68,13 +73,20 @@ export function buildLeaseYears(
   if (total === 0) return [];
 
   const base = Number.isFinite(input.baseRent) && input.baseRent > 0 ? input.baseRent : 0;
+  // In "custom" mode the user hand-edits per-year amounts; in "cpi" mode the server
+  // owns them (index-linked). Both preserve any existing row amount rather than
+  // re-deriving it from a formula, so re-materializing never clobbers real values.
+  // Exception: a fresh in-form switch into CPI (`resetCpiAmounts`) must drop the
+  // previous mode's amounts and project the flat base instead.
+  const preserveExisting =
+    input.escalationMode === 'custom' ||
+    (input.escalationMode === 'cpi' && !opts?.resetCpiAmounts);
   const result: LeaseYear[] = [];
   for (let i = 0; i < total; i += 1) {
     const type: LeaseYearType = i < contract ? 'contract' : 'option';
-    const amount =
-      input.escalationMode === 'custom'
-        ? existingRows?.[i]?.amount ?? base
-        : rentForYear(base, i, input.escalationMode, input.escalationValue);
+    const amount = preserveExisting
+      ? existingRows?.[i]?.amount ?? base
+      : rentForYear(base, i, input.escalationMode, input.escalationValue);
     result.push({ amount, type });
   }
   return result;

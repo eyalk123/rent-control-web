@@ -56,7 +56,7 @@ export interface LeaseYear {
 }
 
 /** How the monthly rent changes from one lease year to the next. */
-export type RentEscalationMode = 'none' | 'percent' | 'fixed' | 'custom';
+export type RentEscalationMode = 'none' | 'percent' | 'fixed' | 'custom' | 'cpi';
 
 /**
  * Structured lease-term intent. `lease_years` remains the source of truth for all
@@ -82,6 +82,8 @@ export interface Renter extends LeaseTermIntent {
   email: string;
   lease_years: LeaseYear[];
   lease_start: string | null;
+  /** CPI base index frozen at signing (mode === 'cpi'). Server-set, read-only. */
+  cpi_base_index?: number | null;
   number_of_payments?: number | null;
   payment_type?: string | null;
   payment_day_of_month?: number | null;
