@@ -163,7 +163,7 @@ export function NeedsAttentionSection() {
                       {t('home.actionIgnore')}
                     </button>
                     <button
-                      onClick={() => navigate(`/renters/${item.renter_id}`)}
+                      onClick={() => navigate(`/renters/${item.renter_id}?extend=1`)}
                       className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
                       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-warning)', color: 'var(--color-warning)' }}
                     >

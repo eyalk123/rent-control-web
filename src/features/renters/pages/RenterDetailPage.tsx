@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
+import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useRenter, useDeleteRenter } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -36,8 +37,20 @@ export function RenterDetailPage() {
   const { showToast } = useToast();
   const [tab, setTab] = useState<TabId>('info');
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [extendDrawerOpen, setExtendDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link from the "Update lease" notification action (?extend=1) opens the
+  // extension drawer directly, then clears the param so a refresh won't re-open it.
+  useEffect(() => {
+    if (searchParams.get('extend') === '1') {
+      setExtendDrawerOpen(true);
+      searchParams.delete('extend');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: renter, isLoading, isError } = useRenter(renterId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
@@ -98,6 +111,7 @@ export function RenterDetailPage() {
           paymentsCount={paymentsCount}
           statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
+          onExtendLease={() => setExtendDrawerOpen(true)}
           onRecordPayment={() => setTxDrawerOpen(true)}
           onDelete={() => setConfirmDeleteOpen(true)}
         />
@@ -112,6 +126,7 @@ export function RenterDetailPage() {
       </div>
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
+      <LeaseExtensionDrawer open={extendDrawerOpen} onClose={() => setExtendDrawerOpen(false)} renter={renter} />
       <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialType="revenue" />
       <ConfirmDialog
         open={confirmDeleteOpen}

@@ -28,8 +28,11 @@ export function LeaseTimeline({ renter }: Props) {
           <span>{yearsLabel}</span>
         </div>
 
-        {/* Year strip */}
-        <div className="flex rounded-[10px] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
+        {/* Year grid — cells wrap to new rows instead of squishing when the lease is long */}
+        <div
+          className="grid gap-1.5"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}
+        >
           {years.map((y, i) => {
             const isCurrent = isCurrentLeaseYear(leaseStart, i);
             const isOption = y.type === 'option';
@@ -38,8 +41,8 @@ export function LeaseTimeline({ renter }: Props) {
             return (
               <div
                 key={i}
-                className="flex-1 relative px-2.5 py-3"
-                style={{ background: bgColor, borderInlineEnd: i === years.length - 1 ? 'none' : '1px solid var(--color-outline)' }}
+                className="relative px-2.5 py-3 rounded-[10px]"
+                style={{ background: bgColor, border: '1px solid var(--color-outline)' }}
               >
                 {isCurrent && (
                   <span className="absolute top-1.5 end-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
