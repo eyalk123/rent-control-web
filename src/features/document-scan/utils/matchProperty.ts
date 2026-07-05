@@ -40,3 +40,39 @@ export function matchProperty(
   if (matches.length === 1) return { propertyId: matches[0].id, status: 'matched' };
   return { propertyId: null, status: 'none' };
 }
+
+interface ScannedRenterLike {
+  prefill: { firstName?: string | null; lastName?: string | null };
+}
+interface ExistingRenterLike {
+  property_id: number | null;
+  first_name?: string | null;
+  last_name?: string | null;
+}
+
+/** Duplicate renter = same normalized first+last name. Full-name-only match; empty names
+ *  never match. Renters can only duplicate within an already-matched property. */
+export function renterNameMatches(
+  scanned: ScannedRenterLike['prefill'],
+  existing: Pick<ExistingRenterLike, 'first_name' | 'last_name'>,
+): boolean {
+  const a = norm(scanned.firstName) + norm(scanned.lastName);
+  const b = norm(existing.first_name) + norm(existing.last_name);
+  return !!a && !!b && a === b;
+}
+
+/** Indices of scanned renters that already exist on the matched property. Empty when the
+ *  property itself didn't match (a renter can't be a duplicate without a duplicate property). */
+export function findDuplicateRenterIndices(
+  scannedRenters: ScannedRenterLike[],
+  matchedPropertyId: number | null,
+  existingRenters: ExistingRenterLike[],
+): Set<number> {
+  const dup = new Set<number>();
+  if (matchedPropertyId == null) return dup;
+  const onProperty = existingRenters.filter((r) => r.property_id === matchedPropertyId);
+  scannedRenters.forEach((s, i) => {
+    if (onProperty.some((e) => renterNameMatches(s.prefill, e))) dup.add(i);
+  });
+  return dup;
+}

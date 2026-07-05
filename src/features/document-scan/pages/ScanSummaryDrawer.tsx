@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Home, Users } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
@@ -11,8 +11,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   mapped: MappedExtraction;
-  /** Continue into the verification forms, carrying the finalised renters (joint rent split
-   *  applied to each renter's baseRent when the lease had one shared amount). */
+  /** The scanned property matches an existing one (surfaced as an "already exists" badge). */
+  propertyMatched: boolean;
+  /** Indices of scanned renters that already exist on the matched property. Only these get an
+   *  "already exists" badge + an include checkbox; the user can exclude them from creation. */
+  duplicateRenterIdx: Set<number>;
+  /** Continue into the verification forms, carrying the finalised renters (duplicates the user
+   *  excluded are dropped; joint rent split applied over the ones that remain). */
   onContinue: (renters: MappedRenter[]) => void;
 }
 
@@ -22,18 +27,31 @@ const renterName = (r: MappedRenter, i: number, fallback: string): string => {
 };
 
 /** Post-scan summary: shows what the scan found (one property, N renters) before the user
- *  verifies each form. When the lease had a single joint rent, offers an equal/custom split
- *  that is written into each renter's baseRent on continue. */
-export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) {
+ *  verifies each form. Flags a property/renter that already exists so re-scanning a known lease
+ *  is obvious, and lets the user exclude duplicate renters. When the lease had a single joint
+ *  rent, offers an equal/custom split that is written into each kept renter's baseRent. */
+export function ScanSummaryDrawer({ open, onClose, mapped, propertyMatched, duplicateRenterIdx, onContinue }: Props) {
   const { t } = useTranslation();
   const renters = mapped.renters;
   const total = mapped.jointMonthlyRent ?? 0;
-  const showSplit = mapped.rentIsJoint && renters.length > 1 && total > 0;
+
+  // Duplicate renters the user has unchecked (excluded from creation). Keyed by original index.
+  const [excluded, setExcluded] = useState<Set<number>>(() => new Set());
+  const includedIdx = useMemo(() => renters.map((_, i) => i).filter((i) => !excluded.has(i)), [renters, excluded]);
+  const includedRenters = useMemo(() => includedIdx.map((i) => renters[i]), [includedIdx, renters]);
+  // Original index -> position among the included renters (for share lookups).
+  const posByIdx = useMemo(() => new Map(includedIdx.map((idx, pos) => [idx, pos])), [includedIdx]);
+
+  const showSplit = mapped.rentIsJoint && includedRenters.length > 1 && total > 0;
 
   const [splitMode, setSplitMode] = useState<'equal' | 'custom'>('equal');
   const [customShares, setCustomShares] = useState<string[]>(() =>
-    equalShares(total, renters.length).map(String),
+    equalShares(total, includedRenters.length).map(String),
   );
+  // Excluding/including a renter changes the split; reset custom shares to an even split.
+  useEffect(() => {
+    setCustomShares(equalShares(total, includedRenters.length).map(String));
+  }, [includedRenters.length, total]);
 
   const numericCustom = useMemo(() => customShares.map((s) => Number(s)), [customShares]);
   const customValid = useMemo(
@@ -42,16 +60,26 @@ export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) 
   );
   const customSum = numericCustom.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
 
-  const canContinue = !showSplit || splitMode === 'equal' || customValid;
+  const splitValid = !showSplit || splitMode === 'equal' || customValid;
+  // Nothing left to create if every renter was excluded.
+  const canContinue = includedRenters.length > 0 && splitValid;
+
+  const toggleExcluded = (i: number) =>
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
 
   const handleContinue = () => {
     if (!canContinue) return;
     if (!mapped.rentIsJoint || total <= 0) {
-      onContinue(renters);
+      onContinue(includedRenters);
       return;
     }
-    const shares = showSplit && splitMode === 'custom' ? numericCustom : equalShares(total, renters.length);
-    onContinue(applyJointRentSplit(renters, total, shares));
+    const shares = showSplit && splitMode === 'custom' ? numericCustom : equalShares(total, includedRenters.length);
+    onContinue(applyJointRentSplit(includedRenters, total, shares));
   };
 
   const footer = (
@@ -94,8 +122,9 @@ export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) 
               {t('documentScan.summaryProperty', { count: 1 })}
             </h3>
           </div>
-          <div className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}>
-            {address ? `${address}${city ? `, ${city}` : ''}` : t('documentScan.summaryNoAddress')}
+          <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}>
+            <span>{address ? `${address}${city ? `, ${city}` : ''}` : t('documentScan.summaryNoAddress')}</span>
+            {propertyMatched && <DuplicateBadge label={t('documentScan.duplicateProperty')} />}
           </div>
         </section>
 
@@ -108,22 +137,43 @@ export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) 
             </h3>
           </div>
           <ul className="flex flex-col gap-2">
-            {renters.map((r, i) => (
-              <li
-                key={i}
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-sm"
-                style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
-              >
-                <span>{renterName(r, i, t('renter.renter'))}</span>
-                {mapped.rentIsJoint && total > 0 && (
-                  <span className="text-xs" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                    {splitMode === 'custom'
-                      ? formatMoney(numericCustom[i])
-                      : formatMoney(equalShares(total, renters.length)[i])}
-                  </span>
-                )}
-              </li>
-            ))}
+            {renters.map((r, i) => {
+              const isDuplicate = duplicateRenterIdx.has(i);
+              const isExcluded = excluded.has(i);
+              const pos = posByIdx.get(i);
+              return (
+                <li
+                  key={i}
+                  className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm"
+                  style={{
+                    border: '1px solid var(--color-outline)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isExcluded ? 0.55 : 1,
+                  }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isDuplicate && (
+                      <input
+                        type="checkbox"
+                        checked={!isExcluded}
+                        onChange={() => toggleExcluded(i)}
+                        aria-label={t('documentScan.includeRenter', { name: renterName(r, i, t('renter.renter')) })}
+                        className="shrink-0"
+                      />
+                    )}
+                    <span className="truncate">{renterName(r, i, t('renter.renter'))}</span>
+                    {isDuplicate && <DuplicateBadge label={t('documentScan.duplicateRenter')} />}
+                  </div>
+                  {mapped.rentIsJoint && total > 0 && !isExcluded && pos !== undefined && (
+                    <span className="text-xs shrink-0" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {splitMode === 'custom'
+                        ? formatMoney(numericCustom[pos])
+                        : formatMoney(equalShares(total, includedRenters.length)[pos])}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
 
@@ -158,18 +208,18 @@ export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) 
 
             {splitMode === 'custom' && (
               <div className="flex flex-col gap-2">
-                {renters.map((r, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                {includedRenters.map((r, pos) => (
+                  <div key={includedIdx[pos]} className="flex items-center gap-2">
                     <span className="flex-1 text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>
-                      {renterName(r, i, t('renter.renter'))}
+                      {renterName(r, includedIdx[pos], t('renter.renter'))}
                     </span>
                     <div className="w-32">
                       <FormInput
                         type="number"
                         min={0}
-                        value={customShares[i] ?? ''}
+                        value={customShares[pos] ?? ''}
                         onChange={(e) =>
-                          setCustomShares((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                          setCustomShares((prev) => prev.map((v, idx) => (idx === pos ? e.target.value : v)))
                         }
                       />
                     </div>
@@ -187,5 +237,17 @@ export function ScanSummaryDrawer({ open, onClose, mapped, onContinue }: Props) 
         )}
       </div>
     </Drawer>
+  );
+}
+
+/** Small "already exists" pill shown next to a matched property / renter. */
+function DuplicateBadge({ label }: { label: string }) {
+  return (
+    <span
+      className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
+      style={{ background: 'var(--color-warning-surface, rgba(217,119,6,0.12))', color: 'var(--color-warning, #b45309)' }}
+    >
+      {label}
+    </span>
   );
 }
