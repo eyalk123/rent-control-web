@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form';
+import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, Info, Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
@@ -22,6 +22,8 @@ import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
+import { diffScannedRenter, type RenterFieldConflict } from '@/features/document-scan/utils/diffRenter';
+import { FieldConflictToggle } from '@/features/document-scan/components/FieldConflictToggle';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
@@ -54,7 +56,7 @@ interface Props {
   /** Document-scan (renter target) property association. When set, the drawer shows the
    *  match hint / soft mismatch warning and, for `none`, a "create property from lease" action. */
   matchStatus?: PropertyMatchStatus;
-  scannedLeaseAddress?: { address?: string | null; city?: string | null };
+  scannedLeaseAddress?: { address?: string | null; city?: string | null; floor?: string | number | null; apartment?: string | null };
   onCreatePropertyFromScan?: () => void;
 }
 
@@ -74,7 +76,6 @@ export function RenterFormDrawer({
   onCreatePropertyFromScan,
 }: Props) {
   const { t } = useTranslation();
-  const isEditing = !!renterId;
 
   // Multi-renter scan queue: which co-tenant we're currently verifying. Saving one advances
   // the cursor to the next; the drawer closes only after the last renter is saved.
@@ -86,11 +87,20 @@ export function RenterFormDrawer({
   const effProvenance = queued ? queued.provenance : provenance;
   const hasNextRenter = queueTotal > 0 && queueIndex < queueTotal - 1;
 
-  const { data: existing } = useRenter(renterId ?? 0);
+  // A scanned renter that matched an existing renter on the attached property is edited in place:
+  // prefill from the stored record, fill blanks from the scan, and resolve field conflicts —
+  // instead of creating a duplicate. `effRenterId` unifies that with the plain edit entry point.
+  const queuedExistingId = queued?.existingRenterId ?? null;
+  const effRenterId = queuedExistingId ?? renterId;
+  const isEditing = !!effRenterId;
+  const [renterConflicts, setRenterConflicts] = useState<RenterFieldConflict[]>([]);
+  const [conflictChoices, setConflictChoices] = useState<Record<string, 'keep' | 'update'>>({});
+
+  const { data: existing } = useRenter(effRenterId ?? 0);
   const { data: properties } = useProperties();
   const { user } = useAppAuth();
   const createMutation = useCreateRenter();
-  const updateMutation = useUpdateRenter(renterId ?? 0);
+  const updateMutation = useUpdateRenter(effRenterId ?? 0);
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const [showDiscard, setShowDiscard] = useState(false);
@@ -98,7 +108,7 @@ export function RenterFormDrawer({
   const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
     defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '', contractTermYears: '', optionYears: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
   });
@@ -117,11 +127,13 @@ export function RenterFormDrawer({
       : false;
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); setQueueIndex(0); }
+    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); setQueueIndex(0); setRenterConflicts([]); setConflictChoices({}); }
   }, [open]);
 
-  // Files live outside RHF, so isDirty alone misses them.
-  const dirty = isDirty || !!idImageFile || !!fullContractFile;
+  // Files live outside RHF, so isDirty alone misses them. Scanner prefill lives in the form's
+  // defaultValues, so RHF reports isDirty=false even though there's reviewed data to lose.
+  const hasScanPrefill = (!isEditing || queuedExistingId != null) && (!!effPrefill || (renterQueue?.length ?? 0) > 0);
+  const dirty = isDirty || !!idImageFile || !!fullContractFile || hasScanPrefill;
   const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
@@ -155,7 +167,7 @@ export function RenterFormDrawer({
                 escalationValue: '',
               };
             })();
-      reset({
+      const existingReset: DefaultValues<FormData> = {
         firstName: existing.first_name,
         lastName: existing.last_name,
         phone: existing.phone,
@@ -172,9 +184,23 @@ export function RenterFormDrawer({
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
         idImageUrl: existing.id_image_url ?? undefined,
         fullContractUrl: existing.full_contract_url ?? undefined,
-      });
+      };
+      // Duplicate scan entry: overlay scan values onto the existing renter — fill the fields it
+      // left blank silently, and surface the ones that differ for the user to keep or replace.
+      if (queuedExistingId != null && effPrefill) {
+        const labelByKey = new Map((effProvenance ?? []).map((pv) => [pv.formKey, pv.labelKey] as [string, string]));
+        const { fills, conflicts } = diffScannedRenter(effPrefill, existingReset, labelByKey);
+        reset({ ...existingReset, ...fills });
+        setRenterConflicts(conflicts);
+      } else {
+        reset(existingReset);
+        setRenterConflicts([]);
+      }
+      setConflictChoices({});
       setIdImagePreview(existing.id_image_url ?? null);
-    } else if (!renterId && open) {
+    } else if (!effRenterId && open) {
+      setRenterConflicts([]);
+      setConflictChoices({});
       setIdImageFile(null);
       setIdImagePreview(null);
       reset({
@@ -246,7 +272,7 @@ export function RenterFormDrawer({
         full_contract_url: fullContractUrl || null,
       };
 
-      if (isEditing && renterId) {
+      if (isEditing && effRenterId) {
         await updateMutation.mutateAsync(payload);
       } else {
         const created = await createMutation.mutateAsync(payload as never);
@@ -262,8 +288,9 @@ export function RenterFormDrawer({
       }
 
       showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
-      // Multi-renter scan: advance to the next co-tenant instead of closing.
-      if (!isEditing && hasNextRenter) {
+      // Multi-renter scan: advance to the next co-tenant instead of closing — including when the
+      // just-saved entry was an in-place edit of an existing (duplicate) renter.
+      if (hasNextRenter) {
         setStep(1);
         setQueueIndex((i) => i + 1);
       } else {
@@ -365,6 +392,31 @@ export function RenterFormDrawer({
       <form id="renter-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <>
+            {renterConflicts.length > 0 && (
+              <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}>
+                <div>
+                  <h4 className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    {t('documentScan.conflictsTitle')}
+                  </h4>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                    {t('documentScan.renterConflictsHint')}
+                  </p>
+                </div>
+                {renterConflicts.map((c) => (
+                  <FieldConflictToggle
+                    key={c.formKey}
+                    label={t(c.labelKey)}
+                    existing={c.existing}
+                    scanned={c.scanned}
+                    choice={conflictChoices[c.formKey] ?? 'keep'}
+                    onChange={(mode) => {
+                      setConflictChoices((prev) => ({ ...prev, [c.formKey]: mode }));
+                      setValue(c.formKey as keyof FormData, (mode === 'update' ? c.scanned : c.existing) as never, { shouldDirty: true });
+                    }}
+                  />
+                ))}
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('renter.firstName')} required error={errors.firstName?.message} {...register('firstName')} />
               <FormInput label={t('renter.lastName')} required error={errors.lastName?.message} {...register('lastName')} />

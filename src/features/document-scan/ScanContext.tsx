@@ -28,6 +28,17 @@ export interface ScanResult {
   renters: MappedRenter[];
   /** The document actually sent (a merged PDF when several images were captured). */
   file: File;
+  /** The existing property the user chose to attach the lease to on the summary, or `null` to
+   *  create a new property. Overrides the origin page's own address auto-match. */
+  targetPropertyId: number | null;
+}
+
+/** The decisions the user made on the summary drawer, handed back on "Continue". */
+export interface ScanContinuePayload {
+  renters: MappedRenter[];
+  targetPropertyId: number | null;
+  /** The (possibly edited) property prefill — carries address/city edits into the create form. */
+  propertyPrefill?: MappedExtraction['propertyPrefill'];
 }
 
 interface ScanSession {
@@ -62,8 +73,9 @@ interface ScanContextValue {
   restore: () => void;
   /** Pill ✕: abort the request and drop the session. */
   cancel: () => void;
-  /** Summary "Continue": store the finalized renters and hand off to the origin page. */
-  continueToForm: (renters: MappedRenter[]) => void;
+  /** Summary "Continue": store the finalized renters + property choice and hand off to the
+   *  origin page. */
+  continueToForm: (payload: ScanContinuePayload) => void;
   /** Origin page picks up the handoff result and clears the session. */
   consume: () => ScanResult | null;
 }
@@ -112,7 +124,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       // The user cancelled (session cleared) or started another scan while this ran.
       if (abortRef.current !== controller || !sessionRef.current) return;
       const mapped = mapExtraction(extraction);
-      setSession((s) => (s ? { ...s, status: 'ready', result: { logId, mapped, renters: mapped.renters, file } } : s));
+      setSession((s) => (s ? { ...s, status: 'ready', result: { logId, mapped, renters: mapped.renters, file, targetPropertyId: null } } : s));
       // If they minimized mid-scan, keep the pill (it flips to "ready"); otherwise reveal the summary.
       setView((v) => (v === 'minimized' ? 'minimized' : 'summary'));
     } catch (err) {
@@ -133,10 +145,16 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     setView(sessionRef.current?.status === 'ready' ? 'summary' : 'scan');
   }, []);
 
-  const continueToForm = useCallback((renters: MappedRenter[]) => {
+  const continueToForm = useCallback((payload: ScanContinuePayload) => {
     const s = sessionRef.current;
     if (!s?.result) return;
-    setSession({ ...s, result: { ...s.result, renters } });
+    const mapped = payload.propertyPrefill
+      ? { ...s.result.mapped, propertyPrefill: payload.propertyPrefill }
+      : s.result.mapped;
+    setSession({
+      ...s,
+      result: { ...s.result, mapped, renters: payload.renters, targetPropertyId: payload.targetPropertyId },
+    });
     setView('handoff');
     navigate(s.originPath);
   }, [navigate]);

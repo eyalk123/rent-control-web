@@ -10,7 +10,7 @@ import { RenterFormDrawer } from './RenterFormDrawer';
 import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
 import { useScanSession } from '@/features/document-scan/ScanContext';
 import { AddMenu } from '@/shared/components/ui/AddMenu';
-import { matchProperty, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
+import { type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useRenters, renterKeys } from '../queries';
 import { useProperties } from '@/features/properties/queries';
@@ -337,25 +337,25 @@ export function RentersListPage() {
     [properties],
   );
 
-  // Pick up the scan handoff: match the lease against existing properties (as the inline
-  // onExtracted did) and open the renter form pre-filled.
+  // Pick up the scan handoff and open the renter form pre-filled. The property to attach to
+  // was chosen by the user on the summary drawer (auto-matched by default) and carried on the
+  // result, so we honor it here instead of re-matching.
   useEffect(() => {
     if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
       const result = consumeScan();
       if (result) {
-        const m = matchProperty(result.mapped.propertyPrefill, properties);
         setScan({
           logId: result.logId,
           mapped: result.mapped,
           renters: result.renters,
           file: result.file,
-          matchedPropertyId: m.propertyId,
-          matchStatus: m.status,
+          matchedPropertyId: result.targetPropertyId,
+          matchStatus: result.targetPropertyId != null ? 'matched' : 'none',
         });
         setDrawerOpen(true);
       }
     }
-  }, [scanView, scanSession, location.pathname, consumeScan, properties]);
+  }, [scanView, scanSession, location.pathname, consumeScan]);
 
   const columns = useRenterColumns(statusMap, ownerByProperty);
   const { table } = useDataTable(columns, filtered);
@@ -532,7 +532,7 @@ export function RentersListPage() {
         pendingContractFile={scan?.file ?? null}
         initialPropertyId={scan?.matchedPropertyId ?? undefined}
         matchStatus={scan?.matchStatus}
-        scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city } : undefined}
+        scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city, floor: scan.mapped.propertyPrefill.floor, apartment: scan.mapped.propertyPrefill.apartment } : undefined}
         onCreatePropertyFromScan={
           scan ? () => { setDrawerOpen(false); setPropertyDrawerOpen(true); } : undefined
         }

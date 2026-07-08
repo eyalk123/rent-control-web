@@ -1,12 +1,17 @@
 import type { PropertyFormValues } from '@/features/properties/validation/propertyValidation';
 import type { RenterFormValues } from '@/features/renters/validation/renterValidation';
 import type { ExtractedRenter, FieldNote, LeaseExtraction, ProvenanceItem, ReviewItem } from '../types';
+import { PROPERTY_SCAN_FIELDS } from './propertyFields';
 
 /** One extracted renter, mapped to the renter form (prefill + review + provenance). */
 export interface MappedRenter {
   prefill: Partial<RenterFormValues>;
   review: ReviewItem[]; // fields the model flagged uncertain (have a note)
   provenance: ProvenanceItem[]; // all prefilled scalar fields (for submit diff)
+  /** Set by the scan summary when this renter matches an existing renter on the attached
+   *  property. When present, the renter form edits that renter in place (prefill from stored
+   *  data, fill blanks from the scan, resolve conflicts) instead of creating a duplicate. */
+  existingRenterId?: number | null;
 }
 
 export interface MappedExtraction {
@@ -47,33 +52,11 @@ export function mapExtraction(extraction: LeaseExtraction): MappedExtraction {
     notes.set(key, n);
   }
 
-  const propAssigns: Assign<keyof PropertyFormValues>[] = [
-    { key: 'address', i18n: 'property.address', field: 'address', get: () => s(p.address) },
-    { key: 'city', i18n: 'property.city', field: 'city', get: () => s(p.city) },
-    { key: 'zipCode', i18n: 'property.zipCode', field: 'zip_code', get: () => s(p.zip_code) },
-    { key: 'type', i18n: 'property.type', field: 'type', get: () => p.type ?? undefined },
-    { key: 'sqFt', i18n: 'property.sqFt', field: 'sq_ft', get: () => s(p.sq_ft) },
-    { key: 'numberOfRooms', i18n: 'property.numberOfRooms', field: 'number_of_rooms', get: () => s(p.number_of_rooms) },
-    { key: 'floor', i18n: 'property.floor', field: 'floor', get: () => s(p.floor) },
-    { key: 'apartment', i18n: 'property.apartment', field: 'apartment', get: () => s(p.apartment) },
-    { key: 'block', i18n: 'property.block', field: 'block', get: () => s(p.block) },
-    { key: 'plot', i18n: 'property.plot', field: 'plot', get: () => s(p.plot) },
-    { key: 'propertyOwner', i18n: 'property.owner', field: 'property_owner', get: () => s(p.property_owner) },
-    { key: 'inventoryNotes', i18n: 'property.inventoryNotes', field: 'inventory_notes', get: () => s(p.inventory_notes) },
-    { key: 'electricityMeterNumber', i18n: 'property.electricityMeterNumber', field: 'electricity_meter_number', get: () => s(p.electricity_meter_number) },
-    { key: 'electricityAccountNumber', i18n: 'property.electricityAccountNumber', field: 'electricity_account_number', get: () => s(p.electricity_account_number) },
-    { key: 'waterMeterNumber', i18n: 'property.waterMeterNumber', field: 'water_meter_number', get: () => s(p.water_meter_number) },
-    { key: 'waterAccountNumber', i18n: 'property.waterAccountNumber', field: 'water_account_number', get: () => s(p.water_account_number) },
-    { key: 'propertyTax', i18n: 'property.propertyTax', field: 'property_tax', get: () => s(p.property_tax) },
-    { key: 'houseCommittee', i18n: 'property.houseCommittee', field: 'house_committee', get: () => s(p.house_committee) },
-    { key: 'parkingNumbersStr', i18n: 'property.parkingNumbers', field: 'parking_numbers', get: () => (p.parking_numbers && p.parking_numbers.length ? p.parking_numbers.join(', ') : undefined) },
-  ];
-
   const propertyPrefill: Partial<PropertyFormValues> = {};
   const propertyReview: ReviewItem[] = [];
   const propertyProvenance: ProvenanceItem[] = [];
-  for (const a of propAssigns) {
-    const v = a.get();
+  for (const a of PROPERTY_SCAN_FIELDS) {
+    const v = a.get(p);
     if (v === undefined) continue;
     (propertyPrefill as Record<string, unknown>)[a.key] = v;
     const note = notes.get(`property.${a.field}`);

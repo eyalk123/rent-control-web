@@ -266,18 +266,25 @@ export function PropertiesListPage() {
   // form keeps its prefill when the property drawer hides on "Add renter". `renters` is the
   // finalised per-renter queue (joint-rent split applied on the summary screen). Populated
   // from the app-global scan session once the user continues out of the summary.
-  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
+  const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File; editPropertyId?: number } | null>(null);
   const openBlankPropertyForm = () => { setScan(null); setDrawerOpen(true); };
   const location = useLocation();
   const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
 
-  // Pick up the scan handoff: when the user continues out of the (global) summary drawer,
-  // populate the local prefill and open the property form, exactly as the inline flow did.
+  // Pick up the scan handoff: when the user continues out of the (global) summary drawer, open
+  // the property form to review it — in edit mode (`editPropertyId`) when the lease matched an
+  // existing property, or create mode otherwise. Either way it chains into the renter queue.
   useEffect(() => {
     if (scanView === 'handoff' && scanSession?.originPath === location.pathname) {
       const result = consumeScan();
       if (result) {
-        setScan({ logId: result.logId, mapped: result.mapped, renters: result.renters, file: result.file });
+        setScan({
+          logId: result.logId,
+          mapped: result.mapped,
+          renters: result.renters,
+          file: result.file,
+          editPropertyId: result.targetPropertyId ?? undefined,
+        });
         setDrawerOpen(true);
       }
     }
@@ -466,6 +473,7 @@ export function PropertiesListPage() {
       <PropertyFormDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        propertyId={scan?.editPropertyId}
         logId={scan?.logId}
         prefill={scan?.mapped.propertyPrefill}
         reviewItems={scan?.mapped.propertyReview}

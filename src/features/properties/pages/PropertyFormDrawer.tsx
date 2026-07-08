@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { propertyFormSchema, PROPERTY_TYPES } from '../validation/propertyValidation';
 import { useCreateProperty, useUpdateProperty, useProperty, useProperties } from '../queries';
@@ -23,6 +23,8 @@ import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
+import { diffScannedPropertyForm, type PropertyFormFieldConflict } from '@/features/document-scan/utils/diffProperty';
+import { FieldConflictToggle } from '@/features/document-scan/components/FieldConflictToggle';
 
 type FormData = z.infer<typeof propertyFormSchema>;
 
@@ -100,23 +102,32 @@ export function PropertyFormDrawer({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [basicContractFile, setBasicContractFile] = useState<File | null>(null);
   const [landRegistryFile, setLandRegistryFile] = useState<File | null>(null);
+  // Scan-attach-to-existing: fields where the lease disagrees with the stored property, for the
+  // user to keep or replace (mirrors the renter form). Only populated when editing via a scan.
+  const [propertyConflicts, setPropertyConflicts] = useState<PropertyFormFieldConflict[]>([]);
+  const [conflictChoices, setConflictChoices] = useState<Record<string, 'keep' | 'update'>>({});
 
-  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema) as never,
     defaultValues: EMPTY_FORM,
   });
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); }
+    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); }
   }, [open]);
 
-  // Files live outside RHF, so isDirty alone misses them.
-  const dirty = isDirty || !!imageFile || !!basicContractFile || !!landRegistryFile;
+  // Whether this is a scan attaching to an existing property (edit mode with scan prefill) — the
+  // one case where the edit form carries scanner data + conflicts to review.
+  const isScanEdit = isEditing && !!prefill;
+  // Files live outside RHF, so isDirty alone misses them. Scanner prefill lives in the form's
+  // defaultValues, so RHF reports isDirty=false even though there's reviewed data to lose.
+  const hasScanPrefill = !!prefill;
+  const dirty = isDirty || !!imageFile || !!basicContractFile || !!landRegistryFile || hasScanPrefill || propertyConflicts.length > 0;
   const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
     if (existing && open) {
-      reset({
+      const existingReset: DefaultValues<FormData> = {
         address: existing.address,
         city: existing.city,
         block: existing.block ?? '',
@@ -138,10 +149,23 @@ export function PropertyFormDrawer({
         parkingNumbersStr: existing.parking_numbers?.join(', ') ?? '',
         basicContractUrl: existing.basic_contract_url ?? undefined,
         landRegistryUrl: existing.land_registry_url ?? undefined,
-      });
+      };
+      // Scan attaching to this property: overlay the lease — fill the fields it left blank
+      // (silent) and surface the ones that differ for the user to keep or replace.
+      if (prefill) {
+        const { fills, conflicts } = diffScannedPropertyForm(prefill as Record<string, unknown>, existingReset as Record<string, unknown>);
+        reset({ ...existingReset, ...fills });
+        setPropertyConflicts(conflicts);
+      } else {
+        reset(existingReset);
+        setPropertyConflicts([]);
+      }
+      setConflictChoices({});
       setImagePreview(getPropertyImageSrc(existing.image_url));
     } else if (!propertyId && open) {
       reset({ ...EMPTY_FORM, ...(prefill ?? {}) });
+      setPropertyConflicts([]);
+      setConflictChoices({});
       setImagePreview(null);
     }
   }, [existing, open, propertyId, reset, prefill]);
@@ -193,8 +217,24 @@ export function PropertyFormDrawer({
 
       if (isEditing && propertyId) {
         await updateMutation.mutateAsync(payload);
+        // Audit: for a scan attach, record which prefilled fields the user changed on the property.
+        if (isScanEdit && logId && provenance) {
+          updateExtractionLog(logId, {
+            entity_type: 'property',
+            created_id: propertyId,
+            ...diffProvenance(provenance, data as Record<string, unknown>),
+          });
+        }
         showToast(t('property.updateSuccess'), 'success');
-        onClose();
+        // Scan flow: the lease's renters are still to be verified — continue straight into the
+        // renter form(s) on the (existing) property instead of just closing.
+        if (renterQueue && renterQueue.length > 0) {
+          onClose();
+          setCreatedPropertyId(propertyId);
+          setRenterDrawerOpen(true);
+        } else {
+          onClose();
+        }
       } else {
         const created = await createMutation.mutateAsync(payload);
         // Audit: record which prefilled fields the user changed on this property (scan flow only).
@@ -295,6 +335,31 @@ export function PropertyFormDrawer({
       <form id="property-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
         {step === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
+            {propertyConflicts.length > 0 && (
+              <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}>
+                <div>
+                  <h4 className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    {t('documentScan.conflictsTitle')}
+                  </h4>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                    {t('documentScan.conflictsHint')}
+                  </p>
+                </div>
+                {propertyConflicts.map((c) => (
+                  <FieldConflictToggle
+                    key={c.formKey}
+                    label={t(c.labelKey)}
+                    existing={c.existing}
+                    scanned={c.scanned}
+                    choice={conflictChoices[c.formKey] ?? 'keep'}
+                    onChange={(mode) => {
+                      setConflictChoices((prev) => ({ ...prev, [c.formKey]: mode }));
+                      setValue(c.formKey as keyof FormData, (mode === 'update' ? c.scanned : c.existing) as never, { shouldDirty: true });
+                    }}
+                  />
+                ))}
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <FormInput label={t('property.address')} required error={errors.address?.message} {...register('address')} />
               {!isEditing && addressEvidence && (

@@ -5,16 +5,23 @@ export type PropertyMatchStatus = 'matched' | 'none';
 interface AddressLike {
   address?: string | null;
   city?: string | null;
+  floor?: string | number | null;
+  apartment?: string | null;
 }
 
-/** Normalize an address/city fragment for loose comparison: lowercase, drop everything that
- *  isn't a letter or number (spaces, punctuation, RTL marks). Works for Hebrew and English. */
-function norm(value?: string | null): string {
-  return (value ?? '').toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
+/** Normalize an address fragment for loose comparison: lowercase, drop everything that isn't a
+ *  letter or number (spaces, punctuation, RTL marks). Coerces numbers (e.g. floor). Works for
+ *  Hebrew and English. */
+function norm(value?: string | number | null): string {
+  return String(value ?? '').toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '');
 }
 
-/** True if two places look like the same address — normalized street matches (either contains
- *  the other) and cities don't actively conflict. Used both for matching and the mismatch hint. */
+/** True if two places look like the same address. Floor and apartment are part of the address
+ *  (like city): the same street+city but a different unit is a *different* property. Street must
+ *  match (either contains the other); city rejects only when both sides give conflicting values.
+ *  The unit (floor/apartment) is strict: if one side names a unit and the other names none it's a
+ *  non-match, and any unit field both sides give must match exactly. Used for matching and the
+ *  mismatch hint. */
 export function addressesMatch(a: AddressLike, b: AddressLike): boolean {
   const aAddr = norm(a.address);
   const bAddr = norm(b.address);
@@ -26,6 +33,18 @@ export function addressesMatch(a: AddressLike, b: AddressLike): boolean {
   if (aCity && bCity && aCity !== bCity && !aCity.includes(bCity) && !bCity.includes(aCity)) {
     return false;
   }
+
+  // Unit identity (floor/apartment). Strict: if one place names a unit and the other names none,
+  // it's a different property; and any unit field both sides give must match exactly (not
+  // substring — "5" must not match "15").
+  const aApt = norm(a.apartment);
+  const bApt = norm(b.apartment);
+  const aFloor = norm(a.floor);
+  const bFloor = norm(b.floor);
+  if (!!(aApt || aFloor) !== !!(bApt || bFloor)) return false;
+  if (aApt && bApt && aApt !== bApt) return false;
+  if (aFloor && bFloor && aFloor !== bFloor) return false;
+
   return true;
 }
 
@@ -45,6 +64,7 @@ interface ScannedRenterLike {
   prefill: { firstName?: string | null; lastName?: string | null };
 }
 interface ExistingRenterLike {
+  id: number;
   property_id: number | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -61,18 +81,21 @@ export function renterNameMatches(
   return !!a && !!b && a === b;
 }
 
-/** Indices of scanned renters that already exist on the matched property. Empty when the
- *  property itself didn't match (a renter can't be a duplicate without a duplicate property). */
-export function findDuplicateRenterIndices(
+/** Map of scanned-renter index -> matched existing renter id, for scanned renters that already
+ *  exist on the matched property. Empty when the property itself didn't match (a renter can't be
+ *  a duplicate without a duplicate property). `Map.has(i)` keeps the badge/checkbox call sites
+ *  working; the continue handler additionally reads `.get(i)` to attach the existing renter id. */
+export function findDuplicateRenterMatches(
   scannedRenters: ScannedRenterLike[],
   matchedPropertyId: number | null,
   existingRenters: ExistingRenterLike[],
-): Set<number> {
-  const dup = new Set<number>();
+): Map<number, number> {
+  const dup = new Map<number, number>();
   if (matchedPropertyId == null) return dup;
   const onProperty = existingRenters.filter((r) => r.property_id === matchedPropertyId);
   scannedRenters.forEach((s, i) => {
-    if (onProperty.some((e) => renterNameMatches(s.prefill, e))) dup.add(i);
+    const match = onProperty.find((e) => renterNameMatches(s.prefill, e));
+    if (match) dup.set(i, match.id);
   });
   return dup;
 }
