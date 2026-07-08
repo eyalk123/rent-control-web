@@ -113,7 +113,7 @@ export function SupplierDetailDrawer({ open, supplier, catMap, onClose, onEdit }
 
             {supplier.bank_account && (
               <InfoRow label={t('suppliers.bankAccount')}>
-                <span className="flex items-center gap-1.5" style={{ fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace" }}>
+                <span className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-family-mono)' }}>
                   <Building2 size={13} style={{ color: 'var(--color-text-secondary)' }} /> {supplier.bank_account}
                 </span>
               </InfoRow>

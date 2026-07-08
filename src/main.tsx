@@ -1,6 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './core/i18n/index'
+// Self-hosted fonts. Each Fontsource weight bundles the Hebrew subset
+// (unicode-range gated), so Rubik covers both English and Hebrew.
+import '@fontsource/rubik/400.css'
+import '@fontsource/rubik/500.css'
+import '@fontsource/rubik/600.css'
+import '@fontsource/rubik/700.css'
+import '@fontsource/rubik/900.css'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
 import './index.css'
 import App from './App.tsx'
 import { initSentry } from './core/monitoring/sentry'

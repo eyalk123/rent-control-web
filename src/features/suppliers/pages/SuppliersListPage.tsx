@@ -53,7 +53,7 @@ function SupplierCard({ supplier, catMap, onOpen }: { supplier: Supplier; catMap
 
       {/* Bank account */}
       {bank && (
-        <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-2 text-[11px] font-medium" style={{ background: 'var(--color-input-filled-background)', color: 'var(--color-text-secondary)', fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace" }}>
+        <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-2 text-[11px] font-medium" style={{ background: 'var(--color-input-filled-background)', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family-mono)' }}>
           <Building2 size={12} /> {bank}
         </div>
       )}

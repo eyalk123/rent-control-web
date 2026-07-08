@@ -43,7 +43,7 @@ export class AppErrorBoundary extends Component<Props, State> {
           textAlign: 'center',
           background: 'var(--color-background, #f1f5f9)',
           color: 'var(--color-text-primary, #0f172a)',
-          fontFamily: "'Inter', system-ui, sans-serif",
+          fontFamily: "'Rubik', system-ui, sans-serif",
         }}
       >
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Something went wrong</h1>

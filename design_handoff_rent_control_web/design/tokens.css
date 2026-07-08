@@ -3,7 +3,8 @@
    Sourced 1:1 from src/core/theme/colors.ts, theme.ts, spacing.ts
    ========================================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+/* Fonts are self-hosted via Fontsource (imported in src/main.tsx): Rubik
+   (English + Hebrew, single family) and IBM Plex Mono (numeric/data fields). */
 
 :root {
   /* ---------- Brand ---------- */
@@ -42,9 +43,9 @@
   --rc-expense-fg:       rgba(185, 28, 28, 1);
 
   /* ---------- Type stack ---------- */
-  /* SUBSTITUTION: Inter stands in for the system UI stack (SF / Roboto). */
-  --rc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                  'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  /* Rubik covers both English and Hebrew in one family (used on web + mobile). */
+  --rc-font-sans: 'Rubik', system-ui, sans-serif;
+  --rc-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* Type scale — derived from React Native Paper MD3 + observed overrides */
   --rc-type-display-l: 700 57px/64px var(--rc-font-sans);
@@ -125,7 +126,7 @@ body, .rc-body  { font: var(--rc-type-body-m); color: var(--rc-fg1); background:
 .rc-card-title  { font: var(--rc-type-title-s); color: var(--rc-fg1); }
 .rc-label       { font: var(--rc-type-label-l); color: var(--rc-fg1); }
 .rc-meta        { font: var(--rc-type-body-s); color: var(--rc-fg2); }
-.rc-mono        { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.rc-mono        { font-family: var(--rc-font-mono); }
 
 .rc-card        { background: var(--rc-card); border: var(--rc-border); border-radius: var(--rc-r-md); padding: var(--rc-sp-md); }
 .rc-card--xl    { border-radius: var(--rc-r-2xl); padding: var(--rc-sp-xl); }
