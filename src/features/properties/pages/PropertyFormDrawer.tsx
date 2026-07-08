@@ -7,7 +7,6 @@ import { useCreateProperty, useUpdateProperty, useProperty, useProperties } from
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
-import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
@@ -19,6 +18,8 @@ import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
+import { PropertyImageField } from '../components/PropertyImageField';
+import { parseImageUrlKey } from '../constants/houseImagePresets';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
@@ -100,6 +101,13 @@ export function PropertyFormDrawer({
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // `rc-house:<key>` sentinel for the currently-shown preset illustration; null for a custom
+  // upload, an existing non-preset image, or no image.
+  const [imagePresetUrl, setImagePresetUrl] = useState<string | null>(null);
+  // True once the user touches the image field (upload / pick preset / remove). Distinguishes a
+  // preset loaded from the existing property from one the user actively chose, so opening the
+  // edit drawer doesn't count as a change and submit only writes image_url when it changed.
+  const [imageDirty, setImageDirty] = useState(false);
   const [basicContractFile, setBasicContractFile] = useState<File | null>(null);
   const [landRegistryFile, setLandRegistryFile] = useState<File | null>(null);
   // Scan-attach-to-existing: fields where the lease disagrees with the stored property, for the
@@ -113,7 +121,7 @@ export function PropertyFormDrawer({
   });
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); }
+    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); }
   }, [open]);
 
   // Whether this is a scan attaching to an existing property (edit mode with scan prefill) — the
@@ -122,7 +130,7 @@ export function PropertyFormDrawer({
   // Files live outside RHF, so isDirty alone misses them. Scanner prefill lives in the form's
   // defaultValues, so RHF reports isDirty=false even though there's reviewed data to lose.
   const hasScanPrefill = !!prefill;
-  const dirty = isDirty || !!imageFile || !!basicContractFile || !!landRegistryFile || hasScanPrefill || propertyConflicts.length > 0;
+  const dirty = isDirty || !!imageFile || imageDirty || !!basicContractFile || !!landRegistryFile || hasScanPrefill || propertyConflicts.length > 0;
   const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
@@ -162,23 +170,45 @@ export function PropertyFormDrawer({
       }
       setConflictChoices({});
       setImagePreview(getPropertyImageSrc(existing.image_url));
+      setImagePresetUrl(existing.image_url?.startsWith('rc-house:') ? existing.image_url : null);
+      setImageDirty(false);
     } else if (!propertyId && open) {
       reset({ ...EMPTY_FORM, ...(prefill ?? {}) });
       setPropertyConflicts([]);
       setConflictChoices({});
       setImagePreview(null);
+      setImagePresetUrl(null);
+      setImageDirty(false);
     }
   }, [existing, open, propertyId, reset, prefill]);
 
-  const handleImageChange = (file: File | null) => {
+  const handleImageUpload = (file: File) => {
     setImageFile(file);
-    if (file) setImagePreview(URL.createObjectURL(file));
-    else setImagePreview(getPropertyImageSrc(existing?.image_url));
+    setImagePresetUrl(null);
+    setImageDirty(true);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSelectPreset = (imageUrlValue: string) => {
+    setImagePresetUrl(imageUrlValue);
+    setImageFile(null);
+    setImageDirty(true);
+    setImagePreview(getPropertyImageSrc(imageUrlValue));
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePresetUrl(null);
+    setImageDirty(true);
+    setImagePreview(null);
   };
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      let imageUrl: string | undefined;
+      // image_url resolution: an untouched field stays undefined so the stored value is preserved;
+      // once touched, a chosen preset sends its sentinel and a removal sends null. A new upload
+      // (handled below) wins over both.
+      let imageUrl: string | null | undefined = imageDirty ? imagePresetUrl : undefined;
       let basicContractUrl = data.basicContractUrl ?? null;
       let landRegistryUrl = data.landRegistryUrl ?? null;
 
@@ -249,6 +279,8 @@ export function PropertyFormDrawer({
         // this the previous values would persist.
         reset(EMPTY_FORM);
         setImageFile(null);
+        setImagePresetUrl(null);
+        setImageDirty(false);
         setBasicContractFile(null);
         setLandRegistryFile(null);
         setImagePreview(null);
@@ -413,12 +445,13 @@ export function PropertyFormDrawer({
                 )}
               />
             </div>
-            <FormFileInput
+            <PropertyImageField
               label={t('property.image')}
-              accept="image/*"
-              value={imageFile}
-              onChange={handleImageChange}
-              preview={imagePreview}
+              previewSrc={imagePreview}
+              selectedPresetKey={imagePresetUrl ? parseImageUrlKey(imagePresetUrl) : null}
+              onUploadFile={handleImageUpload}
+              onSelectPreset={handleSelectPreset}
+              onRemove={handleRemoveImage}
             />
           </div>
         ) : (

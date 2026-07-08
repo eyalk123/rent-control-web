@@ -32,8 +32,12 @@ declare module '@tanstack/react-table' {
  * filters, filter-row visibility) the DataTable needs. Created in the page so
  * the page can read the visible rows (e.g. to drive bulk-selection).
  */
-export function useDataTable<T>(columns: ColumnDef<T, unknown>[], data: T[]) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+export function useDataTable<T>(
+  columns: ColumnDef<T, unknown>[],
+  data: T[],
+  initialSorting: SortingState = [],
+) {
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({

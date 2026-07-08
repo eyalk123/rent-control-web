@@ -21,3 +21,21 @@ export function fmtDate(s: string): string {
   if (isNaN(d.getTime())) return s;
   return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
 }
+
+/**
+ * Classifies a lease-end date for at-a-glance urgency styling:
+ * - `'expired'` — the lease end is before today
+ * - `'soon'`    — the lease ends within `monthsAhead` months (default 3)
+ * - `null`      — further out, or no lease-end date
+ */
+export function getLeaseUrgency(
+  leaseEnd: Date | null,
+  monthsAhead = 3,
+): 'expired' | 'soon' | null {
+  if (leaseEnd == null) return null;
+  const now = new Date();
+  if (leaseEnd < now) return 'expired';
+  const threshold = new Date(now);
+  threshold.setMonth(threshold.getMonth() + monthsAhead);
+  return leaseEnd <= threshold ? 'soon' : null;
+}

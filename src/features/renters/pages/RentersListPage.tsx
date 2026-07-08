@@ -32,6 +32,7 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
+import { getLeaseUrgency } from '@/shared/utils/dates';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 
@@ -43,6 +44,14 @@ function fmtLeaseEnd(renter: Renter): string | null {
   const d = getLeaseEndDate(renter);
   if (!d) return null;
   return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+}
+
+// Color for the "Lease ends" value: red when expired, amber when ending within 3 months.
+function leaseUrgencyColor(renter: Renter): string | undefined {
+  const urgency = getLeaseUrgency(getLeaseEndDate(renter));
+  if (urgency === 'expired') return 'var(--color-error)';
+  if (urgency === 'soon') return 'var(--color-warning)';
+  return undefined;
 }
 
 type RenterStatus = 'active' | 'expiring' | 'overdue';
@@ -114,13 +123,13 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
       {/* Stats row */}
       <div className="grid grid-cols-3 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
         {[
-          { label: t('property.rent'), value: <LtrSpan>{formatMoney(monthly)}</LtrSpan> },
-          { label: t('renter.leaseEnds'), value: leaseEnd ?? '—' },
-          { label: t('renter.payDay'), value: renter.payment_day_of_month ? t('renter.payDayShort', { day: renter.payment_day_of_month }) : '—' },
-        ].map(({ label, value }) => (
+          { label: t('property.rent'), value: <LtrSpan>{formatMoney(monthly)}</LtrSpan>, color: undefined as string | undefined },
+          { label: t('renter.leaseEnds'), value: leaseEnd ?? '—', color: leaseUrgencyColor(renter) },
+          { label: t('renter.payDay'), value: renter.payment_day_of_month ? t('renter.payDayShort', { day: renter.payment_day_of_month }) : '—', color: undefined },
+        ].map(({ label, value, color }) => (
           <div key={label}>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
-            <p className="text-[13.5px] font-bold mt-0.5" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+            <p className="text-[13.5px] font-bold mt-0.5" style={{ color: color ?? 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</p>
           </div>
         ))}
       </div>
@@ -234,10 +243,11 @@ function useRenterColumns(
     {
       id: 'leaseEnds',
       header: t('renter.leaseEnds'),
-      accessorFn: (r) => getLeaseEndDate(r)?.getTime() ?? 0,
+      // No lease-end sorts to the bottom under the default ascending order.
+      accessorFn: (r) => getLeaseEndDate(r)?.getTime() ?? Number.POSITIVE_INFINITY,
       enableColumnFilter: false,
       cell: ({ row }) => (
-        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{fmtLeaseEnd(row.original) ?? '—'}</span>
+        <span className="text-sm font-medium" style={{ color: leaseUrgencyColor(row.original) ?? 'var(--color-text-secondary)' }}>{fmtLeaseEnd(row.original) ?? '—'}</span>
       ),
     },
     {
@@ -325,6 +335,12 @@ export function RentersListPage() {
       }
       if (statusFilter !== 'all' && statusMap.get(r.id) !== statusFilter) return false;
       return true;
+    })
+    // Default order: soonest lease end first; renters with no lease end sink to the bottom.
+    .sort((a, b) => {
+      const ta = getLeaseEndDate(a)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const tb = getLeaseEndDate(b)?.getTime() ?? Number.POSITIVE_INFINITY;
+      return ta - tb;
     }),
     [renters, search, statusFilter, statusMap],
   );
@@ -358,7 +374,8 @@ export function RentersListPage() {
   }, [scanView, scanSession, location.pathname, consumeScan]);
 
   const columns = useRenterColumns(statusMap, ownerByProperty);
-  const { table } = useDataTable(columns, filtered);
+  // Default the table sort to the lease-end column (ascending); user clicks override it.
+  const { table } = useDataTable(columns, filtered, [{ id: 'leaseEnds', desc: false }]);
   // Rows currently visible after column filters + sort — selection acts on these.
   const visibleRows = table.getRowModel().rows.map((r) => r.original);
 
