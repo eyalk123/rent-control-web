@@ -18,6 +18,7 @@ import {
   createExpenseCategory,
 } from './api/transactions';
 import { retryNon4xx } from '@/core/api/queryRetry';
+import { notificationKeys } from '@/features/notifications/queries';
 import type { TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
 import type { TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
 
@@ -77,6 +78,8 @@ export function useCreateRevenueTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: transactionKeys.all });
       qc.invalidateQueries({ queryKey: ['home'] });
+      // Recording rent resolves any overdue alert; refresh the feed.
+      qc.invalidateQueries({ queryKey: notificationKeys.feed });
     },
   });
 }

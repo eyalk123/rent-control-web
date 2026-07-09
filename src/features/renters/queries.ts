@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getRenters, getRenterById, createRenter, updateRenter, deleteRenter } from './api/renters';
 import { retryNon4xx } from '@/core/api/queryRetry';
+import { notificationKeys } from '@/features/notifications/queries';
 import type { RenterCreate, RenterUpdate } from '@/shared/types';
 
 export const renterKeys = {
@@ -36,6 +37,8 @@ export function useUpdateRenter(id: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: renterKeys.all });
       qc.invalidateQueries({ queryKey: renterKeys.detail(id) });
+      // A lease extension resolves any lease_expiring alert; refresh the feed.
+      qc.invalidateQueries({ queryKey: notificationKeys.feed });
     },
   });
 }

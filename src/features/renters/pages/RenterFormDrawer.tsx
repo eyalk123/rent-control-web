@@ -389,7 +389,11 @@ export function RenterFormDrawer({
       </div>
 
       <FieldReviewProvider items={effReview}>
-      <form id="renter-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
+      {/* noValidate: let zod be the sole validator. Otherwise native HTML5 constraint
+          validation on the number inputs silently cancels submit when a field holds
+          "bad input" (a stray 'e', '-', double '.', …) — it renders blank but blocks
+          the submit event before RHF/zod ever run, so Save does nothing with no error. */}
+      <form id="renter-form" onSubmit={onSubmit} autoComplete="off" noValidate className="flex flex-col gap-4">
         {step === 1 ? (
           <>
             {renterConflicts.length > 0 && (
@@ -496,7 +500,7 @@ export function RenterFormDrawer({
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />
               )} />
-              <FormInput label={t('renter.insuranceAmount')} type="number" {...register('insuranceAmount')} />
+              <FormInput label={t('renter.insuranceAmount')} type="number" error={errors.insuranceAmount?.message} {...register('insuranceAmount')} />
             </div>
             <Controller
               control={control}
