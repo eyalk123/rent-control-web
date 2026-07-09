@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
@@ -22,6 +22,7 @@ import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
 
 type TabId = 'info' | 'property' | 'transactions';
+const TAB_IDS: TabId[] = ['info', 'property', 'transactions'];
 
 function daysUntil(d: Date | null): number | null {
   if (!d) return null;
@@ -35,12 +36,34 @@ export function RenterDetailPage() {
   const renterId = Number(id);
   const { mutateAsync: deleteRenter, isPending: isDeleting } = useDeleteRenter();
   const { showToast } = useToast();
-  const [tab, setTab] = useState<TabId>('info');
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [extendDrawerOpen, setExtendDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  // When opened from a property's renter list, that origin is carried on the
+  // navigation state so the back link returns there (and names it) instead of
+  // the generic renters list.
+  const backState = location.state as { backTo?: string; backLabel?: string } | null;
+  const backTo = backState?.backTo ?? '/renters';
+  const backLabel = backState?.backLabel
+    ? t('renter.backToProperty', { name: backState.backLabel })
+    : t('renter.allRenters');
+
+  // Active tab lives in the URL (?tab=) so the browser back button and a refresh
+  // restore the tab the user was on — not the default.
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const tab: TabId = tabParam && TAB_IDS.includes(tabParam) ? tabParam : 'info';
+  const setTab = (id: TabId) =>
+    setSearchParams(
+      (prev) => {
+        prev.set('tab', id);
+        return prev;
+      },
+      { replace: true },
+    );
 
   // Deep-link from the "Update lease" notification action (?extend=1) opens the
   // extension drawer directly, then clears the param so a refresh won't re-open it.
@@ -99,7 +122,7 @@ export function RenterDetailPage() {
     <div>
       {/* Hero */}
       <div className="px-4 pt-6 lg:px-10" style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)' }}>
-        <DetailBackLink to="/renters" label={t('renter.allRenters')} />
+        <DetailBackLink to={backTo} label={backLabel} />
         <RenterDetailHero
           renter={renter}
           pillTone={pillTone}

@@ -10,6 +10,10 @@ import type { Renter } from '@/shared/types';
 
 interface Props {
   renter: Renter;
+  /** Where the renter detail's back link should return to (defaults to /renters). */
+  backTo?: string;
+  /** Human label for that origin (e.g. the property address). */
+  backLabel?: string;
 }
 
 function leaseCountdown(renter: Renter): { days: number } | 'expired' | null {
@@ -19,7 +23,7 @@ function leaseCountdown(renter: Renter): { days: number } | 'expired' | null {
   return days > 0 ? { days } : 'expired';
 }
 
-export function RenterMiniCard({ renter }: Props) {
+export function RenterMiniCard({ renter, backTo, backLabel }: Props) {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
   const navigate = useNavigate();
@@ -33,7 +37,7 @@ export function RenterMiniCard({ renter }: Props) {
 
   return (
     <button
-      onClick={() => navigate(`/renters/${renter.id}`)}
+      onClick={() => navigate(`/renters/${renter.id}`, { state: { backTo, backLabel } })}
       className="flex items-center gap-3.5 p-4 rounded-[var(--radius-card)] text-start w-full transition-colors hover:opacity-90"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
     >

@@ -41,7 +41,14 @@ export function PropertyRentersTab({ property, onAddRenter, onScanRenter }: Prop
 
   return (
     <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
-      {renters.map((r) => <RenterMiniCard key={r.id} renter={r} />)}
+      {renters.map((r) => (
+        <RenterMiniCard
+          key={r.id}
+          renter={r}
+          backTo={`/properties/${property.id}?tab=renters`}
+          backLabel={property.address}
+        />
+      ))}
     </div>
   );
 }

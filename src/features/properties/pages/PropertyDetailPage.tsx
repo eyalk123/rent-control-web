@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
@@ -23,6 +23,7 @@ import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getTotalMonthlyRent } from '@/shared/types';
 
 type TabId = 'info' | 'renters' | 'transactions' | 'documents';
+const TAB_IDS: TabId[] = ['info', 'renters', 'transactions', 'documents'];
 
 export function PropertyDetailPage() {
   const { t } = useTranslation();
@@ -31,7 +32,19 @@ export function PropertyDetailPage() {
   const propertyId = Number(id);
   const { mutateAsync: deleteProperty, isPending: isDeleting } = useDeleteProperty();
   const { showToast } = useToast();
-  const [tab, setTab] = useState<TabId>('info');
+  // Active tab lives in the URL (?tab=) so the browser back button and a page
+  // refresh restore the tab the user was on — not the default.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const tab: TabId = tabParam && TAB_IDS.includes(tabParam) ? tabParam : 'info';
+  const setTab = (id: TabId) =>
+    setSearchParams(
+      (prev) => {
+        prev.set('tab', id);
+        return prev;
+      },
+      { replace: true },
+    );
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);

@@ -6,6 +6,7 @@ import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { useProperties, propertyKeys } from '../queries';
 import { deleteProperty } from '../api/properties';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
@@ -258,7 +259,7 @@ export function PropertiesListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = usePersistedState('app_list_search:properties', '');
   const [view, setView] = useViewMode('properties');
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Document-scan result driving the (persistent) property form's prefill. Kept until the
@@ -323,7 +324,7 @@ export function PropertiesListPage() {
   );
 
   const columns = usePropertyColumns(ownerOptions);
-  const { table } = useDataTable(columns, filtered);
+  const { table } = useDataTable(columns, filtered, [], 'properties');
   // Rows currently visible after column filters + sort — selection acts on these.
   const visibleRows = table.getRowModel().rows.map((r) => r.original);
 

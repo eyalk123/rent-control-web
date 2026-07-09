@@ -6,6 +6,7 @@ import { Plus, Mail, CheckSquare } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
 import { useScanSession } from '@/features/document-scan/ScanContext';
@@ -277,8 +278,8 @@ export function RentersListPage() {
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = usePersistedState<StatusFilter>('app_list_status:renters', 'all');
+  const [search, setSearch] = usePersistedState('app_list_search:renters', '');
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
@@ -375,7 +376,7 @@ export function RentersListPage() {
 
   const columns = useRenterColumns(statusMap, ownerByProperty);
   // Default the table sort to the lease-end column (ascending); user clicks override it.
-  const { table } = useDataTable(columns, filtered, [{ id: 'leaseEnds', desc: false }]);
+  const { table } = useDataTable(columns, filtered, [{ id: 'leaseEnds', desc: false }], 'renters');
   // Rows currently visible after column filters + sort — selection acts on these.
   const visibleRows = table.getRowModel().rows.map((r) => r.original);
 

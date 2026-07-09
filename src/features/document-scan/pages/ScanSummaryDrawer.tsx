@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Home, Info, Users } from 'lucide-react';
+import { Check, Home, Info, Trash2, Users } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
@@ -52,11 +52,15 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
   // Whether the full property picker (dropdown + editable address) is revealed. Collapsed by
   // default so the common case shows a single clear summary of what the lease attaches to.
   const [showPicker, setShowPicker] = useState(false);
+  // Renters the user removed as mis-extracted. Keyed by original index; hidden from the list with
+  // an undo affordance. Removing one re-splits the joint rent across whoever remains.
+  const [removed, setRemoved] = useState<Set<number>>(() => new Set());
   useEffect(() => {
     setEditedAddress(mapped.propertyPrefill.address ?? '');
     setEditedCity(mapped.propertyPrefill.city ?? '');
     setUserPicked(false);
     setShowPicker(false);
+    setRemoved(new Set());
   }, [mapped]);
 
   // Auto-match the address to an existing property until the user explicitly picks.
@@ -102,7 +106,10 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
 
   // Duplicate renters the user has unchecked (excluded from creation). Keyed by original index.
   const [excluded, setExcluded] = useState<Set<number>>(() => new Set());
-  const includedIdx = useMemo(() => renters.map((_, i) => i).filter((i) => !excluded.has(i)), [renters, excluded]);
+  const includedIdx = useMemo(
+    () => renters.map((_, i) => i).filter((i) => !excluded.has(i) && !removed.has(i)),
+    [renters, excluded, removed],
+  );
   const includedRenters = useMemo(() => includedIdx.map((i) => renters[i]), [includedIdx, renters]);
   // Original index -> position among the included renters (for share lookups).
   const posByIdx = useMemo(() => new Map(includedIdx.map((idx, pos) => [idx, pos])), [includedIdx]);
@@ -134,6 +141,14 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
       const next = new Set(prev);
       if (next.has(i)) next.delete(i);
       else next.add(i);
+      return next;
+    });
+
+  const removeRenter = (i: number) => setRemoved((prev) => new Set(prev).add(i));
+  const undoRemove = (i: number) =>
+    setRemoved((prev) => {
+      const next = new Set(prev);
+      next.delete(i);
       return next;
     });
 
@@ -283,9 +298,11 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
           </div>
           <ul className="flex flex-col gap-2">
             {renters.map((r, i) => {
+              if (removed.has(i)) return null; // hidden; shown in the undo area below
               const isDuplicate = duplicateRenterIdx.has(i);
               const isExcluded = excluded.has(i);
               const pos = posByIdx.get(i);
+              const name = renterName(r, i, t('renter.renter'));
               return (
                 <li
                   key={i}
@@ -302,24 +319,57 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
                         type="checkbox"
                         checked={!isExcluded}
                         onChange={() => toggleExcluded(i)}
-                        aria-label={t('documentScan.includeRenter', { name: renterName(r, i, t('renter.renter')) })}
+                        aria-label={t('documentScan.includeRenter', { name })}
                         className="shrink-0"
                       />
                     )}
-                    <span className="truncate">{renterName(r, i, t('renter.renter'))}</span>
+                    <span className="truncate">{name}</span>
                     {isDuplicate && <DuplicateBadge label={t('documentScan.duplicateRenter')} />}
                   </div>
-                  {mapped.rentIsJoint && total > 0 && !isExcluded && pos !== undefined && (
-                    <span className="text-xs shrink-0" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                      {splitMode === 'custom'
-                        ? formatMoney(numericCustom[pos])
-                        : formatMoney(equalShares(total, includedRenters.length)[pos])}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {mapped.rentIsJoint && total > 0 && !isExcluded && pos !== undefined && (
+                      <span className="text-xs" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                        {splitMode === 'custom'
+                          ? formatMoney(numericCustom[pos])
+                          : formatMoney(equalShares(total, includedRenters.length)[pos])}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeRenter(i)}
+                      disabled={includedIdx.length <= 1 && !isExcluded}
+                      aria-label={t('documentScan.removeRenter', { name })}
+                      className="shrink-0 rounded-md p-1 hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  </div>
                 </li>
               );
             })}
           </ul>
+          {removed.size > 0 && (
+            <ul className="flex flex-col gap-1">
+              {renters.map((r, i) =>
+                removed.has(i) ? (
+                  <li key={i} className="flex items-center justify-between gap-2 px-3 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                    <span className="truncate">
+                      {t('documentScan.renterRemoved', { name: renterName(r, i, t('renter.renter')) })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => undoRemove(i)}
+                      className="shrink-0 font-medium hover:underline"
+                      style={{ color: 'var(--color-primary)' }}
+                    >
+                      {t('common.undo')}
+                    </button>
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          )}
         </section>
 
         {/* Joint rent split */}

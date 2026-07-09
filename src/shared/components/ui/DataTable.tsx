@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   flexRender,
   getCoreRowModel,
@@ -31,14 +31,25 @@ declare module '@tanstack/react-table' {
  * Headless TanStack table instance + the local UI state (sorting, column
  * filters, filter-row visibility) the DataTable needs. Created in the page so
  * the page can read the visible rows (e.g. to drive bulk-selection).
+ *
+ * Pass a stable `persistKey` (e.g. 'renters') to remember the sort and column
+ * filters across navigation within the browsing session (sessionStorage); omit
+ * it and the state is ephemeral as before.
  */
 export function useDataTable<T>(
   columns: ColumnDef<T, unknown>[],
   data: T[],
   initialSorting: SortingState = [],
+  persistKey?: string,
 ) {
-  const [sorting, setSorting] = useState<SortingState>(initialSorting);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = usePersistedState<SortingState>(
+    persistKey ? `app_table_sort:${persistKey}` : null,
+    initialSorting,
+  );
+  const [columnFilters, setColumnFilters] = usePersistedState<ColumnFiltersState>(
+    persistKey ? `app_table_filters:${persistKey}` : null,
+    [],
+  );
 
   const table = useReactTable({
     data,
