@@ -19,7 +19,7 @@ import { LeaseInfoTab } from '../components/LeaseInfoTab';
 import { RenterPropertyTab } from '../components/RenterPropertyTab';
 import { RenterTransactionsTab } from '../components/RenterTransactionsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 
 type TabId = 'info' | 'property' | 'transactions';
 const TAB_IDS: TabId[] = ['info', 'property', 'transactions'];
@@ -102,7 +102,7 @@ export function RenterDetailPage() {
   const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
   const status = overdueIds.has(renter.id) ? 'overdue' : expiringIds.has(renter.id) ? 'expiring' : 'active';
 
-  const monthly = getRenterMonthlyRent(renter);
+  const monthly = getCurrentMonthlyRent(renter);
   const leaseEnd = getLeaseEndDate(renter);
   const days = daysUntil(leaseEnd);
   const totalPaid = transactions.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);

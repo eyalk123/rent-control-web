@@ -1,4 +1,4 @@
-import type { LeaseYear } from '@/shared/types';
+export { getRentForMonth } from '@/shared/types';
 
 export type PeriodType = '1month' | '3months' | '6months' | 'custom' | 'year';
 
@@ -33,25 +33,6 @@ export function getCurrentPeriodValue(type: PeriodType): string {
     return `${year}-${String(month).padStart(2, '0')}`;
   }
   return String(year);
-}
-
-export function getRentForMonth(
-  renter: { lease_years: LeaseYear[]; lease_start: string | null },
-  monthStr: string
-): number {
-  const years = renter.lease_years;
-  if (!years?.length) return 0;
-  if (!renter.lease_start) return years[0].amount;
-  const leaseStart = new Date(renter.lease_start);
-  if (isNaN(leaseStart.getTime())) return years[0].amount;
-  const [y, m] = monthStr.split('-').map(Number);
-  const monthDate = new Date(y, m - 1, 1);
-  const monthsDiff =
-    (monthDate.getFullYear() - leaseStart.getFullYear()) * 12 +
-    (monthDate.getMonth() - leaseStart.getMonth());
-  if (monthsDiff < 0) return years[0].amount;
-  const yearIndex = Math.floor(monthsDiff / 12);
-  return years[Math.min(yearIndex, years.length - 1)].amount;
 }
 
 // Contract year labels: "25/26" means the year starting in 2025 and ending in 2026

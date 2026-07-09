@@ -21,6 +21,11 @@ export function LeaseInfoTab({ renter }: Props) {
     wire_transfer: t('renter.insuranceTypeWireTransfer'),
     bank_guarantee: t('renter.insuranceTypeBankGuarantee'),
   };
+  const paymentTypeLabels: Record<string, string> = {
+    cash: t('renter.paymentTypeCash'),
+    wire_transfer: t('renter.paymentTypeWireTransfer'),
+    bit: t('renter.paymentTypeBit'),
+  };
   return (
     <div className="flex flex-col gap-4">
       {/* Full-width lease timeline */}
@@ -29,7 +34,7 @@ export function LeaseInfoTab({ renter }: Props) {
       {/* Balanced card grid, ordered by relevance */}
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
         <DetailPanel title={t('renter.paymentPanel')}>
-          <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type} />
+          <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type ? (paymentTypeLabels[renter.payment_type] ?? renter.payment_type) : null} />
           <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} />
           <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
         </DetailPanel>

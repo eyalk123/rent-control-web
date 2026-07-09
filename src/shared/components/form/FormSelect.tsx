@@ -1,5 +1,5 @@
 import * as Select from '@radix-ui/react-select';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
 import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
@@ -36,12 +36,22 @@ export function FormSelect<T extends string>({
           a programmatically-set (e.g. RHF reset) value transitions before its Item registers,
           which would wipe the selection. No Item uses '', so a real change is always truthy. */}
       <Select.Root value={value} onValueChange={(v) => { if (v) { onValueChange(v as T); if (reviewName) dismissReview?.(reviewName); } }} disabled={disabled} dir={i18n.dir()}>
-        <Select.Trigger id={reviewName ? `scan-field-${reviewName}` : undefined} aria-required={required || undefined} className={`flex items-center justify-between w-full rounded-xl bg-[var(--color-input-bg)] border px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
-          <Select.Value placeholder={placeholder} />
-          <Select.Icon>
-            <ChevronDown size={16} className="text-[var(--color-text-secondary)]" />
-          </Select.Icon>
-        </Select.Trigger>
+        <div className="relative">
+          <Select.Trigger id={reviewName ? `scan-field-${reviewName}` : undefined} aria-required={required || undefined} className={`flex items-center w-full rounded-xl bg-[var(--color-input-bg)] border ps-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${value && !disabled ? 'pe-14' : 'pe-10'} ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
+            <Select.Value placeholder={placeholder} />
+          </Select.Trigger>
+          {value && !disabled && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onValueChange('' as T); }}
+              aria-label={t('a11y.remove')}
+              className="absolute end-8 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-error)]"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
+          <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+        </div>
         <Select.Portal>
           <Select.Content className="z-50 min-w-[8rem] overflow-hidden rounded-xl bg-[var(--color-surface)] border border-[var(--color-outline)] shadow-lg">
             <Select.Viewport className="p-1">

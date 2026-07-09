@@ -110,6 +110,44 @@ export function getTotalMonthlyRent(renters: Renter[] | null | undefined): numbe
   return renters.reduce((sum, r) => sum + getRenterMonthlyRent(r), 0);
 }
 
+/**
+ * Returns the rent amount for the lease year that covers the given month.
+ * monthStr is "YYYY-MM". Falls back to the first year if out of range.
+ */
+export function getRentForMonth(renter: Renter, monthStr: string): number {
+  const years = renter.lease_years;
+  if (!years?.length) return 0;
+  if (!renter.lease_start) return years[0].amount;
+
+  const leaseStart = new Date(renter.lease_start);
+  if (isNaN(leaseStart.getTime())) return years[0].amount;
+
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthDate = new Date(y, m - 1, 1);
+
+  const monthsDiff =
+    (monthDate.getFullYear() - leaseStart.getFullYear()) * 12 +
+    (monthDate.getMonth() - leaseStart.getMonth());
+
+  if (monthsDiff < 0) return years[0].amount;
+
+  const yearIndex = Math.floor(monthsDiff / 12);
+  return years[Math.min(yearIndex, years.length - 1)].amount;
+}
+
+/** Monthly rent for the lease year that covers today. Use for headline "current rent" display. */
+export function getCurrentMonthlyRent(renter: Renter): number {
+  const now = new Date();
+  const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  return getRentForMonth(renter, monthStr);
+}
+
+/** Total monthly rent across a property's renters using each renter's current-year rent. */
+export function getTotalCurrentMonthlyRent(renters: Renter[] | null | undefined): number {
+  if (!renters?.length) return 0;
+  return renters.reduce((sum, r) => sum + getCurrentMonthlyRent(r), 0);
+}
+
 /** Lease end date calculated from lease_start + number of contract (non-option) years. */
 export function getLeaseEndDate(renter: Renter): Date | null {
   if (!renter.lease_start || !renter.lease_years?.length) return null;

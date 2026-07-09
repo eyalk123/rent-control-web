@@ -400,19 +400,6 @@ export function PropertyFormDrawer({
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
-              <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
-            </div>
-            <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.block')} type="number" error={errors.block?.message} {...register('block')} />
-              <FormInput label={t('property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />
-              <FormInput label={t('property.sqFt')} type="number" error={errors.sqFt?.message} {...register('sqFt')} />
-            </div>
             <Controller
               control={control}
               name="type"
@@ -430,7 +417,20 @@ export function PropertyFormDrawer({
               )}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.numberOfRooms')} type="number" error={errors.numberOfRooms?.message} {...register('numberOfRooms')} />
+              <FormInput label={t('property.floor')} type="number" error={errors.floor?.message} {...register('floor')} />
+              <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
+            </div>
+            <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={t('property.block')} type="number" error={errors.block?.message} {...register('block')} />
+              <FormInput label={t('property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />
+              <FormInput label={t('property.sqFt')} type="number" error={errors.sqFt?.message} {...register('sqFt')} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={t('property.numberOfRooms')} type="number" step="0.5" error={errors.numberOfRooms?.message} {...register('numberOfRooms')} />
               <Controller
                 control={control}
                 name="parkingNumbersStr"

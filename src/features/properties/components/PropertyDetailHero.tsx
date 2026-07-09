@@ -3,6 +3,7 @@ import { Pencil, Plus, MapPin, Trash2 } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
+import { RenterRentStat } from './RenterRentStat';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Property } from '@/shared/types';
@@ -77,10 +78,11 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-        <HeroStat
-          label={t('property.renter')}
-          value={renterName ?? t('property.occupancy.vacant')}
-          sub={rentersCount > 1 ? t('property.plusMoreRenters', { count: rentersCount - 1 }) : undefined}
+        <RenterRentStat
+          renters={property.renters ?? []}
+          renterName={renterName}
+          rentersCount={rentersCount}
+          total={monthlyRent}
         />
         <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
         <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} loading={statsLoading} />

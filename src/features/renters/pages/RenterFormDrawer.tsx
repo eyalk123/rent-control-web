@@ -23,6 +23,7 @@ import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import { diffScannedRenter, type RenterFieldConflict } from '@/features/document-scan/utils/diffRenter';
+import { formatConflictValue } from '@/features/document-scan/utils/conflictValue';
 import { FieldConflictToggle } from '@/features/document-scan/components/FieldConflictToggle';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
@@ -410,8 +411,8 @@ export function RenterFormDrawer({
                   <FieldConflictToggle
                     key={c.formKey}
                     label={t(c.labelKey)}
-                    existing={c.existing}
-                    scanned={c.scanned}
+                    existing={formatConflictValue(c.formKey, c.existing, t)}
+                    scanned={formatConflictValue(c.formKey, c.scanned, t)}
                     choice={conflictChoices[c.formKey] ?? 'keep'}
                     onChange={(mode) => {
                       setConflictChoices((prev) => ({ ...prev, [c.formKey]: mode }));
