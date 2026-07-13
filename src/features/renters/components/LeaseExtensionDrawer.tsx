@@ -4,6 +4,9 @@ import { CalendarClock, Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { Stepper } from '@/shared/components/ui/Stepper';
+import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
+import { LeaseYearAmountField } from '@/shared/components/form/LeaseYearAmountField';
+import { LeaseYearTypeText } from '@/shared/components/form/LeaseYearTypeText';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -213,24 +216,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
               )}
             </div>
             {(mode === 'percent' || mode === 'fixed') && (
-              <div className="flex items-center gap-2 mt-3">
-                <span className="text-sm text-[var(--color-text-secondary)]">{t('renter.yearlyIncrease')}</span>
-                <div
-                  className="inline-flex items-center rounded-xl border bg-[var(--color-input-bg)] px-3 h-10 w-32"
-                  style={{ borderColor: 'var(--color-input-border)' }}
-                >
-                  {mode === 'fixed' && <span className="text-sm text-[var(--color-text-secondary)] me-1">₪</span>}
-                  <input
-                    type="number"
-                    dir="ltr"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder="0"
-                    className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[var(--color-text-primary)]"
-                  />
-                  {mode === 'percent' && <span className="text-sm text-[var(--color-text-secondary)] ms-1">%</span>}
-                </div>
-              </div>
+              <EscalationValueField mode={mode} value={value} onChange={setValue} className="mt-3" />
             )}
           </div>
 
@@ -255,7 +241,6 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
                 {/* Existing years — editable amount, deletable, type convertible */}
                 {existingRows.map((row, index) => {
                   const isCurrent = isCurrentLeaseYear(leaseStart, index);
-                  const isOption = row.type === 'option';
                   return (
                     <div
                       key={`existing-${index}`}
@@ -267,23 +252,18 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
                       >
                         {getLeaseYearLabel(leaseStart, index)}
                       </span>
-                      <input
-                        type="number"
-                        dir="ltr"
+                      <LeaseYearAmountField
                         aria-label={t('renter.amount')}
                         value={row.amount}
-                        onChange={(e) => updateAmount(index, e.target.value)}
-                        className="flex-1 min-w-0 rounded-lg border bg-[var(--color-input-bg)] px-2.5 h-9 text-sm text-[var(--color-text-primary)] outline-none transition-colors focus:border-[var(--color-primary)]"
-                        style={{ borderColor: 'var(--color-input-border)' }}
+                        onChange={(v) => updateAmount(index, v)}
                       />
                       <button
                         type="button"
                         onClick={() => toggleType(index)}
                         title={t('renter.tapToChangeType')}
-                        className="text-[13px] font-semibold w-16 text-end rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-input-filled-background)] underline decoration-dotted underline-offset-2"
-                        style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}
+                        className="w-16 text-end rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-input-filled-background)] underline decoration-dotted underline-offset-2"
                       >
-                        {isOption ? t('renter.option') : t('renter.contract')}
+                        <LeaseYearTypeText type={row.type} />
                       </button>
                       {isCurrent && <Pill tone="revenue" size="sm">{t('renter.currentLease')}</Pill>}
                       <button
@@ -301,7 +281,6 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
                 {/* Added years — auto-priced, read-only (adjust via the number inputs + increment) */}
                 {addedYears.map((year, j) => {
                   const index = existingRows.length + j;
-                  const isOption = year.type === 'option';
                   return (
                     <div key={`added-${j}`} className="flex items-center gap-3 px-2 py-1.5 rounded-[8px]">
                       <span className="text-[15px] min-w-[52px] font-semibold text-[var(--color-text-primary)]">
@@ -313,12 +292,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
                       >
                         {year.amount > 0 ? formatMoney(year.amount) : '—'}
                       </LtrSpan>
-                      <span
-                        className="text-[13px] font-semibold w-16 text-end"
-                        style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}
-                      >
-                        {isOption ? t('renter.option') : t('renter.contract')}
-                      </span>
+                      <LeaseYearTypeText type={year.type} className="w-16 text-end" />
                       <Pill tone="neutral" size="sm">{t('renter.newYearTag')}</Pill>
                     </div>
                   );

@@ -10,14 +10,7 @@ import { useCreateRevenueTransaction } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useNotifications, useDismissNotification } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
-import type { PaymentMethod } from '@/shared/types';
-
-function mapPaymentType(type?: string | null): PaymentMethod {
-  if (type === 'wire_transfer') return 'bank_transfer';
-  if (type === 'bit') return 'bit';
-  if (type === 'check') return 'check';
-  return 'cash';
-}
+import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 
 export function NeedsAttentionSection() {
   const { t } = useTranslation();
@@ -42,7 +35,7 @@ export function NeedsAttentionSection() {
         amount: item.data.amount ?? 0,
         date_of_payment: new Date().toISOString().slice(0, 10),
         month_for: new Date().toISOString().slice(0, 8) + '01',
-        payment_method: mapPaymentType(item.payment_type),
+        payment_method: normalizePaymentType(item.payment_type),
       });
       dismissNotification.mutate(item.id);
     } catch {

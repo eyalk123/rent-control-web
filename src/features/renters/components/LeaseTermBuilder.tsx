@@ -13,6 +13,9 @@ import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { FormInput } from '@/shared/components/form/FormInput';
+import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
+import { LeaseYearAmountField } from '@/shared/components/form/LeaseYearAmountField';
+import { LeaseYearTypeText } from '@/shared/components/form/LeaseYearTypeText';
 
 interface Props {
   control: Control<RenterFormValues>;
@@ -170,37 +173,18 @@ export function LeaseTermBuilder({ control }: Props) {
       ) : null}
 
       {escMode === 'percent' || escMode === 'fixed' ? (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--color-text-secondary)]">
-            {t('renter.yearlyIncrease')}
-          </span>
-          <Controller
-            control={control}
-            name="escalationValue"
-            render={({ field }) => (
-              <div
-                className="inline-flex items-center rounded-xl border bg-[var(--color-input-bg)] px-3 h-10 w-32"
-                style={{ borderColor: 'var(--color-input-border)' }}
-              >
-                {escMode === 'fixed' && (
-                  <span className="text-sm text-[var(--color-text-secondary)] me-1">₪</span>
-                )}
-                <input
-                  type="number"
-                  dir="ltr"
-                  value={field.value ?? ''}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  placeholder="0"
-                  className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[var(--color-text-primary)]"
-                />
-                {escMode === 'percent' && (
-                  <span className="text-sm text-[var(--color-text-secondary)] ms-1">%</span>
-                )}
-              </div>
-            )}
-          />
-        </div>
+        <Controller
+          control={control}
+          name="escalationValue"
+          render={({ field }) => (
+            <EscalationValueField
+              mode={escMode}
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
       ) : null}
 
       {leaseYears.length > 0 ? (
@@ -267,30 +251,16 @@ export function LeaseTermBuilder({ control }: Props) {
                         control={control}
                         name={`leaseYears.${index}.amount`}
                         render={({ field }) => (
-                          <input
-                            type="number"
-                            dir="ltr"
-                            placeholder={t('renter.amount')}
+                          <LeaseYearAmountField
                             value={field.value ?? ''}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
                             name={field.name}
-                            className="flex-1 min-w-0 rounded-lg border bg-[var(--color-input-bg)] px-2.5 h-9 text-sm text-[var(--color-text-primary)] outline-none transition-colors focus:border-[var(--color-primary)]"
-                            style={{ borderColor: 'var(--color-input-border)' }}
+                            placeholder={t('renter.amount')}
                           />
                         )}
                       />
-                      <span
-                        className="text-[13px] font-semibold"
-                        style={{
-                          color:
-                            yearType === 'option'
-                              ? 'var(--color-warning)'
-                              : 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {yearType === 'contract' ? t('renter.contract') : t('renter.option')}
-                      </span>
+                      <LeaseYearTypeText type={yearType} />
                       {isCurrent && (
                         <Pill tone="revenue" size="sm">
                           {t('renter.currentLease')}
@@ -328,17 +298,7 @@ export function LeaseTermBuilder({ control }: Props) {
                           </Pill>
                         )}
                       </div>
-                      <span
-                        className="text-[13px] font-semibold"
-                        style={{
-                          color:
-                            yearType === 'option'
-                              ? 'var(--color-warning)'
-                              : 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {yearType === 'contract' ? t('renter.contract') : t('renter.option')}
-                      </span>
+                      <LeaseYearTypeText type={yearType} />
                       {isCurrent && (
                         <Pill tone="revenue" size="sm">
                           {t('renter.currentLease')}

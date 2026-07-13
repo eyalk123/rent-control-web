@@ -10,6 +10,7 @@ import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
+import { getPaymentMethodOptions } from '@/shared/constants/paymentMethods';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
@@ -178,7 +179,9 @@ export function RenterFormDrawer({
         ...intent,
         leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
-        paymentType: existing.payment_type ?? undefined,
+        // Map the legacy 'wire_transfer' value onto the canonical option so it stays selected
+        // in the dropdown; leave empty/other values untouched.
+        paymentType: existing.payment_type === 'wire_transfer' ? 'bank_transfer' : (existing.payment_type ?? undefined),
         paymentFrequency,
         extraContacts: existing.extra_contacts ?? [],
         insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
@@ -308,14 +311,10 @@ export function RenterFormDrawer({
     }
     return opts;
   })();
-  // Renter payment_type domain is cash | wire_transfer | bit (see mapPaymentType in
-  // AlertsPanel / NeedsAttentionSection and the renter.paymentType* i18n keys). Note this
-  // differs from the transaction payment-method domain (which uses 'bank_transfer').
-  const paymentTypeOptions = [
-    { value: 'cash', label: t('renter.paymentTypeCash') },
-    { value: 'wire_transfer', label: t('renter.paymentTypeWireTransfer') },
-    { value: 'bit', label: t('renter.paymentTypeBit') },
-  ];
+  // Renter payment_type shares the transaction payment-method domain
+  // (cash | bank_transfer | bit | check). Legacy 'wire_transfer' values are still read via
+  // normalizePaymentType / getPaymentMethodLabel.
+  const paymentTypeOptions = getPaymentMethodOptions(t);
   const paymentFrequencyOptions = [
     { value: 'monthly', label: t('renter.frequencyMonthly') },
     { value: 'quarterly', label: t('renter.frequencyQuarterly') },

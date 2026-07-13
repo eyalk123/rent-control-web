@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Upload, X } from 'lucide-react';
+import { fileNameFromUrl } from '@/shared/utils/fileName';
 
 interface Props {
   label?: string;
@@ -26,7 +27,7 @@ export function FormDocumentInput({
   const ref = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
-  const fileName = pendingFile?.name ?? (existingUrl ? decodeURIComponent(existingUrl.split('/').pop()?.split('?')[0] ?? '') : null);
+  const fileName = pendingFile?.name ?? (existingUrl ? fileNameFromUrl(existingUrl) : null);
   const hasFile = !!(pendingFile || existingUrl);
 
   return (

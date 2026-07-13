@@ -14,14 +14,7 @@ import {
 } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
 import { useAlertsPanel } from './AlertsPanelContext';
-import type { PaymentMethod } from '@/shared/types';
-
-function mapPaymentType(type?: string | null): PaymentMethod {
-  if (type === 'wire_transfer') return 'bank_transfer';
-  if (type === 'bit') return 'bit';
-  if (type === 'check') return 'check';
-  return 'cash';
-}
+import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 
 export function AlertsPanel() {
   const { t } = useTranslation();
@@ -64,7 +57,7 @@ export function AlertsPanel() {
         amount: item.data.amount ?? 0,
         date_of_payment: new Date().toISOString().slice(0, 10),
         month_for: new Date().toISOString().slice(0, 8) + '01',
-        payment_method: mapPaymentType(item.payment_type),
+        payment_method: normalizePaymentType(item.payment_type),
       });
       dismissNotification.mutate(item.id);
     } catch {
