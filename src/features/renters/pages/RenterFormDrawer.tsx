@@ -20,6 +20,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
+import { fileNameFromUrl } from '@/shared/utils/fileName';
 import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
@@ -97,6 +98,10 @@ export function RenterFormDrawer({
   const isEditing = !!effRenterId;
   const [renterConflicts, setRenterConflicts] = useState<RenterFieldConflict[]>([]);
   const [conflictChoices, setConflictChoices] = useState<Record<string, 'keep' | 'update'>>({});
+  // The scanned lease vs. a contract the matched renter already has. Files live outside RHF, so
+  // this conflict is tracked on its own instead of riding on the scalar `renterConflicts`.
+  const [contractConflict, setContractConflict] = useState<{ existingUrl: string } | null>(null);
+  const [contractChoice, setContractChoice] = useState<'keep' | 'update'>('keep');
 
   const { data: existing } = useRenter(effRenterId ?? 0);
   const { data: properties } = useProperties();
@@ -129,7 +134,7 @@ export function RenterFormDrawer({
       : false;
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); setQueueIndex(0); setRenterConflicts([]); setConflictChoices({}); }
+    if (!open) { setStep(1); setShowDiscard(false); setIdImageFile(null); setIdImagePreview(null); setFullContractFile(null); setQueueIndex(0); setRenterConflicts([]); setConflictChoices({}); setContractConflict(null); setContractChoice('keep'); }
   }, [open]);
 
   // Files live outside RHF, so isDirty alone misses them. Scanner prefill lives in the form's
@@ -196,15 +201,27 @@ export function RenterFormDrawer({
         const { fills, conflicts } = diffScannedRenter(effPrefill, existingReset, labelByKey);
         reset({ ...existingReset, ...fills });
         setRenterConflicts(conflicts);
+        // The scanned lease is the renter's contract: attach it silently when they have none (the
+        // file analogue of a `fill`), or offer keep/replace when a stored contract already exists.
+        if (pendingContractFile && existing.full_contract_url) {
+          setContractConflict({ existingUrl: existing.full_contract_url });
+          setContractChoice('keep');
+          setFullContractFile(null);
+        } else {
+          setContractConflict(null);
+          setFullContractFile(pendingContractFile ?? null);
+        }
       } else {
         reset(existingReset);
         setRenterConflicts([]);
+        setContractConflict(null);
       }
       setConflictChoices({});
       setIdImagePreview(existing.id_image_url ?? null);
     } else if (!effRenterId && open) {
       setRenterConflicts([]);
       setConflictChoices({});
+      setContractConflict(null);
       setIdImageFile(null);
       setIdImagePreview(null);
       reset({
@@ -278,6 +295,15 @@ export function RenterFormDrawer({
 
       if (isEditing && effRenterId) {
         await updateMutation.mutateAsync(payload);
+        // Audit a scanned duplicate merged into an existing renter, same as a creation.
+        if (queuedExistingId != null && logId && effProvenance) {
+          updateExtractionLog(logId, {
+            entity_type: 'renter',
+            created_id: effRenterId,
+            contract_url: fullContractUrl ?? null,
+            ...diffProvenance(effProvenance, data as Record<string, unknown>),
+          });
+        }
       } else {
         const created = await createMutation.mutateAsync(payload as never);
         // Audit: record renter creation + which prefilled fields changed + the kept contract URL.
@@ -396,7 +422,7 @@ export function RenterFormDrawer({
       <form id="renter-form" onSubmit={onSubmit} autoComplete="off" noValidate className="flex flex-col gap-4">
         {step === 1 ? (
           <>
-            {renterConflicts.length > 0 && (
+            {(renterConflicts.length > 0 || contractConflict) && (
               <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}>
                 <div>
                   <h4 className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
@@ -419,6 +445,26 @@ export function RenterFormDrawer({
                     }}
                   />
                 ))}
+                {contractConflict && pendingContractFile && (
+                  <FieldConflictToggle
+                    label={t('documents.fullContract')}
+                    existing={fileNameFromUrl(contractConflict.existingUrl)}
+                    scanned={pendingContractFile.name}
+                    choice={contractChoice}
+                    onChange={(mode) => {
+                      setContractChoice(mode);
+                      // 'update' stages the scanned lease for upload on submit and drops the stored
+                      // URL; 'keep' restores it. Either way the step-2 document input follows.
+                      if (mode === 'update') {
+                        setFullContractFile(pendingContractFile);
+                        setValue('fullContractUrl', undefined, { shouldDirty: true });
+                      } else {
+                        setFullContractFile(null);
+                        setValue('fullContractUrl', contractConflict.existingUrl, { shouldDirty: true });
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

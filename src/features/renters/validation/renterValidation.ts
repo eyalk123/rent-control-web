@@ -21,6 +21,21 @@ const optionalNumericString = z
     { message: "mustBeNumber" },
   );
 
+// Day of month rent is due. Mirrors the backend's RenterCreate.payment_day_in_range (1..31)
+// so a bad value (typed, or prefilled by a lease scan) is caught here instead of only as a
+// 422 at submit. The `min`/`max` attrs on the number input are inert — zodResolver gates
+// submit, so native constraint validation never runs.
+const optionalPaymentDay = optionalNumericString.refine(
+  (val) => {
+    if (val === "") return true;
+    const n = Number(val);
+    return Number.isInteger(n) && n >= 1 && n <= 31;
+  },
+  // Full i18n key: FormInput renders the message via t(error), and the string lives at
+  // validation.paymentDayInvalid in en.json / he.json.
+  { message: "validation.paymentDayInvalid" },
+);
+
 const leaseYearSchema = z.object({
   amount: optionalNumericString,
   type: z.enum(["option", "contract"]).optional(),
@@ -47,7 +62,7 @@ export const renterFormSchema = z.object({
   propertyId: optionalString,
   paymentType: optionalString,
   paymentFrequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
-  paymentDayOfMonth: optionalNumericString,
+  paymentDayOfMonth: optionalPaymentDay,
   insuranceType: z.enum(['wire_transfer', 'bank_guarantee', '']).optional(),
   insuranceAmount: optionalNumericString,
   contractTermYears: optionalNumericString,
