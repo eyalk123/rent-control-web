@@ -1,11 +1,22 @@
 import { useEffect, useRef } from 'react';
-import { Controller, useFieldArray, useWatch, type Control } from 'react-hook-form';
+import {
+  Controller,
+  useFieldArray,
+  useWatch,
+  type Control,
+  type UseFormSetValue,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock } from 'lucide-react';
-import type { LeaseYearType, RentEscalationMode } from '@/shared/types';
+import type {
+  LeaseYear,
+  LeaseYearRuleMode,
+  LeaseYearType,
+  RentEscalationMode,
+} from '@/shared/types';
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
-import { buildLeaseYears } from '@/shared/utils/leaseSchedule';
+import { buildLeaseYears, isProjectedYear } from '@/shared/utils/leaseSchedule';
 import { fmtDate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -14,11 +25,36 @@ import { LeaseYearRow } from '@/shared/components/lease/LeaseYearRow';
 
 interface Props {
   control: Control<RenterFormValues>;
+  /** Needed so editing year one's amount keeps the "first-year rent" field in step with it. */
+  setValue: UseFormSetValue<RenterFormValues>;
 }
 
-type LeaseYearRowValue = { amount?: string; type?: LeaseYearType };
+/**
+ * Form-state shape of a lease year: numbers live as strings while the user types.
+ * `rule.value` is always present (possibly '') — the Zod schema coerces it that way.
+ */
+type LeaseYearRowValue = {
+  amount?: string;
+  type?: LeaseYearType;
+  rule?: { mode: LeaseYearRuleMode; value: string };
+};
 
-export function LeaseTermBuilder({ control }: Props) {
+/** Form rows -> the numeric model the schedule helpers work on. */
+function toModel(rows: LeaseYearRowValue[]): LeaseYear[] {
+  return rows.map((r) => {
+    const year: LeaseYear = {
+      amount: Number(r?.amount) || 0,
+      type: r?.type ?? 'contract',
+    };
+    // "manual" is the absence of a rule — don't carry it into the model or the payload.
+    if (r?.rule && r.rule.mode !== 'manual') {
+      year.rule = { mode: r.rule.mode, value: Number(r.rule.value) || 0 };
+    }
+    return year;
+  });
+}
+
+export function LeaseTermBuilder({ control, setValue }: Props) {
   const { t } = useTranslation();
 
   const contractStr = useWatch({ control, name: 'contractTermYears' }) as string | undefined;
@@ -33,21 +69,30 @@ export function LeaseTermBuilder({ control }: Props) {
 
   const { replace } = useFieldArray({ control, name: 'leaseYears' });
 
+  const isCustom = escMode === 'custom';
+
   // Set when the user actively switches *into* CPI via the escalation toggle (never
   // on edit-hydration, which flows through form reset()). Signals the effect to drop
   // the outgoing mode's amounts and project the flat base instead of preserving them.
   const cpiSwitchRef = useRef(false);
 
+  // Re-run the effect when a per-year rule changes (custom mode), so the walk re-prices the
+  // ruled years. Amounts are deliberately NOT in the deps — see below.
+  const rulesKey = JSON.stringify(leaseYears.map((r) => r.rule ?? null));
+  // ...but a *manual* amount edit must recascade the ruled years below it, so the amounts do
+  // need to be watched. Writing back is what makes this safe: the effect only replaces a row
+  // whose amount actually changed *numerically*, so a half-typed or cleared field is left
+  // exactly as the user left it (see `sameAmount`).
+  const amountsKey = leaseYears.map((r) => r?.amount ?? '').join('|');
+
   // Materialize the lease_years array whenever the term intent changes. Length and
-  // types always follow the steppers; amounts are formula-driven except in
-  // "custom" mode, where existing per-year amounts/types are preserved. The effect
-  // intentionally depends only on the intent scalars: it must NOT re-run when the
-  // user edits a row in custom mode (that would clobber their value), and the
-  // `leaseYears` it reads is the fresh value from whichever render last changed a
-  // scalar — exactly the rows we want to preserve.
+  // types always follow the steppers; amounts are formula-driven except in "custom"
+  // mode, where each year's own rule prices it off the year before it and hand-typed
+  // ("manual") amounts are preserved.
   useEffect(() => {
     const resetCpiAmounts = cpiSwitchRef.current;
     cpiSwitchRef.current = false;
+    const rows = toModel(leaseYears);
     const next = buildLeaseYears(
       {
         contractYears: Number(contractStr) || 0,
@@ -56,25 +101,42 @@ export function LeaseTermBuilder({ control }: Props) {
         escalationMode: escMode,
         escalationValue: Number(escValStr) || 0,
       },
-      leaseYears.map((r) => ({
-        amount: Number(r?.amount) || 0,
-        type: r?.type ?? 'contract',
-      })),
+      rows,
       { resetCpiAmounts },
     );
-    const same =
-      next.length === leaseYears.length &&
-      next.every(
-        (n, i) =>
-          String(n.amount) === String(leaseYears[i]?.amount ?? '') && n.type === leaseYears[i]?.type,
-      );
-    if (!same) {
-      replace(next.map((y) => ({ amount: String(y.amount), type: y.type })));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contractStr, optionStr, baseRentStr, escMode, escValStr]);
 
-  const isCustom = escMode === 'custom';
+    // Rebuilding the whole array remounts every row, so reserve it for changes that really
+    // are structural (the steppers adding/removing years, or leaving custom mode with rules
+    // still attached). Amount-only changes go through setValue on the leaf below — a replace()
+    // there would tear down the rule inputs mid-keystroke and steal focus.
+    const structureChanged =
+      next.length !== leaseYears.length || next.some((y, i) => y.type !== leaseYears[i]?.type);
+    const staleRules = !isCustom && leaseYears.some((r) => r?.rule);
+
+    if (structureChanged || staleRules) {
+      replace(
+        next.map((y, i) => ({
+          amount: String(y.amount),
+          type: y.type,
+          // buildLeaseYears only returns a rule in custom mode, so this drops them on exit.
+          ...(y.rule && leaseYears[i]?.rule ? { rule: leaseYears[i].rule! } : {}),
+        })),
+      );
+      return;
+    }
+
+    // Write only the amounts that actually changed *numerically* — comparing strings would
+    // rewrite "" as "0" and fight the user's cursor mid-typing.
+    next.forEach((y, i) => {
+      if ((Number(leaseYears[i]?.amount) || 0) !== y.amount) {
+        setValue(`leaseYears.${i}.amount`, String(y.amount), { shouldDirty: true });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractStr, optionStr, baseRentStr, escMode, escValStr, rulesKey, amountsKey]);
+
+  /** Rows in the numeric model, for deriving which years render as projections. */
+  const modelRows = toModel(leaseYears);
 
   const contractCount = Number(contractStr) || 0;
   let endDateISO: string | null = null;
@@ -174,19 +236,62 @@ export function LeaseTermBuilder({ control }: Props) {
               const isCpiProjected = escMode === 'cpi' && index > 0;
 
               return isCustom ? (
+                // Two leaf Controllers rather than one on `leaseYears.${index}`: a Controller
+                // bound to the item *object* doesn't re-render when the field array's value is
+                // rewritten, so the recomputed amount never reaches the input.
                 <Controller
                   key={index}
                   control={control}
                   name={`leaseYears.${index}.amount`}
-                  render={({ field }) => (
-                    <LeaseYearRow
-                      label={getLeaseYearLabel(leaseStart, index)}
-                      amount={field.value ?? ''}
-                      type={yearType}
-                      isCurrent={isCurrentLeaseYear(leaseStart, index)}
-                      onAmountChange={field.onChange}
-                      onAmountBlur={field.onBlur}
-                      amountName={field.name}
+                  render={({ field: amountField }) => (
+                    <Controller
+                      control={control}
+                      name={`leaseYears.${index}.rule`}
+                      render={({ field: ruleField, fieldState: ruleState }) => {
+                        const rule = ruleField.value as LeaseYearRowValue['rule'];
+                        const ruleMode = rule?.mode ?? 'manual';
+                        const ruleError = (
+                          ruleState.error as { value?: { message?: string } } | undefined
+                        )?.value?.message;
+
+                        return (
+                          <LeaseYearRow
+                            label={getLeaseYearLabel(leaseStart, index)}
+                            amount={amountField.value ?? ''}
+                            type={yearType}
+                            isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                            projected={isProjectedYear(modelRows, index)}
+                            amountName={amountField.name}
+                            onAmountBlur={amountField.onBlur}
+                            onAmountChange={(v) => {
+                              amountField.onChange(v);
+                              // Typing an amount means the stated rule no longer describes it —
+                              // fall back to manual so the number and the rule can't disagree.
+                              if (rule) ruleField.onChange(undefined);
+                              // Year one *is* the first-year rent; keep the two in step, or the
+                              // server (which prices year one off base_rent) would overwrite it.
+                              if (index === 0) setValue('baseRent', v);
+                            }}
+                            // Year one is the base rent, so it has nothing to derive from.
+                            ruleMode={ruleMode}
+                            onRuleChange={
+                              index === 0
+                                ? undefined
+                                : (mode) =>
+                                    ruleField.onChange(
+                                      mode === 'manual'
+                                        ? undefined
+                                        : { mode, value: rule?.value ?? '' },
+                                    )
+                            }
+                            ruleValue={rule?.value ?? ''}
+                            onRuleValueChange={(v) =>
+                              ruleField.onChange({ mode: ruleMode, value: v })
+                            }
+                            error={ruleError}
+                          />
+                        );
+                      }}
                     />
                   )}
                 />
@@ -202,6 +307,12 @@ export function LeaseTermBuilder({ control }: Props) {
               );
             })}
           </div>
+
+          {isCustom && isProjectedYear(modelRows, modelRows.length - 1) ? (
+            <p className="text-[13px] leading-snug mt-2 text-[var(--color-text-secondary)]">
+              {t('renter.cpiProjectedNote')}
+            </p>
+          ) : null}
 
           {endDateISO ? (
             <div

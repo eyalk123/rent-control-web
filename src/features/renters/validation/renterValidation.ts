@@ -36,9 +36,29 @@ const optionalPaymentDay = optionalNumericString.refine(
   { message: "validation.paymentDayInvalid" },
 );
 
+// How one lease year's rent derives from the previous year's — only used in "custom" mode.
+// `percent` and `fixed` are the only rules that need a number to go with them; the rest
+// ("manual" = the owner typed the amount, "none" = same as last year, "cpi" = the server
+// prices it from the index) carry no value.
+const leaseYearRuleSchema = z
+  .object({
+    mode: z.enum(["manual", "none", "percent", "fixed", "cpi"]),
+    value: optionalNumericString,
+  })
+  .superRefine((rule, ctx) => {
+    if ((rule.mode === "percent" || rule.mode === "fixed") && rule.value === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["value"],
+        message: "renter.ruleValueRequired",
+      });
+    }
+  });
+
 const leaseYearSchema = z.object({
   amount: optionalNumericString,
   type: z.enum(["option", "contract"]).optional(),
+  rule: leaseYearRuleSchema.optional(),
 });
 
 const extraContactSchema = z.object({

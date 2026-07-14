@@ -1,4 +1,9 @@
-import type { LeaseYear, LeaseYearType, RentEscalationMode } from '@/shared/types';
+import type {
+  LeaseYear,
+  LeaseYearRule,
+  LeaseYearType,
+  RentEscalationMode,
+} from '@/shared/types';
 
 /**
  * Lease schedule helpers.
@@ -55,12 +60,81 @@ export function rentForYear(
   }
 }
 
+/* --- Per-year rules ("custom" mode) ------------------------------------------------
+ *
+ * In `custom` mode every year past the first carries its own `rule` and derives from the
+ * *previous year's* amount, which makes the schedule a forward walk. That is what lets a
+ * percent year sit after a CPI year: by the time the walk reaches it, the CPI year's
+ * amount is already settled.
+ *
+ * The client cannot price a CPI year — the index for that anniversary may not be
+ * published yet — so here CPI projects flat (`prev`) and the row renders muted with a "≈".
+ * The server owns the real numbers (see `materialize_ruled_lease_years` in
+ * `cpi_indexing_service.py`) and overwrites them on save and on every indexing run.
+ */
+
+/** Rent for one lease year from its rule and the previous year's amount. */
+export function applyYearRule(
+  prevAmount: number,
+  currentAmount: number,
+  rule: LeaseYearRule | undefined,
+): number {
+  const prev = Number.isFinite(prevAmount) ? prevAmount : 0;
+  const value = Number.isFinite(rule?.value) ? (rule?.value as number) : 0;
+  switch (rule?.mode) {
+    case 'none':
+      return Math.round(prev);
+    case 'percent':
+      return Math.round(prev * (1 + value / 100));
+    case 'fixed':
+      return Math.round(prev + value);
+    case 'cpi':
+      // Unknowable in the browser — project flat and let the server settle it.
+      return Math.round(prev);
+    default:
+      return Math.round(Number.isFinite(currentAmount) ? currentAmount : 0); // manual
+  }
+}
+
+/**
+ * Walks a `custom` schedule forward, resolving each ruled year's amount from the one
+ * before it. Year one is always the base rent; `manual` (and rule-less, i.e. legacy) years
+ * keep the amount they already hold. `type` and `rule` pass through untouched.
+ */
+export function materializeRuledYears(rows: LeaseYear[], baseRent: number): LeaseYear[] {
+  if (rows.length === 0) return [];
+  const base = Number.isFinite(baseRent) && baseRent > 0 ? baseRent : rows[0]?.amount ?? 0;
+  const result: LeaseYear[] = [];
+  let prev = base;
+  rows.forEach((row, i) => {
+    const amount = i === 0 ? Math.round(base) : applyYearRule(prev, row.amount, row.rule);
+    result.push({ ...row, amount });
+    prev = amount;
+  });
+  return result;
+}
+
+/**
+ * Index of the first CPI-linked year, or -1. That year and every year after it are
+ * *projections* — their amounts depend on an index reading the client doesn't have — so the
+ * rows from here on render with `LeaseYearRow`'s `projected` styling.
+ */
+export function firstCpiIndex(rows: LeaseYear[]): number {
+  return rows.findIndex((r) => r.rule?.mode === 'cpi');
+}
+
+/** True when row `index` should render as a projection. */
+export function isProjectedYear(rows: LeaseYear[], index: number): boolean {
+  const cpiAt = firstCpiIndex(rows);
+  return cpiAt !== -1 && index >= cpiAt;
+}
+
 /**
  * Builds the materialized lease-year schedule from term intent. The Contract /
  * Option split is always positional — the first `contractYears` are `contract`,
  * the rest `option` — so it is fully owned by the steppers. Only the *amount*
- * varies by mode: `custom` preserves the existing row's amount (pass
- * `existingRows`), other modes derive it from the escalation rule.
+ * varies by mode: `custom` walks each year's own rule forward (preserving hand-typed
+ * amounts), other modes derive it from the whole-lease escalation rule.
  */
 export function buildLeaseYears(
   input: LeaseScheduleInput,
@@ -73,23 +147,26 @@ export function buildLeaseYears(
   if (total === 0) return [];
 
   const base = Number.isFinite(input.baseRent) && input.baseRent > 0 ? input.baseRent : 0;
-  // In "custom" mode the user hand-edits per-year amounts; in "cpi" mode the server
-  // owns them (index-linked). Both preserve any existing row amount rather than
-  // re-deriving it from a formula, so re-materializing never clobbers real values.
-  // Exception: a fresh in-form switch into CPI (`resetCpiAmounts`) must drop the
-  // previous mode's amounts and project the flat base instead.
+  // In "custom" mode the user hand-edits per-year amounts (or gives the year a rule); in
+  // "cpi" mode the server owns them (index-linked). Both preserve any existing row amount
+  // rather than re-deriving it from the whole-lease formula, so re-materializing never
+  // clobbers real values. Exception: a fresh in-form switch into CPI (`resetCpiAmounts`)
+  // must drop the previous mode's amounts and project the flat base instead.
+  const isCustom = input.escalationMode === 'custom';
   const preserveExisting =
-    input.escalationMode === 'custom' ||
-    (input.escalationMode === 'cpi' && !opts?.resetCpiAmounts);
+    isCustom || (input.escalationMode === 'cpi' && !opts?.resetCpiAmounts);
   const result: LeaseYear[] = [];
   for (let i = 0; i < total; i += 1) {
     const type: LeaseYearType = i < contract ? 'contract' : 'option';
     const amount = preserveExisting
       ? existingRows?.[i]?.amount ?? base
       : rentForYear(base, i, input.escalationMode, input.escalationValue);
-    result.push({ amount, type });
+    // Rules only exist in custom mode; leaving it drops them.
+    const rule = isCustom ? existingRows?.[i]?.rule : undefined;
+    result.push(rule ? { amount, type, rule } : { amount, type });
   }
-  return result;
+  // Re-price the ruled years off the (possibly new) base rent and each other.
+  return isCustom ? materializeRuledYears(result, base) : result;
 }
 
 /**
@@ -108,12 +185,33 @@ export function buildAddedYears(
   optionAdd: number,
   escalationMode: RentEscalationMode,
   escalationValue: number,
+  existingAdded?: LeaseYear[],
 ): LeaseYear[] {
   const contract = toCount(contractAdd);
   const option = toCount(optionAdd);
   const total = contract + option;
   if (total === 0) return [];
   const lastAmount = existingYears.length > 0 ? existingYears[existingYears.length - 1].amount : 0;
+
+  if (escalationMode === 'custom') {
+    // Each added year carries its own rule and prices off the year before it — the first
+    // one off the last *existing* year, so the walk is continuous across the join. Rules
+    // and hand-typed amounts already entered for the added block are preserved.
+    const rows: LeaseYear[] = [];
+    for (let i = 0; i < total; i += 1) {
+      const prior = existingAdded?.[i];
+      rows.push({
+        amount: prior?.amount ?? lastAmount,
+        type: i < contract ? 'contract' : 'option',
+        ...(prior?.rule ? { rule: prior.rule } : {}),
+      });
+    }
+    // Walk existing + added together, then keep only the added tail.
+    return materializeRuledYears([...existingYears, ...rows], existingYears[0]?.amount ?? 0).slice(
+      existingYears.length,
+    );
+  }
+
   const added: LeaseYear[] = [];
   for (let i = 1; i <= total; i += 1) {
     added.push({
@@ -147,9 +245,10 @@ export interface ReconstructedIntent {
 
 /**
  * Recovers term intent from an existing `lease_years` array — used on edit when
- * the backend has not (yet) persisted the structured fields. Detects a uniform
- * schedule as "none"; anything else is treated as "custom" so the exact saved
- * amounts are preserved rather than re-derived.
+ * the backend has not (yet) persisted the structured fields. A schedule carrying per-year
+ * rules is "custom" by definition. Otherwise a uniform schedule reads as "none"; anything
+ * else is treated as "custom" so the exact saved amounts are preserved rather than
+ * re-derived.
  */
 export function reconstructIntentFromLeaseYears(
   leaseYears: LeaseYear[] | undefined,
@@ -158,8 +257,9 @@ export function reconstructIntentFromLeaseYears(
   const contractTermYears = years.filter((y) => y.type === 'contract').length;
   const optionYears = years.filter((y) => y.type === 'option').length;
   const baseRent = years[0]?.amount ?? 0;
+  const hasRules = years.some((y) => y.rule && y.rule.mode !== 'manual');
   const allEqual = years.length > 0 && years.every((y) => y.amount === baseRent);
   const escalationMode: RentEscalationMode =
-    years.length === 0 || allEqual ? 'none' : 'custom';
+    hasRules ? 'custom' : years.length === 0 || allEqual ? 'none' : 'custom';
   return { contractTermYears, optionYears, baseRent, escalationMode };
 }

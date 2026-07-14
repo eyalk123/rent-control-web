@@ -50,9 +50,27 @@ export interface ExtraContact {
 // Lease: per-year amount and type (option vs contract) - matches FormLeaseYearsField UI
 export type LeaseYearType = 'option' | 'contract';
 
+/**
+ * How one lease year's rent derives from the *previous* year's amount. Only meaningful
+ * under the `custom` escalation mode, where each year carries its own rule instead of the
+ * whole lease sharing one.
+ *
+ * `manual` means the owner typed the amount and it is never derived — which is also what an
+ * absent rule means, and therefore what every year stored before this feature existed means.
+ */
+export type LeaseYearRuleMode = 'manual' | 'none' | 'percent' | 'fixed' | 'cpi';
+
+export interface LeaseYearRule {
+  mode: LeaseYearRuleMode;
+  /** Required for `percent` and `fixed`; unused by the others. */
+  value?: number;
+}
+
 export interface LeaseYear {
   amount: number;
   type: LeaseYearType;
+  /** Absent on year one (it is the base rent) and on every year of a non-custom lease. */
+  rule?: LeaseYearRule;
 }
 
 /** How the monthly rent changes from one lease year to the next. */

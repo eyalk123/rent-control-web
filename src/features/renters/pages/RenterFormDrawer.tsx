@@ -33,6 +33,7 @@ import { diffProvenance, updateExtractionLog } from '@/features/document-scan/ap
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof renterFormSchema>;
+type LeaseYearFormValue = FormData['leaseYears'][number];
 
 // Every field rendered on step 1 — validated together on "Next" so invalid values
 // surface inline at the page transition instead of silently failing on Save.
@@ -182,7 +183,14 @@ export function RenterFormDrawer({
         propertyId: (existing.property_id ?? existing.property?.id)?.toString() ?? '',
         leaseStart: existing.lease_start ?? '',
         ...intent,
-        leaseYears: existing.lease_years.map((ly) => ({ amount: ly.amount.toString(), type: ly.type })),
+        leaseYears: existing.lease_years.map((ly) => ({
+          amount: ly.amount.toString(),
+          type: ly.type,
+          // Rules round-trip as form strings; an absent rule stays absent (= manual).
+          ...(ly.rule
+            ? { rule: { mode: ly.rule.mode, value: ly.rule.value != null ? String(ly.rule.value) : '' } }
+            : {}),
+        })),
         paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
         // Map the legacy 'wire_transfer' value onto the canonical option so it stays selected
         // in the dropdown; leave empty/other values untouched.
@@ -277,7 +285,15 @@ export function RenterFormDrawer({
         email: data.email ?? '',
         property_id: data.propertyId ? Number(data.propertyId) : null,
         lease_start: data.leaseStart || null,
-        lease_years: (data.leaseYears ?? []).map((ly: { amount: string; type?: 'option' | 'contract' }) => ({ amount: Number(ly.amount) || 0, type: ly.type ?? 'contract' })),
+        lease_years: (data.leaseYears ?? []).map((ly: LeaseYearFormValue) => ({
+          amount: Number(ly.amount) || 0,
+          type: ly.type ?? 'contract',
+          // Per-year rules only exist in custom mode, and "manual" is the absence of a
+          // rule — omit it so the payload stays the legacy shape for every other lease.
+          ...(data.escalationMode === 'custom' && ly.rule && ly.rule.mode !== 'manual'
+            ? { rule: { mode: ly.rule.mode, value: ly.rule.value ? Number(ly.rule.value) : undefined } }
+            : {}),
+        })),
         contract_term_years: toNumOrNull(data.contractTermYears),
         option_years: toNumOrNull(data.optionYears),
         base_rent: toNumOrNull(data.baseRent),
@@ -534,7 +550,7 @@ export function RenterFormDrawer({
             <Controller control={control} name="leaseStart" render={({ field }) => (
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} reviewName="leaseStart" />
             )} />
-            <LeaseTermBuilder control={control} />
+            <LeaseTermBuilder control={control} setValue={setValue} />
             <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />

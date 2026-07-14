@@ -20,27 +20,47 @@ interface Props<T extends string> {
   required?: boolean;
   /** RHF field name, set only when this select should participate in document-scan review. */
   reviewName?: string;
+  /**
+   * Sized to sit inline inside a row (36px tall, width from content) rather than as a
+   * full-width block: no label, no clear button. Used by the per-year rule picker in
+   * LeaseYearRow, where the row itself supplies the caption and the value is never empty.
+   */
+  compact?: boolean;
+  /** Merged onto the outer wrapper, e.g. a caller's width constraint. */
+  className?: string;
+  'aria-label'?: string;
 }
 
 export function FormSelect<T extends string>({
   label, error, value, onValueChange, options, placeholder, disabled, required, reviewName,
+  compact = false, className = '', ...rest
 }: Props<T>) {
   const { t, i18n } = useTranslation();
   const review = useFieldReview(reviewName);
   const dismissReview = useDismissFieldReview();
   const flagged = !!review && !error;
+  const showClear = !!value && !disabled && !compact;
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={(compact ? className : `flex flex-col gap-1.5 ${className}`).trim()}>
       {label && <label className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)]">{label}{required && <RequiredMark />}</label>}
       {/* Ignore spurious empty emissions: Radix fires onValueChange('') for one render when
           a programmatically-set (e.g. RHF reset) value transitions before its Item registers,
           which would wipe the selection. No Item uses '', so a real change is always truthy. */}
       <Select.Root value={value} onValueChange={(v) => { if (v) { onValueChange(v as T); if (reviewName) dismissReview?.(reviewName); } }} disabled={disabled} dir={i18n.dir()}>
         <div className="relative">
-          <Select.Trigger id={reviewName ? `scan-field-${reviewName}` : undefined} aria-required={required || undefined} className={`flex items-center w-full rounded-xl bg-[var(--color-input-bg)] border ps-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${value && !disabled ? 'pe-14' : 'pe-10'} ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}>
+          <Select.Trigger
+            id={reviewName ? `scan-field-${reviewName}` : undefined}
+            aria-required={required || undefined}
+            aria-label={rest['aria-label']}
+            className={`flex items-center border bg-[var(--color-input-bg)] text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${
+              compact
+                ? 'w-full rounded-lg ps-2.5 pe-8 h-9'
+                : `w-full rounded-xl ps-3.5 py-2.5 ${showClear ? 'pe-14' : 'pe-10'}`
+            } ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}
+          >
             <Select.Value placeholder={placeholder} />
           </Select.Trigger>
-          {value && !disabled && (
+          {showClear && (
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onValueChange('' as T); }}
@@ -50,7 +70,7 @@ export function FormSelect<T extends string>({
               <X size={14} aria-hidden="true" />
             </button>
           )}
-          <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)]" />
+          <ChevronDown size={16} aria-hidden="true" className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] ${compact ? 'end-2' : 'end-3.5'}`} />
         </div>
         <Select.Portal>
           <Select.Content className="z-50 min-w-[8rem] overflow-hidden rounded-xl bg-[var(--color-surface)] border border-[var(--color-outline)] shadow-lg">
@@ -71,7 +91,9 @@ export function FormSelect<T extends string>({
           </Select.Content>
         </Select.Portal>
       </Select.Root>
-      {error && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
+      {/* Compact selects sit inside a caller's row, which is too narrow to read a message in
+          and owns the error line itself — here `error` only colors the border. */}
+      {error && !compact && <p className="text-xs text-[var(--color-error)]">{t(error, { defaultValue: error })}</p>}
       {flagged && <FieldReviewNotice source={review!.source} />}
     </div>
   );
