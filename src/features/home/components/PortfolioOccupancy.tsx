@@ -9,52 +9,84 @@ interface Props {
   loading?: boolean;
 }
 
+/** Above this many properties the per-property squares become too thin to read or click,
+ *  so the strip switches to a single proportional bar. */
+const MAX_SQUARES = 12;
+
 export function PortfolioOccupancy({ properties, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const occupiedCount = properties.filter((p) => p.hasRenters).length;
+  const vacantCount = properties.length - occupiedCount;
   const occupancyPct = properties.length > 0
     ? Math.round((occupiedCount / properties.length) * 100)
     : 0;
+  const showSquares = properties.length <= MAX_SQUARES;
   const occupancyColor =
-    occupancyPct >= 80 ? '#4ADE80' : occupancyPct >= 50 ? '#FACC15' : '#FCA5A5';
+    occupancyPct >= 80
+      ? 'var(--color-rev-fg)'
+      : occupancyPct >= 50
+        ? 'var(--color-warning)'
+        : 'var(--color-exp-fg)';
 
   return (
-    <div className="rounded-[var(--radius-card)] p-6 flex flex-col" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest opacity-75 mb-2">{t('home.portfolioOccupancy')}</p>
-      {loading ? (
-        <>
-          <Skeleton width={120} height={52} className="opacity-30" />
-          <Skeleton width={160} height={16} className="mt-2 opacity-30" />
-        </>
-      ) : (
-        <>
-          <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: occupancyColor }}>
-            {occupancyPct}%
-          </p>
-          <p className="text-sm opacity-65 mt-1">{t('home.occupancyMeta', { occupied: occupiedCount, total: properties.length })}</p>
-        </>
-      )}
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+        {t('home.portfolioOccupancy')}
+      </p>
 
-      <div className="flex gap-1.5 mt-auto pt-5">
-        {properties.slice(0, 8).map((p) => (
-          <button
-            key={p.id}
-            onClick={() => navigate(`/properties/${p.id}`)}
-            title={formatPropertyAddress(p, t)}
-            className="flex-1 h-6 rounded-[4px] min-w-0 transition-opacity hover:opacity-80"
-            style={{ background: p.hasRenters ? '#4ADE80' : 'rgba(255,255,255,0.15)' }}
-          />
-        ))}
-      </div>
-      <div className="flex items-center gap-4 mt-2 text-[11px] opacity-55">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: '#4ADE80' }} />{t('home.occupied')}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,255,255,0.25)' }} />{t('home.vacant')}
-        </span>
+      <div
+        className="rounded-[var(--radius-card)] p-7"
+        style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
+      >
+        {loading ? (
+          <div className="flex items-baseline gap-3">
+            <Skeleton width={120} height={52} />
+            <Skeleton width={140} height={16} />
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: occupancyColor }}>
+              {occupancyPct}%
+            </p>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {t('home.occupancyMeta', { occupied: occupiedCount, total: properties.length })}
+            </p>
+          </div>
+        )}
+
+        {showSquares ? (
+          <div className="flex gap-1.5 mt-7">
+            {properties.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => navigate(`/properties/${p.id}`)}
+                title={formatPropertyAddress(p, t)}
+                className="flex-1 h-16 rounded-[4px] min-w-0 transition-opacity hover:opacity-80"
+                style={{ background: p.hasRenters ? 'var(--color-rev-fg)' : 'var(--color-outline)' }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            className="flex h-16 mt-7 rounded-[4px] overflow-hidden"
+            style={{ background: 'var(--color-outline)' }}
+          >
+            <div style={{ width: `${occupancyPct}%`, background: 'var(--color-rev-fg)' }} />
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 mt-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'var(--color-rev-fg)' }} />
+            {showSquares ? t('home.occupied') : `${occupiedCount} ${t('home.occupied')}`}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'var(--color-outline)' }} />
+            {showSquares ? t('home.vacant') : `${vacantCount} ${t('home.vacant')}`}
+          </span>
+        </div>
       </div>
     </div>
   );

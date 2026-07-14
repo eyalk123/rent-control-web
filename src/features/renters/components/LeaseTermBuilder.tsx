@@ -1,27 +1,22 @@
 import { useEffect, useRef } from 'react';
 import { Controller, useFieldArray, useWatch, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, TrendingUp } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import type { LeaseYearType, RentEscalationMode } from '@/shared/types';
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { buildLeaseYears } from '@/shared/utils/leaseSchedule';
-import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
-import { SegToggle } from '@/shared/components/ui/SegToggle';
-import { Pill } from '@/shared/components/ui/Pill';
-import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { FormInput } from '@/shared/components/form/FormInput';
-import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
-import { LeaseYearAmountField } from '@/shared/components/form/LeaseYearAmountField';
-import { LeaseYearTypeText } from '@/shared/components/form/LeaseYearTypeText';
+import { RentChangeField } from '@/shared/components/lease/RentChangeField';
+import { LeaseYearRow } from '@/shared/components/lease/LeaseYearRow';
 
 interface Props {
   control: Control<RenterFormValues>;
 }
 
-type LeaseYearRow = { amount?: string; type?: LeaseYearType };
+type LeaseYearRowValue = { amount?: string; type?: LeaseYearType };
 
 export function LeaseTermBuilder({ control }: Props) {
   const { t } = useTranslation();
@@ -33,7 +28,8 @@ export function LeaseTermBuilder({ control }: Props) {
     (useWatch({ control, name: 'escalationMode' }) as RentEscalationMode | undefined) ?? 'none';
   const escValStr = useWatch({ control, name: 'escalationValue' }) as string | undefined;
   const leaseStart = useWatch({ control, name: 'leaseStart' }) as string | undefined;
-  const leaseYears = (useWatch({ control, name: 'leaseYears' }) as LeaseYearRow[] | undefined) ?? [];
+  const leaseYears =
+    (useWatch({ control, name: 'leaseYears' }) as LeaseYearRowValue[] | undefined) ?? [];
 
   const { replace } = useFieldArray({ control, name: 'leaseYears' });
 
@@ -80,14 +76,6 @@ export function LeaseTermBuilder({ control }: Props) {
 
   const isCustom = escMode === 'custom';
 
-  const escalationSegments: { value: RentEscalationMode; label: string }[] = [
-    { value: 'none', label: t('renter.rentChangeSame') },
-    { value: 'percent', label: t('renter.rentChangePercent') },
-    { value: 'fixed', label: t('renter.rentChangeFixed') },
-    { value: 'cpi', label: t('renter.rentChangeCpi') },
-    { value: 'custom', label: t('renter.rentChangeCustom') },
-  ];
-
   const contractCount = Number(contractStr) || 0;
   let endDateISO: string | null = null;
   if (leaseStart && contractCount > 0) {
@@ -100,35 +88,37 @@ export function LeaseTermBuilder({ control }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Controller
-        control={control}
-        name="contractTermYears"
-        render={({ field }) => (
-          <Stepper
-            label={t('renter.contractTerm')}
-            unitLabel={t('renter.yearsUnit')}
-            min={0}
-            max={20}
-            value={Number(field.value) || 0}
-            onChange={(v) => field.onChange(String(v))}
-          />
-        )}
-      />
+      <div className="flex flex-wrap gap-4">
+        <Controller
+          control={control}
+          name="contractTermYears"
+          render={({ field }) => (
+            <Stepper
+              label={t('renter.contractTerm')}
+              unitLabel={t('renter.yearsUnit')}
+              min={0}
+              max={20}
+              value={Number(field.value) || 0}
+              onChange={(v) => field.onChange(String(v))}
+            />
+          )}
+        />
 
-      <Controller
-        control={control}
-        name="optionYears"
-        render={({ field }) => (
-          <Stepper
-            label={t('renter.renewalOptions')}
-            unitLabel={t('renter.yearsUnit')}
-            min={0}
-            max={10}
-            value={Number(field.value) || 0}
-            onChange={(v) => field.onChange(String(v))}
-          />
-        )}
-      />
+        <Controller
+          control={control}
+          name="optionYears"
+          render={({ field }) => (
+            <Stepper
+              label={t('renter.renewalOptions')}
+              unitLabel={t('renter.yearsUnit')}
+              min={0}
+              max={10}
+              value={Number(field.value) || 0}
+              onChange={(v) => field.onChange(String(v))}
+            />
+          )}
+        />
+      </div>
 
       <Controller
         control={control}
@@ -146,46 +136,29 @@ export function LeaseTermBuilder({ control }: Props) {
         )}
       />
 
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
-          {t('renter.rentChange')}
-        </span>
-        <Controller
-          control={control}
-          name="escalationMode"
-          render={({ field }) => (
-            <SegToggle
-              value={(field.value as RentEscalationMode) ?? 'none'}
-              onChange={(v) => {
-                if (v === 'cpi') cpiSwitchRef.current = true;
-                field.onChange(v);
-              }}
-              options={escalationSegments}
-            />
-          )}
-        />
-      </div>
-
-      {escMode === 'cpi' ? (
-        <p className="text-[13px] leading-snug text-[var(--color-text-secondary)]">
-          {t('renter.rentChangeCpiNote')}
-        </p>
-      ) : null}
-
-      {escMode === 'percent' || escMode === 'fixed' ? (
-        <Controller
-          control={control}
-          name="escalationValue"
-          render={({ field }) => (
-            <EscalationValueField
-              mode={escMode}
-              value={field.value ?? ''}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-            />
-          )}
-        />
-      ) : null}
+      <Controller
+        control={control}
+        name="escalationMode"
+        render={({ field: modeField }) => (
+          <Controller
+            control={control}
+            name="escalationValue"
+            render={({ field: valueField }) => (
+              <RentChangeField
+                label={t('renter.rentChange')}
+                mode={(modeField.value as RentEscalationMode) ?? 'none'}
+                onModeChange={(v) => {
+                  if (v === 'cpi') cpiSwitchRef.current = true;
+                  modeField.onChange(v);
+                }}
+                value={valueField.value ?? ''}
+                onValueChange={valueField.onChange}
+                onValueBlur={valueField.onBlur}
+              />
+            )}
+          />
+        )}
+      />
 
       {leaseYears.length > 0 ? (
         <div>
@@ -194,119 +167,38 @@ export function LeaseTermBuilder({ control }: Props) {
             {t('renter.leaseTimeline')}
           </p>
 
-          <div>
+          <div className="flex flex-col gap-1.5">
             {leaseYears.map((row, index) => {
-              const isCurrent = isCurrentLeaseYear(leaseStart, index);
               const yearType: LeaseYearType = row?.type ?? 'contract';
-              const amountNum = Number(row?.amount) || 0;
-              const isFirst = index === 0;
-              const isLast = index === leaseYears.length - 1;
               // Year 1 is the known base; later CPI years are index-linked projections.
               const isCpiProjected = escMode === 'cpi' && index > 0;
 
-              return (
-                <div
+              return isCustom ? (
+                <Controller
                   key={index}
-                  className={`flex items-stretch gap-2 px-1 ${isCurrent ? 'rounded-[8px]' : ''}`}
-                  style={isCurrent ? { background: 'var(--color-rev-bg)' } : undefined}
-                >
-                  {/* connected rail */}
-                  <div className="flex flex-col items-center w-6 shrink-0">
-                    <div
-                      className="w-0.5 flex-1"
-                      style={{ background: isFirst ? 'transparent' : 'var(--color-outline)' }}
+                  control={control}
+                  name={`leaseYears.${index}.amount`}
+                  render={({ field }) => (
+                    <LeaseYearRow
+                      label={getLeaseYearLabel(leaseStart, index)}
+                      amount={field.value ?? ''}
+                      type={yearType}
+                      isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                      onAmountChange={field.onChange}
+                      onAmountBlur={field.onBlur}
+                      amountName={field.name}
                     />
-                    <div
-                      className="rounded-full my-0.5 shrink-0"
-                      style={{
-                        width: isCurrent ? 14 : 12,
-                        height: isCurrent ? 14 : 12,
-                        background: isCurrent
-                          ? 'var(--color-rev-fg)'
-                          : yearType === 'option'
-                          ? 'transparent'
-                          : 'var(--color-primary)',
-                        border:
-                          yearType === 'option' && !isCurrent
-                            ? '2px solid var(--color-primary)'
-                            : 'none',
-                      }}
-                    />
-                    <div
-                      className="w-0.5 flex-1"
-                      style={{ background: isLast ? 'transparent' : 'var(--color-outline)' }}
-                    />
-                  </div>
-
-                  {isCustom ? (
-                    <div className="flex-1 flex items-center gap-3 py-2">
-                      <span
-                        className={`text-[15px] min-w-[52px] text-[var(--color-text-primary)] ${
-                          isCurrent ? 'font-extrabold' : 'font-semibold'
-                        }`}
-                      >
-                        {getLeaseYearLabel(leaseStart, index)}
-                      </span>
-                      <Controller
-                        control={control}
-                        name={`leaseYears.${index}.amount`}
-                        render={({ field }) => (
-                          <LeaseYearAmountField
-                            value={field.value ?? ''}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            name={field.name}
-                            placeholder={t('renter.amount')}
-                          />
-                        )}
-                      />
-                      <LeaseYearTypeText type={yearType} />
-                      {isCurrent && (
-                        <Pill tone="revenue" size="sm">
-                          {t('renter.currentLease')}
-                        </Pill>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center gap-3 py-2.5">
-                      <span
-                        className={`text-[15px] min-w-[52px] text-[var(--color-text-primary)] ${
-                          isCurrent ? 'font-extrabold' : 'font-semibold'
-                        }`}
-                      >
-                        {getLeaseYearLabel(leaseStart, index)}
-                      </span>
-                      <div className="flex-1 flex items-center gap-2 min-w-0">
-                        {/* CPI amounts past year 1 are index-linked projections the
-                            client can't know exactly — mark them approximate/muted. */}
-                        <LtrSpan
-                          className={`text-[15px] font-semibold ${
-                            isCpiProjected
-                              ? 'text-[var(--color-text-secondary)]'
-                              : 'text-[var(--color-text-primary)]'
-                          }`}
-                          style={{ fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          {amountNum > 0
-                            ? `${isCpiProjected ? '≈ ' : ''}${formatMoney(amountNum)}`
-                            : '—'}
-                        </LtrSpan>
-                        {isCpiProjected && (
-                          <Pill tone="info" size="sm" className="gap-1">
-                            <TrendingUp size={12} />
-                            {t('renter.rentChangeCpi')}
-                          </Pill>
-                        )}
-                      </div>
-                      <LeaseYearTypeText type={yearType} />
-                      {isCurrent && (
-                        <Pill tone="revenue" size="sm">
-                          {t('renter.currentLease')}
-                        </Pill>
-                      )}
-                    </div>
                   )}
-                </div>
+                />
+              ) : (
+                <LeaseYearRow
+                  key={index}
+                  label={getLeaseYearLabel(leaseStart, index)}
+                  amount={String(row?.amount ?? '')}
+                  type={yearType}
+                  isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                  projected={isCpiProjected}
+                />
               );
             })}
           </div>

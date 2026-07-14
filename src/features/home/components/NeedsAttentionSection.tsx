@@ -12,6 +12,10 @@ import { useNotifications, useDismissNotification } from '@/features/notificatio
 import type { NotificationItem } from '@/features/notifications/types';
 import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 
+/** Rows shown per section before collapsing the rest behind "See all". Keeps the
+ *  section's height stable so the neighbouring occupancy card can't be stretched by it. */
+const MAX_ROWS_PER_SECTION = 2;
+
 export function NeedsAttentionSection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -73,7 +77,7 @@ export function NeedsAttentionSection() {
               </span>
             </div>
             <div className="space-y-2">
-              {overdue.slice(0, 3).map((item) => {
+              {overdue.slice(0, MAX_ROWS_PER_SECTION).map((item) => {
                 const saving = savingId === item.id;
                 return (
                   <div key={item.id} className="flex items-center gap-2">
@@ -113,13 +117,13 @@ export function NeedsAttentionSection() {
                 );
               })}
             </div>
-            {overdue.length > 3 && (
+            {overdue.length > MAX_ROWS_PER_SECTION && (
               <button
                 onClick={openPanel}
                 className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
                 style={{ color: 'var(--color-exp-fg)' }}
               >
-                {t('home.seeAll')} ({overdue.length - 3} {t('home.more')})
+                {t('home.seeAll')} ({overdue.length - MAX_ROWS_PER_SECTION} {t('home.more')})
               </button>
             )}
           </div>
@@ -134,7 +138,7 @@ export function NeedsAttentionSection() {
               </span>
             </div>
             <div className="space-y-2">
-              {expiring.slice(0, 3).map((item) => (
+              {expiring.slice(0, MAX_ROWS_PER_SECTION).map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
                   <button
                     onClick={() => navigate(`/renters/${item.renter_id}`)}
@@ -166,13 +170,13 @@ export function NeedsAttentionSection() {
                 </div>
               ))}
             </div>
-            {expiring.length > 3 && (
+            {expiring.length > MAX_ROWS_PER_SECTION && (
               <button
                 onClick={openPanel}
                 className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
                 style={{ color: 'var(--color-warning)' }}
               >
-                {t('home.seeAll')} ({expiring.length - 3} {t('home.more')})
+                {t('home.seeAll')} ({expiring.length - MAX_ROWS_PER_SECTION} {t('home.more')})
               </button>
             )}
           </div>

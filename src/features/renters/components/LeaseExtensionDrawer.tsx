@@ -1,23 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { CalendarClock, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
-import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { Stepper } from '@/shared/components/ui/Stepper';
-import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
-import { LeaseYearAmountField } from '@/shared/components/form/LeaseYearAmountField';
-import { LeaseYearTypeText } from '@/shared/components/form/LeaseYearTypeText';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
+import { RentChangeField } from '@/shared/components/lease/RentChangeField';
+import { LeaseYearRow } from '@/shared/components/lease/LeaseYearRow';
 import { LeaseTimeline } from './LeaseTimeline';
 import { useUpdateRenter } from '../queries';
 import { getApiErrorMessage } from '@/core/api/client';
 import { buildAddedYears, hasContractAfterOptionYear, reconstructIntentFromLeaseYears } from '@/shared/utils/leaseSchedule';
 import { getLeaseEndDate } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
-import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import type { LeaseYear, LeaseYearType, RentEscalationMode, Renter } from '@/shared/types';
 
@@ -30,33 +27,37 @@ interface Props {
 /** Editable row — amount stays a string while typing, per the form convention. */
 type Row = { amount: string; type: LeaseYearType };
 
-// Increment applied to *new* years. "custom" is intentionally omitted: existing rows are
-// individually editable, and added rows follow the increment.
-const INCREMENT_MODES: RentEscalationMode[] = ['none', 'percent', 'fixed'];
-
 /**
  * Focused lease-extension flow. Shows the current lease, lets the owner grow the lease with
  * "years to add" + "option years to add" number inputs (auto-priced from the lease's existing
  * escalation) and edit/delete/convert the existing years, then saves the whole schedule via
  * PATCH. Order is validated (contract years must precede option years) rather than
  * auto-restructured — the owner is warned and resolves it.
+ *
+ * Offers the same escalation modes as the renter form (RentChangeField): in "custom" mode the
+ * new years become hand-editable too, so every amount in the schedule can be priced by hand.
  */
 export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const updateMutation = useUpdateRenter(renter.id);
 
-  // The existing lease years, individually editable. New years are derived from the counts.
+  // The existing lease years, individually editable. New years are derived from the counts
+  // (and hand-editable in custom mode).
   const [existingRows, setExistingRows] = useState<Row[]>([]);
+  const [addedRows, setAddedRows] = useState<Row[]>([]);
   const [mode, setMode] = useState<RentEscalationMode>('none');
   const [value, setValue] = useState<string>('');
   const [addCount, setAddCount] = useState(0);
   const [addOptionCount, setAddOptionCount] = useState(0);
   const [showDiscard, setShowDiscard] = useState(false);
-  const initialSnapshot = useRef<string>('');
+  // Read during render (to gate the save/discard affordances), so it's state, not a ref.
+  const [initialSnapshot, setInitialSnapshot] = useState('');
 
   // Seed local state from the renter each time the drawer opens. Prefer the persisted
-  // escalation rule; fall back to what the saved schedule implies.
+  // escalation rule; fall back to what the saved schedule implies. The saved mode is kept
+  // as-is (including "custom"/"cpi") — coercing it here would silently rewrite the renter's
+  // escalation rule on the next save.
   useEffect(() => {
     if (!open) return;
     const seededRows: Row[] = (renter.lease_years ?? []).map((y) => ({
@@ -65,16 +66,15 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
     }));
     const seededMode: RentEscalationMode =
       renter.rent_escalation_mode ?? reconstructIntentFromLeaseYears(renter.lease_years).escalationMode;
-    // The editor only exposes none/percent/fixed; treat a saved "custom" as "none".
-    const editorMode: RentEscalationMode = seededMode === 'custom' ? 'none' : seededMode;
     const seededValue = renter.rent_escalation_value != null ? String(renter.rent_escalation_value) : '';
     setExistingRows(seededRows);
-    setMode(editorMode);
+    setAddedRows([]);
+    setMode(seededMode);
     setValue(seededValue);
     setAddCount(0);
     setAddOptionCount(0);
     setShowDiscard(false);
-    initialSnapshot.current = JSON.stringify({ rows: seededRows, mode: editorMode, value: seededValue, addCount: 0, addOptionCount: 0 });
+    setInitialSnapshot(JSON.stringify({ rows: seededRows, added: [], mode: seededMode, value: seededValue }));
   }, [open, renter]);
 
   const existingYears: LeaseYear[] = useMemo(
@@ -82,10 +82,32 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
     [existingRows],
   );
 
+  // New-year pricing walks the escalation rule forward from the last existing amount, so the
+  // derivation only needs the tail of the schedule — and only re-runs when that amount
+  // changes, not on every keystroke in every row.
+  const lastExistingAmount = existingYears.length > 0 ? existingYears[existingYears.length - 1].amount : 0;
+
   // New years grow/shrink reactively with the number inputs — no explicit "add" action.
+  // In custom mode the owner hand-prices them, so re-deriving preserves what they typed.
+  useEffect(() => {
+    setAddedRows((prev) => {
+      const next = buildAddedYears(
+        [{ amount: lastExistingAmount, type: 'contract' }],
+        addCount,
+        addOptionCount,
+        mode,
+        Number(value) || 0,
+      );
+      return next.map((y, i) => ({
+        amount: mode === 'custom' && prev[i] ? prev[i].amount : String(y.amount),
+        type: y.type,
+      }));
+    });
+  }, [addCount, addOptionCount, mode, value, lastExistingAmount]);
+
   const addedYears: LeaseYear[] = useMemo(
-    () => buildAddedYears(existingYears, addCount, addOptionCount, mode, Number(value) || 0),
-    [existingYears, addCount, addOptionCount, mode, value],
+    () => addedRows.map((r) => ({ amount: Number(r.amount) || 0, type: r.type })),
+    [addedRows],
   );
 
   const allYears: LeaseYear[] = useMemo(() => [...existingYears, ...addedYears], [existingYears, addedYears]);
@@ -101,7 +123,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
   const yearDelta = allYears.length - (renter.lease_years?.length ?? 0);
 
   const dirty =
-    JSON.stringify({ rows: existingRows, mode, value, addCount, addOptionCount }) !== initialSnapshot.current;
+    JSON.stringify({ rows: existingRows, added: addedRows, mode, value }) !== initialSnapshot;
   const attemptClose = () => {
     if (dirty) setShowDiscard(true);
     else onClose();
@@ -117,6 +139,9 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
       prev.map((r, i) => (i === index ? { ...r, type: r.type === 'contract' ? 'option' : 'contract' } : r)),
     );
 
+  const updateAddedAmount = (index: number, amount: string) =>
+    setAddedRows((prev) => prev.map((r, i) => (i === index ? { ...r, amount } : r)));
+
   const handleSave = async () => {
     if (orderInvalid) return;
     try {
@@ -125,7 +150,9 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
         contract_term_years: allYears.filter((y) => y.type === 'contract').length,
         option_years: allYears.filter((y) => y.type === 'option').length,
         rent_escalation_mode: mode,
-        rent_escalation_value: value ? Number(value) : null,
+        // Only percent/fixed carry a step; none/cpi/custom must not keep a stale one.
+        rent_escalation_value:
+          (mode === 'percent' || mode === 'fixed') && value ? Number(value) : null,
       });
       showToast(t('renter.extendLeaseSuccess'), 'success');
       onClose();
@@ -134,16 +161,6 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
       showToast(getApiErrorMessage(err, t('error.saveFailed')), 'error');
     }
   };
-
-  const incrementSegments = INCREMENT_MODES.map((m) => ({
-    value: m,
-    label:
-      m === 'none'
-        ? t('renter.rentChangeSame')
-        : m === 'percent'
-        ? t('renter.rentChangePercent')
-        : t('renter.rentChangeFixed'),
-  }));
 
   const footer = (
     <div className="flex gap-3">
@@ -202,22 +219,14 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
               />
             </div>
 
-            {/* Increment for new years */}
-            <div className="flex flex-col gap-1.5 mt-4">
-              <span className="text-sm font-medium text-[var(--color-text-primary)]">{t('renter.newYearIncrement')}</span>
-              {mode === 'cpi' ? (
-                // CPI-linked lease: linkage is preserved and priced server-side; no
-                // manual increment choice here.
-                <p className="text-[13px] leading-snug text-[var(--color-text-secondary)]">
-                  {t('renter.rentChangeCpiNote')}
-                </p>
-              ) : (
-                <SegToggle value={mode} onChange={setMode} options={incrementSegments} />
-              )}
-            </div>
-            {(mode === 'percent' || mode === 'fixed') && (
-              <EscalationValueField mode={mode} value={value} onChange={setValue} className="mt-3" />
-            )}
+            <RentChangeField
+              label={t('renter.newYearIncrement')}
+              mode={mode}
+              onModeChange={setMode}
+              value={value}
+              onValueChange={setValue}
+              className="mt-4"
+            />
           </div>
 
           {/* New lease schedule = live preview */}
@@ -239,64 +248,33 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
             ) : (
               <div className="flex flex-col gap-1.5">
                 {/* Existing years — editable amount, deletable, type convertible */}
-                {existingRows.map((row, index) => {
-                  const isCurrent = isCurrentLeaseYear(leaseStart, index);
-                  return (
-                    <div
-                      key={`existing-${index}`}
-                      className="flex items-center gap-3 px-2 py-1.5 rounded-[8px]"
-                      style={isCurrent ? { background: 'var(--color-rev-bg)' } : undefined}
-                    >
-                      <span
-                        className={`text-[15px] min-w-[52px] text-[var(--color-text-primary)] ${isCurrent ? 'font-extrabold' : 'font-semibold'}`}
-                      >
-                        {getLeaseYearLabel(leaseStart, index)}
-                      </span>
-                      <LeaseYearAmountField
-                        aria-label={t('renter.amount')}
-                        value={row.amount}
-                        onChange={(v) => updateAmount(index, v)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleType(index)}
-                        title={t('renter.tapToChangeType')}
-                        className="w-16 text-end rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-input-filled-background)] underline decoration-dotted underline-offset-2"
-                      >
-                        <LeaseYearTypeText type={row.type} />
-                      </button>
-                      {isCurrent && <Pill tone="revenue" size="sm">{t('renter.currentLease')}</Pill>}
-                      <button
-                        type="button"
-                        onClick={() => removeRow(index)}
-                        aria-label={t('renter.removeYear')}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-input-filled-background)]"
-                        style={{ color: 'var(--color-error)' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  );
-                })}
-                {/* Added years — auto-priced, read-only (adjust via the number inputs + increment) */}
-                {addedYears.map((year, j) => {
-                  const index = existingRows.length + j;
-                  return (
-                    <div key={`added-${j}`} className="flex items-center gap-3 px-2 py-1.5 rounded-[8px]">
-                      <span className="text-[15px] min-w-[52px] font-semibold text-[var(--color-text-primary)]">
-                        {getLeaseYearLabel(leaseStart, index)}
-                      </span>
-                      <LtrSpan
-                        className="flex-1 text-[15px] font-semibold text-[var(--color-text-primary)]"
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {year.amount > 0 ? formatMoney(year.amount) : '—'}
-                      </LtrSpan>
-                      <LeaseYearTypeText type={year.type} className="w-16 text-end" />
-                      <Pill tone="neutral" size="sm">{t('renter.newYearTag')}</Pill>
-                    </div>
-                  );
-                })}
+                {existingRows.map((row, index) => (
+                  <LeaseYearRow
+                    key={`existing-${index}`}
+                    label={getLeaseYearLabel(leaseStart, index)}
+                    amount={row.amount}
+                    type={row.type}
+                    isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                    onAmountChange={(v) => updateAmount(index, v)}
+                    onTypeToggle={() => toggleType(index)}
+                    onRemove={() => removeRow(index)}
+                  />
+                ))}
+                {/* Added years — auto-priced from the escalation rule, except in custom mode
+                    where the owner prices them by hand. */}
+                {addedRows.map((row, j) => (
+                  <LeaseYearRow
+                    key={`added-${j}`}
+                    label={getLeaseYearLabel(leaseStart, existingRows.length + j)}
+                    amount={row.amount}
+                    type={row.type}
+                    onAmountChange={mode === 'custom' ? (v) => updateAddedAmount(j, v) : undefined}
+                    // CPI amounts are index-linked and priced server-side — a client-side
+                    // figure here is only an estimate.
+                    projected={mode === 'cpi'}
+                    badge={<Pill tone="neutral" size="sm">{t('renter.newYearTag')}</Pill>}
+                  />
+                ))}
               </div>
             )}
           </div>

@@ -30,7 +30,7 @@ export function HomePage() {
 
       <QuickActions onNavigate={navigate} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <NeedsAttentionSection />
         <PortfolioOccupancy properties={properties} loading={propsLoading} />
       </div>
