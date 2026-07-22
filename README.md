@@ -1,6 +1,10 @@
 # Rent Control — Web
 
-Web client for **Rent Control**, a property-management app for landlords (Hebrew/RTL + English). It is the web port of the rent-control mobile app and talks to the separate FastAPI backend (`../rent-control-backend`).
+Web client for **Rent Control**, a property-management app for landlords (Hebrew/RTL + English).
+It talks to the [Rent Control backend](https://github.com/eyalk123/rent-control-backend), whose
+README is the **overview of the whole system** — read it first if you're new here.
+
+Sibling clients: [rent-control](https://github.com/eyalk123/rent-control) (iOS/Android).
 
 ## Tech stack
 
