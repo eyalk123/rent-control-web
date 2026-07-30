@@ -20,6 +20,8 @@ test.describe('renters', () => {
   test('Next validates step-1 required fields inline (M1)', async ({ page }) => {
     await page.goto('/renters');
     await page.getByRole('button', { name: 'Add renter' }).click();
+    // "Add renter" opens a chooser (Enter manually / Scan a lease) — pick manual entry.
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
     await expect(page.getByRole('heading', { name: 'Add Renter' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Next' }).click();
@@ -77,6 +79,7 @@ test.describe('renters', () => {
   test('can create a renter (round-trip)', async ({ page }) => {
     await page.goto('/renters');
     await page.getByRole('button', { name: 'Add renter' }).click();
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
 
     await page.getByLabel('First Name').fill('Tessa');
     await page.getByLabel('Last Name').fill('Tester');
