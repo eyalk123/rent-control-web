@@ -16,6 +16,7 @@ Sibling clients: [rent-control](https://github.com/eyalk123/rent-control) (iOS/A
 - **Firebase** Auth (email/password + Google) and Storage (direct browser uploads)
 - **i18next** / react-i18next (en + he)
 - **Recharts** for charts
+- **react-markdown** (+ remark-gfm, remark-breaks) for assistant replies
 - **Sentry** for production error monitoring
 
 ## Getting started
