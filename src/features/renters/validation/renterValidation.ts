@@ -81,7 +81,9 @@ export const renterFormSchema = z.object({
     ),
   propertyId: optionalString,
   paymentType: optionalString,
-  paymentFrequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+  // Payment frequency is optional; its default is '' (nothing picked). Include '' in the
+  // enum — like insuranceType below — so a blank selection doesn't silently block submit.
+  paymentFrequency: z.enum(['monthly', 'quarterly', 'yearly', '']).optional(),
   paymentDayOfMonth: optionalPaymentDay,
   insuranceType: z.enum(['wire_transfer', 'bank_guarantee', '']).optional(),
   insuranceAmount: optionalNumericString,

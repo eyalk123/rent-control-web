@@ -11,6 +11,8 @@ import { AlertsPanelProvider } from '@/features/alerts/AlertsPanelContext';
 import { AlertsPanel } from '@/features/alerts/AlertsPanel';
 import { ScanProvider } from '@/features/document-scan/ScanContext';
 import { ScanSurfaces } from '@/features/document-scan/ScanSurfaces';
+import { ChatPanelProvider } from '@/features/agent/PortfolioChatContext';
+import { PortfolioChatPanel } from '@/features/agent/components/PortfolioChatPanel';
 
 function useDocumentTitle() {
   const { pathname } = useLocation();
@@ -39,7 +41,8 @@ export function AppShell() {
 
   return (
     <AlertsPanelProvider>
-      <ScanProvider>
+      <ChatPanelProvider>
+        <ScanProvider>
         <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
           <AuthTokenSync />
           <Sidebar />
@@ -57,10 +60,12 @@ export function AppShell() {
           <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
           <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} />
           <AlertsPanel />
+          <PortfolioChatPanel />
           {/* App-global scan drawers + floating "active scan" pill. */}
           <ScanSurfaces />
         </div>
-      </ScanProvider>
+        </ScanProvider>
+      </ChatPanelProvider>
     </AlertsPanelProvider>
   );
 }

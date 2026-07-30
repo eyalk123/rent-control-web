@@ -1065,5 +1065,40 @@
     "ruleEnabled": "כלל פעיל",
     "deleteRuleTitle": "למחוק את הכלל?",
     "deleteRuleMessage": "כלל ההתראה יימחק לצמיתות."
+  },
+  "agent": {
+    "title": "שאלו את Rent Control",
+    "launcher": "שאלו את Rent Control",
+    "placeholder": "שאלו על הנכסים, הדיירים או העסקאות שלכם…",
+    "send": "שליחה",
+    "stop": "עצירה",
+    "newChat": "שיחה חדשה",
+    "history": "שיחות",
+    "historyEmpty": "אין עדיין שיחות.",
+    "delete": "מחיקת שיחה",
+    "deleteConfirm": "למחוק את השיחה הזו?",
+    "sources": "מקורות",
+    "emptyTitle": "שאלו על תיק הנכסים שלכם",
+    "emptyHint": "אפשר לשאול בעברית או באנגלית. אני משתמש רק בנתונים שלכם, ומציג את המקורות.",
+    "working": "עובד…",
+    "errorGeneric": "משהו השתבש. נסו שוב.",
+    "errorLimit": "הגעתם למכסת ההודעות היומית של העוזר. נסו שוב מחר.",
+    "starters": [
+      "מי לא שילם החודש?",
+      "כמה הרווחתי השנה?",
+      "מתי מסתיים כל חוזה?"
+    ],
+    "tool": {
+      "get_overdue": "בודק מי לא שילם…",
+      "query_transactions": "בודק עסקאות…",
+      "explain_cpi": "מחשב את המדד…",
+      "get_report_summary": "מסכם את הדוחות…",
+      "get_lease_schedule": "קורא את החוזה…",
+      "list_properties": "בודק את הנכסים…",
+      "list_renters": "בודק את הדיירים…",
+      "get_property": "פותח את הנכס…",
+      "list_suppliers": "בודק ספקים…",
+      "default": "בודק את הנתונים…"
+    }
   }
 }

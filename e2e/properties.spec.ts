@@ -18,6 +18,8 @@ test.describe('properties', () => {
   test('shows validation errors on empty submit', async ({ page }) => {
     await page.goto('/properties');
     await page.getByRole('button', { name: 'Add property' }).click();
+    // "Add property" opens a chooser (Enter manually / Scan a lease) — pick manual entry.
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
     await expect(page.getByRole('heading', { name: 'Add Property' })).toBeVisible();
     // Step 1 "Next" triggers validation of address/city/type.
     await page.getByRole('button', { name: 'Next' }).click();
@@ -27,6 +29,7 @@ test.describe('properties', () => {
   test('can create a property (round-trip)', async ({ page }) => {
     await page.goto('/properties');
     await page.getByRole('button', { name: 'Add property' }).click();
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
 
     await page.getByLabel('Address').fill('999 E2E Boulevard');
     await page.getByLabel('City').fill('Testville');

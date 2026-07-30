@@ -28,12 +28,19 @@ Sentry (prod only). Backend: FastAPI.
   auto-sign-out, `mock.ts`), `auth/` (Firebase, `AuthContext`, `AuthTokenSync`,
   `ProtectedRoute`), `i18n/`, `theme/`, `monitoring/` (Sentry).
 - `src/features/`: feature slices (home, properties, renters, transactions, suppliers,
-  reports, notifications, settings, auth, legal). Each typically has `api/`, `components/`,
-  `pages/`, `queries.ts` (React Query hooks), and `validation/` or `schemas/`.
+  reports, notifications, settings, auth, legal, alerts, document-scan, agent). Each
+  typically has `api/`, `components/`, `pages/`, `queries.ts` (React Query hooks), and
+  `validation/` or `schemas/`.
+  - `agent/` is the "Ask Rent Control" assistant: a `Drawer` (`PortfolioChatPanel`) mounted
+    once in `AppShell` and opened from `TopBar`, streaming SSE from `POST /agent/chat` via
+    `api/agentStream.ts` (plain `fetch`, not Axios — Axios can't stream). Read-only: it
+    answers and cites, it never mutates. The launcher only renders when
+    `useAgentStatus()` reports enabled.
 - `src/shared/`: reusable `components/` (`form/`, `ui/`, `detail/`), `utils/`, `types/`,
   `accessibility/`, `constants/`.
 - `src/layout/`: app chrome — `AppShell`, `Sidebar`, `TopBar`, `MobileBottomBar`,
-  `CommandPalette`.
+  `CommandPalette`, `navConfig.ts`. `AppShell` is where every app-global provider and
+  overlay is mounted (alerts panel, scan surfaces, chat panel, transaction drawer).
 
 **Conventions:**
 
@@ -44,5 +51,8 @@ Sentry (prod only). Backend: FastAPI.
 - Auth: a `401` response auto-signs-out the user via the Axios response interceptor in
   `src/core/api/client.ts`. Public routes (`/sign-in`, `/privacy`, `/terms`,
   `/accessibility`) render outside `ProtectedRoute`; everything else is inside `AppShell`.
+  **One exception:** `features/agent/api/agentStream.ts` uses raw `fetch`, so it misses that
+  interceptor and throws a typed `AgentHttpError` instead — any other streaming call must
+  handle its own `401`/`429`/`503` the same way.
 - Styling: Tailwind v4 + `class-variance-authority` for component variants. RTL is driven by
   i18next language; keep layout direction-agnostic.
