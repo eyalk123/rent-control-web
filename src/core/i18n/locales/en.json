@@ -1064,5 +1064,40 @@
     "ruleEnabled": "Rule enabled",
     "deleteRuleTitle": "Delete rule?",
     "deleteRuleMessage": "This notification rule will be permanently removed."
+  },
+  "agent": {
+    "title": "Ask Rent Control",
+    "launcher": "Ask Rent Control",
+    "placeholder": "Ask about your properties, renters, or transactions…",
+    "send": "Send",
+    "stop": "Stop",
+    "newChat": "New chat",
+    "history": "Conversations",
+    "historyEmpty": "No conversations yet.",
+    "delete": "Delete conversation",
+    "deleteConfirm": "Delete this conversation?",
+    "sources": "Sources",
+    "emptyTitle": "Ask about your portfolio",
+    "emptyHint": "Ask in Hebrew or English. I only use your own data, and I show my sources.",
+    "working": "Working…",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorLimit": "You've reached today's message limit for the assistant. Try again tomorrow.",
+    "starters": [
+      "Who hasn't paid this month?",
+      "How much did I earn this year?",
+      "When does each lease end?"
+    ],
+    "tool": {
+      "get_overdue": "Checking who hasn't paid…",
+      "query_transactions": "Checking transactions…",
+      "explain_cpi": "Working out the CPI…",
+      "get_report_summary": "Adding up the reports…",
+      "get_lease_schedule": "Reading the lease…",
+      "list_properties": "Looking at your properties…",
+      "list_renters": "Looking at your renters…",
+      "get_property": "Opening the property…",
+      "list_suppliers": "Checking suppliers…",
+      "default": "Checking your data…"
+    }
   }
 }

@@ -1,7 +1,9 @@
-import { Sun, Moon, Bell } from 'lucide-react';
+import { Sun, Moon, Bell, Sparkles } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
+import { useChatPanel } from '@/features/agent/PortfolioChatContext';
+import { useAgentStatus } from '@/features/agent/queries';
 
 interface TopBarProps {
   onOpenPalette: () => void;
@@ -11,6 +13,8 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
   const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
   const { openPanel, hasAlerts } = useAlertsPanel();
+  const { open: openChat } = useChatPanel();
+  const { data: agentStatus } = useAgentStatus();
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -31,6 +35,17 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        {agentStatus?.enabled && (
+          <button
+            onClick={openChat}
+            title={t('agent.launcher')}
+            aria-label={t('agent.launcher')}
+            className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
+          >
+            <Sparkles size={16} aria-hidden="true" />
+          </button>
+        )}
+
         <button
           onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
           title={t('common.toggleTheme')}

@@ -16,6 +16,13 @@ import type {
 } from '@/shared/types';
 import { getLeaseEndDate } from '@/shared/types';
 import type { LeaseExtraction } from '@/features/document-scan/types';
+import type {
+  AgentStatus,
+  ConversationDetail,
+  ConversationSummary,
+  StoredMessage,
+} from '@/features/agent/types';
+import type { StreamChatArgs } from '@/features/agent/api/agentStream';
 
 // Set to true to use in-memory mock data when no backend is available.
 // Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
@@ -871,5 +878,80 @@ export const mockDocumentScanApi = {
       ],
     };
     return { logId: Date.now(), extraction };
+  },
+};
+
+// --- Portfolio Chat Agent -----------------------------------------------------------------
+// A canned streamed answer + an in-memory conversation store so the chat, its streaming UI,
+// source chips, and thread history all work offline / in E2E without the real agent backend.
+
+function _sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const id = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(id);
+      reject(new DOMException('Aborted', 'AbortError'));
+    });
+  });
+}
+
+const _agentConversations: ConversationSummary[] = [];
+const _agentMessages: Record<number, StoredMessage[]> = {};
+let _agentConvoId = 1;
+let _agentMsgId = 1;
+
+export const mockAgentApi = {
+  getStatus: async (): Promise<AgentStatus> => ({ enabled: true }),
+
+  listConversations: async (): Promise<ConversationSummary[]> =>
+    [..._agentConversations].sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
+
+  getConversation: async (id: number): Promise<ConversationDetail> => {
+    const conversation = _agentConversations.find((c) => c.id === id);
+    if (!conversation) throw new Error('Conversation not found');
+    return { conversation, messages: _agentMessages[id] ?? [] };
+  },
+
+  deleteConversation: async (id: number): Promise<void> => {
+    const i = _agentConversations.findIndex((c) => c.id === id);
+    if (i !== -1) _agentConversations.splice(i, 1);
+    delete _agentMessages[id];
+  },
+
+  stream: async ({ message, conversationId, signal, onEvent }: StreamChatArgs): Promise<void> => {
+    const now = () => new Date().toISOString();
+    let convo = conversationId != null ? _agentConversations.find((c) => c.id === conversationId) : undefined;
+    if (!convo) {
+      convo = { id: _agentConvoId++, title: message.slice(0, 60), created_at: now(), updated_at: now() };
+      _agentConversations.push(convo);
+      _agentMessages[convo.id] = [];
+    }
+    _agentMessages[convo.id].push({ id: _agentMsgId++, role: 'user', content: message, created_at: now() });
+    onEvent({ type: 'conversation', conversation_id: convo.id });
+
+    // Two canned answers: a table-shaped question exercises Markdown rendering (GFM table +
+    // bold); anything else returns the Hebrew answer that cites a seeded renter (Sources chip
+    // → /renters/1). Both are stripped of citation markers before display.
+    const wantsTable = /table|properties|list all/i.test(message);
+    const answer = wantsTable
+      ? 'Here are your **properties**:\n\n| Property | Rent |\n| --- | --- |\n| HaPalmach 12 | ₪12,000 |\n| Herzl 5 | ₪6,500 |\n\nTwo properties in total. [[property:1|HaPalmach 12]]'
+      : 'החוזה מסתיים במרץ 2027, עם שנת אופציה אחת שנותרה. [[renter:1|חוזה השוכר]]';
+
+    await _sleep(250, signal);
+    onEvent({ type: 'tool', name: wantsTable ? 'list_properties' : 'get_lease_schedule' });
+    await _sleep(250, signal);
+    for (const chunk of answer.match(/.{1,10}/gs) ?? [answer]) {
+      await _sleep(50, signal);
+      onEvent({ type: 'text', delta: chunk });
+    }
+
+    _agentMessages[convo.id].push({
+      id: _agentMsgId++,
+      role: 'assistant',
+      content: [{ type: 'text', text: answer }],
+      created_at: now(),
+    });
+    convo.updated_at = now();
+    onEvent({ type: 'done', status: 'success', message: answer, tool_calls: ['get_lease_schedule'] });
   },
 };
