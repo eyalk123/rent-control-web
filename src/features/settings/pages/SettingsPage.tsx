@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { useToast } from '@/shared/components/ui/Toast';
+import { downloadAllData } from '../api/export';
 
 // ─── DeleteAccountModal ──────────────────────────────────────────────────────
 
@@ -134,6 +135,19 @@ export function SettingsPage() {
   const { signOut, user } = useAppAuth();
   const { showToast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await downloadAllData();
+      showToast(t('settings.exportDataSuccess'), 'success');
+    } catch {
+      showToast(t('settings.exportDataFailed'), 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleSignOut = async () => {
     if (!confirm(t('settings.signOutConfirm'))) return;
@@ -249,6 +263,21 @@ export function SettingsPage() {
 
           {/* Data */}
           <SettingsSection id="data" title={t('settings.dataPrivacy')}>
+            <SettingRow
+              label={t('settings.exportData')}
+              hint={t('settings.exportDataHint')}
+              control={
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
+                  style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+                >
+                  <Download size={14} aria-hidden="true" />
+                  {exporting ? t('settings.exportDataPreparing') : t('settings.exportDataAction')}
+                </button>
+              }
+            />
             <SettingRow
               label={t('settings.currency')}
               hint={t('settings.currencyHint')}

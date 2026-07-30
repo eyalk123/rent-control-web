@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, MapPin, AlertCircle, Download, CheckSquare } from 'lucide-react';
+import { Plus, MapPin, AlertCircle, CheckSquare } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
@@ -377,9 +377,6 @@ export function PropertiesListPage() {
           </div>
         ) : (
           <div className="flex items-center gap-2 shrink-0">
-            <button className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>
-              <Download size={14} /> {t('common.export')}
-            </button>
             <button
               onClick={() => sel.enter()}
               disabled={filtered.length === 0}

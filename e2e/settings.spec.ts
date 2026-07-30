@@ -17,6 +17,16 @@ test.describe('settings', () => {
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   });
 
+  test('export all data downloads a file', async ({ page }) => {
+    await page.goto('/settings');
+    await expect(page.getByText('Export all data')).toBeVisible();
+
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Download' }).click();
+    // Mock API stands in for the server-built ZIP, so only the stem is stable here.
+    expect((await download).suggestedFilename()).toContain('rent-control-export-');
+  });
+
   test('account section shows the signed-in (bypass) user', async ({ page }) => {
     await page.goto('/settings');
     await expect(page.getByRole('main').getByText('e2e@test.local')).toBeVisible();

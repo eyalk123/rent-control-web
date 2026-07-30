@@ -1,6 +1,7 @@
 // Adapted from rent-control mobile 2026-05-14.
 // expo-file-system + expo-sharing replaced with browser Blob URL download.
 import apiClient from '@/core/api/client';
+import { downloadFile } from '@/shared/utils/download';
 
 export interface ReportExport {
   id: number;
@@ -21,27 +22,13 @@ export async function deleteReportExport(id: number): Promise<void> {
   await apiClient.delete(`/reports/history/${id}`);
 }
 
-async function triggerDownload(
+function triggerDownload(
   endpoint: string,
   year: number,
   format: ReportFormat,
   filename: string,
 ): Promise<void> {
-  const response = await apiClient.get<Blob>(endpoint, {
-    params: { year, format },
-    responseType: 'blob',
-    // Generous timeout — large PDF/CSV reports can take a while to generate.
-    timeout: 60000,
-  });
-
-  const url = URL.createObjectURL(response.data);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  return downloadFile(endpoint, filename, { params: { year, format } });
 }
 
 export async function downloadIncomeExpenseReport(year: number, format: ReportFormat): Promise<void> {
