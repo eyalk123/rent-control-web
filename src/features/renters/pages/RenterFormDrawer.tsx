@@ -11,6 +11,7 @@ import { useProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { getPaymentMethodOptions } from '@/shared/constants/paymentMethods';
+import { DEFAULT_PAYMENT_DAY } from '@/shared/constants/paymentDay';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
@@ -118,7 +119,10 @@ export function RenterFormDrawer({
 
   const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: '', contractTermYears: '', optionYears: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
+    // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
+    // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
+    // never shown; pre-filling discloses the default and leaves it editable.
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', optionYears: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -191,7 +195,7 @@ export function RenterFormDrawer({
             ? { rule: { mode: ly.rule.mode, value: ly.rule.value != null ? String(ly.rule.value) : '' } }
             : {}),
         })),
-        paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? '',
+        paymentDayOfMonth: existing.payment_day_of_month?.toString() ?? DEFAULT_PAYMENT_DAY,
         // Map the legacy 'wire_transfer' value onto the canonical option so it stays selected
         // in the dropdown; leave empty/other values untouched.
         paymentType: existing.payment_type === 'wire_transfer' ? 'bank_transfer' : (existing.payment_type ?? undefined),
@@ -238,7 +242,7 @@ export function RenterFormDrawer({
         extraContacts: [],
         propertyId: initialPropertyId?.toString() ?? '',
         paymentType: '',
-        paymentDayOfMonth: '',
+        paymentDayOfMonth: DEFAULT_PAYMENT_DAY,
         contractTermYears: '',
         optionYears: '',
         baseRent: '',
@@ -551,7 +555,7 @@ export function RenterFormDrawer({
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} reviewName="leaseStart" />
             )} />
             <LeaseTermBuilder control={control} setValue={setValue} />
-            <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
+            <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} hint={t('renter.paymentDayHint')} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
             )} />

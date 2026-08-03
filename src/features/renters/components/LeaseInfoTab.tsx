@@ -6,6 +6,7 @@ import { DocRow } from '@/shared/components/detail/DocRow';
 import { LeaseTimeline } from './LeaseTimeline';
 import { formatMoney } from '@/shared/utils/money';
 import { getPaymentMethodLabel } from '@/shared/constants/paymentMethods';
+import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -31,7 +32,18 @@ export function LeaseInfoTab({ renter }: Props) {
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
         <DetailPanel title={t('renter.paymentPanel')}>
           <DetailRow icon={CreditCard} label={t('renter.paymentMethod')} value={renter.payment_type ? getPaymentMethodLabel(renter.payment_type, t) : null} />
-          <DetailRow icon={Calendar} label={t('renter.payDay')} value={renter.payment_day_of_month ? t('renter.payDayValue', { day: renter.payment_day_of_month }) : null} />
+          {/* A renter saved before the form pre-filled this still has no stored day, but the
+              overdue engine already chases them on the 1st — so show that rather than hiding
+              the row, which left the behaviour unexplained. */}
+          <DetailRow
+            icon={Calendar}
+            label={t('renter.payDay')}
+            value={
+              renter.payment_day_of_month
+                ? t('renter.payDayValue', { day: renter.payment_day_of_month })
+                : t('renter.payDayDefaultValue', { day: DEFAULT_PAYMENT_DAY_NUM })
+            }
+          />
           <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
         </DetailPanel>
 
