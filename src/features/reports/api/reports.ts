@@ -1,5 +1,7 @@
 // Adapted from rent-control mobile 2026-05-14.
 // expo-file-system + expo-sharing replaced with browser Blob URL download.
+import i18n from 'i18next';
+
 import apiClient from '@/core/api/client';
 import { downloadFile } from '@/shared/utils/download';
 
@@ -22,13 +24,18 @@ export async function deleteReportExport(id: number): Promise<void> {
   await apiClient.delete(`/reports/history/${id}`);
 }
 
+/** The report is rendered in the language the app is currently in, right-to-left included. */
+function reportLang(): 'en' | 'he' {
+  return i18n.language?.startsWith('he') ? 'he' : 'en';
+}
+
 function triggerDownload(
   endpoint: string,
   year: number,
   format: ReportFormat,
   filename: string,
 ): Promise<void> {
-  return downloadFile(endpoint, filename, { params: { year, format } });
+  return downloadFile(endpoint, filename, { params: { year, format, lang: reportLang() } });
 }
 
 export async function downloadIncomeExpenseReport(year: number, format: ReportFormat): Promise<void> {

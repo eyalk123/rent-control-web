@@ -1,5 +1,10 @@
 // Legal document content for Rent Control (bilingual en/he).
 //
+// DUPLICATED FILE — an identical copy lives at
+// `rent-control/src/features/legal/legalContent.ts` (the mobile app). The two are separate
+// repos, so nothing syncs them automatically: edit both together, including the UPDATED_EN /
+// UPDATED_HE constants, or the two apps will state different terms to the same user.
+//
 // NOTE: These texts are drafted as a practical starting point and should be
 // reviewed by a qualified lawyer for your jurisdiction before relying on them.
 // Operator and contact details are centralised in the constants below.

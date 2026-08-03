@@ -10,7 +10,13 @@ import {
   useUpdateRule,
   useUpdateSettings,
 } from '../queries';
-import { NOTIFICATION_EVENTS, type NotificationEvent, type NotificationRule } from '../types';
+import {
+  NOTIFICATION_EVENTS,
+  isRuleEvent,
+  type NotificationEvent,
+  type NotificationRule,
+  type NotificationSettings,
+} from '../types';
 import { RuleEditorDrawer } from '../components/RuleEditorDrawer';
 
 // ── small toggle switch ───────────────────────────────────────────────────
@@ -38,6 +44,81 @@ function Card({ children }: { children: React.ReactNode }) {
     <div className="rounded-[var(--radius-card)]" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
       {children}
     </div>
+  );
+}
+
+/**
+ * The CPI event's stand-in for a rule editor. Offsets and scope make no sense for it —
+ * it fires when the index moves — so the only dial is how big a change has to be before
+ * it's worth an alert. Committed on blur so every keystroke isn't a PUT.
+ */
+function CpiThresholdCard({
+  settings,
+  onSave,
+}: {
+  settings: NotificationSettings;
+  onSave: (patch: Partial<NotificationSettings>) => void;
+}) {
+  const { t } = useTranslation();
+  const [amount, setAmount] = useState(String(settings.cpi_min_change_amount));
+  const [percent, setPercent] = useState(String(settings.cpi_min_change_percent));
+
+  const commit = (key: 'cpi_min_change_amount' | 'cpi_min_change_percent', raw: string) => {
+    const value = Number(raw);
+    if (raw.trim() === '' || Number.isNaN(value) || value < 0) {
+      // Reject nonsense by snapping the field back to what is actually stored.
+      if (key === 'cpi_min_change_amount') setAmount(String(settings.cpi_min_change_amount));
+      else setPercent(String(settings.cpi_min_change_percent));
+      return;
+    }
+    if (value !== settings[key]) onSave({ [key]: value });
+  };
+
+  const field = (
+    id: string,
+    label: string,
+    value: string,
+    setValue: (v: string) => void,
+    key: 'cpi_min_change_amount' | 'cpi_min_change_percent',
+    suffix: string,
+  ) => (
+    <div className="flex-1">
+      <label htmlFor={id} className="block text-[12px] mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+        {label}
+      </label>
+      <div className="flex items-center gap-1.5">
+        <input
+          id={id}
+          type="number"
+          min={0}
+          step="any"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => commit(key, value)}
+          className="h-9 w-full rounded-[9px] px-2.5 text-[13px]"
+          style={{ background: 'var(--color-bg)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
+        />
+        <span className="text-[13px] shrink-0" style={{ color: 'var(--color-text-secondary)' }}>{suffix}</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card>
+      <div className="px-5 py-4">
+        <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+          {t('notifications.cpiThresholdTitle')}
+        </p>
+        <p className="text-[12px] mt-0.5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+          {t('notifications.cpiThresholdHint')}
+        </p>
+        <div className="flex items-end gap-3">
+          {field('cpi-min-amount', t('notifications.cpiMinAmount'), amount, setAmount, 'cpi_min_change_amount', '₪')}
+          {field('cpi-min-percent', t('notifications.cpiMinPercent'), percent, setPercent, 'cpi_min_change_percent', '%')}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -124,7 +205,9 @@ export function NotificationsSettingsPage() {
                 </div>
 
                 <div style={{ opacity: dimmed ? 0.5 : 1, pointerEvents: dimmed ? 'none' : 'auto' }}>
-                  {rules.length === 0 ? (
+                  {!isRuleEvent(event) ? (
+                    <CpiThresholdCard settings={settings} onSave={setSetting} />
+                  ) : rules.length === 0 ? (
                     <Card>
                       <div className="flex items-center gap-4 px-5 py-4">
                         <div className="flex-1">

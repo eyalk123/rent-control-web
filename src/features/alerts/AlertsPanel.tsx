@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Clock, Settings2 } from 'lucide-react';
+import { AlertCircle, Clock, Settings2, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
+import { fmtDate } from '@/shared/utils/dates';
 import { useCreateRevenueTransaction } from '@/features/transactions/queries';
 import {
   useNotifications,
@@ -30,6 +31,7 @@ export function AlertsPanel() {
 
   const overdue = items.filter((i) => i.type === 'overdue');
   const expiring = items.filter((i) => i.type === 'lease_expiring');
+  const cpiChanges = items.filter((i) => i.type === 'cpi_rent_change');
 
   // Surface the unread dot on the bell.
   useEffect(() => {
@@ -166,7 +168,74 @@ export function AlertsPanel() {
           </div>
         )}
 
-        {overdue.length === 0 && expiring.length === 0 && (
+        {cpiChanges.length > 0 && (
+          <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp size={15} style={{ color: 'var(--color-primary)' }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-primary)' }}>
+                {t('notifications.event.cpi_rent_change')} ({cpiChanges.length})
+              </span>
+            </div>
+            <div className="space-y-2">
+              {cpiChanges.map((item) => (
+                <div key={item.id} className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleNavigate(item.renter_id)}
+                    className="flex-1 text-start hover:opacity-80 min-w-0"
+                  >
+                    <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{item.first_name} {item.last_name}</p>
+                    <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                      <LtrSpan>{formatMoney(item.data.old_amount ?? 0)}</LtrSpan>
+                      {' → '}
+                      <LtrSpan className="font-semibold">{formatMoney(item.data.new_amount ?? 0)}</LtrSpan>
+                      {' · '}
+                      <bdi>
+                        {t(
+                          item.data.stage === 'upcoming'
+                            ? 'notifications.cpiChangesOn'
+                            : 'notifications.cpiEffective',
+                          { date: fmtDate(item.data.effective_date ?? '') },
+                        )}
+                      </bdi>
+                    </p>
+                    {/* The reading behind the figure, so a disputed change is traceable. */}
+                    {item.data.stage === 'upcoming' ? (
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                        {t('notifications.cpiEstimateNote')}
+                      </p>
+                    ) : item.data.index_month ? (
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                        <bdi>{t('notifications.cpiIndexNote', {
+                          month: item.data.index_month,
+                          value: item.data.known_index,
+                          source: (item.data.index_source ?? '').toUpperCase(),
+                        })}</bdi>
+                      </p>
+                    ) : null}
+                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => dismissNotification.mutate(item.id)}
+                      className="rounded-full px-2 py-0.5 text-xs transition-opacity"
+                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)' }}
+                    >
+                      {t('home.actionIgnore')}
+                    </button>
+                    <button
+                      onClick={() => handleNavigate(item.renter_id)}
+                      className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
+                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-primary)', color: 'var(--color-primary)' }}
+                    >
+                      {t('notifications.cpiViewRenter')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/core/auth/firebase';
+import { USE_MOCK_API } from '@/core/api/mock';
 
 // Keep these in sync with storage.rules (server-side enforcement is authoritative;
 // these client-side checks give faster, friendlier feedback).
@@ -35,6 +36,14 @@ export async function uploadToFirebase(
   }
 
   const uuid = crypto.randomUUID();
+
+  // Offline dev / E2E: there is no Storage to write to, so return a URL of the same shape
+  // (`fileNameFromUrl` recovers the file name from it). Validation above still runs, so the
+  // rejection paths stay testable.
+  if (USE_MOCK_API) {
+    return `https://mock.storage.local/${entityType}/${ownerId}/${uuid}/${encodeURIComponent(file.name)}`;
+  }
+
   const storageRef = ref(storage, `${entityType}/${ownerId}/${uuid}/${file.name}`);
   // Pass an explicit content type so the Storage rules' contentType check is reliable.
   await uploadBytes(storageRef, file, { contentType: file.type });

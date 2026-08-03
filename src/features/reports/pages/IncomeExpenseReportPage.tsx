@@ -13,23 +13,42 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { formatMoney } from '@/shared/utils/money';
+import { monthDivider, reportCols, reportTheme } from '../reportTheme';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { Transaction } from '@/shared/types';
 
 import i18n from '@/core/i18n';
 
-function formatK(v: number): string {
+/**
+ * A monthly figure, in full, with thousands separators — the same `{:,.0f}` the PDF prints.
+ *
+ * This used to abbreviate to whole thousands, which rendered 4,100 revenue and 3,750 net both
+ * as "4k": two different numbers wearing the same label, and a row whose own arithmetic looked
+ * broken (4k − 350 = 4k). The columns have room for the real figures.
+ */
+function formatCell(v: number): string {
   if (v === 0) return '—';
-  if (v >= 1000) return `${Math.round(v / 1000)}k`;
-  return String(Math.round(v));
+  return Math.round(v).toLocaleString(i18n.language);
+}
+
+/**
+ * The date a transaction is reported under.
+ *
+ * Revenue belongs to the month it is *for* — January's rent paid on 31 December is January's
+ * revenue — while an expense belongs to the day it was paid. This must match
+ * `get_income_expense_data` on the backend, or this preview and the PDF you download from it
+ * put the same payment in different years.
+ */
+function reportingDate(tx: Transaction): string {
+  return tx.type === 'revenue' ? (tx.month_for ?? tx.date_of_payment) : tx.date_of_payment;
 }
 
 function useAllTransactionsForYear(year: number) {
   return useQuery({
     queryKey: ['transactions', 'all-for-year', year],
     queryFn: () => getAllTransactions(),
-    select: (data: Transaction[]) => data.filter((tx) => tx.date_of_payment.startsWith(String(year))),
+    select: (data: Transaction[]) => data.filter((tx) => reportingDate(tx).startsWith(String(year))),
   });
 }
 
@@ -54,7 +73,7 @@ export function IncomeExpenseReportPage() {
   const rows = properties.map((p) => {
     const monthly = monthsLocale.map((_, idx) => {
       const prefix = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
-      const ptxs = transactions.filter((tx) => tx.property_id === p.id && tx.date_of_payment.startsWith(prefix));
+      const ptxs = transactions.filter((tx) => tx.property_id === p.id && reportingDate(tx).startsWith(prefix));
       const rev = ptxs.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
       const exp = ptxs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
       return { rev, exp };
@@ -65,6 +84,23 @@ export function IncomeExpenseReportPage() {
   });
 
   const grand = rows.reduce((acc, r) => ({ rev: acc.rev + r.totalRev, exp: acc.exp + r.totalExp }), { rev: 0, exp: 0 });
+
+  // Grouped by owner, one block per property — the same shape as the exported PDF, which is
+  // organised owner → property → Revenue / Expenses / Net.
+  const ownerGroups = (() => {
+    const groups = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const owner = row.p.property_owner || t('reports.noOwner');
+      groups.set(owner, [...(groups.get(owner) ?? []), row]);
+    }
+    return [...groups.entries()].map(([owner, ownerRows]) => ({
+      owner,
+      rows: ownerRows,
+      monthlyNet: monthsLocale.map((_, idx) =>
+        ownerRows.reduce((s, r) => s + r.monthly[idx].rev - r.monthly[idx].exp, 0)),
+      totalNet: ownerRows.reduce((s, r) => s + r.totalRev - r.totalExp, 0),
+    }));
+  })();
 
   const handleDownload = async (fmt: ReportFormat) => {
     setIsDownloading(fmt);
@@ -119,7 +155,7 @@ export function IncomeExpenseReportPage() {
         <SegToggle
           value={String(selectedYear)}
           onChange={(v) => setSelectedYear(Number(v))}
-          options={years.slice(0, 3).map((y) => ({ value: String(y), label: String(y) }))}
+          options={years.map((y) => ({ value: String(y), label: String(y) }))}
           size="sm"
         />
         <div className="ms-auto flex gap-6">
@@ -154,98 +190,119 @@ export function IncomeExpenseReportPage() {
         ) : (
           <>
             <div className="overflow-x-auto">
-            <div className="rounded-[var(--radius-card)] overflow-hidden min-w-[900px]" style={{ border: '1px solid var(--color-outline)' }}>
-              {/* Header row */}
-              <div className="flex items-center px-4 py-3 gap-1 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
-                <div className="flex-[2.4] min-w-0">{t('reports.property')}</div>
-                {monthsLocale.map((m) => <div key={m} className="w-12 text-end" style={{ color: 'rgba(255,255,255,0.7)' }}>{m}</div>)}
-                <div className="w-20 text-end">{t('reports.total')}</div>
+            <div className="rounded-[var(--radius-card)] overflow-hidden min-w-[1120px]" style={{ border: `1px solid ${reportTheme.gridStrong}` }}>
+              {/* Header row. Padding lives inside the cells so every label sits directly above
+                  the figures beneath it — see the note in reportTheme. */}
+              <div className="flex items-center py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+                <div className={`${reportCols.property} px-4`}>{t('reports.property')}</div>
+                <div className={reportCols.metric} />
+                {monthsLocale.map((m) => (
+                  <div key={m} className={`${reportCols.month} pe-2`} style={{ color: 'rgba(255,255,255,0.7)', ...monthDivider('header') }}>{m}</div>
+                ))}
+                <div className={`${reportCols.total} pe-3`} style={monthDivider('header')}>{t('reports.total')}</div>
               </div>
 
-              {/* Revenue group */}
-              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-rev-bg)', color: 'var(--color-rev-fg)', borderBottom: '1px solid var(--color-outline)' }}>{t('reports.revenue')}</div>
-              {rows.map((r) => (
-                <div key={`rev-${r.p.id}`} className="flex items-center px-4 py-2.5 gap-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-                  <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
-                    <PropTile propertyId={r.p.id} size={28} />
-                    <div>
-                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
-                      {r.p.property_owner && <p className="text-[10.5px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
-                    </div>
+              {ownerGroups.map((group) => (
+                <div key={group.owner}>
+                  <div
+                    className="px-4 py-2 text-[11px] font-bold"
+                    style={{ background: 'var(--color-rev-bg)', color: 'var(--color-text-primary)' }}
+                  >
+                    {t('property.owner')}: {group.owner}
                   </div>
-                  {r.monthly.map((m, idx) => (
-                    <div key={idx} className="w-12 text-end text-[11.5px] font-medium" style={{ color: m.rev ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                      {formatK(m.rev)}
-                    </div>
-                  ))}
-                  <div className="w-20 text-end text-[13px] font-bold" style={{ color: 'var(--color-rev-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalRev > 0 ? formatMoney(r.totalRev) : '—'}</div>
-                </div>
-              ))}
 
-              {/* Expenses group */}
-              <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wide" style={{ background: 'var(--color-exp-bg)', color: 'var(--color-exp-fg)', borderTop: '1px solid var(--color-outline)', borderBottom: '1px solid var(--color-outline)' }}>{t('reports.expenses')}</div>
-              {rows.map((r) => (
-                <div key={`exp-${r.p.id}`} className="flex items-center px-4 py-2.5 gap-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-                  <div className="flex-[2.4] min-w-0 flex items-center gap-2.5">
-                    <PropTile propertyId={r.p.id} size={28} />
-                    <div>
-                      <p className="text-[12.5px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
-                      {r.p.property_owner && <p className="text-[10.5px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
-                    </div>
-                  </div>
-                  {r.monthly.map((m, idx) => (
-                    <div key={idx} className="w-12 text-end text-[11.5px] font-medium" style={{ color: m.exp ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                      {formatK(m.exp)}
-                    </div>
-                  ))}
-                  <div className="w-20 text-end text-[13px] font-bold" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>{r.totalExp > 0 ? formatMoney(r.totalExp) : '—'}</div>
-                </div>
-              ))}
+                  {group.rows.map((r) => {
+                    const metrics = [
+                      { key: 'rev', label: t('reports.revenue'), values: r.monthly.map((m) => m.rev), total: r.totalRev, color: 'var(--color-rev-fg)', isNet: false },
+                      { key: 'exp', label: t('reports.expenses'), values: r.monthly.map((m) => m.exp), total: r.totalExp, color: 'var(--color-exp-fg)', isNet: false },
+                      { key: 'net', label: t('reports.net'), values: r.monthly.map((m) => m.rev - m.exp), total: r.totalRev - r.totalExp, color: null, isNet: true },
+                    ];
+                    return (
+                      /* One property = one block. The lines inside it are faint and the line
+                         around it is not, so the three rows read as a single property. */
+                      <div key={r.p.id} className="flex" style={{ borderTop: `2px solid ${reportTheme.gridStrong}` }}>
+                        <div className={`${reportCols.property} flex items-center gap-2.5 px-4 py-2`}>
+                          <PropTile propertyId={r.p.id} size={28} />
+                          <div className="min-w-0">
+                            <p className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                              {r.p.address}
+                              <span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0" style={{ borderInlineStart: `2px solid ${reportTheme.gridStrong}` }}>
+                          {metrics.map((metric, mIdx) => (
+                            <div
+                              key={metric.key}
+                              className="flex items-center"
+                              style={{
+                                borderTop: mIdx ? `1px solid ${reportTheme.gridLight}` : undefined,
+                                background: metric.isNet ? reportTheme.netRowBg : undefined,
+                              }}
+                            >
+                              <div className={`${reportCols.metric} ps-3 py-1.5 text-[11px] ${metric.isNet ? 'font-bold' : ''}`} style={{ color: 'var(--color-text-secondary)' }}>
+                                {metric.label}
+                              </div>
+                              {metric.values.map((v, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`${reportCols.month} pe-2 py-1.5 text-[11.5px] ${metric.isNet ? 'font-bold' : 'font-medium'}`}
+                                  style={{
+                                    color: v === 0 ? 'var(--color-text-secondary)' : (metric.color ?? (v > 0 ? 'var(--color-success)' : 'var(--color-error)')),
+                                    fontVariantNumeric: 'tabular-nums',
+                                    ...monthDivider('body'),
+                                  }}
+                                >
+                                  {formatCell(v)}
+                                </div>
+                              ))}
+                              <div
+                                className={`${reportCols.total} pe-3 py-1.5 text-[12.5px] font-bold`}
+                                style={{
+                                  background: metric.isNet ? reportTheme.totalColBgNet : reportTheme.totalColBg,
+                                  borderInlineStart: `2px solid ${reportTheme.gridStrong}`,
+                                  color: metric.color ?? (metric.total >= 0 ? 'var(--color-success)' : 'var(--color-error)'),
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}
+                              >
+                                {formatMoney(metric.total)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
 
-              {/* Net totals row */}
-              <div className="flex items-center px-4 py-3.5 gap-1" style={{ background: 'var(--color-input-filled-background)', borderTop: '1px solid var(--color-outline)' }}>
-                <div className="flex-[2.4] text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{t('reports.netTotal')}</div>
-                {monthsLocale.map((_, idx) => {
-                  const net = rows.reduce((s, r) => s + r.monthly[idx].rev - r.monthly[idx].exp, 0);
-                  return (
-                    <div key={idx} className="w-12 text-end text-[11.5px] font-bold" style={{ color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
-                      {net === 0 ? '—' : formatK(net)}
+                  {/* Owner total, net per month — matches the PDF's OWNER TOTAL (net) row. */}
+                  <div className="flex items-center" style={{ borderTop: `2px solid ${reportTheme.gridStrong}`, background: 'var(--color-input-filled-background)' }}>
+                    <div className={`${reportCols.property} px-4 py-2.5 text-[12px] font-bold`} style={{ color: 'var(--color-text-primary)' }}>
+                      {t('reports.ownerTotalNet')}
                     </div>
-                  );
-                })}
-                <div className="w-20 text-end text-[14px] font-bold" style={{ color: grand.rev - grand.exp >= 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums' }}>
-                  {formatMoney(grand.rev - grand.exp)}
-                </div>
-              </div>
-            </div>
-            </div>
-
-            {/* Per-property summary cards */}
-            <div className="grid gap-3 mt-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-              {rows.map((r) => (
-                <div key={r.p.id} className="rounded-[var(--radius-md)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-                  <div className="flex items-center gap-2.5 mb-3">
-                    <PropTile propertyId={r.p.id} size={32} />
-                    <div>
-                      <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{r.p.address}<span className="font-normal" style={{ color: 'var(--color-text-secondary)' }}>{formatFloorApartment(r.p, t)}</span></p>
-                      {r.p.property_owner && <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{r.p.property_owner}</p>}
-                    </div>
-                  </div>
-                  <div className="flex justify-between pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
-                    {[
-                      { label: t('reports.revenue'), value: r.totalRev, color: 'var(--color-rev-fg)' },
-                      { label: t('reports.expenses'), value: r.totalExp, color: 'var(--color-exp-fg)' },
-                      { label: t('reports.net'), value: r.totalRev - r.totalExp, color: 'var(--color-text-primary)' },
-                    ].map(({ label, value, color }) => (
-                      <div key={label}>
-                        <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
-                        <LtrSpan className="text-[13px] font-bold mt-0.5 block" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(value)}</LtrSpan>
+                    <div className={reportCols.metric} />
+                    {group.monthlyNet.map((net, idx) => (
+                      <div key={idx} className={`${reportCols.month} pe-2 py-2.5 text-[11.5px] font-bold`} style={{ color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)', fontVariantNumeric: 'tabular-nums', ...monthDivider('body') }}>
+                        {formatCell(net)}
                       </div>
                     ))}
+                    <div
+                      className={`${reportCols.total} pe-3 py-2.5 text-[13px] font-bold`}
+                      style={{
+                        background: reportTheme.totalColBgNet,
+                        borderInlineStart: `2px solid ${reportTheme.gridStrong}`,
+                        color: group.totalNet >= 0 ? 'var(--color-success)' : 'var(--color-error)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {formatMoney(group.totalNet)}
+                    </div>
                   </div>
                 </div>
               ))}
+
             </div>
+            </div>
+
           </>
         )}
       </div>

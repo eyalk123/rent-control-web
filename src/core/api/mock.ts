@@ -656,7 +656,7 @@ export const mockHomeApi = {
 // feed is derived from the mock overdue/expiring computations; read/dismissed
 // state and rules live in module-scoped state for the session.
 
-type MockEvent = 'overdue' | 'lease_expiring';
+type MockEvent = 'overdue' | 'lease_expiring' | 'cpi_rent_change';
 
 interface MockRule {
   id: number;
@@ -672,6 +672,8 @@ interface MockRule {
 const mockNotifSettings = {
   master_enabled: true,
   muted_events: [] as MockEvent[],
+  cpi_min_change_amount: 10,
+  cpi_min_change_percent: 0.5,
 };
 let mockNotifRules: MockRule[] = [];
 let nextRuleId = 1;
@@ -717,6 +719,44 @@ async function buildMockFeed() {
         dismissed: false,
         created_at: new Date().toISOString(),
       });
+    }
+  }
+  if (mockNotifSettings.master_enabled && !muted.has('cpi_rent_change')) {
+    // No index feed in mock mode, so this is a fixed sample rather than a computation —
+    // enough to exercise the feed row, the collapse and the settings section.
+    const effective = new Date();
+    effective.setMonth(effective.getMonth() - 1, 1);
+    const iso = effective.toISOString().slice(0, 10);
+    for (const r of await mockHomeApi.getExpiringRenters({ days_until: 3650 })) {
+      items.push({
+        id: r.renter_id * 10 + 2, // stable synthetic id (offset 0)
+        type: 'cpi_rent_change' as MockEvent,
+        renter_id: r.renter_id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        property_id: r.property_id,
+        property_address: r.property_address,
+        payment_type: null,
+        offset: 0,
+        data: {
+          stage: 'changed' as const,
+          old_amount: 5000,
+          new_amount: 5240,
+          delta: 240,
+          delta_percent: 4.8,
+          effective_date: iso,
+          year_index: 1,
+          base_index: 100,
+          known_index: 104.8,
+          index_month: iso.slice(0, 7),
+          index_source: 'cbs',
+          offset: 0,
+        },
+        read: false,
+        dismissed: false,
+        created_at: new Date().toISOString(),
+      });
+      break; // one sample is enough; a per-renter loop would swamp the mock feed
     }
   }
   return items
