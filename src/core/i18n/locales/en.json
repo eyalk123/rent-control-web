@@ -27,7 +27,8 @@
     "settings": "Settings",
     "transactions": "Transactions",
     "reports": "Reports",
-    "suppliers": "Suppliers"
+    "suppliers": "Suppliers",
+    "more": "More"
   },
   "home": {
     "portfolio": "Portfolio",
@@ -574,6 +575,7 @@
     "manage": "Manage",
     "netProfit": "net profit",
     "personal": "personal",
+    "search": "Search",
     "searchPlaceholder": "Search properties, renters, transactions…",
     "toggleTheme": "Toggle theme",
     "notifications": "Notifications",
@@ -924,6 +926,7 @@
     "hint": "Long-press to select items"
   },
   "reports": {
+    "scrollHint": "Swipe the table sideways to see all months.",
     "incomeExpense": "Income & Expense",
     "expenseLog": "Expense Log",
     "incomeExpenseDescription": "Monthly income vs. expenses per property, grouped by owner. Exported as PDF or CSV.",

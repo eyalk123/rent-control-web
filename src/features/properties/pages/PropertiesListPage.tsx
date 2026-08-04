@@ -86,7 +86,12 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
       style={{ background: 'var(--color-surface)', border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-outline)'}`, boxShadow: isSelected ? '0 0 0 1px var(--color-primary)' : undefined }}
     >
       {/* Image */}
-      <div className="relative w-full" style={{ aspectRatio: '4/3', background: imageSrc ? 'var(--color-input-filled-background)' : bg }}>
+      {/* A 4:3 hero is ~290px tall in a full-width mobile column, so barely one card fit
+          per screen. Below `lg` use a shallower ratio to roughly double list density. */}
+      <div
+        className="relative w-full aspect-[16/9] lg:aspect-[4/3]"
+        style={{ background: imageSrc ? 'var(--color-input-filled-background)' : bg }}
+      >
         {imageSrc ? (
           <img src={imageSrc} alt="" className="absolute inset-0 w-full h-full object-contain p-3" />
         ) : (
@@ -364,7 +369,7 @@ export function PropertiesListPage() {
           </p>
         </div>
         {sel.isSelectMode ? (
-          <div className="flex-1 min-w-[260px]">
+          <div className="flex-1 basis-full sm:basis-auto sm:min-w-[260px]">
             <SelectionToolbar
               allSelected={sel.allSelected}
               someSelected={sel.someSelected}
@@ -400,7 +405,7 @@ export function PropertiesListPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('property.searchPlaceholder')}
-          className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none transition-colors"
+          className="h-9 rounded-[9px] px-3 text-sm flex-1 basis-full sm:basis-auto sm:min-w-[200px] sm:max-w-[300px] outline-none transition-colors"
           style={{
             background: 'var(--color-input-filled-background)',
             border: '1px solid var(--color-outline)',

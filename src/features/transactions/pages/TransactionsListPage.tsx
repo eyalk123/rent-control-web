@@ -168,7 +168,7 @@ export function TransactionsListPage() {
           </p>
         </div>
         {sel.isSelectMode ? (
-          <div className="flex-1 min-w-[260px]">
+          <div className="flex-1 basis-full sm:basis-auto sm:min-w-[260px]">
             <SelectionToolbar
               allSelected={sel.allSelected}
               someSelected={sel.someSelected}
@@ -279,7 +279,7 @@ export function TransactionsListPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('transactions.searchPlaceholder')}
-          className="h-9 rounded-[9px] px-3 text-sm flex-1 min-w-[200px] max-w-[300px] outline-none"
+          className="h-9 rounded-[9px] px-3 text-sm flex-1 basis-full sm:basis-auto sm:min-w-[200px] sm:max-w-[300px] outline-none"
           style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
         />
       </div>

@@ -405,8 +405,10 @@ export function RentersListPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 space-y-0">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-        <div>
+      {/* Stacked on mobile: side by side, the three-clause subtitle wrapped to three lines
+          and ran underneath the Select / Add buttons. */}
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.renters')}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
             {isLoading
@@ -415,7 +417,7 @@ export function RentersListPage() {
           </p>
         </div>
         {sel.isSelectMode ? (
-          <div className="flex-1 min-w-[260px]">
+          <div className="flex-1 basis-full sm:basis-auto sm:min-w-[260px]">
             <SelectionToolbar
               allSelected={sel.allSelected}
               someSelected={sel.someSelected}
@@ -446,12 +448,13 @@ export function RentersListPage() {
       </div>
 
       {/* Status tabs + search + view toggle */}
-      <div className="flex flex-wrap items-center gap-0 gap-y-2 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+      {/* Scrolls rather than wrapping: at 390px the fourth tab dropped to its own row. */}
+      <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap items-center gap-0 gap-y-2 pt-1" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         {STATUS_TABS.map(({ key, label, tone }) => (
           <button
             key={key}
             onClick={() => setStatusFilter(key)}
-            className="inline-flex items-center gap-1.5 px-1 py-2.5 me-4 text-[13px] transition-colors"
+            className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 px-1 py-2.5 me-4 text-[13px] transition-colors"
             style={{
               background: 'transparent',
               border: 'none',

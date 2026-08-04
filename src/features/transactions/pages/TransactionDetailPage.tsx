@@ -89,12 +89,13 @@ export function TransactionDetailPage() {
         </div>
       </div>
 
-      {/* 2-col layout */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      {/* Stacks below `lg`. As an inline template this could not respond, so at 390px the
+          details panel was crushed to a ~20px sliver. */}
+      <div className="grid gap-5 grid-cols-1 lg:grid-cols-2">
         {/* Left: tinted hero card */}
-        <div className="rounded-[var(--radius-card)] p-8 flex flex-col items-center justify-center gap-4" style={{ background: tintBg, border: '1px solid var(--color-outline)' }}>
+        <div className="rounded-[var(--radius-card)] px-5 py-8 lg:p-8 flex flex-col items-center justify-center gap-4" style={{ background: tintBg, border: '1px solid var(--color-outline)' }}>
           <Pill tone={isRevenue ? 'revenue' : 'expense'} size="md">{isRevenue ? t('transactions.revenue') : t('transactions.expense')}</Pill>
-          <LtrSpan className="text-[56px] font-bold leading-none" style={{ color: tintFg, fontVariantNumeric: 'tabular-nums' }}>
+          <LtrSpan className="text-[40px] lg:text-[56px] font-bold leading-none" style={{ color: tintFg, fontVariantNumeric: 'tabular-nums' }}>
             {isRevenue ? '+' : '−'}{formatMoney(tx.amount)}
           </LtrSpan>
           <p className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>

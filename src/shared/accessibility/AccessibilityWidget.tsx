@@ -93,7 +93,9 @@ export function AccessibilityWidget() {
 
   return (
     <>
-      {/* Floating toggle button */}
+      {/* Floating toggle button. Below `lg` the mobile bottom bar owns the bottom 68px,
+          so the FAB has to sit above it (same offset trick as ScanPill) or it covers the
+          Home tab. `.a11y-fab` is also used by index.css to hide it while a drawer is open. */}
       <button
         ref={toggleRef}
         type="button"
@@ -102,7 +104,7 @@ export function AccessibilityWidget() {
         aria-haspopup="dialog"
         aria-label={t('a11y.openMenu')}
         title={t('a11y.openMenu')}
-        className="fixed bottom-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2"
+        className="a11y-fab fixed bottom-24 lg:bottom-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2"
         style={{
           insetInlineStart: 16,
           zIndex: 50,
@@ -120,7 +122,7 @@ export function AccessibilityWidget() {
           role="dialog"
           aria-label={t('a11y.title')}
           tabIndex={-1}
-          className="fixed bottom-20 w-[290px] rounded-[var(--radius-card)] p-4 shadow-2xl focus:outline-none"
+          className="a11y-panel fixed bottom-40 lg:bottom-20 w-[290px] max-w-[calc(100vw-2rem)] rounded-[var(--radius-card)] p-4 shadow-2xl focus:outline-none"
           style={{
             insetInlineStart: 16,
             zIndex: 50,
@@ -134,7 +136,7 @@ export function AccessibilityWidget() {
               type="button"
               onClick={() => { setOpen(false); toggleRef.current?.focus(); }}
               aria-label={t('a11y.close')}
-              className="flex h-7 w-7 items-center justify-center rounded-[7px]"
+              className="flex h-11 w-11 lg:h-7 lg:w-7 items-center justify-center rounded-[7px]"
               style={{ color: 'var(--color-text-secondary)' }}
             >
               <X size={16} aria-hidden="true" />
@@ -150,7 +152,7 @@ export function AccessibilityWidget() {
                 onClick={() => changeScale(-1)}
                 disabled={settings.fontScale <= MIN_SCALE}
                 aria-label={t('a11y.decrease')}
-                className="flex h-9 flex-1 items-center justify-center rounded-[9px] disabled:opacity-40"
+                className="flex h-11 lg:h-9 flex-1 items-center justify-center rounded-[9px] disabled:opacity-40"
                 style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
               >
                 <Minus size={16} aria-hidden="true" />
@@ -163,7 +165,7 @@ export function AccessibilityWidget() {
                 onClick={() => changeScale(1)}
                 disabled={settings.fontScale >= MAX_SCALE}
                 aria-label={t('a11y.increase')}
-                className="flex h-9 flex-1 items-center justify-center rounded-[9px] disabled:opacity-40"
+                className="flex h-11 lg:h-9 flex-1 items-center justify-center rounded-[9px] disabled:opacity-40"
                 style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
               >
                 <Plus size={16} aria-hidden="true" />

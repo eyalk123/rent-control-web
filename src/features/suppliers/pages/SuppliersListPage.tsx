@@ -186,7 +186,10 @@ export function SuppliersListPage() {
           }
         />
       ) : (
-        <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+        <div
+          // `minmax(360px, …)` overflows on 360px-wide devices; below `sm` use a single column.
+          className="grid gap-3.5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]"
+        >
           {filtered.map((s) => <SupplierCard key={s.id} supplier={s} catMap={catMap} onOpen={setDetailSupplier} />)}
         </div>
       )}

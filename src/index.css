@@ -260,3 +260,62 @@ button:focus:not(:focus-visible) { outline: none; }
   animation: shimmer 1.4s infinite;
   border-radius: var(--radius-md);
 }
+
+/* ── Mobile-only: keep the accessibility affordance clear of the bottom bar ──
+   Below `lg` the mobile bottom bar owns the bottom 68px and drawers are
+   full-width with a pinned footer, so the floating FAB would sit on top of the
+   Home tab / the drawer's Cancel button. The offset is handled by Tailwind
+   classes on the element; this rule hides it outright while a drawer is open.
+   Scoped to a max-width query so the desktop layout is untouched. */
+@media (max-width: 1023px) {
+  html[data-overlay-open] .a11y-fab,
+  html[data-overlay-open] .a11y-panel { display: none; }
+}
+
+/* ── Mobile-only: minimum readable type ───────────────────────────────────────
+   The design uses arbitrary sub-12px sizes for micro-labels and dense table
+   text (73 call sites across 36 files). At phone size those fall below a
+   comfortable reading floor, so raise them in one place instead of editing
+   every site: 12px for body text, 11px for uppercase micro-labels.
+
+   These are unlayered rules, so they win over Tailwind's layered utilities
+   without needing !important. Scoped to a max-width query — desktop keeps the
+   original sizes exactly. */
+@media (max-width: 1023px) {
+  .text-\[10px\]    { font-size: 11px; }
+  .text-\[10\.5px\] { font-size: 11px; }
+  .text-\[11px\]    { font-size: 12px; }
+  .text-\[11\.5px\] { font-size: 12px; }
+}
+
+/* ── Mobile-only: 44px minimum touch target ───────────────────────────────────
+   The app has no shared Button component; action controls are built ad hoc from
+   the `h-7` / `h-8` / `h-9` height utilities (28/32/36px), all below the 44px
+   touch minimum. Raising the floor here covers every one of them at once.
+   `min-height` beats the utility's `height`, so nothing else has to change.
+   Unlayered + max-width scoped, so desktop keeps the compact sizing. */
+@media (max-width: 1023px) {
+  button.h-7,  a.h-7,  input.h-7,
+  button.h-8,  a.h-8,  input.h-8,
+  button.h-9,  a.h-9,  input.h-9,
+  select.h-9,  textarea.h-9 { min-height: 44px; }
+
+  /* Pill-shaped inline actions (alerts panel "Ignore" / "Mark paid") sit at 22px. */
+  button.rounded-full.px-2.py-0\.5 { min-height: 36px; padding-inline: 0.75rem; }
+}
+
+/* Switches are 24px tall by design and stretching them would distort the control,
+   so expand only the hit area with a centred pseudo-element. Safe here because a
+   switch always sits alone at the end of its row — no neighbour to overlap. */
+@media (max-width: 1023px) {
+  [role="switch"] { position: relative; }
+  [role="switch"]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}

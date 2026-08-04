@@ -6,12 +6,15 @@ interface Props<T extends string> {
 
 export function DetailTabBar<T extends string>({ tabs, activeId, onChange }: Props<T>) {
   return (
-    <div className="flex gap-0 -mb-px">
+    // Scrolls instead of overflowing: four tabs do not fit at 390px and pushed the whole
+    // page 18px wider than the viewport. Desktop is unaffected — the tabs fit there, so
+    // `overflow-x-auto` never renders a scrollbar.
+    <div className="flex gap-0 -mb-px overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className="px-[18px] py-3 text-[13px] transition-colors"
+          className="shrink-0 whitespace-nowrap px-[18px] py-3 min-h-11 lg:min-h-0 text-[13px] transition-colors"
           style={{
             background: 'transparent',
             border: 'none',

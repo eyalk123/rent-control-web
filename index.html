@@ -9,6 +9,22 @@
     <meta name="description" content="Property management for landlords" />
     <meta name="theme-color" content="#1E3A5F" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      // Resolve the language before first paint. The markup defaults to he/rtl, so
+      // without this an English user renders the whole shell right-to-left for a frame
+      // until useLanguage's effect flips it after hydration — very visible on mobile.
+      // Must stay in sync with detectLanguage() in src/hooks/useLanguage.ts.
+      (function () {
+        try {
+          var stored = localStorage.getItem('app_language');
+          var lang = stored === 'en' || stored === 'he'
+            ? stored
+            : ((navigator.language || '').slice(0, 2) === 'he' ? 'he' : 'en');
+          document.documentElement.setAttribute('lang', lang);
+          document.documentElement.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
+        } catch (e) { /* private mode: keep the markup defaults */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

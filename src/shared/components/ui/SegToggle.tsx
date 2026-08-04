@@ -30,7 +30,7 @@ export function SegToggle<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`inline-flex items-center gap-1.5 rounded-[9px] font-medium transition-colors ${padClass} ${
+            className={`inline-flex items-center justify-center gap-1.5 rounded-[9px] font-medium transition-colors min-h-11 lg:min-h-0 ${padClass} ${
               active
                 ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm'
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'

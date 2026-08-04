@@ -27,7 +27,8 @@
     "settings": "הגדרות",
     "transactions": "תנועות",
     "reports": "דוחות",
-    "suppliers": "ספקים"
+    "suppliers": "ספקים",
+    "more": "עוד"
   },
   "home": {
     "portfolio": "תיק נכסים",
@@ -575,6 +576,7 @@
     "manage": "ניהול",
     "netProfit": "רווח נקי",
     "personal": "פרטי",
+    "search": "חיפוש",
     "searchPlaceholder": "חיפוש נכסים, דיירים, תנועות…",
     "toggleTheme": "החלף ערכת נושא",
     "notifications": "התראות",
@@ -925,6 +927,7 @@
     "hint": "לחץ לאורך זמן לבחירת פריטים"
   },
   "reports": {
+    "scrollHint": "החליקו את הטבלה לצדדים כדי לראות את כל החודשים.",
     "incomeExpense": "הכנסות והוצאות",
     "expenseLog": "יומן הוצאות",
     "incomeExpenseDescription": "הכנסות מול הוצאות חודשיות לפי נכס, מקובצות לפי בעלים. ייצוא כ-PDF או CSV.",

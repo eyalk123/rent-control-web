@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { downloadExpenseLogReport, type ReportFormat } from '../api/reports';
 import { getAllTransactions } from '@/features/transactions/api/transactions';
@@ -36,6 +37,10 @@ function fmtDate(s: string): string {
 export function ExpenseLogReportPage() {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
+  // Only on mobile: let the browser infer each cell's direction so an LTR supplier or
+  // address truncates on its own trailing edge. In an RTL page these cells otherwise cut
+  // the informative half ("…Plumber"). Desktop keeps the current alignment untouched.
+  const autoDir = useMediaQuery('(max-width: 1023px)') ? ('auto' as const) : undefined;
   const navigate = useNavigate();
   const { showToast } = useToast();
   const currentYear = new Date().getFullYear();
@@ -176,7 +181,13 @@ export function ExpenseLogReportPage() {
         ) : expenses.length === 0 ? (
           <EmptyState icon={undefined} title={t('reports.noExpenses')} description={t('reports.noExpensesForYear', { year: selectedYear })} />
         ) : (
-          <div className="grid gap-5" style={{ gridTemplateColumns: isRtl ? '320px 1fr' : '1fr 320px', alignItems: 'start' }}>
+          <div
+            className="grid gap-5 items-start grid-cols-1 lg:grid-cols-[var(--expense-log-cols)]"
+            /* Single column below `lg`. The template goes through a custom property rather
+               than `gridTemplateColumns`, because an inline template beats every media query
+               — that is why this collapsed to an 18px column on mobile. Desktop is unchanged. */
+            style={{ ['--expense-log-cols' as string]: isRtl ? '320px 1fr' : '1fr 320px' }}
+          >
             {/* Main table */}
             <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
               {/* Header */}
@@ -201,10 +212,10 @@ export function ExpenseLogReportPage() {
                       <div key={tx.id} className="flex items-center px-4 py-2.5" style={{ borderBottom: i === txs.length - 1 ? 'none' : '1px solid var(--color-outline)' }}>
                         <div className="w-[90px] text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{fmtDate(tx.date_of_payment)}</div>
                         <div className="flex-[1.5] min-w-0">
-                          <p className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—')}</p>
-                          {tx.notes && <p className="text-[11px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.notes}</p>}
+                          <p dir={autoDir} className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—')}</p>
+                          {tx.notes && <p dir={autoDir} className="text-[11px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.notes}</p>}
                         </div>
-                        <div className="flex-1 text-[12px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.property_name}</div>
+                        <div dir={autoDir} className="flex-1 text-[12px] truncate" style={{ color: 'var(--color-text-secondary)' }}>{tx.property_name}</div>
                         <LtrSpan className="w-[90px] text-right text-[13px] font-semibold shrink-0" style={{ color: 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
                           {formatMoney(tx.amount)}
                         </LtrSpan>
@@ -277,7 +288,7 @@ export function ExpenseLogReportPage() {
                     </div>
                     {group.properties.map((row) => (
                       <div key={row.address} className="flex items-center" style={{ borderTop: `1px solid ${reportTheme.gridLight}` }}>
-                        <div className="flex-1 min-w-[16rem] px-4 py-2 text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{row.address}</div>
+                        <div dir={autoDir} className="flex-1 min-w-[16rem] px-4 py-2 text-[12.5px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{row.address}</div>
                         {pivotCategories.map((cat) => (
                           <div key={cat} className="w-28 shrink-0 px-2 py-2 text-end text-[11.5px]" style={{ color: row.cells.get(cat) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums', ...monthDivider('body') }}>
                             {row.cells.get(cat) ? formatMoney(row.cells.get(cat)!) : '—'}

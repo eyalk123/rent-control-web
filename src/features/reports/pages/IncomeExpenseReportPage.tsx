@@ -189,6 +189,12 @@ export function IncomeExpenseReportPage() {
           />
         ) : (
           <>
+            {/* The pivot is 1120px wide by design (12 months + totals) and cannot usefully
+                reflow at 390px, so it scrolls. Tell mobile users that, since there is no
+                scrollbar on touch. */}
+            <p className="lg:hidden mb-2 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+              {t('reports.scrollHint')}
+            </p>
             <div className="overflow-x-auto">
             <div className="rounded-[var(--radius-card)] overflow-hidden min-w-[1120px]" style={{ border: `1px solid ${reportTheme.gridStrong}` }}>
               {/* Header row. Padding lives inside the cells so every label sits directly above

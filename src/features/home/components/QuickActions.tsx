@@ -21,7 +21,9 @@ export function QuickActions({ onNavigate }: Props) {
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.quickActions')}
       </p>
-      <div className="grid grid-cols-5 gap-3">
+      {/* Five columns leaves ~62px per tile at 390px, which wraps every label onto two
+          lines and pushes the longest one out of its card. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {ACTIONS.map(({ labelKey, icon: Icon, to, color, bg }) => (
           <button
             key={labelKey}

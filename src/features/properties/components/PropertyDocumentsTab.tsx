@@ -15,7 +15,7 @@ export function PropertyDocumentsTab({ property }: Props) {
   if (property.land_registry_url) docs.push({ label: t('documents.landRegistry'), url: property.land_registry_url });
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+    <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
       <DetailPanel title={t('property.tabDocuments')}>
         {docs.length === 0 ? (
           <p className="p-4 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('property.noDocuments')}</p>

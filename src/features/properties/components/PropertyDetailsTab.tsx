@@ -14,7 +14,7 @@ export function PropertyDetailsTab({ property }: Props) {
   const parking = property.parking_numbers?.filter(Boolean).join(', ') || null;
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: '1fr 1fr' }}>
+    <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
       <DetailPanel title={t('property.basicInfo')}>
         <DetailRow icon={MapPin} label={t('property.address')} value={`${property.address}, ${property.city}${property.zip_code ? ` ${property.zip_code}` : ''}`} />
         <DetailRow icon={Receipt} label={t('property.type')} value={t(`property.type_${property.type}` as never, property.type)} />

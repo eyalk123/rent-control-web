@@ -180,14 +180,17 @@ export function SettingsPage() {
         <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('settings.headerSubtitle')}</p>
       </div>
 
-      <div className="grid gap-10" style={{ gridTemplateColumns: '260px 1fr' }}>
-        {/* Side nav */}
-        <nav className="flex flex-col gap-0.5 sticky top-4 self-start">
+      {/* Single column on mobile — as an inline style this template could not be
+          overridden by any media query, so the page scrolled horizontally to 626px
+          and clipped the sections pane. */}
+      <div className="grid gap-6 lg:gap-10 grid-cols-1 lg:grid-cols-[260px_1fr]">
+        {/* Side nav — a scrollable chip row on mobile, a sticky column from `lg`. */}
+        <nav className="flex flex-row gap-1 overflow-x-auto -mx-4 px-4 pb-1 lg:mx-0 lg:px-0 lg:pb-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:sticky lg:top-4 lg:self-start">
           {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
             <a
               key={key}
               href={`#${key}`}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-[9px] text-[13px] font-medium transition-colors hover:bg-[var(--color-input-filled-background)]"
+              className="flex shrink-0 items-center gap-2.5 whitespace-nowrap px-3 min-h-11 rounded-[9px] text-[13px] font-medium transition-colors hover:bg-[var(--color-input-filled-background)] border border-[var(--color-outline)] lg:border-0 lg:shrink lg:min-h-0 lg:py-2.5"
               style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }}
             >
               <Icon size={15} style={{ color: 'var(--color-text-secondary)' }} />

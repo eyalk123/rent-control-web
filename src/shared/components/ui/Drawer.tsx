@@ -45,7 +45,15 @@ export function Drawer({ open, onClose, onRequestClose, title, children, footer,
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    // Flag the open drawer on <html> so app-global floating affordances (the
+    // accessibility FAB) can get out of the way on mobile, where the drawer is
+    // full-width and its pinned footer sits exactly where they float.
+    if (open) document.documentElement.setAttribute('data-overlay-open', '');
+    else document.documentElement.removeAttribute('data-overlay-open');
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.removeAttribute('data-overlay-open');
+    };
   }, [open]);
 
   useEffect(() => {

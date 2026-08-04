@@ -22,7 +22,18 @@ export default defineConfig({
     video: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Desktop. The viewport in `use` above (1600x900) applies here.
+    { name: 'chromium', testIgnore: /mobile\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Mobile. Scoped to mobile.spec.ts on purpose: the other specs' selectors assume the
+    // labelled >=1536px sidebar, which does not render at phone width. `devices` supplies
+    // its own 390x844 viewport (overriding the desktop one above) plus touch and a mobile
+    // UA. `browserName` is forced back to chromium because the iPhone descriptor defaults
+    // to webkit, and only the chromium browser is installed for this project.
+    {
+      name: 'mobile',
+      testMatch: /mobile\.spec\.ts/,
+      use: { ...devices['iPhone 14'], browserName: 'chromium' },
+    },
   ],
   // Boot Vite in `test` mode so it loads .env.test (VITE_USE_MOCK_API + VITE_E2E_AUTH_BYPASS).
   webServer: {

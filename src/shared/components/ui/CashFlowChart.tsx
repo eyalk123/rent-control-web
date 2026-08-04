@@ -1,5 +1,6 @@
 import { Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface BucketData {
   month: string;
@@ -20,6 +21,9 @@ function formatK(v: number): string {
 
 export function CashFlowChart({ data, height = 200, compact = false }: CashFlowChartProps) {
   const { t } = useTranslation();
+  // At 390px, `interval={0}` renders every month label and they collide into an
+  // unreadable run ("03/202604/202605/2026…"). Thin them out on narrow screens.
+  const isNarrow = useMediaQuery('(max-width: 1023px)');
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
@@ -37,7 +41,8 @@ export function CashFlowChart({ data, height = 200, compact = false }: CashFlowC
           tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
           axisLine={false}
           tickLine={false}
-          interval={compact ? 'preserveStartEnd' : 0}
+          interval={compact || isNarrow ? 'preserveStartEnd' : 0}
+          minTickGap={isNarrow ? 24 : 5}
         />
         {!compact && (
           <YAxis

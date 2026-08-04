@@ -40,7 +40,8 @@ export function PropertyRentersTab({ property, onAddRenter, onScanRenter }: Prop
   }
 
   return (
-    <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+    // `minmax(360px, …)` overflows on 360px-wide devices; below `sm` use a single column.
+    <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]">
       {renters.map((r) => (
         <RenterMiniCard
           key={r.id}
