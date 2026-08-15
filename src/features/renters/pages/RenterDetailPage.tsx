@@ -150,7 +150,13 @@ export function RenterDetailPage() {
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
       <LeaseExtensionDrawer open={extendDrawerOpen} onClose={() => setExtendDrawerOpen(false)} renter={renter} />
-      <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} initialType="revenue" />
+      <TransactionFormDrawer
+        open={txDrawerOpen}
+        onClose={() => setTxDrawerOpen(false)}
+        initialType="revenue"
+        initialPropertyId={renter.property_id ?? undefined}
+        initialRenterId={renter.id}
+      />
       <ConfirmDialog
         open={confirmDeleteOpen}
         title={t('renter.deleteConfirmTitle')}

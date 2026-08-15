@@ -10,6 +10,11 @@ function shortMonth(locale: string, monthIndex: number): string {
   return MONTHS_SHORT[key][monthIndex];
 }
 
+/** Today as `YYYY-MM-DD`, the wire format every date field and API payload uses. */
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /** "15 Apr 2026" — no Intl API, uses static lookup. */
 export function formatDateFull(date: Date, locale: string): string {
   return `${date.getDate()} ${shortMonth(locale, date.getMonth())} ${date.getFullYear()}`;

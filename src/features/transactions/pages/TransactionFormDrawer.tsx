@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { TrendingUp, TrendingDown } from 'lucide-react';
@@ -26,7 +26,8 @@ import { MonthGridPicker } from '@/shared/components/ui/MonthGridPicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
-import { PAYMENT_METHOD_VALUES } from '@/shared/constants/paymentMethods';
+import { PAYMENT_METHOD_VALUES, toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
+import { todayISO } from '@/shared/utils/dates';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
@@ -38,7 +39,8 @@ import {
   getRentForMonth,
   YEAR_OPTIONS,
 } from '../utils/periodUtils';
-import type { Transaction, Renter } from '@/shared/types';
+import { getCurrentMonthlyRent } from '@/shared/types';
+import type { Transaction, Renter, PaymentMethod } from '@/shared/types';
 
 type TxType = 'revenue' | 'expense';
 
@@ -47,6 +49,11 @@ type TxType = 'revenue' | 'expense';
 interface RenterWithProperty extends Renter {
   propertyId: number;
   propertyLabel: string;
+}
+
+/** Order-insensitive equality for the id collections behind the multi-selects. */
+function sameIds(a: number[], b: number[]): boolean {
+  return a.length === b.length && a.every((id) => b.includes(id));
 }
 
 // ─── Revenue Form ─────────────────────────────────────────────────────────────
@@ -63,10 +70,12 @@ interface RevenueEditFields {
 interface RevenueFormProps {
   onClose: () => void;
   transaction?: Transaction;
+  initialPropertyId?: number;
+  initialRenterId?: number;
   onDirtyChange: (dirty: boolean) => void;
 }
 
-function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) {
+function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange }: RevenueFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const qc = useQueryClient();
@@ -110,13 +119,15 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
   const [customMonths, setCustomMonths] = useState<Set<string>>(new Set());
   const [gridYear, setGridYear] = useState(() => new Date().getFullYear());
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
-  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>(
+    initialPropertyId ? [initialPropertyId] : [],
+  );
   const [allRenters, setAllRenters] = useState<RenterWithProperty[]>([]);
   const [selectedRenterIds, setSelectedRenterIds] = useState<Set<number>>(new Set());
   const [overrideAmounts, setOverrideAmounts] = useState<Record<number, string>>({});
   const [overriddenIds, setOverriddenIds] = useState<Set<number>>(new Set());
-  const [bulkDate, setBulkDate] = useState('');
-  const [bulkPayment, setBulkPayment] = useState('');
+  const [bulkDate, setBulkDate] = useState(todayISO);
+  const [bulkPayment, setBulkPayment] = useState<PaymentMethod | ''>('');
   const [bulkNotes, setBulkNotes] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [propertyError, setPropertyError] = useState('');
@@ -125,10 +136,24 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
 
   // Report unsaved-changes state up to the drawer. Edit mode tracks the RHF form;
   // bulk-create tracks the property/renter selection and bulk fields (held outside RHF).
+  // Dirtiness is divergence from what the form was *seeded* with, not mere non-emptiness —
+  // otherwise a prefilled form (or the today-defaulted date) would trigger the discard
+  // prompt the instant it opens. With no prefill the baseline is empty and this is the
+  // same test as before.
   const isEdit = !!transaction;
+  const seededDate = useRef(bulkDate).current;
+  const seededPropertyIds = useRef(selectedPropertyIds).current;
+  // Written by the renter-prefill effect below, which is why this baseline is a ref rather
+  // than an initial-state snapshot: it is only known once `properties` has loaded.
+  const prefillAppliedRef = useRef(false);
+  const autoCheckedRef = useRef<number[]>([]);
+  const seededRenterIds = autoCheckedRef.current;
   const revenueDirty = isEdit
     ? isDirty
-    : selectedPropertyIds.length > 0 || selectedRenterIds.size > 0 || !!bulkDate || !!bulkNotes;
+    : !sameIds(selectedPropertyIds, seededPropertyIds)
+      || !sameIds([...selectedRenterIds], seededRenterIds)
+      || bulkDate !== seededDate
+      || !!bulkNotes;
   useEffect(() => { onDirtyChange(revenueDirty); }, [revenueDirty, onDirtyChange]);
 
   useEffect(() => {
@@ -160,13 +185,35 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
       return (prop?.renters ?? []).map((r) => ({ ...r, propertyId: pid, propertyLabel: label }));
     });
     setAllRenters(enriched);
-    if (!bulkPayment && enriched.length > 0 && enriched[0].payment_type) {
-      setBulkPayment(enriched[0].payment_type);
-    }
+    // Seed the payment method from the renter this form is about (the prefilled one when there
+    // is one, else the first listed). `payment_type` is a free-form string that predates the
+    // PaymentMethod enum, so it must be mapped: an unmapped value would be set on a <Select>
+    // with no matching option — an empty-looking trigger — and then rejected by the API on save.
+    // When it maps to nothing, leave the field on its placeholder rather than guess.
+    const seedRenter = (initialRenterId && enriched.find((r) => r.id === initialRenterId)) || enriched[0];
+    const seedPayment = toPaymentMethodOrNull(seedRenter?.payment_type);
+    if (!bulkPayment && seedPayment) setBulkPayment(seedPayment);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bulkPayment is a one-time default; re-running on its change would override the user's choice
-  }, [selectedPropertyIds, properties]);
+  }, [selectedPropertyIds, properties, initialRenterId]);
 
   const allRenterIds = allRenters.map((r) => r.id);
+
+  // Prefill: check the renter this form was opened for, or — when opened from a property that
+  // has exactly one renter — that renter. Runs once, so unchecking it doesn't re-check.
+  useEffect(() => {
+    if (isEdit || prefillAppliedRef.current || allRenters.length === 0) return;
+    if (!initialRenterId && !initialPropertyId) return;
+    const target = initialRenterId
+      ? allRenters.find((r) => r.id === initialRenterId)
+      : allRenters.length === 1
+        ? allRenters[0]
+        : undefined;
+    prefillAppliedRef.current = true;
+    if (!target) return;
+    autoCheckedRef.current = [target.id];
+    toggleRenter(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot prefill guarded by prefillAppliedRef
+  }, [allRenters]);
 
   function toggleRenter(renter: RenterWithProperty) {
     setSelectedRenterIds((prev) => {
@@ -177,7 +224,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         next.add(renter.id);
         setOverrideAmounts((am) => {
           if (am[renter.id] !== undefined) return am;
-          return { ...am, [renter.id]: String(renter.lease_years?.[0]?.amount || '') };
+          return { ...am, [renter.id]: String(getCurrentMonthlyRent(renter) || '') };
         });
       }
       return next;
@@ -192,7 +239,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
       setOverrideAmounts((am) => {
         const next = { ...am };
         for (const r of allRenters) {
-          if (next[r.id] === undefined) next[r.id] = String(r.lease_years?.[0]?.amount || '');
+          if (next[r.id] === undefined) next[r.id] = String(getCurrentMonthlyRent(r) || '');
         }
         return next;
       });
@@ -233,7 +280,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         amount: overrideAmount ?? getRentForMonth(renter, monthFor),
         date_of_payment: bulkDate,
         month_for: monthFor,
-        payment_method: (bulkPayment || undefined) as never,
+        payment_method: bulkPayment || undefined,
         notes: bulkNotes || undefined,
       }));
     });
@@ -298,51 +345,6 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         />
       )}
 
-      {/* Period type */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.timePeriod')}</label>
-        <SegToggle
-          value={periodType}
-          onChange={(v) => setPeriodType(v as PeriodType)}
-          options={[
-            { value: '1month', label: t('transactions.bulkRevenue.oneMonth') },
-            { value: 'custom', label: t('transactions.bulkRevenue.custom') },
-            { value: 'year', label: t('transactions.bulkRevenue.contractYear') },
-          ]}
-          size="sm"
-        />
-      </div>
-
-      {/* Period value */}
-      {periodType === '1month' && (
-        <WheelDatePicker
-          mode="month"
-          label={t('transactions.bulkRevenue.oneMonth')}
-          value={periodValue}
-          onChange={(v) => setPeriodValue(v as string)}
-        />
-      )}
-      {periodType === 'custom' && (
-        <MonthGridPicker
-          selectedMonths={customMonths}
-          onToggle={(m) => setCustomMonths((prev) => { const next = new Set(prev); if (next.has(m)) next.delete(m); else next.add(m); return next; })}
-          gridYear={gridYear}
-          onGridYearChange={setGridYear}
-        />
-      )}
-      {periodType === 'year' && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.contractYear')}</label>
-          <select
-            value={periodValue}
-            onChange={(e) => setPeriodValue(e.target.value)}
-            className="w-full h-[42px] rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)]"
-          >
-            {YEAR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
-      )}
-
       {/* Properties */}
       <PropertyMultiSelect
         label={t('transactions.property')}
@@ -352,28 +354,6 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         onChange={(ids) => { setSelectedPropertyIds(ids); setSelectedRenterIds(new Set()); setOverrideAmounts({}); setOverriddenIds(new Set()); }}
         error={propertyError}
         placeholder={t('transactions.selectProperties')}
-      />
-
-      {/* Payment details */}
-      <WheelDatePicker
-        mode="date"
-        label={t('transactions.date')}
-        required
-        value={bulkDate}
-        onChange={(v) => { setBulkDate(v as string); setBulkDateError(''); }}
-        error={bulkDateError}
-      />
-      <FormSelect
-        label={t('transactions.paymentMethod')}
-        value={bulkPayment}
-        onValueChange={setBulkPayment}
-        options={paymentOptions}
-        placeholder={t('transactions.selectPaymentMethod')}
-      />
-      <FormInput
-        label={t('transactions.notes')}
-        value={bulkNotes}
-        onChange={(e) => setBulkNotes((e as React.ChangeEvent<HTMLInputElement>).target.value)}
       />
 
       {/* Renter checklist */}
@@ -408,6 +388,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleRenter(renter)}
+                        aria-label={`${renter.first_name} ${renter.last_name}`}
                         className="h-4 w-4 shrink-0 rounded accent-[var(--color-primary)] cursor-pointer"
                       />
                       <div className="flex-1 min-w-0">
@@ -473,6 +454,74 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
         </div>
       )}
 
+      {/* Period type */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.timePeriod')}</label>
+        <SegToggle
+          value={periodType}
+          onChange={(v) => setPeriodType(v as PeriodType)}
+          options={[
+            { value: '1month', label: t('transactions.bulkRevenue.oneMonth') },
+            { value: 'custom', label: t('transactions.bulkRevenue.custom') },
+            { value: 'year', label: t('transactions.bulkRevenue.contractYear') },
+          ]}
+          size="sm"
+        />
+      </div>
+
+      {/* Period value */}
+      {periodType === '1month' && (
+        <WheelDatePicker
+          mode="month"
+          label={t('transactions.bulkRevenue.oneMonth')}
+          value={periodValue}
+          onChange={(v) => setPeriodValue(v as string)}
+        />
+      )}
+      {periodType === 'custom' && (
+        <MonthGridPicker
+          selectedMonths={customMonths}
+          onToggle={(m) => setCustomMonths((prev) => { const next = new Set(prev); if (next.has(m)) next.delete(m); else next.add(m); return next; })}
+          gridYear={gridYear}
+          onGridYearChange={setGridYear}
+        />
+      )}
+      {periodType === 'year' && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.contractYear')}</label>
+          <select
+            value={periodValue}
+            onChange={(e) => setPeriodValue(e.target.value)}
+            className="w-full h-[42px] rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)]"
+          >
+            {YEAR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Payment details */}
+      <WheelDatePicker
+        mode="date"
+        label={t('transactions.date')}
+        required
+        value={bulkDate}
+        onChange={(v) => { setBulkDate(v as string); setBulkDateError(''); }}
+        error={bulkDateError}
+      />
+      <FormSelect
+        label={t('transactions.paymentMethod')}
+        value={bulkPayment}
+        onValueChange={setBulkPayment}
+        options={paymentOptions}
+        sorted={false}
+        placeholder={t('transactions.selectPaymentMethod')}
+      />
+      <FormInput
+        label={t('transactions.notes')}
+        value={bulkNotes}
+        onChange={(e) => setBulkNotes((e as React.ChangeEvent<HTMLInputElement>).target.value)}
+      />
+
       {/* Bulk submit button rendered via the drawer footer (id="transaction-form-bulk") */}
       <button
         id="bulk-revenue-submit"
@@ -499,10 +548,12 @@ interface ExpenseEditFields {
 interface ExpenseFormProps {
   onClose: () => void;
   transaction?: Transaction;
+  initialPropertyId?: number;
+  initialRenterId?: number;
   onDirtyChange: (dirty: boolean) => void;
 }
 
-function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) {
+function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange }: ExpenseFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const { data: categories } = useExpenseCategories();
@@ -533,7 +584,9 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
   }, [transaction?.id]);
 
   // ── Create mode state ──────────────────────────────────────────────────────
-  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>(
+    !transaction && initialPropertyId ? [initialPropertyId] : [],
+  );
   const [propertyError, setPropertyError] = useState('');
 
   const singlePropertyId = selectedPropertyIds.length === 1 ? selectedPropertyIds[0] : null;
@@ -544,9 +597,9 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors, isDirty } } = useForm<ExpenseEditFields>({
     defaultValues: {
-      renterId: transaction?.renter_id?.toString() ?? '__none__',
+      renterId: (transaction?.renter_id ?? initialRenterId)?.toString() ?? '__none__',
       amount: transaction?.amount?.toString() ?? '',
-      dateOfPayment: transaction?.date_of_payment ?? '',
+      dateOfPayment: transaction?.date_of_payment ?? todayISO(),
       supplierId: transaction?.supplier_id?.toString() ?? '',
       paymentMethod: transaction?.payment_method ?? '',
       notes: transaction?.notes ?? '',
@@ -557,8 +610,12 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
 
   // Report unsaved-changes state up to the drawer. Categories are seeded from the
   // transaction in edit mode, so only count them as dirty in create mode.
+  // `isDirty` already measures against the seeded RHF defaults, so the prefilled renter and
+  // today's date don't register. The property multi-select lives outside RHF, so it gets the
+  // same baseline treatment: dirty means diverged from what was seeded, not merely non-empty.
   const isEdit = !!transaction;
-  const baseDirty = isDirty || receiptFile !== null || selectedPropertyIds.length > 0;
+  const seededPropertyIds = useRef(selectedPropertyIds).current;
+  const baseDirty = isDirty || receiptFile !== null || !sameIds(selectedPropertyIds, seededPropertyIds);
   const expenseDirty = isEdit ? baseDirty : baseDirty || selectedCategoryIds.length > 0;
   useEffect(() => { onDirtyChange(expenseDirty); }, [expenseDirty, onDirtyChange]);
 
@@ -804,11 +861,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   initialType?: TxType;
+  /** Create mode only: preselect this property. Ignored when editing. */
   initialPropertyId?: number;
+  /** Create mode only: preselect this renter (implies its property). Ignored when editing. */
+  initialRenterId?: number;
   transaction?: Transaction;
 }
 
-export function TransactionFormDrawer({ open, onClose, initialType, transaction }: Props) {
+export function TransactionFormDrawer({ open, onClose, initialType, initialPropertyId, initialRenterId, transaction }: Props) {
   const { t } = useTranslation();
   const editType = transaction?.type as TxType | undefined;
   const [txType, setTxType] = useState<TxType | null>(editType ?? initialType ?? null);
@@ -900,9 +960,9 @@ export function TransactionFormDrawer({ open, onClose, initialType, transaction 
           </button>
         </div>
       ) : txType === 'revenue' ? (
-        <RevenueForm onClose={onClose} transaction={transaction} onDirtyChange={setDirty} />
+        <RevenueForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} />
       ) : (
-        <ExpenseForm onClose={onClose} transaction={transaction} onDirtyChange={setDirty} />
+        <ExpenseForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} />
       )}
     </Drawer>
     <ConfirmDialog
