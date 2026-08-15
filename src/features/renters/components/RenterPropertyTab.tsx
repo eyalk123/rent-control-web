@@ -6,7 +6,7 @@ import { FormSelect } from '@/shared/components/form/FormSelect';
 import { RenterPropertyCard } from './RenterPropertyCard';
 import { useUpdateRenter } from '../queries';
 import { useProperty, useProperties } from '@/features/properties/queries';
-import { getRenterMonthlyRent } from '@/shared/types';
+import { getCurrentMonthlyRent } from '@/shared/types';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Renter } from '@/shared/types';
 
@@ -75,7 +75,7 @@ export function RenterPropertyTab({ renter }: Props) {
   }
 
   const properties = fullProp ? [fullProp] : [];
-  const monthlyRent = getRenterMonthlyRent(renter);
+  const monthlyRent = getCurrentMonthlyRent(renter);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

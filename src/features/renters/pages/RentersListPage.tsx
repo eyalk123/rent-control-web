@@ -34,7 +34,7 @@ import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyCol
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getLeaseUrgency } from '@/shared/utils/dates';
-import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
-  const monthly = getRenterMonthlyRent(renter);
+  const monthly = getCurrentMonthlyRent(renter);
   const leaseEnd = fmtLeaseEnd(renter);
   const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
   const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
@@ -234,11 +234,11 @@ function useRenterColumns(
     {
       id: 'rent',
       header: t('property.rent'),
-      accessorFn: (r) => getRenterMonthlyRent(r),
+      accessorFn: (r) => getCurrentMonthlyRent(r),
       enableColumnFilter: false,
       cell: ({ row }) => (
         <span className="text-sm font-semibold">
-          <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(getRenterMonthlyRent(row.original))}</LtrSpan>
+          <LtrSpan style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(getCurrentMonthlyRent(row.original))}</LtrSpan>
         </span>
       ),
     },

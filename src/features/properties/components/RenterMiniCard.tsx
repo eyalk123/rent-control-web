@@ -5,7 +5,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getRenterMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -29,7 +29,7 @@ export function RenterMiniCard({ renter, backTo, backLabel }: Props) {
   const navigate = useNavigate();
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
-  const monthly = getRenterMonthlyRent(renter);
+  const monthly = getCurrentMonthlyRent(renter);
   const countdown = leaseCountdown(renter);
   const countdownStr = countdown === 'expired'
     ? t('renter.leaseExpired')

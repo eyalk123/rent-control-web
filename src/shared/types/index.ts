@@ -115,19 +115,6 @@ export interface Renter extends LeaseTermIntent {
   id_image_url?: string | null;
 }
 
-/** Monthly rent derived from first lease year amount. Use for display or default transaction amount. */
-export function getRenterMonthlyRent(renter: Renter): number {
-  const first = renter.lease_years?.[0];
-  if (!first?.amount) return 0;
-  return first.amount;
-}
-
-/** Total monthly rent across all renters of a property. */
-export function getTotalMonthlyRent(renters: Renter[] | null | undefined): number {
-  if (!renters?.length) return 0;
-  return renters.reduce((sum, r) => sum + getRenterMonthlyRent(r), 0);
-}
-
 /**
  * Returns the rent amount for the lease year that covers the given month.
  * monthStr is "YYYY-MM". Falls back to the first year if out of range.

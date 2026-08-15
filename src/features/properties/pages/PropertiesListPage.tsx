@@ -26,7 +26,7 @@ import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyCol
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { formatMoney } from '@/shared/utils/money';
-import { getTotalMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getTotalCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -66,7 +66,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   const bg = getPropertyColorBg(property.id, 0.35);
   const imageSrc = getPropertyImageSrc(property.image_url);
   const activeRenter = property.renters?.[0];
-  const monthlyRent = property.renters?.length ? getTotalMonthlyRent(property.renters) : null;
+  const monthlyRent = property.renters?.length ? getTotalCurrentMonthlyRent(property.renters) : null;
   const leaseEnd = fmtLeaseDate(activeRenter);
   const longPress = useLongPress(() => onLongPress(property.id));
 
@@ -231,10 +231,10 @@ function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown
     {
       id: 'rent',
       header: t('property.rent'),
-      accessorFn: (p) => getTotalMonthlyRent(p.renters),
+      accessorFn: (p) => getTotalCurrentMonthlyRent(p.renters),
       enableColumnFilter: false,
       cell: ({ row }) => {
-        const rent = getTotalMonthlyRent(row.original.renters);
+        const rent = getTotalCurrentMonthlyRent(row.original.renters);
         return (
           <span className="text-sm font-medium">
             <LtrSpan style={{ color: 'var(--color-text-primary)' }}>{rent > 0 ? formatMoney(rent) : '—'}</LtrSpan>
@@ -341,7 +341,7 @@ export function PropertiesListPage() {
   });
 
   const occupied = filtered.filter((p) => p.hasRenters).length;
-  const totalMonthly = filtered.reduce((sum, p) => sum + getTotalMonthlyRent(p.renters), 0);
+  const totalMonthly = filtered.reduce((sum, p) => sum + getTotalCurrentMonthlyRent(p.renters), 0);
 
   if (error) return (
     <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
