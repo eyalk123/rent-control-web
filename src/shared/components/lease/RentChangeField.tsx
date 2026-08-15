@@ -15,8 +15,12 @@ interface Props {
   className?: string;
 }
 
-/** The escalation modes, in display order. Every caller offers all of them. */
-export const RENT_ESCALATION_MODES: RentEscalationMode[] = ['none', 'percent', 'fixed', 'cpi', 'custom'];
+/**
+ * The escalation modes, in display order. Every caller offers all of them. `custom` leads
+ * because it is the one that expresses a real lease — the other four are each a special case
+ * of it. It is not the default; every caller sets `none` explicitly.
+ */
+export const RENT_ESCALATION_MODES: RentEscalationMode[] = ['custom', 'none', 'percent', 'fixed', 'cpi'];
 
 /**
  * The "how does the rent change" control: mode toggle + the CPI explainer + the percent/₪

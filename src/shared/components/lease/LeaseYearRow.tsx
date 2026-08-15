@@ -11,9 +11,10 @@ import { formatMoney } from '@/shared/utils/money';
 import type { LeaseYearRuleMode, LeaseYearType } from '@/shared/types';
 
 /**
- * The per-year rule options, in display order. Mirrors the whole-lease choices in
- * RENT_ESCALATION_MODES (minus `custom`, which has no meaning for a single year), plus
- * `manual` — the neutral default, meaning "this amount was typed, not derived".
+ * The per-year rule options. Same set as the whole-lease RENT_ESCALATION_MODES (minus
+ * `custom`, which has no meaning for a single year), plus `manual` — the neutral default,
+ * meaning "this amount was typed, not derived", which is why it leads here rather than
+ * following that array's order.
  */
 export const LEASE_YEAR_RULE_MODES: LeaseYearRuleMode[] = [
   'manual',
@@ -39,7 +40,10 @@ interface Props {
   type: LeaseYearType;
   /** Highlights the row the lease is currently in. */
   isCurrent?: boolean;
-  /** Editable amount when provided; a read-only formatted amount otherwise. */
+  /**
+   * Editable amount when provided; a read-only formatted amount otherwise. Ignored on a
+   * `cpi` year, whose amount is never editable — see `amountEditable`.
+   */
   onAmountChange?: (value: string) => void;
   onAmountBlur?: () => void;
   amountName?: string;
@@ -95,6 +99,9 @@ export function LeaseYearRow({
   const { t } = useTranslation();
   const amountNum = Number(amount) || 0;
   const showRuleValue = ruleMode === 'percent' || ruleMode === 'fixed';
+  // A CPI year's rent is index-linked and priced server-side, so the figure here is only an
+  // estimate — and typing over it would silently drop the rule. Show it, don't let it be edited.
+  const amountEditable = Boolean(onAmountChange) && ruleMode !== 'cpi';
 
   const ruleOptions = LEASE_YEAR_RULE_MODES.map((m) => ({
     value: m,
@@ -115,7 +122,7 @@ export function LeaseYearRow({
           {label}
         </span>
 
-        {onAmountChange ? (
+        {amountEditable && onAmountChange ? (
           <LeaseYearAmountField
             aria-label={t('renter.amount')}
             value={amount}
@@ -169,7 +176,7 @@ export function LeaseYearRow({
 
         {/* An editable row shows the projection pill here — its amount lives in an input, so
             the read-only branch above (which owns the other pill) never renders. */}
-        {onAmountChange && projected && (
+        {amountEditable && projected && (
           <Pill tone="info" size="sm" className="gap-1 shrink-0">
             <TrendingUp size={12} />
             {t('renter.rentChangeCpi')}
