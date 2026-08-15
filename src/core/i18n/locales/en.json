@@ -410,6 +410,7 @@
     "yearRuleValue": "Rent change amount",
     "ruleValueRequired": "Enter an amount",
     "cpiProjectedNote": "Amounts from the first CPI year on are estimates — they are finalized once the index for that year is published.",
+    "cpiTimelineProjectedNote": "Amounts marked ≈ are projections based on the latest published index. Each is finalized once the index for that lease year is published.",
     "rentChangeCpiNote": "Rent is linked to the Consumer Price Index and updates automatically at the start of each contract year.",
     "yearlyIncrease": "Increase each year",
     "extendLease": "Extend lease",

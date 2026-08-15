@@ -91,4 +91,63 @@ test.describe('renters', () => {
     await expectToast(page, 'Renter created');
     await expect(page.getByText('Tessa Tester')).toBeVisible();
   });
+
+  // A CPI-linked year that hasn't started has no published index yet, so its stored amount
+  // is only a projection off the latest known reading. The timeline must say so — but only
+  // for the future years: the ones already underway resolved against their own index and
+  // are frozen server-side. Renter #7 (Noa Levi) is a 4-year `cpi` lease from 2024-09-01.
+  test('lease timeline marks only future CPI years as projections', async ({ page }) => {
+    await page.goto('/renters/7');
+
+    const timeline = page.getByText('Lease timeline').locator('..').locator('..');
+    // Settled years — the one that ended and the one underway — carry no marker.
+    await expect(timeline.getByText('24,000', { exact: false })).not.toContainText('≈');
+    await expect(timeline.getByText('24,600', { exact: false })).not.toContainText('≈');
+    // Both future years are marked with the ≈ and a CPI pill.
+    await expect(timeline.getByText('25,080', { exact: false })).toHaveCount(2);
+    for (const amount of await timeline.getByText('25,080', { exact: false }).all()) {
+      await expect(amount).toContainText('≈');
+    }
+    await expect(timeline.getByText('CPI', { exact: true })).toHaveCount(2);
+    // …and the explanation appears once.
+    await expect(
+      page.getByText('are projections based on the latest published index', { exact: false })
+    ).toBeVisible();
+  });
+
+  // The same rule under `custom` per-year rules: only the years carrying a CPI rule (and
+  // still in the future) are projections — the percent year before them is exact.
+  // Renter #8 (Daniel Katz): year 2 is percent, years 3-4 are CPI and not yet started.
+  test('lease timeline leaves non-CPI years in a custom schedule unmarked', async ({ page }) => {
+    await page.goto('/renters/8');
+
+    const timeline = page.getByText('Lease timeline').locator('..').locator('..');
+    // The percent year is exact even though CPI years follow it.
+    await expect(timeline.getByText('31,500', { exact: false })).not.toContainText('≈');
+    await expect(timeline.getByText('CPI', { exact: true })).toHaveCount(2);
+  });
+
+  // Regression: the marker must come from the year's own rule, not from
+  // `rent_escalation_mode` — which is nullable, and absent on renters saved before the
+  // structured fields existed. Renter #9 (Yael Bar) has a CPI rule on its last option year
+  // and no mode at all; gating on the mode made that year render as a settled figure.
+  test('lease timeline marks a CPI year when the escalation mode is missing', async ({ page }) => {
+    await page.goto('/renters/9');
+
+    const timeline = page.getByText('Lease timeline').locator('..').locator('..');
+    await expect(timeline.getByText('41,000', { exact: false })).toContainText('≈');
+    await expect(timeline.getByText('CPI', { exact: true })).toHaveCount(1);
+    // The two flat years before it are untouched.
+    await expect(timeline.getByText('40,000', { exact: false }).first()).not.toContainText('≈');
+  });
+
+  // A lease with no index linkage must render exactly as before — no marker, no footnote.
+  test('lease timeline shows no projection note for a non-CPI lease', async ({ page }) => {
+    await page.goto('/renters/1');
+    await expect(page.getByText('Lease timeline')).toBeVisible();
+    await expect(page.getByText('≈', { exact: false })).toHaveCount(0);
+    await expect(
+      page.getByText('are projections based on the latest published index', { exact: false })
+    ).toHaveCount(0);
+  });
 });

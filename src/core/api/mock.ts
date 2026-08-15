@@ -189,6 +189,71 @@ const seedRenters: Renter[] = [
     property: null,
     contact_id: null,
   },
+  {
+    // CPI-linked lease. Amounts are the ones the *server* would have materialized: the
+    // started years resolved against their own published index, while the years that
+    // haven't begun all fall back to the latest known index — which is why they repeat.
+    // Unlinked from any property on purpose: several property-scoped tests assert an exact
+    // renter roster (e.g. "property #2 has only Emily Davis"), and these fixtures exist for
+    // the lease timeline, which doesn't care about the property.
+    id: 7,
+    property_id: null,
+    first_name: 'Noa',
+    last_name: 'Levi',
+    phone: '512-555-0107',
+    email: 'noa.levi@email.com',
+    lease_years: [
+      { amount: 24000, type: 'contract' },
+      { amount: 24600, type: 'contract' },
+      { amount: 25080, type: 'option' },
+      { amount: 25080, type: 'option' },
+    ],
+    lease_start: '2024-09-01',
+    base_rent: 24000,
+    rent_escalation_mode: 'cpi',
+    property: null,
+    contact_id: null,
+  },
+  {
+    // `custom` schedule whose CPI rule starts mid-lease — only the years from that rule on
+    // are index-dependent, and only the ones still in the future are projections.
+    id: 8,
+    property_id: null,
+    first_name: 'Daniel',
+    last_name: 'Katz',
+    phone: '512-555-0108',
+    email: 'daniel.katz@email.com',
+    lease_years: [
+      { amount: 30000, type: 'contract' },
+      { amount: 31500, type: 'contract', rule: { mode: 'percent', value: 5 } },
+      { amount: 32130, type: 'option', rule: { mode: 'cpi' } },
+      { amount: 32130, type: 'option', rule: { mode: 'cpi' } },
+    ],
+    lease_start: '2024-11-01',
+    base_rent: 30000,
+    rent_escalation_mode: 'custom',
+    property: null,
+    contact_id: null,
+  },
+  {
+    // Legacy shape: only the final option year is CPI-linked, and `rent_escalation_mode`
+    // was never persisted (it is nullable in the API response). The per-year rule alone has
+    // to be enough to mark the year — gating on the mode used to hide it entirely.
+    id: 9,
+    property_id: null,
+    first_name: 'Yael',
+    last_name: 'Bar',
+    phone: '512-555-0109',
+    email: 'yael.bar@email.com',
+    lease_years: [
+      { amount: 40000, type: 'contract' },
+      { amount: 40000, type: 'contract' },
+      { amount: 41000, type: 'option', rule: { mode: 'cpi' } },
+    ],
+    lease_start: '2024-12-01',
+    property: null,
+    contact_id: null,
+  },
 ];
 
 const seedExpenseCategories: ExpenseCategory[] = [
@@ -349,7 +414,9 @@ const mockExpenseCategories: ExpenseCategory[] = [...seedExpenseCategories];
 const mockSuppliers: Supplier[] = [...seedSuppliers];
 let mockTransactions: Transaction[] = [...seedTransactions];
 let nextPropertyId = 6;
-let nextRenterId = 7;
+// Derived, not hardcoded: adding a seed renter used to silently collide with the first
+// id handed out by createRenter, which React surfaced as a duplicate-key warning.
+let nextRenterId = Math.max(...seedRenters.map((r) => r.id)) + 1;
 let nextCategoryId = 6;
 let nextSupplierId = 4;
 let nextTransactionId = 7;

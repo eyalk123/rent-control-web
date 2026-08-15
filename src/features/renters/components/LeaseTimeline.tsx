@@ -1,10 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import { TrendingUp } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
+import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import { getLeaseEndDate } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
+import { isUnsettledCpiYear } from '@/shared/utils/leaseSchedule';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -18,6 +21,13 @@ export function LeaseTimeline({ renter }: Props) {
   const leaseStart = renter.lease_start;
 
   const yearsLabel = years.length === 1 ? t('renter.yearsCount', { count: 1 }) : t('renter.yearsCount_plural', { count: years.length });
+
+  // CPI-linked years that haven't started yet: the index for their anniversary isn't
+  // published, so the stored amount is only a projection off the latest known index.
+  const projected = years.map((_, i) =>
+    isUnsettledCpiYear(years, i, leaseStart, renter.rent_escalation_mode),
+  );
+  const hasProjected = projected.some(Boolean);
 
   return (
     <DetailPanel title={t('renter.leaseTimeline')}>
@@ -35,6 +45,7 @@ export function LeaseTimeline({ renter }: Props) {
         >
           {years.map((y, i) => {
             const isCurrent = isCurrentLeaseYear(leaseStart, i);
+            const isProjected = projected[i];
             const isOption = y.type === 'option';
             const bgColor = isCurrent ? 'var(--color-rev-bg)' : isOption ? 'var(--color-input-filled-background)' : 'var(--color-surface)';
             const typeLabel = isOption ? t('renter.optionYear') : t('renter.contractYear');
@@ -48,7 +59,21 @@ export function LeaseTimeline({ renter }: Props) {
                   <span className="absolute top-1.5 end-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
                 )}
                 <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, i)}</p>
-                <LtrSpan className="text-[16px] font-bold mt-1 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(y.amount)}</LtrSpan>
+                <LtrSpan
+                  className="text-[16px] font-bold mt-1 block"
+                  style={{
+                    color: isProjected ? 'var(--color-text-secondary)' : 'var(--color-text-primary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {isProjected ? `≈ ${formatMoney(y.amount)}` : formatMoney(y.amount)}
+                </LtrSpan>
+                {isProjected && (
+                  <Pill tone="info" size="sm" className="gap-1 mt-1">
+                    <TrendingUp size={12} />
+                    {t('renter.rentChangeCpi')}
+                  </Pill>
+                )}
                 <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}>
                   {typeLabel}
                 </p>
@@ -56,6 +81,12 @@ export function LeaseTimeline({ renter }: Props) {
             );
           })}
         </div>
+
+        {hasProjected && (
+          <p className="text-[13px] leading-snug mt-3" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('renter.cpiTimelineProjectedNote')}
+          </p>
+        )}
 
         {/* Legend */}
         <div className="flex gap-4 mt-4 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>

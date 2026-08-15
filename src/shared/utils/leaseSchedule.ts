@@ -1,3 +1,4 @@
+import { leaseYearStart } from '@/shared/utils/leaseYear';
 import type {
   LeaseYear,
   LeaseYearRule,
@@ -127,6 +128,36 @@ export function firstCpiIndex(rows: LeaseYear[]): number {
 export function isProjectedYear(rows: LeaseYear[], index: number): boolean {
   const cpiAt = firstCpiIndex(rows);
   return cpiAt !== -1 && index >= cpiAt;
+}
+
+/**
+ * True when lease year `index` is CPI-linked *and* its anniversary hasn't arrived — so its
+ * amount is a projection off the latest published index, not a settled figure.
+ *
+ * Narrower than {@link isProjectedYear} on purpose. That one answers "is this amount
+ * something the client couldn't derive", which is the right question while *editing* a
+ * schedule. Here we are displaying a live lease, where a year that has already started
+ * resolved against its own known index and is frozen server-side (`is_frozen` in
+ * `cpi_indexing_service.py`) — its rent is final, and flagging it would be wrong.
+ */
+export function isUnsettledCpiYear(
+  rows: LeaseYear[],
+  index: number,
+  leaseStart: string | null | undefined,
+  mode: RentEscalationMode | null | undefined,
+  today: Date = new Date(),
+): boolean {
+  // Per-year rules win when the schedule has any, whatever `mode` claims. Gating this on
+  // `mode === 'custom'` would miss every renter whose rows carry a CPI rule while the
+  // structured mode field was never persisted — the same legacy shape
+  // `reconstructIntentFromLeaseYears` exists to recover from, and `rent_escalation_mode`
+  // is nullable in the API response. Only a lease with no rules at all falls back to the
+  // whole-lease flag, where year one is the base rent and never indexed.
+  const cpiLinked =
+    firstCpiIndex(rows) !== -1 ? isProjectedYear(rows, index) : mode === 'cpi' && index > 0;
+  if (!cpiLinked) return false;
+  const start = leaseYearStart(leaseStart, index);
+  return start !== null && start > today;
 }
 
 /**
