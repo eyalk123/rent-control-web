@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { translateCategory } from '@/shared/utils/categories';
-import i18n from '@/core/i18n';
+import { fmtMonthYear } from '@/shared/utils/dates';
+import { fmtTxDate, monthKey } from '@/shared/utils/txDate';
 import { Plus, TrendingUp, TrendingDown, CheckSquare } from 'lucide-react';
 import { useTransactions, useTransactionSummary, transactionKeys } from '../queries';
 import { deleteTransaction } from '../api/transactions';
@@ -29,17 +30,11 @@ type Filter = 'all' | 'revenue' | 'expense';
 function groupByMonth(txs: Transaction[]): Map<string, Transaction[]> {
   const map = new Map<string, Transaction[]>();
   for (const tx of txs) {
-    const key = tx.date_of_payment.slice(0, 7);
+    const key = monthKey(tx);
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(tx);
   }
   return map;
-}
-
-function fmtMonthKey(key: string): string {
-  const [y, m] = key.split('-');
-  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
-  return new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(date);
 }
 
 // ─── TxRow ───────────────────────────────────────────────────────────────────
@@ -85,7 +80,7 @@ function TxRow({ tx, isSelectMode, isSelected, onToggle, onLongPress }: TxRowPro
           {isRev ? (tx.renter_name ?? tx.property_name) : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
         </p>
         <p className="text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? t('transactions.rentLabel') : translateCategory(tx.category_name, t)} · {tx.property_name} · {tx.date_of_payment}
+          {isRev ? t('transactions.rentLabel') : translateCategory(tx.category_name, t)} · {tx.property_name} · {fmtTxDate(tx)}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
@@ -313,7 +308,7 @@ export function TransactionsListPage() {
               <div key={month}>
                 {/* Month header */}
                 <div className="flex items-center justify-between px-1.5 pb-2.5">
-                  <p className="text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmtMonthKey(month)}</p>
+                  <p className="text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmtMonthYear(month, 'long')}</p>
                   <div className="flex gap-4 text-[12px] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     <LtrSpan style={{ color: 'var(--color-rev-fg)' }}>+{formatMoney(mRev)}</LtrSpan>
                     <LtrSpan style={{ color: 'var(--color-exp-fg)' }}>−{formatMoney(mExp)}</LtrSpan>

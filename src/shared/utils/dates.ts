@@ -23,6 +23,16 @@ export function fmtDate(s: string): string {
 }
 
 /**
+ * "Apr 2026" from a `YYYY-MM` key or any ISO date string, locale-aware via Intl.
+ * Returns the input unchanged if unparseable.
+ */
+export function fmtMonthYear(s: string, month: 'short' | 'long' = 'short'): string {
+  const d = new Date(s.length === 7 ? `${s}-01` : s);
+  if (isNaN(d.getTime())) return s;
+  return new Intl.DateTimeFormat(i18n.language, { month, year: 'numeric' }).format(d);
+}
+
+/**
  * Classifies a lease-end date for at-a-glance urgency styling:
  * - `'expired'` — the lease end is before today
  * - `'soon'`    — the lease ends within `monthsAhead` months (default 3)

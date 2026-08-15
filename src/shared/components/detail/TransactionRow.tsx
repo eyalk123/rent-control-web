@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtTxDate } from '@/shared/utils/txDate';
 import { translateCategory } from '@/shared/utils/categories';
 import type { Transaction } from '@/shared/types';
 
@@ -30,7 +30,7 @@ export function TransactionRow({ tx }: Props) {
           {isRev ? tx.renter_name : (tx.supplier_name ?? (tx.category_name ? translateCategory(tx.category_name, t) : '—'))}
         </p>
         <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          {isRev ? t('property.rent') : translateCategory(tx.category_name, t)} · {fmtDate(tx.date_of_payment)}
+          {isRev ? t('property.rent') : translateCategory(tx.category_name, t)} · {fmtTxDate(tx)}
         </p>
       </div>
       <LtrSpan className="text-[13.5px] font-semibold shrink-0" style={{ color: isRev ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>

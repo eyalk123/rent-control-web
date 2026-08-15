@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { fmtTxDate } from '@/shared/utils/txDate';
 import type { Transaction } from '@/shared/types';
 
 interface Props {
@@ -70,7 +71,7 @@ export function RecentTransactions({ transactions, loading }: Props) {
                 {tx.renter_name ?? tx.property_name ?? '—'}
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                {tx.property_name} · {tx.date_of_payment}
+                {tx.property_name} · {fmtTxDate(tx)}
               </p>
             </div>
             <LtrSpan

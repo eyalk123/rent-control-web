@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
+import { fmtDate, fmtMonthYear } from '@/shared/utils/dates';
 import { useToast } from '@/shared/components/ui/Toast';
 
 function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
@@ -115,9 +116,9 @@ export function TransactionDetailPage() {
           <DetailRow icon={User} label={t('transactions.renterLabel')} value={tx.renter_name} />
           {!isRevenue && <DetailRow icon={Store} label={t('transactions.supplierLabel')} value={tx.supplier_name} />}
           {!isRevenue && <DetailRow icon={Tag} label={t('transactions.categoryLabel')} value={categoryDisplay} />}
-          {isRevenue && tx.month_for && <DetailRow icon={Calendar} label={t('transactions.monthForLabel2')} value={tx.month_for} />}
+          {isRevenue && tx.month_for && <DetailRow icon={Calendar} label={t('transactions.monthForLabel2')} value={fmtMonthYear(tx.month_for)} />}
           <DetailRow icon={CreditCard} label={t('transactions.paymentMethodLabel')} value={tx.payment_method ? t(`transactions.paymentMethod_${tx.payment_method}`, { defaultValue: tx.payment_method }) : null} />
-          <DetailRow icon={Calendar} label={t('transactions.dateOfPaymentLabel')} value={tx.date_of_payment} />
+          <DetailRow icon={Calendar} label={t('transactions.dateOfPaymentLabel')} value={fmtDate(tx.date_of_payment)} />
           {tx.notes && <DetailRow icon={FileText} label={t('transactions.notesLabel')} value={tx.notes} />}
 
           {/* Receipt */}
