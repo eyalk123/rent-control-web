@@ -151,6 +151,7 @@ export function LeaseYearRow({
             value={ruleMode}
             onValueChange={onRuleChange}
             options={ruleOptions}
+            sorted={false}
             error={error}
           />
         )}

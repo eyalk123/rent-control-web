@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, type Control, type FieldValues, type Path } from 'react-hook-form';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Plus } from 'lucide-react';
+import { sortLabels } from '@/shared/utils/sortOptions';
 
 type Props<TFieldValues extends FieldValues> = {
   control: Control<TFieldValues>;
@@ -28,9 +29,10 @@ export function FormCreatableSelect<TFieldValues extends FieldValues>({
   createModalPlaceholder,
   error,
 }: Props<TFieldValues>) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
+  const sortedOptions = useMemo(() => sortLabels(options, i18n.language), [options, i18n.language]);
 
   return (
     <Controller
@@ -78,7 +80,7 @@ export function FormCreatableSelect<TFieldValues extends FieldValues>({
                   align="start"
                   sideOffset={4}
                 >
-                  {options.map((owner) => (
+                  {sortedOptions.map((owner) => (
                     <DropdownMenu.Item
                       key={owner}
                       onSelect={() => onChange(owner)}

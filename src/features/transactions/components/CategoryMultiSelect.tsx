@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { translateCategory } from '@/shared/utils/categories';
+import { sortOptions } from '@/shared/utils/sortOptions';
 import { AddCategoryModal } from './AddCategoryModal';
 import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import type { ExpenseCategory } from '@/shared/types';
@@ -16,14 +17,24 @@ interface Props {
 }
 
 export function CategoryMultiSelect({ label, categories, selectedIds, onChange, error, required }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const toggle = (id: number) => {
     onChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
   };
 
-  const activeCategories = categories.filter((c) => c.is_active);
+  // Sorted by the label the user actually reads: the backend's `sort_order` is a curated
+  // numeric order over keys, unrelated to the translated names shown here.
+  const activeCategories = useMemo(
+    () => sortOptions(
+      categories
+        .filter((c) => c.is_active)
+        .map((c) => ({ ...c, label: c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id)) })),
+      i18n.language,
+    ),
+    [categories, t, i18n.language],
+  );
 
   return (
     <>
@@ -48,7 +59,7 @@ export function CategoryMultiSelect({ label, categories, selectedIds, onChange, 
                   color: selected ? '#fff' : 'var(--color-text-secondary)',
                 }}
               >
-                {c.name ?? (c.key ? translateCategory(c.key, t) : String(c.id))}
+                {c.label}
               </button>
             );
           })}

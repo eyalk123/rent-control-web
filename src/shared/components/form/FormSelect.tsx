@@ -1,12 +1,16 @@
 import * as Select from '@radix-ui/react-select';
 import { ChevronDown, Check, X } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
 import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
+import { sortOptions } from '@/shared/utils/sortOptions';
 
 export interface SelectOption<T extends string = string> {
   label: string;
   value: T;
+  /** Sentinel rows ("All owners", "None", "+ Create new") stay above the sorted options. */
+  pinned?: boolean;
 }
 
 interface Props<T extends string> {
@@ -26,6 +30,11 @@ interface Props<T extends string> {
    * LeaseYearRow, where the row itself supplies the caption and the value is never empty.
    */
   compact?: boolean;
+  /**
+   * Options are ordered alphabetically in the active language by default. Set false where the
+   * given order carries meaning (payment method/frequency, lease rule modes, years, months).
+   */
+  sorted?: boolean;
   /** Merged onto the outer wrapper, e.g. a caller's width constraint. */
   className?: string;
   'aria-label'?: string;
@@ -33,9 +42,13 @@ interface Props<T extends string> {
 
 export function FormSelect<T extends string>({
   label, error, value, onValueChange, options, placeholder, disabled, required, reviewName,
-  compact = false, className = '', ...rest
+  compact = false, sorted = true, className = '', ...rest
 }: Props<T>) {
   const { t, i18n } = useTranslation();
+  const items = useMemo(
+    () => (sorted ? sortOptions(options, i18n.language) : options),
+    [options, sorted, i18n.language],
+  );
   const review = useFieldReview(reviewName);
   const dismissReview = useDismissFieldReview();
   const flagged = !!review && !error;
@@ -75,7 +88,7 @@ export function FormSelect<T extends string>({
         <Select.Portal>
           <Select.Content className="z-50 min-w-[8rem] overflow-hidden rounded-xl bg-[var(--color-surface)] border border-[var(--color-outline)] shadow-lg">
             <Select.Viewport className="p-1">
-              {options.map((opt) => (
+              {items.map((opt) => (
                 <Select.Item
                   key={opt.value}
                   value={opt.value}

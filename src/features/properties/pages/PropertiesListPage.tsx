@@ -317,14 +317,14 @@ export function PropertiesListPage() {
     [properties, search],
   );
 
-  // Distinct, sorted owners across all properties — drives the Owner column's
-  // dropdown filter (same dedupe/sort pattern as PropertyFormDrawer).
+  // Distinct owners across all properties — drives the Owner column's dropdown filter.
+  // DataTable applies the locale-aware ordering to every column filter.
   const ownerOptions = useMemo(
     () => Array.from(new Set(
       (properties ?? [])
         .map((p) => p.property_owner?.trim())
         .filter((o): o is string => !!o),
-    )).sort(),
+    )),
     [properties],
   );
 

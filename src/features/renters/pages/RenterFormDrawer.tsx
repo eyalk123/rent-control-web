@@ -557,10 +557,10 @@ export function RenterFormDrawer({
             <LeaseTermBuilder control={control} setValue={setValue} />
             <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} hint={t('renter.paymentDayHint')} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
-              <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
+              <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} sorted={false} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
             )} />
             <Controller control={control} name="paymentFrequency" render={({ field }) => (
-              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} placeholder={t('renter.selectPaymentFrequency')} reviewName="paymentFrequency" />
+              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} sorted={false} placeholder={t('renter.selectPaymentFrequency')} reviewName="paymentFrequency" />
             )} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (

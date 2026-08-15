@@ -12,6 +12,8 @@ import {
   type Table,
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { sortOptions } from '@/shared/utils/sortOptions';
 import { TriStateCheckbox } from './TriStateCheckbox';
 
 // Per-column UI hints, read by the DataTable filter row.
@@ -94,6 +96,7 @@ export function DataTable<T>({
   onToggle,
   onToggleAll,
 }: DataTableProps<T>) {
+  const { i18n } = useTranslation();
   const rows = table.getRowModel().rows;
 
   return (
@@ -182,7 +185,7 @@ export function DataTable<T>({
                         }}
                       >
                         <option value="">{meta.filterPlaceholder ?? ''}</option>
-                        {meta.filterOptions?.map((opt) => (
+                        {sortOptions(meta.filterOptions ?? [], i18n.language).map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>

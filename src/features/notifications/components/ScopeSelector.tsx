@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
+import { compareLabels, sortLabels } from '@/shared/utils/sortOptions';
 
 type ScopeKind = 'all' | 'owners' | 'properties' | 'renters';
 
@@ -33,15 +34,29 @@ function initialKind(v: ScopeValue): ScopeKind {
  * then multi-select within it. The backend supports a union across dimensions;
  * this UI keeps it to one for clarity. */
 export function ScopeSelector({ value, onChange }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [kind, setKind] = useState<ScopeKind>(() => initialKind(value));
   const [query, setQuery] = useState('');
   const { data: properties = [] } = useProperties();
   const { data: renters = [] } = useRenters();
+  const lang = i18n.language;
 
   const owners = useMemo(
-    () => [...new Set(properties.map((p) => p.property_owner).filter((o): o is string => !!o))].sort(),
-    [properties],
+    () => sortLabels(
+      [...new Set(properties.map((p) => p.property_owner).filter((o): o is string => !!o))],
+      lang,
+    ),
+    [properties, lang],
+  );
+
+  // These lists render directly rather than through FormSelect, so they sort themselves.
+  const sortedProperties = useMemo(
+    () => [...properties].sort((a, b) => compareLabels(`${a.address}, ${a.city}`, `${b.address}, ${b.city}`, lang)),
+    [properties, lang],
+  );
+  const sortedRenters = useMemo(
+    () => [...renters].sort((a, b) => compareLabels(`${a.first_name} ${a.last_name}`, `${b.first_name} ${b.last_name}`, lang)),
+    [renters, lang],
   );
 
   const q = query.trim().toLowerCase();
@@ -50,12 +65,12 @@ export function ScopeSelector({ value, onChange }: Props) {
     [owners, q],
   );
   const filteredProperties = useMemo(
-    () => (q ? properties.filter((p) => `${p.address}, ${p.city}`.toLowerCase().includes(q)) : properties),
-    [properties, q],
+    () => (q ? sortedProperties.filter((p) => `${p.address}, ${p.city}`.toLowerCase().includes(q)) : sortedProperties),
+    [sortedProperties, q],
   );
   const filteredRenters = useMemo(
-    () => (q ? renters.filter((r) => `${r.first_name} ${r.last_name}`.toLowerCase().includes(q)) : renters),
-    [renters, q],
+    () => (q ? sortedRenters.filter((r) => `${r.first_name} ${r.last_name}`.toLowerCase().includes(q)) : sortedRenters),
+    [sortedRenters, q],
   );
 
   const changeKind = (next: ScopeKind) => {

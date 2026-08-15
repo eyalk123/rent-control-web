@@ -88,7 +88,7 @@ export function ScanSummaryDrawer({ open, onClose, mapped, properties, existingR
 
   const propertyOptions = useMemo(
     () => [
-      { label: t('documentScan.createNewProperty'), value: NEW_PROPERTY },
+      { label: t('documentScan.createNewProperty'), value: NEW_PROPERTY, pinned: true },
       ...properties.map((p) => ({
         label: `${p.address}${formatFloorApartment(p, t)} - ${p.city}`,
         value: String(p.id),

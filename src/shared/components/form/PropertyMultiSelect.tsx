@@ -1,7 +1,8 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check } from 'lucide-react';
 import { RequiredMark } from './RequiredMark';
+import { sortOptions } from '@/shared/utils/sortOptions';
 
 interface Option {
   value: number;
@@ -20,9 +21,10 @@ interface Props {
 }
 
 export function PropertyMultiSelect({ label, options, selectedIds, onChange, error, disabled, placeholder, required }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sorted = useMemo(() => sortOptions(options, i18n.language), [options, i18n.language]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,14 +69,14 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
             {selectedIds.length === 0 ? (
               <span className="text-[var(--color-placeholder)]">{placeholder ?? label}</span>
             ) : (
-              selectedIds.map((id) => {
-                const opt = options.find((o) => o.value === id);
-                return opt ? (
-                  <span key={id} className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-[var(--color-outline)] text-[var(--color-text-primary)] whitespace-nowrap">
+              // Chips follow the same alphabetical order as the list below, not click order.
+              sorted
+                .filter((opt) => selectedIds.includes(opt.value))
+                .map((opt) => (
+                  <span key={opt.value} className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-[var(--color-outline)] text-[var(--color-text-primary)] whitespace-nowrap">
                     {opt.label}
                   </span>
-                ) : null;
-              })
+                ))
             )}
           </div>
           <ChevronDown size={16} className="shrink-0 ms-2 text-[var(--color-text-secondary)]" style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }} />
@@ -93,7 +95,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
                 </span>
                 {allSelected ? t('transactions.bulkRevenue.deselectAll') : t('transactions.bulkRevenue.selectAll')}
               </button>
-              {options.map((opt) => {
+              {sorted.map((opt) => {
                 const checked = selectedIds.includes(opt.value);
                 return (
                   <button

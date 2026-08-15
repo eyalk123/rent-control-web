@@ -163,9 +163,10 @@ function useRenterColumns(
   const { t } = useTranslation();
   return useMemo<ColumnDef<Renter, unknown>[]>(() => {
     const ownerOf = (r: Renter) => ownerByProperty.get(r.property?.id ?? r.property_id ?? -1) ?? '';
+    // DataTable applies the locale-aware ordering to every column filter.
     const ownerOptions = Array.from(
       new Set(Array.from(ownerByProperty.values()).map((o) => o.trim()).filter(Boolean)),
-    ).sort();
+    );
     return [
     {
       id: 'renter',

@@ -136,11 +136,12 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
   }, [periodType]);
 
   const ownerOptions = useMemo(() => {
+    // FormSelect sorts the owner names; the "all owners" row stays pinned on top.
     const owners = Array.from(new Set(
       (properties ?? []).map((p) => p.property_owner?.trim()).filter((o): o is string => !!o)
-    )).sort();
+    ));
     return [
-      { value: '__all__', label: t('transactions.bulkRevenue.allOwners') },
+      { value: '__all__', label: t('transactions.bulkRevenue.allOwners'), pinned: true },
       ...owners.map((o) => ({ value: o, label: o })),
     ];
   }, [properties, t]);
@@ -266,7 +267,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
           </div>
         </div>
         <Controller control={control} name="renterId" render={({ field }) => (
-          <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...renterOptions]} placeholder={t('transactions.selectRenter')} />
+          <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter'), pinned: true }, ...renterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
         <FormInput label={t('transactions.amount')} type="number" step="0.01" required error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
         <Controller control={control} name="monthFor" rules={{ required: t('common.required') }} render={({ field }) => (
@@ -276,7 +277,7 @@ function RevenueForm({ onClose, transaction, onDirtyChange }: RevenueFormProps) 
           <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
         )} />
         <Controller control={control} name="paymentMethod" render={({ field }) => (
-          <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} />
+          <FormSelect label={t('transactions.paymentMethod')} value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} />
         )} />
         <FormInput label={t('transactions.notes')} {...register('notes')} />
       </form>
@@ -654,7 +655,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
           </div>
         </div>
         <Controller control={control} name="renterId" render={({ field }) => (
-          <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...editRenterOptions]} placeholder={t('transactions.selectRenter')} />
+          <FormSelect label={t('transactions.selectRenter')} value={field.value} onValueChange={field.onChange} options={[{ value: '__none__', label: t('transactions.selectRenter'), pinned: true }, ...editRenterOptions]} placeholder={t('transactions.selectRenter')} />
         )} />
         <FormInput label={t('transactions.amount')} type="number" step="0.01" required error={errors.amount?.message} {...register('amount', { required: t('common.required') })} />
         <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
@@ -688,7 +689,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
           )}
         </div>
         <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
-          <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
+          <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
         )} />
         <FormInput label={t('transactions.notes')} {...register('notes')} />
         <FormFileInput
@@ -742,7 +743,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
             label={t('transactions.selectRenter')}
             value={field.value}
             onValueChange={field.onChange}
-            options={[{ value: '__none__', label: t('transactions.selectRenter') }, ...createRenterOptions]}
+            options={[{ value: '__none__', label: t('transactions.selectRenter'), pinned: true }, ...createRenterOptions]}
             placeholder={t('transactions.selectRenter')}
             disabled={renterDisabled}
           />
@@ -783,7 +784,7 @@ function ExpenseForm({ onClose, transaction, onDirtyChange }: ExpenseFormProps) 
         )}
       </div>
       <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
-        <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
+        <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
       <FormFileInput

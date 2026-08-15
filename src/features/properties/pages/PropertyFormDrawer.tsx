@@ -85,12 +85,13 @@ export function PropertyFormDrawer({
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty(propertyId ?? 0);
 
+  // FormCreatableSelect applies the locale-aware ordering.
   const ownerOptions = useMemo(() =>
     Array.from(new Set(
       allProperties
         .map((p) => p.property_owner?.trim())
         .filter((o): o is string => !!o)
-    )).sort(),
+    )),
   [allProperties]);
   const { showToast } = useToast();
 
