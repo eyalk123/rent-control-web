@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
@@ -14,6 +14,7 @@ import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
+import { useDetailBackTarget } from '@/shared/components/detail/useDetailBackTarget';
 import { RenterDetailHero } from '../components/RenterDetailHero';
 import { LeaseInfoTab } from '../components/LeaseInfoTab';
 import { RenterPropertyTab } from '../components/RenterPropertyTab';
@@ -40,30 +41,15 @@ export function RenterDetailPage() {
   const [extendDrawerOpen, setExtendDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
-
   // When opened from a property's renter list, that origin is carried on the
   // navigation state so the back link returns there (and names it) instead of
   // the generic renters list.
-  const backState = location.state as { backTo?: string; backLabel?: string } | null;
+  const { backState, tab, setTab, searchParams, setSearchParams, location } =
+    useDetailBackTarget(TAB_IDS, 'info');
   const backTo = backState?.backTo ?? '/renters';
   const backLabel = backState?.backLabel
     ? t('renter.backToProperty', { name: backState.backLabel })
     : t('renter.allRenters');
-
-  // Active tab lives in the URL (?tab=) so the browser back button and a refresh
-  // restore the tab the user was on — not the default.
-  const tabParam = searchParams.get('tab') as TabId | null;
-  const tab: TabId = tabParam && TAB_IDS.includes(tabParam) ? tabParam : 'info';
-  const setTab = (id: TabId) =>
-    setSearchParams(
-      (prev) => {
-        prev.set('tab', id);
-        return prev;
-      },
-      { replace: true },
-    );
 
   // Deep-link from the "Update lease" notification action (?extend=1) opens the
   // extension drawer directly, then clears the param so a refresh won't re-open it.
@@ -71,9 +57,10 @@ export function RenterDetailPage() {
     if (searchParams.get('extend') === '1') {
       setExtendDrawerOpen(true);
       searchParams.delete('extend');
-      setSearchParams(searchParams, { replace: true });
+      // Re-send state: a state-less replace would drop the back-link origin.
+      setSearchParams(searchParams, { replace: true, state: location.state });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, location.state]);
 
   const { data: renter, isLoading, isError } = useRenter(renterId);
   const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
@@ -105,8 +92,11 @@ export function RenterDetailPage() {
   const monthly = getCurrentMonthlyRent(renter);
   const leaseEnd = getLeaseEndDate(renter);
   const days = daysUntil(leaseEnd);
-  const totalPaid = transactions.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
-  const paymentsCount = transactions.filter((tx) => tx.type === 'revenue').length;
+  // Hero totals cover the current calendar year only, by payment date.
+  const currentYear = new Date().getFullYear();
+  const thisYearTx = transactions.filter((tx) => tx.date_of_payment?.slice(0, 4) === String(currentYear));
+  const totalRevenue = thisYearTx.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
+  const totalExpenses = thisYearTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(renter.id, 0.12);
 
   const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
@@ -130,8 +120,9 @@ export function RenterDetailPage() {
           monthly={monthly}
           days={days}
           leaseEnd={leaseEnd}
-          totalPaid={totalPaid}
-          paymentsCount={paymentsCount}
+          totalRevenue={totalRevenue}
+          totalExpenses={totalExpenses}
+          year={String(currentYear)}
           statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onExtendLease={() => setExtendDrawerOpen(true)}

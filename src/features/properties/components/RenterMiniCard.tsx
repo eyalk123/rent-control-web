@@ -6,14 +6,11 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Renter } from '@/shared/types';
 
-interface Props {
+interface Props extends DetailBackState {
   renter: Renter;
-  /** Where the renter detail's back link should return to (defaults to /renters). */
-  backTo?: string;
-  /** Human label for that origin (e.g. the property address). */
-  backLabel?: string;
 }
 
 function leaseCountdown(renter: Renter): { days: number } | 'expired' | null {

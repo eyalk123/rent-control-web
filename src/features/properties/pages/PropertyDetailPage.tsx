@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PropertyFormDrawer } from './PropertyFormDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
@@ -14,6 +14,7 @@ import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
+import { useDetailBackTarget } from '@/shared/components/detail/useDetailBackTarget';
 import { PropertyDetailHero } from '../components/PropertyDetailHero';
 import { PropertyDetailsTab } from '../components/PropertyDetailsTab';
 import { PropertyRentersTab } from '../components/PropertyRentersTab';
@@ -32,19 +33,10 @@ export function PropertyDetailPage() {
   const propertyId = Number(id);
   const { mutateAsync: deleteProperty, isPending: isDeleting } = useDeleteProperty();
   const { showToast } = useToast();
-  // Active tab lives in the URL (?tab=) so the browser back button and a page
-  // refresh restore the tab the user was on — not the default.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab') as TabId | null;
-  const tab: TabId = tabParam && TAB_IDS.includes(tabParam) ? tabParam : 'info';
-  const setTab = (id: TabId) =>
-    setSearchParams(
-      (prev) => {
-        prev.set('tab', id);
-        return prev;
-      },
-      { replace: true },
-    );
+  // When opened from a renter's property tab, that origin is carried on the
+  // navigation state so the back link returns there (and names it) instead of
+  // the generic properties list.
+  const { backState, tab, setTab, location } = useDetailBackTarget(TAB_IDS, 'info');
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [renterDrawerOpen, setRenterDrawerOpen] = useState(false);
@@ -53,7 +45,6 @@ export function PropertyDetailPage() {
   // Populated from the app-global scan session once the user continues out of the summary.
   const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const location = useLocation();
   const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
 
   // Pick up the scan handoff and open the renter form pre-filled for this property.
@@ -104,7 +95,14 @@ export function PropertyDetailPage() {
     <div>
       {/* Hero */}
       <div className="px-4 pt-6 lg:px-10" style={{ background: heroBg, borderBottom: '1px solid var(--color-outline)' }}>
-        <DetailBackLink to="/properties" label={t('property.allProperties')} />
+        <DetailBackLink
+          to={backState?.backTo ?? '/properties'}
+          label={
+            backState?.backLabel
+              ? t('property.backToRenter', { name: backState.backLabel })
+              : t('property.allProperties')
+          }
+        />
         <PropertyDetailHero
           property={property}
           monthlyRent={monthlyRent}

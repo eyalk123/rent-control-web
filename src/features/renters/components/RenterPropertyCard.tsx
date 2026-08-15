@@ -7,16 +7,18 @@ import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getPropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
+import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Property } from '@/shared/types';
 
-interface Props {
+interface Props extends DetailBackState {
   property: Property;
   monthlyRent: number;
 }
 
-export function RenterPropertyCard({ property, monthlyRent }: Props) {
+export function RenterPropertyCard({ property, monthlyRent, backTo, backLabel }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const open = () => navigate(`/properties/${property.id}`, { state: { backTo, backLabel } });
   const color = getPropertyColor(property.id);
   const bg = getPropertyColorBg(property.id, 0.35);
   const imageSrc = getPropertyImageSrc(property.image_url);
@@ -25,8 +27,8 @@ export function RenterPropertyCard({ property, monthlyRent }: Props) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/properties/${property.id}`)}
-      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/properties/${property.id}`); }}
+      onClick={open}
+      onKeyDown={(e) => { if (e.key === 'Enter') open(); }}
       className="rounded-[var(--radius-card)] overflow-hidden cursor-pointer transition-all hover:-translate-y-px text-start"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
     >

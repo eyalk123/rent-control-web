@@ -15,8 +15,11 @@ interface Props {
   monthly: number;
   days: number | null;
   leaseEnd: Date | null;
-  totalPaid: number;
-  paymentsCount: number;
+  /** Revenue/expense totals cover the current calendar year only. */
+  totalRevenue: number;
+  totalExpenses: number;
+  /** Calendar year the two totals are for, shown in their labels. */
+  year: string;
   /** Payment totals are still loading. */
   statsLoading?: boolean;
   onEdit: () => void;
@@ -25,7 +28,7 @@ interface Props {
   onDelete: () => void;
 }
 
-export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalPaid, paymentsCount, statsLoading, onEdit, onExtendLease, onRecordPayment, onDelete }: Props) {
+export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalRevenue, totalExpenses, year, statsLoading, onEdit, onExtendLease, onRecordPayment, onDelete }: Props) {
   const { t } = useTranslation();
   const avatarColor = getPropertyColor(renter.id);
   const avatarBg = getPropertyColorBg(renter.id, 0.18);
@@ -93,7 +96,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <HeroStat label={t('renter.monthlyRent')} value={formatMoney(monthly)} />
         <HeroStat
           label={t('renter.leaseEndsIn')}
@@ -101,7 +104,8 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
           tone={days != null && days < 90 ? 'warning' : undefined}
         />
-        <HeroStat label={t('renter.totalPaid')} value={formatMoney(totalPaid)} sub={t('renter.paymentsCount', { count: paymentsCount })} tone="success" loading={statsLoading} />
+        <HeroStat label={t('renter.totalRevenue', { year })} value={formatMoney(totalRevenue)} tone="success" loading={statsLoading} />
+        <HeroStat label={t('renter.totalExpenses', { year })} value={formatMoney(totalExpenses)} tone="danger" loading={statsLoading} />
       </div>
     </>
   );
