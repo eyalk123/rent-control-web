@@ -7,11 +7,10 @@ import { fmtDate } from '@/shared/utils/dates';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useToast } from '@/shared/components/ui/Toast';
-import { useCreateRevenueTransaction } from '@/features/transactions/queries';
+import { useMarkRentPaid } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useNotifications, useDismissNotification } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
-import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 
 /** Rows shown per section before collapsing the rest behind "See all". Keeps the
  *  section's height stable so the neighbouring occupancy card can't be stretched by it. */
@@ -23,7 +22,7 @@ export function NeedsAttentionSection() {
   const { showToast } = useToast();
   const { openPanel } = useAlertsPanel();
   const { data: items = [], isLoading: loading } = useNotifications('all');
-  const createRevenue = useCreateRevenueTransaction();
+  const { markPaid } = useMarkRentPaid();
   const dismissNotification = useDismissNotification();
   const [savingId, setSavingId] = useState<number | null>(null);
 
@@ -35,13 +34,14 @@ export function NeedsAttentionSection() {
     if (!item.property_id) return;
     setSavingId(item.id);
     try {
-      await createRevenue.mutateAsync({
+      // Overdue candidates are only ever generated for the current month
+      // (`renter_repository.get_overdue_this_month`), so that is the month being paid for.
+      await markPaid({
         property_id: item.property_id,
         renter_id: item.renter_id,
         amount: item.data.amount ?? 0,
-        date_of_payment: new Date().toISOString().slice(0, 10),
-        month_for: new Date().toISOString().slice(0, 8) + '01',
-        payment_method: normalizePaymentType(item.payment_type),
+        monthFor: new Date().toISOString().slice(0, 7),
+        paymentType: item.payment_type,
       });
       dismissNotification.mutate(item.id);
     } catch {

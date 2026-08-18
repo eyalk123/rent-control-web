@@ -56,7 +56,9 @@ test.describe('transactions', () => {
   // houses Michael Chen — only the renter we came from may be checked.
   test('record-payment from a renter prefills property, renter and payment method', async ({ page }) => {
     await page.goto('/renters/1');
-    await page.getByRole('button', { name: 'Record payment' }).click();
+    // The hero button opens the type chooser now, so a bill can be logged from here too.
+    await page.getByRole('button', { name: 'Add transaction' }).first().click();
+    await page.getByRole('button', { name: 'Revenue', exact: true }).click();
 
     await expect(page.getByText('123 Main St', { exact: false }).first()).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'Sarah Johnson' })).toBeChecked();
@@ -89,10 +91,13 @@ test.describe('transactions', () => {
   // not stop to ask. The prefill and the today-defaulted date both used to trip that guard.
   test('closing an untouched prefilled form does not prompt to discard', async ({ page }) => {
     await page.goto('/renters/1');
-    await page.getByRole('button', { name: 'Record payment' }).click();
+    await page.getByRole('button', { name: 'Add transaction' }).first().click();
+    await page.getByRole('button', { name: 'Revenue', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Sarah Johnson' })).toBeChecked();
 
-    await page.getByRole('button', { name: 'Cancel' }).click();
+    // Escape is the drawer's own soft dismissal — the footer button reads "Back" here,
+    // because from the chooser there is a step to go back to.
+    await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: 'Add transaction', level: 2 })).toHaveCount(0);
     await expect(page.getByText('Discard changes')).toHaveCount(0);
   });

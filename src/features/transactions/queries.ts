@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import {
   getTransactions,
+  getAllTransactions,
   getTransactionById,
   createRevenueTransaction,
   createExpenseTransaction,
@@ -19,8 +20,9 @@ import {
 } from './api/transactions';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { notificationKeys } from '@/features/notifications/queries';
+import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 import type { TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
-import type { TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
+import type { TransactionsListParams, TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
 
 const PAGE_SIZE = 10;
 
@@ -28,6 +30,7 @@ export const transactionKeys = {
   all: ['transactions'] as const,
   list: (filters: object) => ['transactions', 'list', filters] as const,
   detail: (id: number) => ['transactions', id] as const,
+  allList: (filters: object) => ['transactions', 'all-list', filters] as const,
   summary: ['transactions', 'summary'] as const,
   categories: ['expense-categories'] as const,
   propertyRenters: (pid: number) => ['property-renters', pid] as const,
@@ -43,6 +46,24 @@ export function useTransactions(filters: Record<string, unknown> = {}) {
       return (lastPage as unknown[]).length < PAGE_SIZE ? undefined : loaded;
     },
     initialPageParam: 0,
+  });
+}
+
+/**
+ * Every matching transaction, not just the first page.
+ *
+ * The detail tabs need the whole history: a payment grid cannot tell paid from unpaid if it
+ * only sees the ten most recent rows, and the same cap was already skewing the hero YTD
+ * totals. `getAllTransactions` pages at 100 under the hood.
+ */
+export function useAllTransactions(
+  filters: Omit<TransactionsListParams, 'limit' | 'offset'>,
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({
+    queryKey: transactionKeys.allList(filters),
+    queryFn: () => getAllTransactions(filters),
+    enabled: options.enabled ?? true,
   });
 }
 
@@ -82,6 +103,41 @@ export function useCreateRevenueTransaction() {
       qc.invalidateQueries({ queryKey: notificationKeys.feed });
     },
   });
+}
+
+export interface MarkRentPaidInput {
+  property_id: number;
+  renter_id: number | null;
+  amount: number;
+  /** "YYYY-MM" — the month the rent is *for*, which is rarely the month it arrives in. */
+  monthFor: string;
+  /** The renter's stored payment_type; normalized to a PaymentMethod here. */
+  paymentType?: string | null;
+}
+
+/**
+ * Records a rent payment in one shot — the affordance behind "Mark paid" on an overdue
+ * alert and behind an unpaid box on the payment grid.
+ *
+ * There is no mark-as-paid endpoint: paid *is* the existence of a revenue row for that
+ * month, so this simply creates one. Callers must pass the month the rent is for; the
+ * alert path used to hardcode the current month, which mis-filed a payment for an alert
+ * raised about an earlier one.
+ */
+export function useMarkRentPaid() {
+  const createRevenue = useCreateRevenueTransaction();
+  return {
+    ...createRevenue,
+    markPaid: (input: MarkRentPaidInput) =>
+      createRevenue.mutateAsync({
+        property_id: input.property_id,
+        renter_id: input.renter_id,
+        amount: input.amount,
+        date_of_payment: new Date().toISOString().slice(0, 10),
+        month_for: `${input.monthFor}-01`,
+        payment_method: normalizePaymentType(input.paymentType),
+      }),
+  };
 }
 
 export function useCreateExpenseTransaction() {

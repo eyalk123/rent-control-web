@@ -30,6 +30,9 @@ export function SegToggle<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
+            // Which segment is selected is otherwise carried by background colour alone,
+            // which does not survive linearisation into a screen reader.
+            aria-pressed={active}
             className={`inline-flex items-center justify-center gap-1.5 rounded-[9px] font-medium transition-colors min-h-11 lg:min-h-0 ${padClass} ${
               active
                 ? 'bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm'

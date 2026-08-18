@@ -1,5 +1,5 @@
 import apiClient from '@/core/api/client';
-import { USE_MOCK_API, mockExpenseCategoriesApi, mockTransactionsApi } from '@/core/api/mock';
+import { USE_MOCK_API, mockExpenseCategoriesApi, mockLatency, mockTransactionsApi } from '@/core/api/mock';
 import type {
   Transaction,
   TransactionCreateRevenue,
@@ -58,6 +58,7 @@ export async function getTransactions(
   params: TransactionsListParams = {},
 ): Promise<Transaction[]> {
   if (USE_MOCK_API) {
+    await mockLatency();
     return mockTransactionsApi.getTransactions(params);
   }
 

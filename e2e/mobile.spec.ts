@@ -40,6 +40,10 @@ async function horizontalOverflow(page: Page) {
  * Narrowest column of any visible multi-column grid. The audit found templates that
  * resolved to 18-20px because an inline `gridTemplateColumns` cannot be overridden by
  * a media query, which made whole panels unreadable.
+ *
+ * Grids marked `data-dense-grid` are skipped: a calendar-style grid of small cells is the
+ * intended design there, not a collapsed panel. Those still owe a usable touch target, so
+ * mark one only when its cells stay at or above 44px.
  */
 async function narrowestGridColumn(page: Page) {
   return page.evaluate(() => {
@@ -51,6 +55,7 @@ async function narrowestGridColumn(page: Page) {
     };
     let min = Infinity;
     for (const el of Array.from(document.querySelectorAll('body *'))) {
+      if (el.hasAttribute('data-dense-grid')) continue;
       if (!visible(el) || !getComputedStyle(el).display.includes('grid')) continue;
       const cols = getComputedStyle(el)
         .gridTemplateColumns.split(' ')

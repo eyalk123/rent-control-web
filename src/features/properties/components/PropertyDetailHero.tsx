@@ -11,8 +11,11 @@ import type { Property } from '@/shared/types';
 interface Props {
   property: Property;
   monthlyRent: number | null;
+  /** Net/revenue/expense totals cover the current calendar year only. */
   revTotal: number;
   expTotal: number;
+  /** Calendar year those three totals are for, shown in their labels. */
+  year: string;
   renterName: string | null;
   rentersCount: number;
   /** Transaction totals (net/revenue/expenses) are still loading. */
@@ -22,7 +25,7 @@ interface Props {
   onDelete: () => void;
 }
 
-export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
+export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -85,9 +88,9 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
           total={monthlyRent}
         />
         <HeroStat label={t('property.monthlyRent')} value={monthlyRent ? formatMoney(monthlyRent) : '—'} />
-        <HeroStat label={t('property.net')} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} sub={t('common.allTime')} loading={statsLoading} />
-        <HeroStat label={t('property.totalRevenue')} value={formatMoney(revTotal)} tone="success" sub={t('common.allTime')} loading={statsLoading} />
-        <HeroStat label={t('property.totalExpenses')} value={formatMoney(expTotal)} tone="danger" sub={t('common.allTime')} loading={statsLoading} />
+        <HeroStat label={t('property.net', { year })} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} loading={statsLoading} />
+        <HeroStat label={t('property.totalRevenue', { year })} value={formatMoney(revTotal)} tone="success" loading={statsLoading} />
+        <HeroStat label={t('property.totalExpenses', { year })} value={formatMoney(expTotal)} tone="danger" loading={statsLoading} />
       </div>
     </>
   );

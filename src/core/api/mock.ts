@@ -29,6 +29,21 @@ import type { StreamChatArgs } from '@/features/agent/api/agentStream';
 // Defaults to false when the var is unset, so production behavior is unchanged.
 export const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
+/**
+ * Artificial latency for mock reads, in milliseconds, read per-call from
+ * `window.__mockLatencyMs`. Zero (the default) unless a test sets it.
+ *
+ * The mock answers in-process, so every read resolves inside the same frame as the write
+ * that triggered it. That hides a whole class of bug where the UI flips state off a mutation
+ * before the cache has caught up — a just-recorded rent month flashed back to red before
+ * turning green, and no zero-latency test could see it. Only reachable under
+ * `USE_MOCK_API`, so it cannot affect a real build.
+ */
+export function mockLatency(): Promise<void> {
+  const ms = Number((globalThis as { __mockLatencyMs?: number }).__mockLatencyMs) || 0;
+  return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
 function toPropertyBrief(p: Property): PropertyBrief {
   return { id: p.id, address: p.address, city: p.city, type: p.type };
 }

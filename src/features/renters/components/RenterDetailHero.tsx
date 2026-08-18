@@ -24,11 +24,11 @@ interface Props {
   statsLoading?: boolean;
   onEdit: () => void;
   onExtendLease: () => void;
-  onRecordPayment: () => void;
+  onAddTransaction: () => void;
   onDelete: () => void;
 }
 
-export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalRevenue, totalExpenses, year, statsLoading, onEdit, onExtendLease, onRecordPayment, onDelete }: Props) {
+export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalRevenue, totalExpenses, year, statsLoading, onEdit, onExtendLease, onAddTransaction, onDelete }: Props) {
   const { t } = useTranslation();
   const avatarColor = getPropertyColor(renter.id);
   const avatarBg = getPropertyColorBg(renter.id, 0.18);
@@ -86,11 +86,11 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
             <Trash2 size={14} /> {t('common.delete')}
           </button>
           <button
-            onClick={onRecordPayment}
+            onClick={onAddTransaction}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
             style={{ background: 'var(--color-primary)' }}
           >
-            <Plus size={14} /> {t('renter.recordPayment')}
+            <Plus size={14} /> {t('renter.addTransaction')}
           </button>
         </div>
       </div>

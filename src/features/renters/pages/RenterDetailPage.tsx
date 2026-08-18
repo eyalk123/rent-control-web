@@ -6,7 +6,7 @@ import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useRenter, useDeleteRenter } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
-import { useTransactions } from '@/features/transactions/queries';
+import { useAllTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -21,6 +21,7 @@ import { RenterPropertyTab } from '../components/RenterPropertyTab';
 import { RenterTransactionsTab } from '../components/RenterTransactionsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { effectiveDate } from '@/shared/utils/txDate';
 
 type TabId = 'info' | 'property' | 'transactions';
 const TAB_IDS: TabId[] = ['info', 'property', 'transactions'];
@@ -63,11 +64,11 @@ export function RenterDetailPage() {
   }, [searchParams, setSearchParams, location.state]);
 
   const { data: renter, isLoading, isError } = useRenter(renterId);
-  const { data: txPages, isLoading: txLoading } = useTransactions({ renterId });
+  // The payment grid needs the whole history, not the first page — it cannot tell paid
+  // from unpaid on months it never sees, and the hero totals were being capped too.
+  const { data: transactions = [], isLoading: txLoading } = useAllTransactions({ renterId });
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
-
-  const transactions = txPages?.pages.flat() ?? [];
 
   const handleDelete = async () => {
     try {
@@ -92,9 +93,12 @@ export function RenterDetailPage() {
   const monthly = getCurrentMonthlyRent(renter);
   const leaseEnd = getLeaseEndDate(renter);
   const days = daysUntil(leaseEnd);
-  // Hero totals cover the current calendar year only, by payment date.
+  // Hero totals cover the current calendar year only, bucketed by *effective* date — the
+  // month rent was for, falling back to the day it moved. That is what the payment grid and
+  // the backend's summaries both use, so a January payment for December's rent lands in the
+  // same year in all three places.
   const currentYear = new Date().getFullYear();
-  const thisYearTx = transactions.filter((tx) => tx.date_of_payment?.slice(0, 4) === String(currentYear));
+  const thisYearTx = transactions.filter((tx) => effectiveDate(tx).slice(0, 4) === String(currentYear));
   const totalRevenue = thisYearTx.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
   const totalExpenses = thisYearTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(renter.id, 0.12);
@@ -105,7 +109,7 @@ export function RenterDetailPage() {
   const TABS: { id: TabId; label: string }[] = [
     { id: 'info', label: t('renter.tabLeaseInfo') },
     { id: 'property', label: t('renter.tabProperty') },
-    { id: 'transactions', label: txLoading ? t('renter.tabTransactions') : t('renter.tabTransactionsCount', { count: transactions.length }) },
+    { id: 'transactions', label: t('renter.tabTransactions') },
   ];
 
   return (
@@ -126,7 +130,7 @@ export function RenterDetailPage() {
           statsLoading={txLoading}
           onEdit={() => setEditDrawerOpen(true)}
           onExtendLease={() => setExtendDrawerOpen(true)}
-          onRecordPayment={() => setTxDrawerOpen(true)}
+          onAddTransaction={() => setTxDrawerOpen(true)}
           onDelete={() => setConfirmDeleteOpen(true)}
         />
         <DetailTabBar tabs={TABS} activeId={tab} onChange={setTab} />
@@ -136,15 +140,16 @@ export function RenterDetailPage() {
       <div className="p-4 lg:p-10">
         {tab === 'info' && <LeaseInfoTab renter={renter} />}
         {tab === 'property' && <RenterPropertyTab renter={renter} />}
-        {tab === 'transactions' && <RenterTransactionsTab transactions={transactions} />}
+        {tab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} />}
       </div>
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
       <LeaseExtensionDrawer open={extendDrawerOpen} onClose={() => setExtendDrawerOpen(false)} renter={renter} />
+      {/* No `initialType`: the drawer opens on its revenue/expense chooser, so a bill paid
+          for this renter can be logged from here too. Both branches take the same prefill. */}
       <TransactionFormDrawer
         open={txDrawerOpen}
         onClose={() => setTxDrawerOpen(false)}
-        initialType="revenue"
         initialPropertyId={renter.property_id ?? undefined}
         initialRenterId={renter.id}
       />

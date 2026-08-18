@@ -7,7 +7,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
-import { useCreateRevenueTransaction } from '@/features/transactions/queries';
+import { useMarkRentPaid } from '@/features/transactions/queries';
 import {
   useNotifications,
   useMarkAllNotificationsRead,
@@ -15,7 +15,6 @@ import {
 } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
 import { useAlertsPanel } from './AlertsPanelContext';
-import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 
 export function AlertsPanel() {
   const { t } = useTranslation();
@@ -24,7 +23,7 @@ export function AlertsPanel() {
   const { isOpen, closePanel, setHasAlerts } = useAlertsPanel();
 
   const { data: items = [] } = useNotifications('all');
-  const createRevenue = useCreateRevenueTransaction();
+  const { markPaid } = useMarkRentPaid();
   const dismissNotification = useDismissNotification();
   const markAllRead = useMarkAllNotificationsRead();
   const [savingId, setSavingId] = useState<number | null>(null);
@@ -53,13 +52,14 @@ export function AlertsPanel() {
     if (!item.property_id) return;
     setSavingId(item.id);
     try {
-      await createRevenue.mutateAsync({
+      // Overdue candidates are only ever generated for the current month
+      // (`renter_repository.get_overdue_this_month`), so that is the month being paid for.
+      await markPaid({
         property_id: item.property_id,
         renter_id: item.renter_id,
         amount: item.data.amount ?? 0,
-        date_of_payment: new Date().toISOString().slice(0, 10),
-        month_for: new Date().toISOString().slice(0, 8) + '01',
-        payment_method: normalizePaymentType(item.payment_type),
+        monthFor: new Date().toISOString().slice(0, 7),
+        paymentType: item.payment_type,
       });
       dismissNotification.mutate(item.id);
     } catch {

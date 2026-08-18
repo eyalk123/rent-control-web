@@ -8,7 +8,7 @@ import { useScanSession } from '@/features/document-scan/ScanContext';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useProperty, useDeleteProperty } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
-import { useTransactions } from '@/features/transactions/queries';
+import { useAllTransactions } from '@/features/transactions/queries';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -22,6 +22,7 @@ import { PropertyTransactionsTab } from '../components/PropertyTransactionsTab';
 import { PropertyDocumentsTab } from '../components/PropertyDocumentsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getTotalCurrentMonthlyRent } from '@/shared/types';
+import { effectiveDate } from '@/shared/utils/txDate';
 
 type TabId = 'info' | 'renters' | 'transactions' | 'documents';
 const TAB_IDS: TabId[] = ['info', 'renters', 'transactions', 'documents'];
@@ -59,8 +60,8 @@ export function PropertyDetailPage() {
   }, [scanView, scanSession, location.pathname, consumeScan]);
 
   const { data: property, isLoading, isError } = useProperty(propertyId);
-  const { data: txPages, isLoading: txLoading } = useTransactions({ propertyId });
-  const transactions = txPages?.pages.flat() ?? [];
+  // The payment matrix needs the whole history, not the first page — see RenterDetailPage.
+  const { data: transactions = [], isLoading: txLoading } = useAllTransactions({ propertyId });
 
   const handleDelete = async () => {
     try {
@@ -79,15 +80,20 @@ export function PropertyDetailPage() {
 
   const activeRenter = property.renters?.[0];
   const monthlyRent = property.renters?.length ? getTotalCurrentMonthlyRent(property.renters) : null;
-  const revTotal = transactions.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
-  const expTotal = transactions.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+  // Scoped to the current calendar year and bucketed by effective date, matching the renter
+  // page and the payment grid below. These read as all-time before, which put an all-time
+  // figure next to a per-year grid.
+  const currentYear = new Date().getFullYear();
+  const thisYearTx = transactions.filter((tx) => effectiveDate(tx).slice(0, 4) === String(currentYear));
+  const revTotal = thisYearTx.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
+  const expTotal = thisYearTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(property.id, 0.12);
   const rentersCount = property.renters?.length ?? 0;
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'info', label: t('property.tabDetails') },
     { id: 'renters', label: t('property.tabRentersCount', { count: rentersCount }) },
-    { id: 'transactions', label: txLoading ? t('property.tabTransactions') : t('property.tabTransactionsCount', { count: transactions.length }) },
+    { id: 'transactions', label: t('property.tabTransactions') },
     { id: 'documents', label: t('property.tabDocuments') },
   ];
 
@@ -108,6 +114,7 @@ export function PropertyDetailPage() {
           monthlyRent={monthlyRent}
           revTotal={revTotal}
           expTotal={expTotal}
+          year={String(currentYear)}
           renterName={activeRenter ? `${activeRenter.first_name} ${activeRenter.last_name}` : null}
           rentersCount={rentersCount}
           statsLoading={txLoading}
@@ -128,7 +135,7 @@ export function PropertyDetailPage() {
             onScanRenter={() => beginScan({ target: 'renter', propertyId, originPath: location.pathname })}
           />
         )}
-        {tab === 'transactions' && <PropertyTransactionsTab transactions={transactions} />}
+        {tab === 'transactions' && <PropertyTransactionsTab property={property} transactions={transactions} />}
         {tab === 'documents' && <PropertyDocumentsTab property={property} />}
       </div>
 

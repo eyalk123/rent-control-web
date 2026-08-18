@@ -37,3 +37,37 @@ export function useDetailBackTarget<T extends string>(tabIds: readonly T[], defa
 
   return { backState, tab, setTab, searchParams, setSearchParams, location };
 }
+
+/**
+ * A single piece of tab-local UI state kept in the query string, so switching detail tabs —
+ * which unmounts the panel — does not throw it away, and a refresh or the back button
+ * restores it.
+ *
+ * Writes go through the same replace + re-send-`state` shape as `setTab` above, for the same
+ * reason: dropping `state` would silently degrade the back link. Setting a value equal to
+ * `fallback` removes the param rather than writing a redundant one, so a page left on its
+ * defaults keeps a clean URL.
+ */
+export function useDetailParam<T extends string>(
+  key: string,
+  fallback: T,
+  allowed?: readonly T[],
+): [T, (value: T) => void] {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  const raw = searchParams.get(key) as T | null;
+  const value: T = raw != null && (!allowed || allowed.includes(raw)) ? raw : fallback;
+
+  const setValue = (next: T) =>
+    setSearchParams(
+      (prev) => {
+        if (next === fallback) prev.delete(key);
+        else prev.set(key, next);
+        return prev;
+      },
+      { replace: true, state: location.state, preventScrollReset: true },
+    );
+
+  return [value, setValue];
+}

@@ -72,10 +72,12 @@ interface RevenueFormProps {
   transaction?: Transaction;
   initialPropertyId?: number;
   initialRenterId?: number;
+  /** "YYYY-MM" — seeds the single-month period. Set when opened from a payment-grid box. */
+  initialMonth?: string;
   onDirtyChange: (dirty: boolean) => void;
 }
 
-function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange }: RevenueFormProps) {
+function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId, initialMonth, onDirtyChange }: RevenueFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useProperties();
   const qc = useQueryClient();
@@ -115,7 +117,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
   // ── Bulk create mode state ─────────────────────────────────────────────────
   const [periodType, setPeriodType] = useState<PeriodType>('1month');
-  const [periodValue, setPeriodValue] = useState(() => getCurrentPeriodValue('1month'));
+  const [periodValue, setPeriodValue] = useState(() => initialMonth ?? getCurrentPeriodValue('1month'));
   const [customMonths, setCustomMonths] = useState<Set<string>>(new Set());
   const [gridYear, setGridYear] = useState(() => new Date().getFullYear());
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
@@ -156,7 +158,14 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       || !!bulkNotes;
   useEffect(() => { onDirtyChange(revenueDirty); }, [revenueDirty, onDirtyChange]);
 
+  // Re-seed the period value when the user switches period type — but *not* on mount, which
+  // would immediately overwrite the `initialMonth` the payment grid seeds. Effects run after
+  // the first render too, so without this guard "Edit details" on a February box opened the
+  // form on the current month instead.
+  const lastPeriodType = useRef(periodType);
   useEffect(() => {
+    if (lastPeriodType.current === periodType) return;
+    lastPeriodType.current = periodType;
     if (periodType !== 'custom') setPeriodValue(getCurrentPeriodValue(periodType));
   }, [periodType]);
 
@@ -865,10 +874,12 @@ interface Props {
   initialPropertyId?: number;
   /** Create mode only: preselect this renter (implies its property). Ignored when editing. */
   initialRenterId?: number;
+  /** Create mode only: "YYYY-MM" to record for. Ignored when editing. */
+  initialMonth?: string;
   transaction?: Transaction;
 }
 
-export function TransactionFormDrawer({ open, onClose, initialType, initialPropertyId, initialRenterId, transaction }: Props) {
+export function TransactionFormDrawer({ open, onClose, initialType, initialPropertyId, initialRenterId, initialMonth, transaction }: Props) {
   const { t } = useTranslation();
   const editType = transaction?.type as TxType | undefined;
   const [txType, setTxType] = useState<TxType | null>(editType ?? initialType ?? null);
@@ -960,7 +971,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, initialPrope
           </button>
         </div>
       ) : txType === 'revenue' ? (
-        <RevenueForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} />
+        <RevenueForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} initialMonth={initialMonth} onDirtyChange={setDirty} />
       ) : (
         <ExpenseForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} />
       )}
