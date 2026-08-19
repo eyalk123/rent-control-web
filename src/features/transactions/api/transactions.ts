@@ -233,13 +233,15 @@ export async function deleteTransaction(id: number): Promise<void> {
 
 export async function getPropertyRenters(
   propertyId: number,
+  includeEnded = false,
 ): Promise<PropertyRenterSummary[]> {
   if (USE_MOCK_API) {
-    return mockTransactionsApi.getPropertyRenters(propertyId);
+    return mockTransactionsApi.getPropertyRenters(propertyId, includeEnded);
   }
 
   const response = await apiClient.get<PropertyRenterSummary[]>(
     `/properties/${propertyId}/renters`,
+    { params: includeEnded ? { include_ended: true } : undefined },
   );
   return response.data;
 }

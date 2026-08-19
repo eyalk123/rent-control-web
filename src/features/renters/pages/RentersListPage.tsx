@@ -21,6 +21,7 @@ import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi'
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
+import { getRenterLifecycle } from '@/shared/utils/renterStatus';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { SelectionToolbar } from '@/shared/components/ui/SelectionToolbar';
@@ -55,7 +56,29 @@ function leaseUrgencyColor(renter: Renter): string | undefined {
   return undefined;
 }
 
-type RenterStatus = 'active' | 'expiring' | 'overdue';
+/**
+ * Display status for the list. `ended` comes from the lease lifecycle and wins over the
+ * other three: a closed lease is neither overdue nor expiring, whatever the
+ * overdue/expiring endpoints still hold.
+ */
+type RenterStatus = 'active' | 'expiring' | 'overdue' | 'ended';
+
+const STATUS_TONE: Record<RenterStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
+  active: 'success',
+  expiring: 'warning',
+  overdue: 'danger',
+  ended: 'neutral',
+};
+
+function statusLabelKey(status: RenterStatus): string {
+  return status === 'overdue'
+    ? 'renter.overdue'
+    : status === 'expiring'
+      ? 'renter.expiring'
+      : status === 'ended'
+        ? 'renter.ended'
+        : 'renter.active';
+}
 
 // ─── card ────────────────────────────────────────────────────────────────────
 
@@ -75,8 +98,8 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
   const bg = getPropertyColorBg(renter.id);
   const monthly = getCurrentMonthlyRent(renter);
   const leaseEnd = fmtLeaseEnd(renter);
-  const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-  const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
+  const pillTone = STATUS_TONE[status];
+  const pillLabel = t(statusLabelKey(status));
   const longPress = useLongPress(() => onLongPress(renter.id));
 
   const activate = () => {
@@ -105,7 +128,7 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
           <span
             className="absolute bottom-0 end-0 h-3 w-3 rounded-full border-2"
             style={{
-              background: status === 'overdue' ? 'var(--color-error)' : status === 'expiring' ? 'var(--color-warning)' : 'var(--color-success)',
+              background: status === 'overdue' ? 'var(--color-error)' : status === 'expiring' ? 'var(--color-warning)' : status === 'ended' ? 'var(--color-text-secondary)' : 'var(--color-success)',
               borderColor: 'var(--color-surface)',
             }}
           />
@@ -259,9 +282,7 @@ function useRenterColumns(
       enableColumnFilter: false, // status already filtered via the tab bar
       cell: ({ row }) => {
         const status = statusMap.get(row.original.id) ?? 'active';
-        const tone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-        const label = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
-        return <Pill tone={tone}>{label}</Pill>;
+        return <Pill tone={STATUS_TONE[status]}>{t(statusLabelKey(status))}</Pill>;
       },
     },
     ];
@@ -270,7 +291,9 @@ function useRenterColumns(
 
 // ─── main page ───────────────────────────────────────────────────────────────
 
-type StatusFilter = 'all' | 'active' | 'expiring' | 'overdue';
+type StatusFilter = 'all' | 'active' | 'expiring' | 'overdue' | 'ended';
+
+const STATUS_FILTERS: StatusFilter[] = ['all', 'active', 'expiring', 'overdue', 'ended'];
 
 export function RentersListPage() {
   const { t } = useTranslation();
@@ -279,7 +302,10 @@ export function RentersListPage() {
   const { data: overdueList = [] } = useOverdueRenters();
   const { data: expiringList = [] } = useExpiringRenters();
 
-  const [statusFilter, setStatusFilter] = usePersistedState<StatusFilter>('app_list_status:renters', 'all');
+  const [persistedStatus, setStatusFilter] = usePersistedState<StatusFilter>('app_list_status:renters', 'all');
+  // The persisted value outlives the code that wrote it, so an unrecognised one (a tab
+  // that was renamed or removed) falls back to 'all' rather than filtering everything out.
+  const statusFilter = STATUS_FILTERS.includes(persistedStatus) ? persistedStatus : 'all';
   const [search, setSearch] = usePersistedState('app_list_search:renters', '');
   const [view, setView] = useViewMode('renters');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -316,15 +342,24 @@ export function RentersListPage() {
     const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
     const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
     return new Map<number, RenterStatus>(
-      renters.map((r) => [r.id, overdueIds.has(r.id) ? 'overdue' : expiringIds.has(r.id) ? 'expiring' : 'active'])
+      // Lifecycle first: the overdue/expiring endpoints already exclude ended leases, but
+      // a renter whose lease simply ran out is in neither list and would otherwise fall
+      // through to 'active' — which is how an expired lease used to show a green pill.
+      renters.map((r) => {
+        if (getRenterLifecycle(r) === 'ended') return [r.id, 'ended'];
+        return [r.id, overdueIds.has(r.id) ? 'overdue' : expiringIds.has(r.id) ? 'expiring' : 'active'];
+      })
     );
   }, [renters, overdueList, expiringList]);
 
+  // "All" means all *current* renters — ended leases live behind their own tab so the
+  // list doesn't fill with past tenants as the years accumulate.
   const counts = {
-    all: renters.length,
+    all: renters.filter((r) => statusMap.get(r.id) !== 'ended').length,
     active: renters.filter((r) => statusMap.get(r.id) === 'active').length,
     expiring: renters.filter((r) => statusMap.get(r.id) === 'expiring').length,
     overdue: renters.filter((r) => statusMap.get(r.id) === 'overdue').length,
+    ended: renters.filter((r) => statusMap.get(r.id) === 'ended').length,
   };
 
   // Memoized so the `data` reference passed to useReactTable is stable across renders;
@@ -335,8 +370,12 @@ export function RentersListPage() {
         const q = search.toLowerCase();
         if (!`${r.first_name} ${r.last_name} ${r.phone} ${r.email}`.toLowerCase().includes(q)) return false;
       }
-      if (statusFilter !== 'all' && statusMap.get(r.id) !== statusFilter) return false;
-      return true;
+      const status = statusMap.get(r.id) ?? 'active';
+      // An active search looks across every renter including ended ones — "where did
+      // Yossi go" must never depend on which tab happens to be open.
+      if (search) return true;
+      if (statusFilter === 'all') return status !== 'ended';
+      return status === statusFilter;
     })
     // Default order: soonest lease end first; renters with no lease end sink to the bottom.
     .sort((a, b) => {
@@ -401,6 +440,7 @@ export function RentersListPage() {
     { key: 'active',   label: t('renter.active'),    tone: 'success' },
     { key: 'expiring', label: t('renter.expiring'),  tone: 'warning' },
     { key: 'overdue',  label: t('renter.overdue'),   tone: 'danger'  },
+    { key: 'ended',    label: t('renter.ended'),     tone: 'neutral' },
   ];
 
   return (

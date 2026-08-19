@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
-import { useRenter, useDeleteRenter } from '../queries';
+import { useRenter, useDeleteRenter, useTerminateLease, useUndoTermination } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useAllTransactions } from '@/features/transactions/queries';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
@@ -16,11 +16,13 @@ import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { useDetailBackTarget } from '@/shared/components/detail/useDetailBackTarget';
 import { RenterDetailHero } from '../components/RenterDetailHero';
+import { EndLeaseDialog } from '../components/EndLeaseDialog';
 import { LeaseInfoTab } from '../components/LeaseInfoTab';
 import { RenterPropertyTab } from '../components/RenterPropertyTab';
 import { RenterTransactionsTab } from '../components/RenterTransactionsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getEffectiveLeaseEnd, getRenterLifecycle } from '@/shared/utils/renterStatus';
 import { effectiveDate } from '@/shared/utils/txDate';
 
 type TabId = 'info' | 'property' | 'transactions';
@@ -31,17 +33,30 @@ function daysUntil(d: Date | null): number | null {
   return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
 }
 
+/** Whole months the tenant actually held the property, start to effective end. */
+function monthsBetween(start: string | null, end: Date | null): number | null {
+  if (!start || !end) return null;
+  const from = new Date(start);
+  if (isNaN(from.getTime())) return null;
+  const months =
+    (end.getFullYear() - from.getFullYear()) * 12 + (end.getMonth() - from.getMonth());
+  return Math.max(0, end.getDate() >= from.getDate() ? months : months - 1);
+}
+
 export function RenterDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const renterId = Number(id);
   const { mutateAsync: deleteRenter, isPending: isDeleting } = useDeleteRenter();
+  const { mutateAsync: terminateLease, isPending: isTerminating } = useTerminateLease(renterId);
+  const { mutateAsync: undoTermination, isPending: isReopening } = useUndoTermination(renterId);
   const { showToast } = useToast();
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [extendDrawerOpen, setExtendDrawerOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [endLeaseOpen, setEndLeaseOpen] = useState(false);
   // When opened from a property's renter list, that origin is carried on the
   // navigation state so the back link returns there (and names it) instead of
   // the generic renters list.
@@ -81,6 +96,25 @@ export function RenterDetailPage() {
     }
   };
 
+  const handleEndLease = async (terminatedOn: string, reason: string | null) => {
+    try {
+      await terminateLease({ terminated_on: terminatedOn, reason });
+      setEndLeaseOpen(false);
+      showToast(t('renter.endLeaseSuccess'), 'success');
+    } catch {
+      showToast(t('error.saveFailed'), 'error');
+    }
+  };
+
+  const handleReopenLease = async () => {
+    try {
+      await undoTermination();
+      showToast(t('renter.reopenLeaseSuccess'), 'success');
+    } catch {
+      showToast(t('error.saveFailed'), 'error');
+    }
+  };
+
   if (isLoading) return <FullPageLoader />;
   if (isError || !renter)
     return <DetailNotFound title={t('error.renterNotFound')} detail={t('error.notFoundDetail')} />;
@@ -88,10 +122,21 @@ export function RenterDetailPage() {
   // Derive status
   const overdueIds = new Set((overdueList as OverdueRenter[]).map((r) => r.renter_id));
   const expiringIds = new Set((expiringList as ExpiringRenter[]).map((r) => r.renter_id));
-  const status = overdueIds.has(renter.id) ? 'overdue' : expiringIds.has(renter.id) ? 'expiring' : 'active';
+  // Lifecycle first, exactly as the renters list does it: a lease that has run out is in
+  // neither the overdue nor the expiring list, and would otherwise read as 'active'.
+  const lifecycle = getRenterLifecycle(renter);
+  const status =
+    lifecycle === 'ended'
+      ? 'ended'
+      : overdueIds.has(renter.id)
+        ? 'overdue'
+        : expiringIds.has(renter.id)
+          ? 'expiring'
+          : 'active';
 
   const monthly = getCurrentMonthlyRent(renter);
-  const leaseEnd = getLeaseEndDate(renter);
+  // An early termination moves the end date the hero shows; the signed schedule stays put.
+  const leaseEnd = getEffectiveLeaseEnd(renter) ?? getLeaseEndDate(renter);
   const days = daysUntil(leaseEnd);
   // Hero totals cover the current calendar year only, bucketed by *effective* date — the
   // month rent was for, falling back to the day it moved. That is what the payment grid and
@@ -103,8 +148,28 @@ export function RenterDetailPage() {
   const totalExpenses = thisYearTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(renter.id, 0.12);
 
-  const pillTone = status === 'overdue' ? 'danger' : status === 'expiring' ? 'warning' : 'success';
-  const pillLabel = status === 'overdue' ? t('renter.overdue') : status === 'expiring' ? t('renter.expiring') : t('renter.active');
+  // Whole-tenancy total, not the calendar year's — what the hero shows once a lease ends.
+  const lifetimeRevenue = transactions
+    .filter((tx) => tx.type === 'revenue')
+    .reduce((s, tx) => s + tx.amount, 0);
+  const monthsTenanted = monthsBetween(renter.lease_start, leaseEnd);
+
+  const pillTone =
+    status === 'overdue'
+      ? 'danger'
+      : status === 'expiring'
+        ? 'warning'
+        : status === 'ended'
+          ? 'neutral'
+          : 'success';
+  const pillLabel =
+    status === 'overdue'
+      ? t('renter.overdue')
+      : status === 'expiring'
+        ? t('renter.expiring')
+        : status === 'ended'
+          ? t('renter.ended')
+          : t('renter.active');
 
   const TABS: { id: TabId; label: string }[] = [
     { id: 'info', label: t('renter.tabLeaseInfo') },
@@ -128,10 +193,15 @@ export function RenterDetailPage() {
           totalExpenses={totalExpenses}
           year={String(currentYear)}
           statsLoading={txLoading}
+          lifetimeRevenue={lifetimeRevenue}
+          monthsTenanted={monthsTenanted}
           onEdit={() => setEditDrawerOpen(true)}
           onExtendLease={() => setExtendDrawerOpen(true)}
           onAddTransaction={() => setTxDrawerOpen(true)}
           onDelete={() => setConfirmDeleteOpen(true)}
+          onEndLease={() => setEndLeaseOpen(true)}
+          onReopenLease={handleReopenLease}
+          lifecyclePending={isTerminating || isReopening}
         />
         <DetailTabBar tabs={TABS} activeId={tab} onChange={setTab} />
       </div>
@@ -160,6 +230,13 @@ export function RenterDetailPage() {
         loading={isDeleting}
         onConfirm={handleDelete}
         onClose={() => setConfirmDeleteOpen(false)}
+      />
+      <EndLeaseDialog
+        open={endLeaseOpen}
+        renter={renter}
+        loading={isTerminating}
+        onConfirm={handleEndLease}
+        onClose={() => setEndLeaseOpen(false)}
       />
     </div>
   );

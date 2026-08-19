@@ -102,6 +102,14 @@ export interface Renter extends LeaseTermIntent {
   lease_start: string | null;
   /** CPI base index frozen at signing (mode === 'cpi'). Server-set, read-only. */
   cpi_base_index?: number | null;
+  /**
+   * Set when the lease was ended early. Read-only here — it moves only through the
+   * terminate endpoints, never through a renter save, so an edit can't close a lease by
+   * accident. `lease_years` and `cpi_base_index` are untouched by it: the signed terms
+   * stay on the record so past reports still reconstruct.
+   */
+  terminated_on?: string | null;
+  termination_reason?: string | null;
   number_of_payments?: number | null;
   payment_type?: string | null;
   payment_day_of_month?: number | null;
@@ -260,6 +268,9 @@ export interface SupplierUpdate {
 }
 
 export interface PropertyRenterSummary {
+  /** True when this tenancy has finished. Only populated when the list was fetched
+   * with `includeEnded` — the picker uses it to mark the option. */
+  is_ended?: boolean;
   id: number;
   first_name: string;
   last_name: string;

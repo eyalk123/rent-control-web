@@ -84,10 +84,16 @@ export function useExpenseCategories() {
   return useQuery({ queryKey: transactionKeys.categories, queryFn: getExpenseCategories, staleTime: Infinity });
 }
 
-export function usePropertyRenters(propertyId: number | null) {
+/**
+ * `includeEnded` is what the transaction form asks for. A payment can arrive after a
+ * tenancy finishes — the last month's rent routinely lands late — and editing an old
+ * transaction has to show the renter it is already attached to, or the select renders an
+ * empty trigger and the next save silently detaches it.
+ */
+export function usePropertyRenters(propertyId: number | null, includeEnded = false) {
   return useQuery({
-    queryKey: transactionKeys.propertyRenters(propertyId ?? 0),
-    queryFn: () => getPropertyRenters(propertyId!),
+    queryKey: [...transactionKeys.propertyRenters(propertyId ?? 0), includeEnded],
+    queryFn: () => getPropertyRenters(propertyId!, includeEnded),
     enabled: !!propertyId,
   });
 }

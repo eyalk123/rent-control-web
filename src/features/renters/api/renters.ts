@@ -117,3 +117,24 @@ export async function deleteRenter(id: number): Promise<void> {
   if (USE_MOCK_API) return mockRentersApi.deleteRenter(id);
   await apiClient.delete(`/renters/${id}`);
 }
+
+/**
+ * Ends a lease early. Its own endpoint rather than a field on updateRenter — the
+ * sanitizers above whitelist what a save may send, and `terminated_on` is deliberately
+ * not on that list, so a lease can only be closed by an explicit act.
+ */
+export async function terminateLease(
+  id: number,
+  data: { terminated_on: string; reason?: string | null }
+): Promise<Renter> {
+  if (USE_MOCK_API) return mockRentersApi.terminateLease(id, data);
+  const response = await apiClient.post<Renter>(`/renters/${id}/terminate`, data);
+  return response.data;
+}
+
+/** Reopens a lease ended by mistake. Nothing was destroyed, so this just clears it. */
+export async function undoTermination(id: number): Promise<Renter> {
+  if (USE_MOCK_API) return mockRentersApi.undoTermination(id);
+  const response = await apiClient.delete<Renter>(`/renters/${id}/terminate`);
+  return response.data;
+}

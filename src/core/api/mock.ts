@@ -1,3 +1,4 @@
+import { getRenterLifecycle } from '@/shared/utils/renterStatus';
 import type {
   Property,
   PropertyBrief,
@@ -148,7 +149,10 @@ const seedRenters: Renter[] = [
     last_name: 'Chen',
     phone: '512-555-0102',
     email: 'michael.chen@email.com',
-    lease_years: [{ amount: 22800, type: 'contract' }],
+    lease_years: [
+      { amount: 22800, type: 'contract' },
+      { amount: 23500, type: 'contract' },
+    ],
     lease_start: '2025-07-22',
     number_of_payments: 12,
     payment_type: 'wire_transfer',
@@ -163,7 +167,11 @@ const seedRenters: Renter[] = [
     last_name: 'Davis',
     phone: '512-555-0103',
     email: 'emily.davis@email.com',
-    lease_years: [{ amount: 19800, type: 'contract' }],
+    lease_years: [
+      { amount: 19800, type: 'contract' },
+      { amount: 20400, type: 'contract' },
+      { amount: 21000, type: 'contract' },
+    ],
     lease_start: '2024-02-01',
     property: null,
     contact_id: null,
@@ -175,7 +183,11 @@ const seedRenters: Renter[] = [
     last_name: 'Wilson',
     phone: '512-555-0104',
     email: 'james.wilson@email.com',
-    lease_years: [{ amount: 25200, type: 'contract' }],
+    lease_years: [
+      { amount: 25200, type: 'contract' },
+      { amount: 25900, type: 'contract' },
+      { amount: 26600, type: 'contract' },
+    ],
     lease_start: '2024-04-15',
     property: null,
     contact_id: null,
@@ -199,7 +211,11 @@ const seedRenters: Renter[] = [
     last_name: 'Thompson',
     phone: '512-555-0106',
     email: 'robert.thompson@email.com',
-    lease_years: [{ amount: 23400, type: 'contract' }],
+    lease_years: [
+      { amount: 23400, type: 'contract' },
+      { amount: 24100, type: 'contract' },
+      { amount: 24800, type: 'contract' },
+    ],
     lease_start: '2024-05-01',
     property: null,
     contact_id: null,
@@ -551,6 +567,27 @@ export const mockRentersApi = {
   deleteRenter: async (id: number): Promise<void> => {
     mockRenters = mockRenters.filter((x) => x.id !== id);
   },
+  terminateLease: async (
+    id: number,
+    data: { terminated_on: string; reason?: string | null }
+  ): Promise<Renter> => {
+    const idx = mockRenters.findIndex((x) => x.id === id);
+    if (idx < 0) throw new Error('Renter not found');
+    // Mirrors the server: only the two termination columns move. lease_years and
+    // cpi_base_index are left exactly as they are.
+    mockRenters[idx] = {
+      ...mockRenters[idx],
+      terminated_on: data.terminated_on,
+      termination_reason: data.reason ?? null,
+    };
+    return mockRentersApi.getRenterById(id);
+  },
+  undoTermination: async (id: number): Promise<Renter> => {
+    const idx = mockRenters.findIndex((x) => x.id === id);
+    if (idx < 0) throw new Error('Renter not found');
+    mockRenters[idx] = { ...mockRenters[idx], terminated_on: null, termination_reason: null };
+    return mockRentersApi.getRenterById(id);
+  },
 };
 
 export const mockExpenseCategoriesApi = {
@@ -688,14 +725,21 @@ export const mockTransactionsApi = {
       ytd_by_owner: ytdByOwner,
     };
   },
-  getPropertyRenters: async (propertyId: number): Promise<PropertyRenterSummary[]> => {
+  getPropertyRenters: async (
+    propertyId: number,
+    includeEnded = false
+  ): Promise<PropertyRenterSummary[]> => {
     return mockRenters
       .filter((r) => r.property_id === propertyId)
-      .map((r) => ({
+      .map((r) => ({ renter: r, ended: getRenterLifecycle(r) === 'ended' }))
+      // Mirrors the server: active leases only unless the caller asks for the rest.
+      .filter(({ ended }) => includeEnded || !ended)
+      .map(({ renter: r, ended }) => ({
         id: r.id,
         first_name: r.first_name,
         last_name: r.last_name,
         monthly_rent: r.lease_years?.[0]?.amount ?? 0,
+        is_ended: ended,
         lease_start: r.lease_start ?? null,
         lease_years: r.lease_years ?? [],
       }));

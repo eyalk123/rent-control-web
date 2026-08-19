@@ -4,15 +4,52 @@ test.describe('renters', () => {
   test('list shows seeded renters', async ({ page }) => {
     await page.goto('/renters');
     await expect(page.getByRole('heading', { name: 'Renters' })).toBeVisible();
-    await expect(page.getByText('Sarah Johnson')).toBeVisible();
     await expect(page.getByText('Michael Chen')).toBeVisible();
+    await expect(page.getByText('Emily Davis')).toBeVisible();
   });
 
-  test('search filters the list', async ({ page }) => {
+  // The default view is "current tenants". Renter 1 (Sarah Johnson) is seeded with a lease
+  // that ran Jun 2025 - May 2026, so she belongs under Ended — and used to show a green
+  // "Active" pill there, because the status came from the overdue/expiring lists only.
+  test('a lease that has run out is filed under Ended, not Active', async ({ page }) => {
+    await page.goto('/renters');
+    await expect(page.getByText('Sarah Johnson')).toHaveCount(0);
+
+    await page.getByRole('button', { name: /^Ended/ }).click();
+    await expect(page.getByText('Sarah Johnson')).toBeVisible();
+
+    // Her detail page is the unambiguous check: an expired lease used to render the green
+    // "Active" pill and still offer Extend, because status came from the overdue/expiring
+    // lists rather than the dates.
+    await page.goto('/renters/1');
+    await expect(page.getByText(/Lease ended/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Extend lease' })).toHaveCount(0);
+  });
+
+  // Search crosses the tabs on purpose: "where did this tenant go" must not depend on
+  // which filter happens to be open.
+  test('search finds an ended renter from the default tab', async ({ page }) => {
     await page.goto('/renters');
     await page.getByPlaceholder(/Search renters/i).fill('Sarah');
     await expect(page.getByText('Sarah Johnson')).toBeVisible();
     await expect(page.getByText('Michael Chen')).toHaveCount(0);
+  });
+
+  test('ending a lease moves the renter to Ended, and undo brings it back', async ({ page }) => {
+    await page.goto('/renters/2');
+    // The trigger carries an ellipsis ("End lease…"); the dialog's confirm does not. Both
+    // are also substrings of "Extend lease", hence the exact matches.
+    await page.getByRole('button', { name: 'End lease…', exact: true }).click();
+    await page.getByRole('button', { name: 'End lease', exact: true }).click();
+
+    await expectToast(page, 'Lease ended');
+    // Extend disappears; the banner and its undo take over.
+    await expect(page.getByRole('button', { name: 'Extend lease' })).toHaveCount(0);
+    await expect(page.getByText(/Lease terminated/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Reopen lease' }).click();
+    await expectToast(page, 'Lease reopened');
+    await expect(page.getByRole('button', { name: 'Extend lease' })).toBeVisible();
   });
 
   // Regression for M1: step-1 required fields are validated on "Next", so the errors

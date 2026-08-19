@@ -85,7 +85,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const { showToast } = useToast();
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
-  const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null);
+  const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null, true);
   const { register, handleSubmit, control, formState: { errors, isDirty } } = useForm<RevenueEditFields>({
     defaultValues: {
       renterId: transaction?.renter_id?.toString() ?? '__none__',
@@ -98,7 +98,12 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   });
 
   const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
-  const renterOptions = (editRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
+  const renterOptions = (editRenters ?? []).map((r) => ({
+    value: r.id.toString(),
+    label: r.is_ended
+      ? t('renter.endedSuffix', { name: `${r.first_name} ${r.last_name}` })
+      : `${r.first_name} ${r.last_name}`,
+  }));
 
   const onEditSubmit = handleSubmit(async (data) => {
     try {
@@ -602,7 +607,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const { data: createRenters } = usePropertyRenters(singlePropertyId);
 
   // ── Edit mode renter data ──────────────────────────────────────────────────
-  const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null);
+  const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null, true);
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors, isDirty } } = useForm<ExpenseEditFields>({
     defaultValues: {
@@ -639,7 +644,12 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 
   const createRenterOptions = (createRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
-  const editRenterOptions = (editRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
+  const editRenterOptions = (editRenters ?? []).map((r) => ({
+    value: r.id.toString(),
+    label: r.is_ended
+      ? t('renter.endedSuffix', { name: `${r.first_name} ${r.last_name}` })
+      : `${r.first_name} ${r.last_name}`,
+  }));
 
   const handleCategoryChange = (ids: number[]) => {
     setSelectedCategoryIds(ids);

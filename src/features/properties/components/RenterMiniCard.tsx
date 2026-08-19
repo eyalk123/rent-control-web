@@ -5,7 +5,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getCurrentMonthlyRent } from '@/shared/types';
+import { getEffectiveLeaseEnd } from '@/shared/utils/renterStatus';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Renter } from '@/shared/types';
 
@@ -14,7 +15,8 @@ interface Props extends DetailBackState {
 }
 
 function leaseCountdown(renter: Renter): { days: number } | 'expired' | null {
-  const d = getLeaseEndDate(renter);
+  // An early termination moves the end date; the signed schedule stays put.
+  const d = getEffectiveLeaseEnd(renter);
   if (!d) return null;
   const days = Math.ceil((d.getTime() - Date.now()) / 86_400_000);
   return days > 0 ? { days } : 'expired';
