@@ -1,4 +1,5 @@
 import { leaseYearStart } from '@/shared/utils/leaseYear';
+import { periodMonths } from '@/shared/types';
 import type {
   LeaseYear,
   LeaseYearRule,
@@ -22,8 +23,16 @@ export type { RentEscalationMode } from '@/shared/types';
 export interface LeaseScheduleInput {
   /** Number of binding (contract) years — always first in the schedule. */
   contractYears: number;
+  /**
+   * Odd months on top of the contract years, 0-11. Appended as one short period at the
+   * end of the contract block, which is the only place a partial period can sit: a lease
+   * runs whole years and then, sometimes, a remainder.
+   */
+  contractMonths?: number;
   /** Number of renewal (option) years — appended after the contract years. */
   optionYears: number;
+  /** Odd months on top of the option years, 0-11. Same rule, at the very end. */
+  optionMonths?: number;
   /** First-year monthly rent. */
   baseRent: number;
   escalationMode: RentEscalationMode;
@@ -33,6 +42,24 @@ export interface LeaseScheduleInput {
 
 function toCount(n: number): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+/** A remainder is only meaningful below a year — 12 months *is* another whole period. */
+function toRemainder(n: number | undefined): number {
+  const v = Number.isFinite(n) && (n as number) > 0 ? Math.floor(n as number) : 0;
+  return v >= 12 ? 0 : v;
+}
+
+/**
+ * Describes the periods a term produces: `count` whole years, then optionally one short
+ * tail. Keeping this in one place is what stops the builder and the extension flow from
+ * disagreeing about where a partial period is allowed to sit.
+ */
+function blockSizes(years: number, months: number | undefined): number[] {
+  const sizes = Array<number>(toCount(years)).fill(12);
+  const tail = toRemainder(months);
+  if (tail > 0) sizes.push(tail);
+  return sizes;
 }
 
 /** Rent for lease-year `index` (0-based) under the given escalation rule. */
@@ -156,7 +183,7 @@ export function isUnsettledCpiYear(
   const cpiLinked =
     firstCpiIndex(rows) !== -1 ? isProjectedYear(rows, index) : mode === 'cpi' && index > 0;
   if (!cpiLinked) return false;
-  const start = leaseYearStart(leaseStart, index);
+  const start = leaseYearStart(leaseStart, rows, index);
   return start !== null && start > today;
 }
 
@@ -172,9 +199,11 @@ export function buildLeaseYears(
   existingRows?: LeaseYear[],
   opts?: { resetCpiAmounts?: boolean },
 ): LeaseYear[] {
-  const contract = toCount(input.contractYears);
-  const option = toCount(input.optionYears);
-  const total = contract + option;
+  const contractSizes = blockSizes(input.contractYears, input.contractMonths);
+  const optionSizes = blockSizes(input.optionYears, input.optionMonths);
+  const sizes = [...contractSizes, ...optionSizes];
+  const contract = contractSizes.length;
+  const total = sizes.length;
   if (total === 0) return [];
 
   const base = Number.isFinite(input.baseRent) && input.baseRent > 0 ? input.baseRent : 0;
@@ -189,12 +218,22 @@ export function buildLeaseYears(
   const result: LeaseYear[] = [];
   for (let i = 0; i < total; i += 1) {
     const type: LeaseYearType = i < contract ? 'contract' : 'option';
+    // A short tail is a holdover or an alignment stub, not a repricing event, so it
+    // carries the previous period's rent rather than taking another escalation step.
+    // Stepping it would quietly raise the rent on a three-month extension.
+    const isShortTail = sizes[i] < 12;
     const amount = preserveExisting
       ? existingRows?.[i]?.amount ?? base
-      : rentForYear(base, i, input.escalationMode, input.escalationValue);
+      : isShortTail
+        ? rentForYear(base, Math.max(i - 1, 0), input.escalationMode, input.escalationValue)
+        : rentForYear(base, i, input.escalationMode, input.escalationValue);
     // Rules only exist in custom mode; leaving it drops them.
     const rule = isCustom ? existingRows?.[i]?.rule : undefined;
-    result.push(rule ? { amount, type, rule } : { amount, type });
+    const row: LeaseYear = rule ? { amount, type, rule } : { amount, type };
+    // Absent means twelve, so only a short period carries the field at all — which keeps
+    // an ordinary lease's payload byte-identical to what it has always been.
+    if (sizes[i] < 12) row.months = sizes[i];
+    result.push(row);
   }
   // Re-price the ruled years off the (possibly new) base rent and each other.
   return isCustom ? materializeRuledYears(result, base) : result;
@@ -217,10 +256,14 @@ export function buildAddedYears(
   escalationMode: RentEscalationMode,
   escalationValue: number,
   existingAdded?: LeaseYear[],
+  contractMonthsAdd?: number,
+  optionMonthsAdd?: number,
 ): LeaseYear[] {
-  const contract = toCount(contractAdd);
-  const option = toCount(optionAdd);
-  const total = contract + option;
+  const contractSizes = blockSizes(contractAdd, contractMonthsAdd);
+  const optionSizes = blockSizes(optionAdd, optionMonthsAdd);
+  const sizes = [...contractSizes, ...optionSizes];
+  const contract = contractSizes.length;
+  const total = sizes.length;
   if (total === 0) return [];
   const lastAmount = existingYears.length > 0 ? existingYears[existingYears.length - 1].amount : 0;
 
@@ -235,6 +278,7 @@ export function buildAddedYears(
         amount: prior?.amount ?? lastAmount,
         type: i < contract ? 'contract' : 'option',
         ...(prior?.rule ? { rule: prior.rule } : {}),
+        ...(sizes[i] < 12 ? { months: sizes[i] } : {}),
       });
     }
     // Walk existing + added together, then keep only the added tail.
@@ -245,9 +289,12 @@ export function buildAddedYears(
 
   const added: LeaseYear[] = [];
   for (let i = 1; i <= total; i += 1) {
+    // As in buildLeaseYears: a sub-year period holds the rent rather than stepping it.
+    const short = sizes[i - 1] < 12;
     added.push({
-      amount: rentForYear(lastAmount, i, escalationMode, escalationValue),
+      amount: rentForYear(lastAmount, short ? i - 1 : i, escalationMode, escalationValue),
       type: i <= contract ? 'contract' : 'option',
+      ...(short ? { months: sizes[i - 1] } : {}),
     });
   }
   return added;
@@ -269,7 +316,9 @@ export function hasContractAfterOptionYear(years: LeaseYear[]): boolean {
 
 export interface ReconstructedIntent {
   contractTermYears: number;
+  contractTermMonths: number;
   optionYears: number;
+  optionTermMonths: number;
   baseRent: number;
   escalationMode: RentEscalationMode;
 }
@@ -285,12 +334,30 @@ export function reconstructIntentFromLeaseYears(
   leaseYears: LeaseYear[] | undefined,
 ): ReconstructedIntent {
   const years = leaseYears ?? [];
-  const contractTermYears = years.filter((y) => y.type === 'contract').length;
-  const optionYears = years.filter((y) => y.type === 'option').length;
+  // Split each block back into whole years plus a remainder, so re-opening the form
+  // restores the steppers the user actually set rather than counting a 4-month tail as
+  // a whole year and quietly extending the lease on the next save.
+  const split = (rows: LeaseYear[]) => {
+    const months = rows.reduce((sum, y) => sum + periodMonths(y), 0);
+    return { years: Math.floor(months / 12), months: months % 12 };
+  };
+  const contract = split(years.filter((y) => y.type === 'contract'));
+  const option = split(years.filter((y) => y.type === 'option'));
+  const contractTermYears = contract.years;
+  const contractTermMonths = contract.months;
+  const optionYears = option.years;
+  const optionTermMonths = option.months;
   const baseRent = years[0]?.amount ?? 0;
   const hasRules = years.some((y) => y.rule && y.rule.mode !== 'manual');
   const allEqual = years.length > 0 && years.every((y) => y.amount === baseRent);
   const escalationMode: RentEscalationMode =
     hasRules ? 'custom' : years.length === 0 || allEqual ? 'none' : 'custom';
-  return { contractTermYears, optionYears, baseRent, escalationMode };
+  return {
+    contractTermYears,
+    contractTermMonths,
+    optionYears,
+    optionTermMonths,
+    baseRent,
+    escalationMode,
+  };
 }

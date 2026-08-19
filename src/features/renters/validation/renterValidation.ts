@@ -59,6 +59,8 @@ const leaseYearSchema = z.object({
   amount: optionalNumericString,
   type: z.enum(["option", "contract"]).optional(),
   rule: leaseYearRuleSchema.optional(),
+  // Absent means a full twelve months; only a short tail period carries it.
+  months: z.number().int().min(1).max(12).optional(),
 });
 
 const extraContactSchema = z.object({
@@ -88,7 +90,11 @@ export const renterFormSchema = z.object({
   insuranceType: z.enum(['wire_transfer', 'bank_guarantee', '']).optional(),
   insuranceAmount: optionalNumericString,
   contractTermYears: optionalNumericString,
+  // Odd months on top of the whole years, 0-11. The steppers clamp to that range, so
+  // this only has to survive a hand-edited or stale persisted value.
+  contractTermMonths: optionalNumericString,
   optionYears: optionalNumericString,
+  optionTermMonths: optionalNumericString,
   baseRent: optionalNumericString,
   escalationMode: z.enum(['none', 'percent', 'fixed', 'custom', 'cpi']).optional(),
   escalationValue: optionalNumericString,

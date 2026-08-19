@@ -122,7 +122,7 @@ export function RenterFormDrawer({
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
     // never shown; pre-filling discloses the default and leaves it editable.
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', optionYears: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -154,11 +154,21 @@ export function RenterFormDrawer({
       const paymentFrequency = numPayments === 12 ? 'monthly' : numPayments === 4 ? 'quarterly' : numPayments === 1 ? 'yearly' : undefined;
       // Prefer the structured intent the backend persisted; otherwise infer it from
       // the materialized lease_years so the builder re-opens sensibly.
+      // The stored intent records whole years only; the odd months live in the
+      // schedule, so they are always recovered from it. Taking them from the stored
+      // fields alone would drop a short tail on the next save.
+      const fromSchedule = reconstructIntentFromLeaseYears(existing.lease_years);
       const intent =
         existing.contract_term_years != null
           ? {
               contractTermYears: String(existing.contract_term_years ?? 0),
+              contractTermMonths: String(
+                existing.contract_term_months ?? fromSchedule.contractTermMonths,
+              ),
               optionYears: String(existing.option_years ?? 0),
+              optionTermMonths: String(
+                existing.option_term_months ?? fromSchedule.optionTermMonths,
+              ),
               baseRent:
                 existing.base_rent != null
                   ? String(existing.base_rent)
@@ -169,16 +179,17 @@ export function RenterFormDrawer({
               escalationValue:
                 existing.rent_escalation_value != null ? String(existing.rent_escalation_value) : '',
             }
-          : (() => {
-              const r = reconstructIntentFromLeaseYears(existing.lease_years);
-              return {
-                contractTermYears: r.contractTermYears ? String(r.contractTermYears) : '',
-                optionYears: r.optionYears ? String(r.optionYears) : '',
-                baseRent: r.baseRent ? String(r.baseRent) : '',
-                escalationMode: r.escalationMode,
-                escalationValue: '',
-              };
-            })();
+          : {
+              contractTermYears: fromSchedule.contractTermYears
+                ? String(fromSchedule.contractTermYears)
+                : '',
+              contractTermMonths: String(fromSchedule.contractTermMonths),
+              optionYears: fromSchedule.optionYears ? String(fromSchedule.optionYears) : '',
+              optionTermMonths: String(fromSchedule.optionTermMonths),
+              baseRent: fromSchedule.baseRent ? String(fromSchedule.baseRent) : '',
+              escalationMode: fromSchedule.escalationMode,
+              escalationValue: '',
+            };
       const existingReset: DefaultValues<FormData> = {
         firstName: existing.first_name,
         lastName: existing.last_name,
@@ -190,6 +201,7 @@ export function RenterFormDrawer({
         leaseYears: existing.lease_years.map((ly) => ({
           amount: ly.amount.toString(),
           type: ly.type,
+          ...(ly.months != null ? { months: ly.months } : {}),
           // Rules round-trip as form strings; an absent rule stays absent (= manual).
           ...(ly.rule
             ? { rule: { mode: ly.rule.mode, value: ly.rule.value != null ? String(ly.rule.value) : '' } }
@@ -244,7 +256,9 @@ export function RenterFormDrawer({
         paymentType: '',
         paymentDayOfMonth: DEFAULT_PAYMENT_DAY,
         contractTermYears: '',
+        contractTermMonths: '',
         optionYears: '',
+        optionTermMonths: '',
         baseRent: '',
         escalationMode: 'none',
         escalationValue: '',
@@ -292,6 +306,9 @@ export function RenterFormDrawer({
         lease_years: (data.leaseYears ?? []).map((ly: LeaseYearFormValue) => ({
           amount: Number(ly.amount) || 0,
           type: ly.type ?? 'contract',
+          // Absent means twelve, so only a short tail carries it and an ordinary lease's
+          // payload stays exactly the shape it has always been.
+          ...(ly.months && ly.months < 12 ? { months: ly.months } : {}),
           // Per-year rules only exist in custom mode, and "manual" is the absence of a
           // rule — omit it so the payload stays the legacy shape for every other lease.
           ...(data.escalationMode === 'custom' && ly.rule && ly.rule.mode !== 'manual'
@@ -299,7 +316,9 @@ export function RenterFormDrawer({
             : {}),
         })),
         contract_term_years: toNumOrNull(data.contractTermYears),
+        contract_term_months: toNumOrNull(data.contractTermMonths),
         option_years: toNumOrNull(data.optionYears),
+        option_term_months: toNumOrNull(data.optionTermMonths),
         base_rent: toNumOrNull(data.baseRent),
         rent_escalation_mode: data.escalationMode ?? 'none',
         rent_escalation_value: toNumOrNull(data.escalationValue),

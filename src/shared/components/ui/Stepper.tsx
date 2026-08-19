@@ -21,7 +21,11 @@ export function Stepper({ label, value, onChange, min = 0, max = 99, unitLabel }
       {label && (
         <span className="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
       )}
+      {/* Grouped and named so the two controls are distinguishable to a screen reader —
+          a form can carry several steppers whose +/- buttons are otherwise identical. */}
       <div
+        role="group"
+        aria-label={label}
         className="inline-flex items-center self-start rounded-xl border bg-[var(--color-input-bg)] overflow-hidden"
         style={{ borderColor: 'var(--color-input-border)' }}
       >
@@ -36,7 +40,12 @@ export function Stepper({ label, value, onChange, min = 0, max = 99, unitLabel }
           <Minus size={18} />
         </button>
         <div className="flex flex-col items-center justify-center min-w-14 px-2 select-none">
-          <span className="text-lg font-bold text-[var(--color-text-primary)] leading-none">{value}</span>
+          <span
+            aria-live="polite"
+            className="text-lg font-bold text-[var(--color-text-primary)] leading-none"
+          >
+            {value}
+          </span>
           {unitLabel && (
             <span className="text-[10px] mt-0.5 text-[var(--color-text-secondary)]">{unitLabel}</span>
           )}

@@ -8,6 +8,7 @@ import {
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock } from 'lucide-react';
+import { addMonths, periodMonths } from '@/shared/types';
 import type {
   LeaseYear,
   LeaseYearRuleMode,
@@ -17,7 +18,7 @@ import type {
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { buildLeaseYears, isProjectedYear } from '@/shared/utils/leaseSchedule';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, toISODate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { RentChangeField } from '@/shared/components/lease/RentChangeField';
@@ -37,6 +38,8 @@ type LeaseYearRowValue = {
   amount?: string;
   type?: LeaseYearType;
   rule?: { mode: LeaseYearRuleMode; value: string };
+  /** Absent means twelve. Set by the steppers, never typed directly. */
+  months?: number;
 };
 
 /** Form rows -> the numeric model the schedule helpers work on. */
@@ -50,15 +53,24 @@ function toModel(rows: LeaseYearRowValue[]): LeaseYear[] {
     if (r?.rule && r.rule.mode !== 'manual') {
       year.rule = { mode: r.rule.mode, value: Number(r.rule.value) || 0 };
     }
+    // Absent means twelve, so a full-year period never carries the field — which keeps
+    // an ordinary lease's payload identical to what it has always been.
+    if (r?.months && r.months < 12) year.months = r.months;
     return year;
   });
 }
 
 export function LeaseTermBuilder({ control, setValue }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const contractStr = useWatch({ control, name: 'contractTermYears' }) as string | undefined;
+  const contractMonthsStr = useWatch({ control, name: 'contractTermMonths' }) as
+    | string
+    | undefined;
   const optionStr = useWatch({ control, name: 'optionYears' }) as string | undefined;
+  const optionMonthsStr = useWatch({ control, name: 'optionTermMonths' }) as
+    | string
+    | undefined;
   const baseRentStr = useWatch({ control, name: 'baseRent' }) as string | undefined;
   const escMode =
     (useWatch({ control, name: 'escalationMode' }) as RentEscalationMode | undefined) ?? 'none';
@@ -96,7 +108,9 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     const next = buildLeaseYears(
       {
         contractYears: Number(contractStr) || 0,
+        contractMonths: Number(contractMonthsStr) || 0,
         optionYears: Number(optionStr) || 0,
+        optionMonths: Number(optionMonthsStr) || 0,
         baseRent: Number(baseRentStr) || 0,
         escalationMode: escMode,
         escalationValue: Number(escValStr) || 0,
@@ -110,7 +124,10 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     // still attached). Amount-only changes go through setValue on the leaf below — a replace()
     // there would tear down the rule inputs mid-keystroke and steal focus.
     const structureChanged =
-      next.length !== leaseYears.length || next.some((y, i) => y.type !== leaseYears[i]?.type);
+      next.length !== leaseYears.length ||
+      next.some(
+        (y, i) => y.type !== leaseYears[i]?.type || (y.months ?? 12) !== (leaseYears[i]?.months ?? 12),
+      );
     const staleRules = !isCustom && leaseYears.some((r) => r?.rule);
 
     if (structureChanged || staleRules) {
@@ -118,6 +135,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
         next.map((y, i) => ({
           amount: String(y.amount),
           type: y.type,
+          ...(y.months ? { months: y.months } : {}),
           // buildLeaseYears only returns a rule in custom mode, so this drops them on exit.
           ...(y.rule && leaseYears[i]?.rule ? { rule: leaseYears[i].rule! } : {}),
         })),
@@ -133,18 +151,29 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contractStr, optionStr, baseRentStr, escMode, escValStr, rulesKey, amountsKey]);
+  }, [
+    contractStr,
+    contractMonthsStr,
+    optionStr,
+    optionMonthsStr,
+    baseRentStr,
+    escMode,
+    escValStr,
+    rulesKey,
+    amountsKey,
+  ]);
 
   /** Rows in the numeric model, for deriving which years render as projections. */
   const modelRows = toModel(leaseYears);
 
-  const contractCount = Number(contractStr) || 0;
+  // Summed from the periods rather than the year stepper, so a short tail counts — and
+  // so the option periods do too, which the old arithmetic silently dropped.
   let endDateISO: string | null = null;
-  if (leaseStart && contractCount > 0) {
+  if (leaseStart && modelRows.length > 0) {
     const s = new Date(leaseStart);
     if (!isNaN(s.getTime())) {
-      const end = new Date(s.getFullYear() + contractCount, s.getMonth(), s.getDate());
-      endDateISO = end.toISOString().split('T')[0];
+      const months = modelRows.reduce((sum, y) => sum + periodMonths(y), 0);
+      endDateISO = toISODate(addMonths(s, months));
     }
   }
 
@@ -168,6 +197,21 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
 
         <Controller
           control={control}
+          name="contractTermMonths"
+          render={({ field }) => (
+            <Stepper
+              label={t('renter.extraMonths')}
+              unitLabel={t('renter.monthsUnit')}
+              min={0}
+              max={11}
+              value={Number(field.value) || 0}
+              onChange={(v) => field.onChange(String(v))}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
           name="optionYears"
           render={({ field }) => (
             <Stepper
@@ -175,6 +219,21 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
               unitLabel={t('renter.yearsUnit')}
               min={0}
               max={10}
+              value={Number(field.value) || 0}
+              onChange={(v) => field.onChange(String(v))}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="optionTermMonths"
+          render={({ field }) => (
+            <Stepper
+              label={t('renter.extraMonths')}
+              unitLabel={t('renter.monthsUnit')}
+              min={0}
+              max={11}
               value={Number(field.value) || 0}
               onChange={(v) => field.onChange(String(v))}
             />
@@ -256,10 +315,10 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
 
                         return (
                           <LeaseYearRow
-                            label={getLeaseYearLabel(leaseStart, index)}
+                            label={getLeaseYearLabel(leaseStart, modelRows, index, i18n.language)}
                             amount={amountField.value ?? ''}
                             type={yearType}
-                            isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                            isCurrent={isCurrentLeaseYear(leaseStart, modelRows, index)}
                             projected={isProjectedYear(modelRows, index)}
                             amountName={amountField.name}
                             onAmountBlur={amountField.onBlur}
@@ -298,10 +357,10 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
               ) : (
                 <LeaseYearRow
                   key={index}
-                  label={getLeaseYearLabel(leaseStart, index)}
+                  label={getLeaseYearLabel(leaseStart, modelRows, index, i18n.language)}
                   amount={String(row?.amount ?? '')}
                   type={yearType}
-                  isCurrent={isCurrentLeaseYear(leaseStart, index)}
+                  isCurrent={isCurrentLeaseYear(leaseStart, modelRows, index)}
                   projected={isCpiProjected}
                 />
               );

@@ -71,6 +71,13 @@ export interface LeaseYear {
   type: LeaseYearType;
   /** Absent on year one (it is the base rent) and on every year of a non-custom lease. */
   rule?: LeaseYearRule;
+  /**
+   * How long this period runs. **Absent means 12** — which is why no stored lease needed
+   * migrating when periods stopped being whole years. Only the last period of the
+   * contract block and of the option block is ever short; a partial period mid-lease is
+   * not a thing that happens, and the form cannot express one.
+   */
+  months?: number;
 }
 
 /** How the monthly rent changes from one lease year to the next. */
@@ -84,7 +91,10 @@ export type RentEscalationMode = 'none' | 'percent' | 'fixed' | 'custom' | 'cpi'
  */
 export interface LeaseTermIntent {
   contract_term_years?: number | null;
+  /** Odd months on top of the whole contract years, 0-11. Absent reads as 0. */
+  contract_term_months?: number | null;
   option_years?: number | null;
+  option_term_months?: number | null;
   base_rent?: number | null;
   rent_escalation_mode?: RentEscalationMode | null;
   rent_escalation_value?: number | null;
@@ -124,6 +134,27 @@ export interface Renter extends LeaseTermIntent {
 }
 
 /**
+ * How long one lease period runs. Absent, zero or nonsensical all read as a full year:
+ * every lease stored before variable periods existed has no `months` at all, and a zero
+ * would stall the cumulative walk rather than degrade to the old behaviour.
+ */
+export function periodMonths(year: LeaseYear): number {
+  const m = year.months;
+  return typeof m === 'number' && Number.isFinite(m) && m > 0 ? Math.floor(m) : 12;
+}
+
+/**
+ * `date` plus `months`, clamping the day rather than rolling into the next month —
+ * JS `setMonth` turns 31 Jan + 1 month into 3 March, which would move a lease's end date.
+ */
+export function addMonths(date: Date, months: number): Date {
+  const target = new Date(date.getFullYear(), date.getMonth() + months, 1);
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(date.getDate(), lastDay));
+  return target;
+}
+
+/**
  * Returns the rent amount for the lease year that covers the given month.
  * monthStr is "YYYY-MM". Falls back to the first year if out of range.
  */
@@ -144,8 +175,15 @@ export function getRentForMonth(renter: Renter, monthStr: string): number {
 
   if (monthsDiff < 0) return years[0].amount;
 
-  const yearIndex = Math.floor(monthsDiff / 12);
-  return years[Math.min(yearIndex, years.length - 1)].amount;
+  // Walk the periods' own lengths rather than dividing by 12 — a lease can carry a
+  // short final period, after which every later period starts a month earlier than the
+  // anniversary arithmetic would say.
+  let cursor = 0;
+  for (const year of years) {
+    cursor += periodMonths(year);
+    if (monthsDiff < cursor) return year.amount;
+  }
+  return years[years.length - 1].amount;
 }
 
 /** Monthly rent for the lease year that covers today. Use for headline "current rent" display. */
@@ -161,14 +199,37 @@ export function getTotalCurrentMonthlyRent(renters: Renter[] | null | undefined)
   return renters.reduce((sum, r) => sum + getCurrentMonthlyRent(r), 0);
 }
 
-/** Lease end date calculated from lease_start + number of contract (non-option) years. */
+/**
+ * End of the *binding* term — lease_start plus every contract period's length.
+ *
+ * Deliberately not the end of the whole schedule: an option period is not yet exercised,
+ * so this is the date the landlord actually has to decide something. The server stores
+ * the same date as `contract_end` and fires the lease-expiring alert from it.
+ */
 export function getLeaseEndDate(renter: Renter): Date | null {
   if (!renter.lease_start || !renter.lease_years?.length) return null;
-  const contractYears = renter.lease_years.filter((y) => y.type === 'contract').length;
-  if (contractYears === 0) return null;
   const start = new Date(renter.lease_start);
   if (isNaN(start.getTime())) return null;
-  return new Date(start.getFullYear() + contractYears, start.getMonth(), start.getDate());
+
+  let months = 0;
+  let contractMonths = 0;
+  for (const year of renter.lease_years) {
+    months += periodMonths(year);
+    if (year.type !== 'option') contractMonths = months;
+  }
+  if (contractMonths === 0) return null;
+  return addMonths(start, contractMonths);
+}
+
+/** End of the whole signed schedule, options included. */
+export function getScheduleEndDate(renter: Renter): Date | null {
+  if (!renter.lease_start || !renter.lease_years?.length) return null;
+  const start = new Date(renter.lease_start);
+  if (isNaN(start.getTime())) return null;
+  return addMonths(
+    start,
+    renter.lease_years.reduce((sum, y) => sum + periodMonths(y), 0),
+  );
 }
 
 // Transactions

@@ -52,6 +52,37 @@ test.describe('renters', () => {
     await expect(page.getByRole('button', { name: 'Extend lease' })).toBeVisible();
   });
 
+  // A term is whole years plus an optional remainder, and the remainder becomes one short
+  // period at the end of its block. Renter #2 (Michael Chen) is a 2-contract-year lease
+  // from 2025-07-22, so adding 4 months moves its end from Jul 2027 to Nov 2027.
+  test('a months remainder adds one short period and moves the lease end', async ({ page }) => {
+    await page.goto('/renters/2');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    const extraMonths = page.getByRole('group', { name: 'Extra months' }).first();
+    for (let i = 0; i < 4; i += 1) {
+      await extraMonths.getByRole('button', { name: 'Increase' }).click();
+    }
+
+    // The tail is labelled as the months it actually covers — "27-28" would simply be
+    // false for a four-month period — and the end date is the sum of the periods
+    // (Jul 2025 + 12 + 12 + 4), not the year arithmetic's Jul 2027.
+    await expect(page.getByText('Jul–Oct 27')).toBeVisible();
+    await expect(page.getByText(/Lease ends:/)).toContainText('Nov 22, 2027');
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expectToast(page, 'Renter updated');
+
+    // …and re-opening restores the steppers as 2 years + 4 months, rather than counting
+    // the tail as a third whole year.
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Extra months' }).first(),
+    ).toContainText('4');
+  });
+
   // Regression for M1: step-1 required fields are validated on "Next", so the errors
   // show immediately on step 1 instead of being hidden behind step 2.
   test('Next validates step-1 required fields inline (M1)', async ({ page }) => {

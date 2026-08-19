@@ -46,7 +46,11 @@ export interface ExtractedRenter {
   lease_start: string | null;
   lease_years: LeaseYearGuess[] | null;
   contract_term_years: number | null;
+  /** Odd months on top of the whole years, 0-11 — Israeli leases do state terms like
+   *  "two years and four months", and rounding one would move every renewal reminder. */
+  contract_term_months: number | null;
   option_years: number | null;
+  option_term_months: number | null;
   base_rent: number | null;
   rent_escalation_mode: 'none' | 'percent' | 'fixed' | 'custom' | null;
   rent_escalation_value: number | null;

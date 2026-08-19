@@ -15,6 +15,17 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * A local date as `YYYY-MM-DD`. Not `toISOString().slice(0, 10)`, which converts to UTC
+ * first and so reports the previous day for anyone east of Greenwich in the evening —
+ * which is everyone using this app.
+ */
+export function toISODate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 /** "15 Apr 2026" — no Intl API, uses static lookup. */
 export function formatDateFull(date: Date, locale: string): string {
   return `${date.getDate()} ${shortMonth(locale, date.getMonth())} ${date.getFullYear()}`;
