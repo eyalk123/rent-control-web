@@ -663,7 +663,30 @@ export const mockTransactionsApi = {
         profit: revenue - expenses,
       });
     }
-    return { six_month_buckets: buckets };
+    // Year-to-date net per property owner, mirroring the backend: revenue counts
+    // under month_for when set, expenses under date_of_payment; a transaction with
+    // no (or a deleted) property is unattributed.
+    const ytdYear = now.getFullYear();
+    const ytdTotals = new Map<string | null, { revenue: number; expenses: number }>();
+    for (const t of mockTransactions) {
+      const effective = t.type === 'revenue' ? (t.month_for ?? t.date_of_payment) : t.date_of_payment;
+      if (!effective || !effective.startsWith(String(ytdYear))) continue;
+      const owner =
+        mockProperties.find((p) => p.id === t.property_id)?.property_owner?.trim() || null;
+      const bucket = ytdTotals.get(owner) ?? { revenue: 0, expenses: 0 };
+      bucket[t.type === 'revenue' ? 'revenue' : 'expenses'] += Number(t.amount);
+      ytdTotals.set(owner, bucket);
+    }
+    const ytdByOwner = [...ytdTotals.entries()]
+      .map(([owner, { revenue, expenses }]) => ({ owner, revenue, expenses, net: revenue - expenses }))
+      .sort((a, b) => b.net - a.net);
+
+    return {
+      six_month_buckets: buckets,
+      ytd_year: ytdYear,
+      ytd_net: ytdByOwner.reduce((sum, o) => sum + o.net, 0),
+      ytd_by_owner: ytdByOwner,
+    };
   },
   getPropertyRenters: async (propertyId: number): Promise<PropertyRenterSummary[]> => {
     return mockRenters

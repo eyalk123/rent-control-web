@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { mainNavItems, bottomNavItems } from './navConfig';
-import { TrendingUp } from 'lucide-react';
 import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTransactionSummary } from '@/features/transactions/queries';
 import { formatMoney } from '@/shared/utils/money';
@@ -54,14 +53,18 @@ function IconNavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; l
   );
 }
 
+/** Net figures read green above water, red below — same rule as the income/expense report. */
+function netColor(net: number): string {
+  return net >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)';
+}
+
 export function Sidebar() {
   const { t } = useTranslation();
   const { user } = useAppAuth();
   const navigate = useNavigate();
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
 
-  const bucket = summary?.six_month_buckets?.at(-1);
-  const profit = bucket ? bucket.revenue - bucket.expenses : null;
+  const byOwner = summary?.ytd_by_owner ?? [];
   const initials = (user?.displayName ?? user?.email ?? '?')
     .split(/[\s@]+/)
     .map((w: string) => w[0])
@@ -106,17 +109,35 @@ export function Sidebar() {
             <Skeleton width="70%" height={22} className="block mt-2" />
             <Skeleton width="45%" height={11} className="block mt-2" />
           </div>
-        ) : profit !== null && (
+        ) : summary && (
           <div className="mx-3.5 mb-3 rounded-[10px] bg-[var(--color-input-filled-background)] p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">
-              {t('home.thisMonthPL')}
+              {t('home.ytdNet', { year: summary.ytd_year })}
             </p>
-            <LtrSpan className="text-[22px] font-bold text-[var(--color-text-primary)] tracking-tight leading-none block">
-              {formatMoney(profit)}
+            <LtrSpan
+              className="text-[22px] font-bold tracking-tight leading-none block"
+              style={{ color: netColor(summary.ytd_net) }}
+            >
+              {formatMoney(summary.ytd_net)}
             </LtrSpan>
-            <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--color-success)]">
-              <TrendingUp size={12} /> {t('common.netProfit')}
-            </p>
+            {/* One line is what the total already says — only split when there is a split. */}
+            {byOwner.length > 1 && (
+              <ul className="mt-2.5 flex flex-col gap-1 border-t border-[var(--color-outline)] pt-2">
+                {byOwner.map((entry) => (
+                  <li
+                    key={entry.owner ?? '__none__'}
+                    className="flex items-center gap-2 text-[11px]"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[var(--color-text-secondary)]">
+                      {entry.owner ?? t('reports.noOwner')}
+                    </span>
+                    <LtrSpan className="font-semibold" style={{ color: netColor(entry.net) }}>
+                      {formatMoney(entry.net)}
+                    </LtrSpan>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

@@ -50,8 +50,22 @@ export interface MonthSummaryItem {
   profit: number;
 }
 
+export interface OwnerNetItem {
+  /** The free-text `property_owner` of the property; `null` when unattributed. */
+  owner: string | null;
+  revenue: number;
+  expenses: number;
+  net: number;
+}
+
 export interface TransactionSummaryResponse {
   six_month_buckets: MonthSummaryItem[];
+  /** Calendar year the `ytd_*` figures below cover. */
+  ytd_year: number;
+  /** Net from Jan 1 to today, across every owner. */
+  ytd_net: number;
+  /** Same window, split by property owner, biggest net first. */
+  ytd_by_owner: OwnerNetItem[];
 }
 
 export async function getTransactions(

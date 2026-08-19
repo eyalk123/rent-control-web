@@ -26,7 +26,12 @@ export function useCreateRenter() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: RenterCreate) => createRenter(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: renterKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: renterKeys.all });
+      // Overdue / expiring status pills come from the home lists, not the
+      // renter row itself — refresh them or the pill stays stale.
+      qc.invalidateQueries({ queryKey: ['home'] });
+    },
   });
 }
 
@@ -37,6 +42,9 @@ export function useUpdateRenter(id: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: renterKeys.all });
       qc.invalidateQueries({ queryKey: renterKeys.detail(id) });
+      // Payment day / lease dates drive the overdue + expiring lists that back
+      // the status pill; invalidate them too.
+      qc.invalidateQueries({ queryKey: ['home'] });
       // A lease extension resolves any lease_expiring alert; refresh the feed.
       qc.invalidateQueries({ queryKey: notificationKeys.feed });
     },
@@ -47,6 +55,9 @@ export function useDeleteRenter() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteRenter,
-    onSuccess: () => qc.invalidateQueries({ queryKey: renterKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: renterKeys.all });
+      qc.invalidateQueries({ queryKey: ['home'] });
+    },
   });
 }
