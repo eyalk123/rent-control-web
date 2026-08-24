@@ -1180,5 +1180,307 @@
       "list_suppliers": "Checking suppliers…",
       "default": "Checking your data…"
     }
+  },
+  "onboarding": {
+    "tours": {
+      "first-run": {
+        "home": {
+          "title": "Your dashboard",
+          "body": "Money in, money out, and anything that needs you this month."
+        },
+        "portfolio": {
+          "title": "Your portfolio",
+          "body": "Properties are the units. Renters are the people in them, and their leases."
+        },
+        "money": {
+          "title": "Every shekel",
+          "body": "Rent collected and expenses paid, all recorded here."
+        },
+        "reports": {
+          "title": "Reports",
+          "body": "Income against expenses for any period, plus a full expense log."
+        },
+        "chat": {
+          "title": "Ask anything",
+          "body": "Ask about your own portfolio in plain language."
+        },
+        "start": {
+          "title": "Start with one property",
+          "body": "Add it by hand, or scan a lease and we'll create the property and the renter together."
+        }
+      },
+      "home": {
+        "attention": {
+          "title": "Needs attention",
+          "body": "Rent that hasn't arrived, leases about to expire, and CPI changes — all in one place."
+        },
+        "reports": {
+          "title": "Reports live here",
+          "body": "Not in the tab bar — this card is the way in."
+        },
+        "bell": {
+          "title": "The bell",
+          "body": "Every alert, with read and unread state."
+        },
+        "notifications": {
+          "title": "Reminder settings",
+          "body": "Manage notifications sits here under Needs Attention — not behind the Settings gear."
+        }
+      },
+      "properties-list": {
+        "cards": {
+          "title": "One card per unit",
+          "body": "Open one for its lease, its tenant, and the money it has made."
+        },
+        "persistence": {
+          "title": "It remembers you",
+          "body": "Search, filters and sort stay exactly how you left them."
+        }
+      },
+      "property-form": {
+        "twoSteps": {
+          "title": "Two steps",
+          "body": "Where it is, then the extras. You can save after the first."
+        },
+        "owner": {
+          "title": "Property owner",
+          "body": "Worth filling in even with one property."
+        }
+      },
+      "renters-list": {
+        "current": {
+          "title": "Who's leasing now",
+          "body": "Everyone with an active lease."
+        },
+        "ended": {
+          "title": "And who used to",
+          "body": "Ended tenants have their own filter."
+        }
+      },
+      "lease-form": {
+        "term": {
+          "title": "The term",
+          "body": "Years and months — 'eighteen months' is as easy as 'two years'. The end date is calculated, never typed."
+        },
+        "mode": {
+          "title": "How the rent moves",
+          "body": "Flat, a fixed percentage, a fixed amount, index-linked, or your own schedule."
+        },
+        "baseYear": {
+          "title": "Year one",
+          "body": "This is the starting rent. Every later year is computed forward from it."
+        }
+      },
+      "transactions-list": {
+        "twoKinds": {
+          "title": "Two kinds of money",
+          "body": "Revenue is rent coming in. Expenses are what you pay out."
+        },
+        "forMonth": {
+          "title": "Which month it pays for",
+          "body": "Recorded separately from the date it arrived — March rent can land in April, and the reports still count it as March."
+        },
+        "recording": {
+          "title": "Recording rent",
+          "body": "The revenue form is built for collecting from everyone at once."
+        }
+      },
+      "renter-detail": {
+        "timeline": {
+          "title": "The lease, year by year",
+          "body": "Every period and the rent for it."
+        },
+        "extend": {
+          "title": "Extend",
+          "body": "When they stay on."
+        },
+        "end": {
+          "title": "End lease",
+          "body": "When they don't."
+        }
+      },
+      "chat": {
+        "ask": {
+          "title": "Ask in plain language",
+          "body": "'Who hasn't paid this month?' · 'What did I spend on plumbing?'"
+        },
+        "scope": {
+          "title": "What it can see",
+          "body": "Your properties, renters and transactions — and nothing outside your account. It reads; it never changes anything."
+        }
+      },
+      "cpi-mode": {
+        "base": {
+          "title": "The base index",
+          "body": "We freeze the index at the lease start. Every later change is measured against that number."
+        },
+        "lag": {
+          "title": "The index runs late",
+          "body": "It publishes mid-month for the month before, so a change appears a little after the anniversary. That's the index, not the app."
+        },
+        "reanchor": {
+          "title": "Careful with dates",
+          "body": "Changing the lease start later re-anchors the base and re-prices history. If a tenant left early, use End lease instead."
+        }
+      },
+      "custom-mode": {
+        "perYear": {
+          "title": "A rule per year",
+          "body": "Each year after the first: type an amount, repeat last year, add a percentage, add a fixed sum, or link it to the index."
+        },
+        "forward": {
+          "title": "Computed forward",
+          "body": "Each year builds on the previous year's resolved rent — so ₪5,000, then +3%, then whatever the index does, then flat, is expressible exactly."
+        }
+      },
+      "revenue-form": {
+        "scope": {
+          "title": "Pick the scope",
+          "body": "Properties — narrowed by owner if you manage for more than one — then a month, a quarter, your own set of months, or a whole contract year."
+        },
+        "perContract": {
+          "title": "Per contract",
+          "body": "The amount comes from each renter's own schedule, so a mid-lease rise is applied for you. Override any row; Auto snaps it back."
+        },
+        "saving": {
+          "title": "One row at a time",
+          "body": "A big batch saves as many small writes. If it stops halfway, what was written stays written — re-run only the months that didn't land."
+        }
+      },
+      "expense-form": {
+        "required": {
+          "title": "What an expense needs",
+          "body": "A property, an amount, a date, a payment method, and at least one category. Categories are what the reports group by."
+        },
+        "split": {
+          "title": "One bill, several units",
+          "body": "Select several properties and the amount splits evenly between them — one transaction each."
+        }
+      },
+      "extend-lease": {
+        "months": {
+          "title": "Years or months",
+          "body": "'Another three months' is more common than another whole year, so both are here."
+        },
+        "optionLast": {
+          "title": "Option years come last",
+          "body": "The preview badges what's new and keeps existing years editable. A contract year after an option year is blocked — a renewal option with binding years after it isn't an option."
+        }
+      },
+      "suppliers": {
+        "what": {
+          "title": "The people you pay twice",
+          "body": "Plumber, electrician, management company. Save once, then attach to any expense."
+        },
+        "categories": {
+          "title": "Expense categories",
+          "body": "They live here too, and they're what your expense reports group by."
+        }
+      },
+      "notifications": {
+        "events": {
+          "title": "Three things we watch",
+          "body": "Rent that hasn't arrived, leases about to expire, and CPI rent changes. Mute any of them, or all of them."
+        },
+        "rules": {
+          "title": "Custom rules",
+          "body": "Change the reminder days and who they apply to."
+        },
+        "templates": {
+          "title": "WhatsApp messages",
+          "body": "The wording is yours."
+        }
+      },
+      "notification-rules": {
+        "offsets": {
+          "title": "When",
+          "body": "Three days before, seven days after — whatever matches how you actually chase."
+        },
+        "scope": {
+          "title": "Who",
+          "body": "Everything, or specific owners, properties or renters. A live estimate shows how many renters a rule matches."
+        },
+        "cpiException": {
+          "title": "Except CPI",
+          "body": "'How long before' means nothing for an index that has already moved, so CPI gets a materiality threshold instead of a rule."
+        }
+      },
+      "whatsapp-templates": {
+        "placeholders": {
+          "title": "Placeholders",
+          "body": "Tap a chip to drop in the name, amount, address or date. No typing braces."
+        },
+        "perLanguage": {
+          "title": "Per language",
+          "body": "English and Hebrew keep separate versions — editing one never touches the other. Reset restores the original."
+        }
+      },
+      "reports": {
+        "two": {
+          "title": "Two reports",
+          "body": "Income against expenses for any period, and a full expense log you can filter."
+        },
+        "export": {
+          "title": "Export",
+          "body": "Take what you're looking at to your accountant."
+        }
+      },
+      "lease-scan": {
+        "pick": {
+          "title": "Give us the lease",
+          "body": "A PDF or a photo."
+        },
+        "review": {
+          "title": "Nothing saves unread",
+          "body": "We show you every field we found. Fix anything that looks wrong before it is saved."
+        },
+        "both": {
+          "title": "Both at once",
+          "body": "One scan can create the property and the renter together — the fastest way in."
+        }
+      }
+    },
+    "seeds": {
+      "alert-actions": "Rows here do more than warn — each one can record the payment or message the renter on WhatsApp without leaving the page.",
+      "scan-lease": "Have the lease as a file? Scan it and we'll read it and create the property and the renter in one pass.",
+      "suppliers": "Suppliers lives in here too — save the plumber or the management company once, then attach them to any expense.",
+      "reports": "Reports are on Home rather than the tab bar — income against expenses, and a full expense log.",
+      "notifications": "Reminder settings are under Needs Attention → Manage notifications, not behind the Settings gear.",
+      "property-owner": "Set this if you ever manage units for more than one person — it later filters rent recording and scopes reminders.",
+      "ended-tenants": "Past tenants are never deleted. They're under Ended, and search always looks in both.",
+      "bulk-select": "Long-press any card to select several at once.",
+      "cpi": "CPI links the rent to the Israeli consumer price index. Choose it and we'll explain what that means for your rent.",
+      "custom-schedule": "Custom gives every year its own rule — ₪5,000, then +3%, then whatever the index does, then flat.",
+      "no-auto-rent": "Nothing is charged automatically. 'Overdue' only means no payment is recorded yet — record it and the alert clears itself.",
+      "bulk-rent": "Recording rent handles many renters across many months at once. You won't be typing them one by one.",
+      "expense-split": "Paying one bill for the whole building? Select several properties and it splits evenly between them.",
+      "extend-lease": "Extend adds years or months and prices them, with a live preview — and it clears the expiring-lease alert for you.",
+      "end-lease": "Tenant leaving early? End lease records the exit without rewriting past rent or reports. It's undoable.",
+      "notification-rules": "Custom rules change the reminder days and scope them to one owner, property or renter.",
+      "whatsapp-templates": "The WhatsApp wording is yours to rewrite, in each language. We never send anything to a tenant — the message lands in your input box, unsent."
+    },
+    "callbacks": {
+      "suppliers": "Here's the Suppliers list we mentioned.",
+      "reports": "Here are the reports we mentioned.",
+      "notifications": "Here's where reminders are set up.",
+      "scan-lease": "Here's the lease scanner we mentioned.",
+      "cpi": "You picked CPI — here's what it does.",
+      "custom-schedule": "You picked Custom — here's how the years work.",
+      "bulk-rent": "This is the bulk rent recording we mentioned.",
+      "extend-lease": "Here's the extend flow we mentioned.",
+      "notification-rules": "Here's the rule editor.",
+      "whatsapp-templates": "Here's where the wording lives."
+    },
+    "ui": {
+      "skip": "Skip",
+      "next": "Next",
+      "back": "Back",
+      "done": "Got it",
+      "stepOf": "{{current}} of {{total}}",
+      "replayTitle": "Show tours again",
+      "replayBody": "Reset every tour and tip so they appear again as you move around the app.",
+      "replayAction": "Reset tours",
+      "disable": "Turn off tours"
+    }
   }
 }

@@ -12,6 +12,7 @@ import { AlertsPanel } from '@/features/alerts/AlertsPanel';
 import { ScanProvider } from '@/features/document-scan/ScanContext';
 import { ScanSurfaces } from '@/features/document-scan/ScanSurfaces';
 import { ChatPanelProvider } from '@/features/agent/PortfolioChatContext';
+import { AnchorRegistryProvider } from '@/features/onboarding/AnchorRegistry';
 import { PortfolioChatPanel } from '@/features/agent/components/PortfolioChatPanel';
 
 function useDocumentTitle() {
@@ -40,6 +41,7 @@ export function AppShell() {
   }, []);
 
   return (
+    <AnchorRegistryProvider>
     <AlertsPanelProvider>
       <ChatPanelProvider>
         <ScanProvider>
@@ -67,5 +69,6 @@ export function AppShell() {
         </ScanProvider>
       </ChatPanelProvider>
     </AlertsPanelProvider>
+    </AnchorRegistryProvider>
   );
 }

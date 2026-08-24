@@ -3,15 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { mainNavItems, bottomNavItems } from './navConfig';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTransactionSummary } from '@/features/transactions/queries';
 import { formatMoney } from '@/shared/utils/money';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 
-function NavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; labelKey: string; path: string }) {
+function NavBtn({ icon: Icon, labelKey, path, anchor }: { icon: React.ElementType; labelKey: string; path: string; anchor?: string }) {
   const { t } = useTranslation();
+  const anchorRef = useTourAnchor(anchor ?? '');
   return (
     <NavLink
+      ref={anchor ? anchorRef : undefined}
       to={path}
       end={path === '/home'}
       className={({ isActive }) =>
@@ -32,10 +35,12 @@ function NavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; label
   );
 }
 
-function IconNavBtn({ icon: Icon, labelKey, path }: { icon: React.ElementType; labelKey: string; path: string }) {
+function IconNavBtn({ icon: Icon, labelKey, path, anchor }: { icon: React.ElementType; labelKey: string; path: string; anchor?: string }) {
   const { t } = useTranslation();
+  const anchorRef = useTourAnchor(anchor ?? '');
   return (
     <NavLink
+      ref={anchor ? anchorRef : undefined}
       to={path}
       end={path === '/home'}
       title={t(labelKey)}
