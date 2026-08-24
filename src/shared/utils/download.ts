@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react';
+
 import apiClient from '@/core/api/client';
 
 /** Fetch a binary endpoint and save it to disk via a temporary Blob URL.
@@ -15,12 +17,20 @@ export async function downloadFile(
     timeout: options.timeout ?? 60000,
   });
 
-  const url = URL.createObjectURL(response.data);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // The request itself is reported by the axios interceptor if it fails. This part is
+  // not an HTTP failure, so nothing else would ever see it — a browser that refuses the
+  // Blob URL leaves the user with a silent no-op download.
+  try {
+    const url = URL.createObjectURL(response.data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    Sentry.captureException(err, { tags: { feature: 'file_download' } });
+    throw err;
+  }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import * as Sentry from '@sentry/react';
 import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
@@ -41,7 +42,10 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     try {
       await deleteFirebaseAccount();
       navigate('/sign-in', { replace: true });
-    } catch {
+    } catch (err) {
+      // A Firebase SDK failure, not an HTTP one — no central handler sees it, and a
+      // user stuck unable to delete their account is exactly what we want to hear about.
+      Sentry.captureException(err, { tags: { feature: 'account_delete' } });
       showToast(t('error.saveFailed'), 'error');
       setLoading(false);
     }
@@ -154,7 +158,9 @@ export function SettingsPage() {
     try {
       await signOut();
       navigate('/sign-in', { replace: true });
-    } catch {
+    } catch (err) {
+      // Also a Firebase SDK failure; a sign-out that cannot complete is a real problem.
+      Sentry.captureException(err, { tags: { feature: 'sign_out' } });
       showToast(t('error.saveFailed'), 'error');
     }
   };

@@ -12,6 +12,7 @@ import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'
 import './index.css'
 import App from './App.tsx'
+import * as Sentry from '@sentry/react'
 import { initSentry } from './core/monitoring/sentry'
 
 initSentry()
@@ -23,7 +24,13 @@ initSentry()
 window.addEventListener('vite:preloadError', (event) => {
   const KEY = 'vitePreloadReloadAt'
   const last = Number(sessionStorage.getItem(KEY) ?? 0)
-  if (Date.now() - last < 10_000) return
+  if (Date.now() - last < 10_000) {
+    // Already reloaded once and it failed again: not a stale-chunk race but a genuinely
+    // broken deploy. The first occurrence is expected after every deploy and is
+    // deliberately not reported (see ignoreErrors in core/monitoring/sentry.ts).
+    Sentry.captureMessage('vite:preloadError persisted after reload', 'error')
+    return
+  }
   sessionStorage.setItem(KEY, String(Date.now()))
   event.preventDefault()
   window.location.reload()

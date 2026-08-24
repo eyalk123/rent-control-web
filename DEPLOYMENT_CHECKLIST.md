@@ -86,12 +86,14 @@ This doc is the complete checklist of work remaining before we can deploy: code 
 
 ## SHOULD-FIX — strongly recommended before going live
 
-### S1. Production error monitoring (Sentry)
-- **Files:** `src/main.tsx` (init), `vite.config.ts` (optional sourcemap upload), new `VITE_SENTRY_DSN` env.
-- Today prod errors are invisible (console logs are DEV-gated).
-- **Action:** Add `@sentry/react`, init only when `import.meta.env.PROD`, wrap the router/app, capture unhandled errors + the route error boundary. Keep `tracesSampleRate` low. Upload sourcemaps to Sentry as a build step but do **not** ship `.map` files publicly (see S6).
+### S1. Production error monitoring (Sentry) — **DONE**
+- **Files:** `src/core/monitoring/sentry.ts` (init, called from `src/main.tsx`), `src/core/api/client.ts` (HTTP failures), `src/App.tsx` (query/mutation caches), `src/shared/components/ui/RouteErrorPage.tsx` + `AppErrorBoundary.tsx` (render errors), `vite.config.ts` + `Dockerfile` (source-map upload).
+- Errors only: `tracesSampleRate: 0`, `sendDefaultPii: false`, Firebase UID as the only user context — so this stays in the "strictly functional" bucket and needs no consent banner (see B7).
+- One owner per failure class, to avoid duplicate events: the axios interceptor owns **all** HTTP failures (capturing 5xx/network/timeout only — 4xx is normal operation); the query/mutation caches report only non-axios throws; `RouteErrorPage` owns route errors (excluding 404); `AppErrorBoundary` owns the rest.
+- Source maps upload via `@sentry/vite-plugin` with `build.sourcemap: 'hidden'` and `filesToDeleteAfterUpload`, gated on `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` being present — absent in CI, so the build there is unchanged and no `.map` is ever served (S6 intact).
+- **Remaining:** set `VITE_SENTRY_DSN` (and the three build-time source-map vars) as Railway service variables, then redeploy. Until the DSN is set, `initSentry()` returns early and nothing is reported.
 
-### S2. Non-DEV-gated `console.error` in form drawers
+### S2. Non-DEV-gated `console.error` in form drawers — **DONE** (already DEV-gated; line numbers below are stale)
 - **Files:** `src/features/properties/pages/PropertyFormDrawer.tsx:144`, `src/features/renters/pages/RenterFormDrawer.tsx:127`, `src/features/suppliers/pages/SupplierFormDrawer.tsx:85`.
 - These log raw errors to the prod console. Gate behind `if (import.meta.env.DEV)` or route through Sentry (S1).
 

@@ -1,6 +1,8 @@
 import { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
+import axios from 'axios';
+import * as Sentry from '@sentry/react';
 import { AuthProvider } from '@/core/auth/AuthContext';
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute';
 import { AppShell } from '@/layout/AppShell';
@@ -29,10 +31,34 @@ const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolic
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
 
+// HTTP failures are owned by the axios response interceptor (src/core/api/client.ts) —
+// it sees every request, including the ones that never go through react-query. These
+// handlers exist only for the other kind of failure: something thrown inside a
+// queryFn/mutationFn that is not an HTTP error (a parser, a selector, a date helper).
+function reportNonHttpError(error: unknown, tags: Record<string, string>) {
+  if (axios.isAxiosError(error)) return;
+  Sentry.captureException(error, { tags });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 1000 * 60 * 2, gcTime: 1000 * 60 * 10, retry: 1 },
   },
+  // Only queryKey[0] is tagged, never the full key — keys carry ids and filter values.
+  queryCache: new QueryCache({
+    onError: (error, query) =>
+      reportNonHttpError(error, {
+        react_query: 'query',
+        query_key: String(query.queryKey[0] ?? ''),
+      }),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _vars, _ctx, mutation) =>
+      reportNonHttpError(error, {
+        react_query: 'mutation',
+        mutation_key: String(mutation.options.mutationKey?.[0] ?? ''),
+      }),
+  }),
 });
 
 // Root layout rendered on every route: provides the always-available

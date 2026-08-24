@@ -6,6 +6,7 @@ import {
   deleteUser,
   type User,
 } from 'firebase/auth';
+import * as Sentry from '@sentry/react';
 import { auth } from './firebase';
 import { setAuthTokenGetter } from '@/core/api/client';
 
@@ -53,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       setIsLoaded(true);
       setAuthTokenGetter(() => (u ? getIdToken(u) : Promise.resolve(null)));
+      // UID only — matches the backend and the privacy copy in legalContent.ts: an
+      // error is traceable to one account without sending an email or a name.
+      Sentry.setUser(u ? { id: u.uid } : null);
     });
   }, []);
 

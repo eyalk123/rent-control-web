@@ -1,9 +1,28 @@
+import { useEffect, useRef } from 'react';
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import * as Sentry from '@sentry/react';
 
 export function RouteErrorPage() {
   const error = useRouteError();
   const navigate = useNavigate();
+  const reported = useRef<unknown>(null);
+
+  // `errorElement` catches route errors before AppErrorBoundary ever sees them, so this
+  // is the only place they can be reported. The ref (not state — no re-render wanted)
+  // stops StrictMode's double-invoke and any re-render from filing the same error twice;
+  // a genuinely new error is a new object.
+  useEffect(() => {
+    if (!error || reported.current === error) return;
+    reported.current = error;
+    if (isRouteErrorResponse(error)) {
+      // A 404 is a bad URL, not a bug.
+      if (error.status === 404) return;
+      Sentry.captureMessage(`Route error ${error.status} ${error.statusText}`, 'error');
+      return;
+    }
+    Sentry.captureException(error);
+  }, [error]);
 
   let title = 'Something went wrong';
   let detail = 'An unexpected error occurred.';

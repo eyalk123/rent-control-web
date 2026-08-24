@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import * as Sentry from '@sentry/react';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { getConversation, streamAgentChat } from './api/agentApi';
 import { AgentHttpError } from './api/agentStream';
@@ -146,6 +147,17 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
             patchMessage(assistantId, { streaming: false });
           } else {
             const limited = err instanceof AgentHttpError && err.status === 429;
+            // Report only what isn't a designed outcome. The AbortError branch above is
+            // the user pressing stop; 429 is the daily cap, 401 an expired token, 503
+            // the agent being switched off. Reporting those recreates exactly the noise
+            // the abort branch exists to prevent. The SSE 'error' frame is likewise not
+            // reported here — the backend captures that failure with the real upstream
+            // stack, so a second event here would carry no information.
+            const expected =
+              err instanceof AgentHttpError && [401, 429, 503].includes(err.status);
+            if (!expected) {
+              Sentry.captureException(err, { tags: { feature: 'agent_chat' } });
+            }
             patchMessage(assistantId, {
               streaming: false,
               error: true,
