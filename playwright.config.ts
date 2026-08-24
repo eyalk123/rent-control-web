@@ -36,6 +36,11 @@ export default defineConfig({
     },
   ],
   // Boot Vite in `test` mode so it loads .env.test (VITE_USE_MOCK_API + VITE_E2E_AUTH_BYPASS).
+  // Routes are lazy-loaded chunks served by a dev server shared across all workers, so
+  // the first assertion after a navigation can legitimately take longer than the 5s
+  // default when the suite runs fully parallel. This buys headroom without masking a
+  // real hang — the 30s test timeout still applies.
+  expect: { timeout: 10_000 },
   webServer: {
     command: `npx vite --mode test --port ${PORT} --strictPort`,
     url: BASE_URL,

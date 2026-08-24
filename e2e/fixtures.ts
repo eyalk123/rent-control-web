@@ -43,3 +43,19 @@ export const ROUTE_ERROR_HEADING = 'Something went wrong';
 export async function expectNoRouteError(page: Page) {
   await expect(page.getByText(ROUTE_ERROR_HEADING)).toHaveCount(0);
 }
+
+/**
+ * Wait until a protected route has actually rendered.
+ *
+ * Replaces `waitForLoadState('networkidle')`, which Playwright itself discourages and
+ * which is actively wrong here: routes are lazy-loaded chunks and the dev server holds
+ * an open HMR socket, so "no network for 500ms" is not a signal that the page is ready
+ * — under parallel load it would hang until the 30s test timeout.
+ *
+ * These two conditions are the real thing being waited for: the app shell is mounted,
+ * and no Suspense/loading spinner is left on screen.
+ */
+export async function waitForAppReady(page: Page) {
+  await expect(page.locator('main')).toBeVisible();
+  await expect(page.locator('.animate-spin')).toHaveCount(0);
+}

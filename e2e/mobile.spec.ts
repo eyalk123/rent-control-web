@@ -1,4 +1,4 @@
-import { test, expect, expectNoRouteError } from './fixtures';
+import { test, expect, expectNoRouteError, waitForAppReady } from './fixtures';
 import type { Page } from '@playwright/test';
 
 /**
@@ -71,7 +71,7 @@ test.describe('mobile — layout integrity at 390px', () => {
   for (const route of ROUTES) {
     test(`${route} has no horizontal overflow and no crushed columns`, async ({ page, pageErrors }) => {
       await page.goto(route);
-      await page.waitForLoadState('networkidle');
+      await waitForAppReady(page);
       await expectNoRouteError(page);
 
       const { doc, viewport } = await horizontalOverflow(page);
@@ -90,7 +90,7 @@ test.describe('mobile — layout integrity at 390px', () => {
 test.describe('mobile — navigation', () => {
   test('the Home tab is tappable and not covered by the accessibility button', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     // The FAB used to sit at z-50 directly on top of the Home tab, so a tap at the
     // tab's centre hit the FAB instead. Hit-test the centre point.
@@ -110,7 +110,7 @@ test.describe('mobile — navigation', () => {
   test('Reports and Suppliers are reachable from the bottom bar', async ({ page }) => {
     // Both used to have no mobile navigation path at all.
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     await page.getByRole('button', { name: 'More', exact: true }).click();
     const sheet = page.getByRole('dialog');
@@ -125,7 +125,7 @@ test.describe('mobile — navigation', () => {
 
   test('the search trigger fits inside the top bar', async ({ page }) => {
     await page.goto('/home');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     // The full placeholder wrapped to three lines and spilled out of a 36px-tall button.
     const overflow = await page.evaluate(() => {
@@ -145,30 +145,39 @@ test.describe('mobile — drawers', () => {
   test('the form drawer footer is not covered by the accessibility button', async ({ page }) => {
     // The FAB overlapped the pinned footer, clipping "Cancel" to "…cel".
     await page.goto('/properties?new=true');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
     const cancel = dialog.getByRole('button', { name: 'Cancel' });
-    const box = await cancel.boundingBox();
-    expect(box).not.toBeNull();
+    await expect(cancel).toBeVisible();
 
-    const hit = await page.evaluate(
-      ({ x, y }) => {
-        const el = document.elementFromPoint(x, y);
-        return el?.closest('button')?.textContent?.trim() ?? null;
-      },
-      { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 },
-    );
-    expect(hit, 'the drawer Cancel button is covered').toBe('Cancel');
+    // Measure and hit-test inside one evaluate, and poll it: the drawer slides in, so a
+    // box read in one call and probed in the next can be stale by the time it is used.
+    // Polling still fails if the FAB genuinely covers the button — that never settles.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const btn = Array.from(document.querySelectorAll('[role="dialog"] button')).find(
+              (b) => b.textContent?.trim() === 'Cancel',
+            );
+            if (!btn) return null;
+            const r = btn.getBoundingClientRect();
+            const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            return el?.closest('button')?.textContent?.trim() ?? null;
+          }),
+        { message: 'the drawer Cancel button is covered' },
+      )
+      .toBe('Cancel');
   });
 });
 
 test.describe('mobile — typography', () => {
   test('no visible text renders below 11px', async ({ page }) => {
     await page.goto('/reports/income-expense');
-    await page.waitForLoadState('networkidle');
+    await waitForAppReady(page);
 
     const smallest = await page.evaluate(() => {
       const visible = (el: Element) => {
