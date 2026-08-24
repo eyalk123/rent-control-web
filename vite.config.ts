@@ -21,6 +21,10 @@ export default defineConfig({
             org: process.env.SENTRY_ORG,
             project: process.env.SENTRY_PROJECT,
             authToken: sentryAuthToken,
+            // The org is EU-hosted (the DSN points at ingest.de.sentry.io). sentry-cli
+            // defaults to the US instance, where these credentials do not resolve, so
+            // the upload has to be aimed explicitly or it fails at build time.
+            url: 'https://de.sentry.io/',
             telemetry: false,
             release: { name: process.env.RAILWAY_GIT_COMMIT_SHA },
             sourcemaps: {
