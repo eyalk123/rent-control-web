@@ -22,6 +22,9 @@ import { fmtDate, toISODate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { RentChangeField } from '@/shared/components/lease/RentChangeField';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import { LeaseYearRow } from '@/shared/components/lease/LeaseYearRow';
 
 interface Props {
@@ -163,6 +166,21 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     amountsKey,
   ]);
 
+  // The lease tours are requested from here rather than from the drawer because this is
+  // what mounts on step two and it owns every anchor they point at. Asking from the drawer
+  // would ask while the user is still on step one, find nothing mounted, and defer a tour
+  // that was moments from being showable.
+  const termAnchorRef = useTourAnchor(ANCHORS.leaseTermBuilder);
+  const baseRentAnchorRef = useTourAnchor(ANCHORS.leaseBaseRent);
+  const yearRowsAnchorRef = useTourAnchor(ANCHORS.leaseYearRows);
+
+  useTour('lease-form');
+  // Both elaborations are gated on the mode, so exactly one of these can ever open, and
+  // only once the user has actually chosen it. Selecting a mode changes `rentMode`, which
+  // re-runs the request — that is the whole trigger.
+  useTour('cpi-mode', { rentMode: escMode });
+  useTour('custom-mode', { rentMode: escMode });
+
   /** Rows in the numeric model, for deriving which years render as projections. */
   const modelRows = toModel(leaseYears);
 
@@ -179,7 +197,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-4">
+      <div ref={termAnchorRef} className="flex flex-wrap gap-4">
         <Controller
           control={control}
           name="contractTermYears"
@@ -241,21 +259,23 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
         />
       </div>
 
-      <Controller
-        control={control}
-        name="baseRent"
-        render={({ field, fieldState }) => (
-          <FormInput
-            label={t('renter.firstYearRent')}
-            type="number"
-            value={field.value ?? ''}
-            onChange={field.onChange}
-            onBlur={field.onBlur}
-            name={field.name}
-            error={fieldState.error?.message}
-          />
-        )}
-      />
+      <div ref={baseRentAnchorRef}>
+        <Controller
+          control={control}
+          name="baseRent"
+          render={({ field, fieldState }) => (
+            <FormInput
+              label={t('renter.firstYearRent')}
+              type="number"
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+      </div>
 
       <Controller
         control={control}
@@ -282,7 +302,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
       />
 
       {leaseYears.length > 0 ? (
-        <div>
+        <div ref={yearRowsAnchorRef}>
           <div className="h-px my-1 bg-[var(--color-outline)]" />
           <p className="text-sm font-medium mb-2 text-[var(--color-text-primary)]">
             {t('renter.leaseTimeline')}

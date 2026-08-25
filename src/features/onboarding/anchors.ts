@@ -39,7 +39,7 @@ export const ANCHORS = {
   leaseRentChangeField: 'leaseForm.rentChangeField', // -> RentChangeField.tsx
   leaseBaseRent: 'leaseForm.baseRent',
   leaseYearRows: 'leaseForm.yearRows', // -> LeaseYearRow.tsx
-  leaseCpiBase: 'leaseForm.cpiBase', // -> EscalationValueField.tsx
+  leaseCpiBase: 'leaseForm.cpiBase', // -> RentChangeField.tsx, the CPI explainer
 
   // Extend lease — src/features/renters/ (extend drawer)
   extendYearsStepper: 'extendLease.yearsStepper',

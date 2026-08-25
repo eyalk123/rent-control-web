@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
 import type { RentEscalationMode } from '@/shared/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface Props {
   /** Caption above the toggle — the two callers word it differently (whole lease vs. new years). */
@@ -38,6 +40,11 @@ export function RentChangeField({
   className = '',
 }: Props) {
   const { t } = useTranslation();
+  // The lease-form tour seeds CPI and Custom from this control — neither mode is guessable
+  // from its label alone. The lease-extension drawer renders this component too, so both
+  // instances claim these keys; the registry resolves to whichever one is on screen.
+  const anchorRef = useTourAnchor(ANCHORS.leaseRentChangeField);
+  const cpiAnchorRef = useTourAnchor(ANCHORS.leaseCpiBase);
 
   const segments: { value: RentEscalationMode; label: string }[] = RENT_ESCALATION_MODES.map((m) => ({
     value: m,
@@ -53,12 +60,17 @@ export function RentChangeField({
   }));
 
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`.trim()}>
+    <div ref={anchorRef} className={`flex flex-col gap-1.5 ${className}`.trim()}>
       <span className="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
       <SegToggle value={mode} onChange={onModeChange} options={segments} />
 
+      {/* The CPI elaboration opens here. Picking CPI replaces the value field with this
+          note, so the note is the only thing on screen for the tour to point at. */}
       {mode === 'cpi' && (
-        <p className="text-[13px] leading-snug mt-1.5 text-[var(--color-text-secondary)]">
+        <p
+          ref={cpiAnchorRef}
+          className="text-[13px] leading-snug mt-1.5 text-[var(--color-text-secondary)]"
+        >
           {t('renter.rentChangeCpiNote')}
         </p>
       )}

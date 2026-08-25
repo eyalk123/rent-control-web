@@ -31,6 +31,7 @@ import { useLocation } from 'react-router-dom';
 import { useAnchorRegistry } from './AnchorRegistry';
 import { useTourProgress } from './queries';
 import { TOURS } from './registry';
+import { TOURS_ENABLED } from './flags';
 import { useGates, type GateInputs } from './useGates';
 import type { SeedId, TourDefinition, TourId, TourStep } from './types';
 
@@ -73,7 +74,10 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   const declined = useRef(new Set<TourId>());
   const openingRef = useRef<TourId | null>(null);
 
-  const canRun = progress.ready && !progress.toursDisabled;
+  // TOURS_ENABLED is the master switch (see flags.ts). It is checked here as well as
+  // on the query because this is the single place a tour can be opened from, so one
+  // false here is a hard guarantee that nothing appears.
+  const canRun = TOURS_ENABLED && progress.ready && !progress.toursDisabled;
 
   /** Waits for the anchors a tour needs, then opens it. */
   const openWhenAnchored = useCallback(

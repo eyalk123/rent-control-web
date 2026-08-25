@@ -37,8 +37,13 @@ Sentry (prod only). Backend: FastAPI.
     so both platforms share tour and seed IDs, `AnchorRegistry` lets a component claim an
     anchor key, `TourController` decides which tour runs, and `TourOverlay` draws it with a
     Radix Popover. Progress is stored per account (`/users/me/tour-state`), so a tour seen
-    on the phone does not reappear here. Suppressed under Playwright unless a spec calls
-    `enableTours` — see `e2e/onboarding.spec.ts`.
+    on the phone does not reappear here. **The content is unfinished, so `flags.ts` keeps
+    the whole feature off by default: on under `npm run dev`, off in every build unless
+    `VITE_ONBOARDING_TOURS=on` (forwarded by the Dockerfile, so production is switched on
+    with a Railway variable rather than a code change). `rentControlTours(true)` in the
+    browser console is a per-browser override that outranks both and works against a
+    deployed build.** Playwright is off by default too; `enableTours` uses that same
+    override — see `e2e/onboarding.spec.ts`.
   - `agent/` is the "Ask Rent Control" assistant: a `Drawer` (`PortfolioChatPanel`) mounted
     once in `AppShell` and opened from `TopBar`, streaming SSE from `POST /agent/chat` via
     `api/agentStream.ts` (plain `fetch`, not Axios — Axios can't stream). Read-only: it

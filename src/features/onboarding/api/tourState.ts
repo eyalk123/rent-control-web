@@ -1,5 +1,6 @@
 import apiClient from '@/core/api/client';
 import { USE_MOCK_API } from '@/core/api/mock';
+import { TOURS_ENABLED } from '../flags';
 import type { SeedId, TourId } from '../types';
 
 /**
@@ -35,30 +36,12 @@ function fromDto(dto: TourStateDto): TourState {
   };
 }
 
-/**
- * Under Playwright, tours are off unless a spec asks for them.
- *
- * Not squeamishness about testing the feature — `e2e/onboarding.spec.ts` opts in and
- * drives the whole thing. It is that the first-run tour is a modal overlay on `/home`,
- * so leaving it armed would put a click-blocking scrim in front of every unrelated spec
- * in the suite and couple all of them to onboarding copy. The opt-in is a localStorage
- * key so a spec can set it in `addInitScript`, before any app code runs.
- */
-const E2E = import.meta.env.VITE_E2E_AUTH_BYPASS === 'true';
-export const E2E_TOURS_KEY = 'onboarding.e2eTours';
-
-function e2eSuppressed(): boolean {
-  if (!E2E) return false;
-  try {
-    return localStorage.getItem(E2E_TOURS_KEY) !== 'on';
-  } catch {
-    return true;
-  }
-}
-
 /** Mock mode has no server, and an offline UI session should simply see no tours. */
 export async function getTourState(): Promise<TourState> {
-  if (e2eSuppressed()) return { ...EMPTY_TOUR_STATE, toursDisabled: true };
+  // Belt and braces: the query is not enabled when tours are off, so this should be
+  // unreachable. Answering "disabled" rather than throwing means any future caller that
+  // forgets the flag still gets the safe answer instead of a live tour.
+  if (!TOURS_ENABLED) return { ...EMPTY_TOUR_STATE, toursDisabled: true };
   if (USE_MOCK_API) return EMPTY_TOUR_STATE;
   const response = await apiClient.get<TourStateDto>('/users/me/tour-state');
   return fromDto(response.data);

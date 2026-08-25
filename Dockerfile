@@ -14,6 +14,9 @@ ARG VITE_FIREBASE_PROJECT_ID
 ARG VITE_FIREBASE_STORAGE_BUCKET
 ARG VITE_FIREBASE_APP_ID
 ARG VITE_SENTRY_DSN
+# Guided onboarding tours. Unset (the default) means off in any build; set it to `on`
+# as a Railway service variable to turn them on without touching code.
+ARG VITE_ONBOARDING_TOURS
 
 # Source-map upload to Sentry. Build-time only and deliberately NOT VITE_-prefixed, so
 # none of these is ever inlined into the bundle. Omit the token and the upload is
@@ -29,7 +32,8 @@ ENV VITE_API_URL=$VITE_API_URL \
     VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID \
     VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET \
     VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID \
-    VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+    VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
+    VITE_ONBOARDING_TOURS=$VITE_ONBOARDING_TOURS
 
 COPY package.json package-lock.json ./
 RUN npm ci

@@ -7,6 +7,7 @@ import {
   type TourState,
   type TourStatePatch,
 } from './api/tourState';
+import { TOURS_ENABLED } from './flags';
 import type { SeedId, TourId } from './types';
 
 export const tourStateKeys = {
@@ -25,6 +26,10 @@ export function useTourState() {
   const query = useQuery({
     queryKey: tourStateKeys.all,
     queryFn: getTourState,
+    // With the master switch off this never runs, so a build with tours disabled makes
+    // no onboarding request at all. `ready` then stays false, which is itself enough to
+    // keep every tour shut.
+    enabled: TOURS_ENABLED,
     staleTime: 1000 * 60 * 30,
     gcTime: 1000 * 60 * 60,
     retry: 1,
