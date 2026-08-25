@@ -45,6 +45,23 @@ export async function expectNoRouteError(page: Page) {
 }
 
 /**
+ * Arm the onboarding tours for one spec.
+ *
+ * They are suppressed for the rest of the suite (see `features/onboarding/api/tourState`)
+ * because the first-run tour is a click-blocking overlay on `/home`. Must be called
+ * before the first `goto`, since it runs as an init script.
+ */
+export async function enableTours(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('onboarding.e2eTours', 'on');
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
+/**
  * Wait until a protected route has actually rendered.
  *
  * Replaces `waitForLoadState('networkidle')`, which Playwright itself discourages and

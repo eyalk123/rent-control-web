@@ -3,11 +3,43 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MoreHorizontal } from 'lucide-react';
 import { mobileNavItems, mobileMoreItems } from './navConfig';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import type { NavItem } from './navConfig';
 
 const tabClass = (isActive: boolean) =>
   `flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-medium transition-colors ${
     isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'
   }`;
+
+/**
+ * One bottom-bar destination.
+ *
+ * Split out of the map purely so it can register a tour anchor: the sidebar variants and
+ * this bar all claim the same anchor keys, and below the `lg` breakpoint this bar is the
+ * only one the user can actually see. Without it the first-run tour has nothing to point
+ * at on a phone-width browser and quietly never opens.
+ */
+function BottomTab({ item }: { item: NavItem }) {
+  const { t } = useTranslation();
+  const anchorRef = useTourAnchor(item.anchor ?? '');
+  return (
+    <NavLink
+      ref={item.anchor ? anchorRef : undefined}
+      to={item.path}
+      end={item.path === '/home'}
+      className={({ isActive }) => tabClass(isActive)}
+    >
+      {({ isActive }) => (
+        <>
+          <span className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${isActive ? 'bg-[var(--color-primary)]/10' : ''}`}>
+            <item.icon size={20} strokeWidth={isActive ? 2 : 1.75} />
+          </span>
+          <span>{t(item.labelKey)}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export function MobileBottomBar() {
   const { t } = useTranslation();
@@ -78,21 +110,7 @@ export function MobileBottomBar() {
       >
         <div className="flex">
           {mobileNavItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/home'}
-              className={({ isActive }) => tabClass(isActive)}
-            >
-              {({ isActive }) => (
-                <>
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${isActive ? 'bg-[var(--color-primary)]/10' : ''}`}>
-                    <item.icon size={20} strokeWidth={isActive ? 2 : 1.75} />
-                  </span>
-                  <span>{t(item.labelKey)}</span>
-                </>
-              )}
-            </NavLink>
+            <BottomTab key={item.path} item={item} />
           ))}
 
           <button

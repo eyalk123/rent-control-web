@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   EMPTY_TOUR_STATE,
@@ -6,6 +7,7 @@ import {
   type TourState,
   type TourStatePatch,
 } from './api/tourState';
+import type { SeedId, TourId } from './types';
 
 export const tourStateKeys = {
   all: ['tour-state'] as const,
@@ -76,4 +78,37 @@ export function useRecordTourProgress() {
       if (server) qc.setQueryData(tourStateKeys.all, server);
     },
   });
+}
+
+/**
+ * The shape the tour controller actually wants: "may a tour run", "has this one run",
+ * and one call to record a finished tour together with every seed it displayed.
+ *
+ * Mobile debounces those marks because they arrive as a burst of separate calls; here
+ * the controller already knows the whole set at the moment a tour ends, so it is one
+ * patch and needs no timer.
+ */
+export function useTourProgress() {
+  const { state, ready } = useTourState();
+  const record = useRecordTourProgress();
+  const mutate = record.mutate;
+
+  const completeTour = useCallback(
+    (tourId: TourId, seedsShown: SeedId[]) => {
+      mutate({ toursSeen: [tourId], seedsShown });
+    },
+    [mutate],
+  );
+
+  return useMemo(
+    () => ({
+      /** Until this is true, no tour may run — better silent than repeated. */
+      ready,
+      toursDisabled: state.toursDisabled,
+      hasSeenTour: (id: TourId) => Boolean(state.toursSeen[id]),
+      hasShownSeed: (id: SeedId) => Boolean(state.seedsShown[id]),
+      completeTour,
+    }),
+    [ready, state, completeTour],
+  );
 }

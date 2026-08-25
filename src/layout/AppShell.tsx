@@ -13,6 +13,8 @@ import { ScanProvider } from '@/features/document-scan/ScanContext';
 import { ScanSurfaces } from '@/features/document-scan/ScanSurfaces';
 import { ChatPanelProvider } from '@/features/agent/PortfolioChatContext';
 import { AnchorRegistryProvider } from '@/features/onboarding/AnchorRegistry';
+import { TourControllerProvider } from '@/features/onboarding/TourController';
+import { TourOverlay } from '@/features/onboarding/TourOverlay';
 import { PortfolioChatPanel } from '@/features/agent/components/PortfolioChatPanel';
 
 function useDocumentTitle() {
@@ -42,6 +44,7 @@ export function AppShell() {
 
   return (
     <AnchorRegistryProvider>
+    <TourControllerProvider>
     <AlertsPanelProvider>
       <ChatPanelProvider>
         <ScanProvider>
@@ -65,10 +68,13 @@ export function AppShell() {
           <PortfolioChatPanel />
           {/* App-global scan drawers + floating "active scan" pill. */}
           <ScanSurfaces />
+          {/* Onboarding. Last so its portal sits above the drawers it may point at. */}
+          <TourOverlay />
         </div>
         </ScanProvider>
       </ChatPanelProvider>
     </AlertsPanelProvider>
+    </TourControllerProvider>
     </AnchorRegistryProvider>
   );
 }

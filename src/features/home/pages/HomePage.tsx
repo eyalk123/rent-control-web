@@ -8,9 +8,14 @@ import { QuickActions } from '../components/QuickActions';
 import { NeedsAttentionSection } from '../components/NeedsAttentionSection';
 import { PortfolioOccupancy } from '../components/PortfolioOccupancy';
 import { RecentTransactions } from '../components/RecentTransactions';
+import { useTour } from '@/features/onboarding/TourController';
 
 export function HomePage() {
   const navigate = useNavigate();
+
+  // The one orientation tour. Its gate is `always`, so this is the first thing a new
+  // account sees; every other tour waits for the page it explains to have content.
+  useTour('first-run');
 
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
   const { data: properties = [], isLoading: propsLoading } = useProperties();

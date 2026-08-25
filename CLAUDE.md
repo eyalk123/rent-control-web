@@ -28,9 +28,17 @@ Sentry (prod only). Backend: FastAPI.
   auto-sign-out, `mock.ts`), `auth/` (Firebase, `AuthContext`, `AuthTokenSync`,
   `ProtectedRoute`), `i18n/`, `theme/`, `monitoring/` (Sentry).
 - `src/features/`: feature slices (home, properties, renters, transactions, suppliers,
-  reports, notifications, settings, auth, legal, alerts, document-scan, agent). Each
+  reports, notifications, settings, auth, legal, alerts, document-scan, agent,
+  onboarding). Each
   typically has `api/`, `components/`, `pages/`, `queries.ts` (React Query hooks), and
   `validation/` or `schemas/`.
+  - `onboarding/` is the guided tour. `registry.ts` holds the tour/step structure (copy
+    lives in i18n under `onboarding.*`), `types.ts` is byte-identical to the mobile repo's
+    so both platforms share tour and seed IDs, `AnchorRegistry` lets a component claim an
+    anchor key, `TourController` decides which tour runs, and `TourOverlay` draws it with a
+    Radix Popover. Progress is stored per account (`/users/me/tour-state`), so a tour seen
+    on the phone does not reappear here. Suppressed under Playwright unless a spec calls
+    `enableTours` — see `e2e/onboarding.spec.ts`.
   - `agent/` is the "Ask Rent Control" assistant: a `Drawer` (`PortfolioChatPanel`) mounted
     once in `AppShell` and opened from `TopBar`, streaming SSE from `POST /agent/chat` via
     `api/agentStream.ts` (plain `fetch`, not Axios — Axios can't stream). Read-only: it
@@ -40,7 +48,10 @@ Sentry (prod only). Backend: FastAPI.
   `accessibility/`, `constants/`.
 - `src/layout/`: app chrome — `AppShell`, `Sidebar`, `TopBar`, `MobileBottomBar`,
   `CommandPalette`, `navConfig.ts`. `AppShell` is where every app-global provider and
-  overlay is mounted (alerts panel, scan surfaces, chat panel, transaction drawer).
+  overlay is mounted (alerts panel, scan surfaces, chat panel, transaction drawer,
+  onboarding tour). Note that all three navigation variants — wide sidebar, icon sidebar,
+  bottom bar — are in the DOM at every width and only hidden by breakpoint classes, so
+  anything that measures a nav item must resolve to the visible one.
 
 **Conventions:**
 
