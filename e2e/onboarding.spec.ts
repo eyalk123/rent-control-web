@@ -26,31 +26,42 @@ test.describe('onboarding — first run', () => {
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
     await expect(card.getByText('Your dashboard')).toBeVisible();
-    // Five because the mock reports the assistant enabled, so the optional launcher step
-    // is kept. With the assistant off it is dropped and this tour is four steps — that is
-    // the whole point of `optional`, and why the count is read rather than assumed.
-    await expect(card.getByText('1 of 5')).toBeVisible();
-
-    // The seed: a feature named where the user cannot see it, one tier below the step's
-    // own copy. Showing it must not consume the tour it advertises.
-    await expect(card.getByText(/record the payment or message the renter/i)).toBeVisible();
+    // Eight, and every one of them is conditional on something, which is why the count is
+    // read rather than assumed:
+    //   - Suppliers and Reports are sidebar-only, so they survive at this viewport (1280)
+    //     and are dropped below `lg`, where the bottom bar hides them behind "More";
+    //   - the assistant step survives because the mock reports the assistant enabled;
+    //   - "start with one property" is *gone*, because the mock account has properties.
+    //     That is the ninth step, and it is the one an empty account sees instead.
+    await expect(card.getByText('1 of 8')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Your portfolio')).toBeVisible();
+    await expect(card.getByText('Your properties')).toBeVisible();
+    // The seed: a feature named where the user cannot see it, one tier below the step's
+    // own copy. Showing it must not consume the tour it advertises.
+    await expect(card.getByText(/scan it and we'll read it/i)).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Your renters')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Every shekel')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Ask anything')).toBeVisible();
+    await expect(card.getByText('Suppliers')).toBeVisible();
 
-    // The last step has no anchor — a statement about the product, centred, no cutout.
     await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Start with one property')).toBeVisible();
-    await expect(card.getByText('5 of 5')).toBeVisible();
+    await expect(card.getByText('Reports')).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('The bell')).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Ask anything')).toBeVisible();
+    await expect(card.getByText('8 of 8')).toBeVisible();
 
     await card.getByRole('button', { name: 'Got it' }).click();
-    await expect(page.getByText('Start with one property')).toBeHidden();
+    await expect(page.getByText('Ask anything')).toBeHidden();
 
     // Leaving and coming back must not replay it. There is no server in this mode, so
     // this also covers the case where the write is never acknowledged.
@@ -62,6 +73,40 @@ test.describe('onboarding — first run', () => {
     await expect(page).toHaveURL(/\/home/);
     await waitForAppReady(page);
     await expect(page.getByText('Your dashboard')).toBeHidden();
+  });
+
+  /**
+   * The second half of the sweep, and the order it runs in — which is the whole point of
+   * this pass. It was reported as one tour in a nonsensical order (tabs, then the closing
+   * card, then needs-attention, then the bell, then Reports) because the two tours run
+   * back to back and nobody had read them as one sequence. They now go chrome first, then
+   * this screen top to bottom.
+   */
+  test('the home sweep follows first-run and walks the screen top to bottom', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/home');
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await card.getByRole('button', { name: 'Skip' }).click();
+
+    // No click of the user's in between: the home tour opens as soon as first-run closes.
+    await expect(card.getByText('The month so far')).toBeVisible();
+    await expect(card.getByText('1 of 5')).toBeVisible();
+
+    for (const title of ['Quick actions', 'Needs attention', 'Occupancy', 'Recent activity']) {
+      await card.getByRole('button', { name: 'Next' }).click();
+      await expect(card.getByText(title)).toBeVisible();
+    }
+    await expect(card.getByText('5 of 5')).toBeVisible();
+
+    // The alert-actions seed moved here from first-run's Home step, where it named a
+    // feature three screens away from anything it described.
+    await card.getByRole('button', { name: 'Back' }).click();
+    await card.getByRole('button', { name: 'Back' }).click();
+    await expect(card.getByText('Needs attention')).toBeVisible();
+    await expect(card.getByText(/record the payment or message the renter/i)).toBeVisible();
   });
 
   test('skipping counts as seen', async ({ page }) => {
@@ -134,7 +179,7 @@ test.describe('onboarding — first run', () => {
 
     // Same step, still open: not advanced, not skipped.
     await expect(card.getByText('Your dashboard')).toBeVisible();
-    await expect(card.getByText('1 of 5')).toBeVisible();
+    await expect(card.getByText('1 of 8')).toBeVisible();
   });
 
   test('the page still scrolls while a step is showing', async ({ page }) => {

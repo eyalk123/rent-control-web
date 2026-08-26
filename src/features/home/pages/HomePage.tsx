@@ -9,16 +9,21 @@ import { NeedsAttentionSection } from '../components/NeedsAttentionSection';
 import { PortfolioOccupancy } from '../components/PortfolioOccupancy';
 import { RecentTransactions } from '../components/RecentTransactions';
 import { useTour } from '@/features/onboarding/TourController';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 export function HomePage() {
   const navigate = useNavigate();
+  // The two summary cards are anchored as a pair, from here: they are one idea to the
+  // reader, and neither component owns the grid that holds them.
+  const summaryAnchorRef = useTourAnchor(ANCHORS.homeSummaryCards);
 
   // The one orientation tour. Its gate is `always`, so this is the first thing a new
   // account sees; every other tour waits for the page it explains to have content.
   useTour('first-run');
-  // Gated on hasRenters, so it waits until Home actually has something on it — the
-  // needs-attention block, the alerts bell and the Reports nav entry are all mounted from
-  // the first render, so there is nothing else to wait for.
+  // The second half of the sweep, gated on hasRenters so it waits until these cards have
+  // something on them. Every one is mounted from the first render, so there is nothing
+  // else to wait for; it opens as soon as first-run closes.
   useTour('home');
 
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
@@ -32,7 +37,7 @@ export function HomePage() {
     <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8 pb-10 space-y-8">
       <HomeGreeting />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div ref={summaryAnchorRef} className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <NetProfitCard currentBucket={currentBucket} loading={summaryLoading} />
         <CashFlowCard buckets={summary?.six_month_buckets} loading={summaryLoading} />
       </div>

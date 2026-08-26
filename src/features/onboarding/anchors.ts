@@ -18,17 +18,21 @@ export const ANCHORS = {
   // Sidebar — src/layout/
   navHome: 'nav.home',
   navProperties: 'nav.properties',
-  // RESERVED: plumbed on all three nav variants, but first-run spends its steps elsewhere.
   navRenters: 'nav.renters',
   navTransactions: 'nav.transactions',
-  // RESERVED: suppliers are introduced by a seed on the transactions tour, not a spotlight.
+  /** Sidebar only — the bottom bar hides Suppliers behind an unanchored "More" sheet, so
+   *  the step pointing here is `optional` and drops below `lg`. Same for Reports. */
   navSuppliers: 'nav.suppliers',
   navReports: 'nav.reports',
   // RESERVED: nothing points at Settings; the Phase 7 replay control lives inside it.
   navSettings: 'nav.settings',
 
-  // Home — src/features/home/
+  // Home — src/features/home/ (the home sweep walks these in render order)
+  homeSummaryCards: 'home.summaryCards', // net profit + cash flow, the pair at the top
+  homeQuickActions: 'home.quickActions',
   homeNeedsAttention: 'home.needsAttention',
+  homeOccupancy: 'home.occupancy',
+  homeRecent: 'home.recent',
   homeNotificationsBell: 'home.notificationsBell', // web-only bell panel
 
   // Properties

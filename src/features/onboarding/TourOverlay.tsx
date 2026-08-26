@@ -21,7 +21,7 @@
  * schema's `start`/`end` are direction-relative. That mapping is the whole of the RTL
  * work on this platform, and `avoidCollisions` makes it forgiving if it is ever wrong.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import * as Popover from '@radix-ui/react-popover';
 import { useTranslation } from 'react-i18next';
@@ -115,18 +115,32 @@ export function TourOverlay() {
    * What Radix actually positions against: the anchor's *visible slice*, not the element.
    *
    * Handing it the element directly means an over-tall anchor pushes the card off-screen
-   * entirely (see `clampToViewport`). Measuring on every call rather than caching keeps
-   * Radix's own reposition loop correct while the user scrolls.
+   * entirely (see `clampToViewport`).
+   *
+   * The identity has to change with the rect, and that is not a detail. Radix's own
+   * reposition loop only follows an anchor it can *find* scroll ancestors for, and a
+   * virtual anchor has no DOM node to walk up from — so it listens to the window, which
+   * in this app never scrolls (the only scroller is a div inside AppShell). Left stable,
+   * the card is positioned once and then stays where it was: on the last step of the home
+   * sweep, which scrolls the page to reach its anchor, it landed 200px below the fold with
+   * the spotlight correctly on target, because the spotlight follows this component's
+   * state and the card followed Radix's. Rebuilding the object whenever the measured rect
+   * changes is what makes Radix re-measure. `useMemo` on the values, not the object, so a
+   * render that changed nothing does not trigger a reposition loop.
    */
-  const virtualAnchorRef = useRef<{ getBoundingClientRect: () => DOMRect }>({
-    getBoundingClientRect: () => {
-      const el = anchorRef.current;
-      if (!el) return new DOMRect(0, 0, 0, 0);
-      const box = el.getBoundingClientRect();
-      const c = clampToViewport({ x: box.x, y: box.y, width: box.width, height: box.height });
-      return new DOMRect(c.x, c.y, c.width, c.height);
-    },
-  });
+  const virtualAnchor = useMemo(
+    () => ({
+      getBoundingClientRect: () => {
+        const el = anchorRef.current;
+        if (!el) return new DOMRect(0, 0, 0, 0);
+        const box = el.getBoundingClientRect();
+        const c = clampToViewport({ x: box.x, y: box.y, width: box.width, height: box.height });
+        return new DOMRect(c.x, c.y, c.width, c.height);
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rect?.x, rect?.y, rect?.width, rect?.height],
+  );
 
   // Follow the anchor for as long as the tour is on screen. One measurement was enough on
   // mobile, where a tour covers a static screen; here the page underneath can still move —
@@ -352,7 +366,7 @@ export function TourOverlay() {
 
       {anchored ? (
         <Popover.Root open modal={false}>
-          <Popover.Anchor virtualRef={virtualAnchorRef} />
+          <Popover.Anchor virtualRef={{ current: virtualAnchor }} />
           <Popover.Portal>
             <Popover.Content
               side={toSide(step.placement, isRtl)}

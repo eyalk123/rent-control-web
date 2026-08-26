@@ -6,9 +6,10 @@
  * navigation genuinely differs:
  *   - the assistant is a launcher in the top bar and a side panel, not a tab, so the
  *     `chat` tour fires when the panel opens rather than on a route;
- *   - Suppliers and Reports are top-level sidebar entries, not nested, so their seeds
- *     move from Transactions/Home onto the sidebar step;
- *   - alerts also live in a bell panel, which the Home tour points at;
+ *   - Suppliers and Reports are top-level sidebar entries, not nested, so each gets its
+ *     own step in the sweep instead of the seed it carries on mobile — and Reports is not
+ *     a card on Home here, which is why mobile's `home.reports` copy has no place on web;
+ *   - alerts also live in a bell panel, which gets a step of its own next to the assistant;
  *   - no `whatsapp-templates` tour, because web has no template editor.
  */
 import { ANCHORS } from './anchors';
@@ -23,31 +24,49 @@ export const TOURS = {
     gate: 'always',
     kind: 'orientation',
     steps: [
-      { id: 'home', anchor: ANCHORS.navHome, placement: 'end', seed: { id: 'alert-actions', opens: null } },
+      { id: 'home', anchor: ANCHORS.navHome, placement: 'end' },
       { id: 'portfolio', anchor: ANCHORS.navProperties, placement: 'end', seed: { id: 'scan-lease', opens: 'lease-scan' } },
-      { id: 'money', anchor: ANCHORS.navTransactions, placement: 'end', seed: { id: 'suppliers', opens: 'suppliers' } },
-      // Optional: the launcher only renders once the assistant's status request comes back
-      // enabled, and a required step whose element never mounts suppresses the whole tour.
-      // First-run is the last tour that may go missing, so this step gets dropped instead.
+      { id: 'renters', anchor: ANCHORS.navRenters, placement: 'end' },
+      { id: 'money', anchor: ANCHORS.navTransactions, placement: 'end' },
+      // Optional, both: Suppliers and Reports live only in the two sidebar variants. The
+      // bottom bar shows four tabs and puts the rest behind a "More" sheet whose items
+      // carry no anchor, so below `lg` neither resolves to a visible element — and a
+      // required step that never mounts suppresses the entire tour. They drop instead.
+      { id: 'suppliers', anchor: ANCHORS.navSuppliers, placement: 'end', optional: true },
+      { id: 'reports', anchor: ANCHORS.navReports, placement: 'end', optional: true },
+      { id: 'bell', anchor: ANCHORS.homeNotificationsBell, placement: 'bottom', seed: { id: 'notifications', opens: 'notifications' } },
+      // Optional for the same reason: the launcher only renders once the assistant's
+      // status request comes back enabled.
       { id: 'chat', anchor: ANCHORS.chatLauncher, placement: 'bottom', optional: true },
-      { id: 'start', anchor: null, placement: 'center' },
+      // The closing call to action, and only for someone who still needs it. An account
+      // with a portfolio drops it, which is also what puts the home sweep immediately
+      // after the assistant instead of after a card telling them to do what they did
+      // months ago.
+      { id: 'start', anchor: null, placement: 'center', skipWhen: 'hasProperties' },
     ],
   },
 
   /**
-   * Reports could be seeded from the sidebar on web, but that would put a fourth seed in
-   * first-run. It waits here with notifications instead — same shape as mobile, and both
-   * land once Home has data to make them mean something.
+   * The second half of the first-login sweep: first-run explains the chrome, this explains
+   * the screen you are standing on. It opens the moment first-run closes, so the two read
+   * as one sequence and are budgeted as one (see BUDGET.orientation in types.ts).
+   *
+   * The steps walk Home top to bottom, in the order HomePage renders them, because a tour
+   * that jumps around a screen is harder to follow than the screen itself. Everything here
+   * is mounted from the first render, so there is nothing to wait for beyond the gate —
+   * which is `hasRenters`, since every one of these cards is a shrug when empty.
    */
   home: {
     id: 'home',
     route: '/home',
     gate: 'hasRenters',
-    kind: 'page',
+    kind: 'orientation',
     steps: [
-      { id: 'attention', anchor: ANCHORS.homeNeedsAttention, placement: 'bottom' },
-      { id: 'bell', anchor: ANCHORS.homeNotificationsBell, placement: 'bottom', seed: { id: 'notifications', opens: 'notifications' } },
-      { id: 'reports', anchor: ANCHORS.navReports, placement: 'end', seed: { id: 'reports', opens: 'reports' } },
+      { id: 'summary', anchor: ANCHORS.homeSummaryCards, placement: 'bottom' },
+      { id: 'quickActions', anchor: ANCHORS.homeQuickActions, placement: 'bottom' },
+      { id: 'attention', anchor: ANCHORS.homeNeedsAttention, placement: 'bottom', seed: { id: 'alert-actions', opens: null } },
+      { id: 'occupancy', anchor: ANCHORS.homeOccupancy, placement: 'bottom' },
+      { id: 'recent', anchor: ANCHORS.homeRecent, placement: 'top' },
     ],
   },
 
@@ -205,12 +224,16 @@ export const TOURS = {
     ],
   },
 
+  /**
+   * No `arrivesFrom` on web: Suppliers has its own step in the sweep, so nobody arrives
+   * here off the `suppliers` seed and a callback line would answer a question that was
+   * never asked. Mobile keeps the seed — Suppliers is a button inside Transactions there.
+   */
   suppliers: {
     id: 'suppliers',
     route: '/suppliers',
     gate: 'always',
     kind: 'elaboration',
-    arrivesFrom: 'suppliers',
     steps: [
       { id: 'what', anchor: ANCHORS.suppliersList, placement: 'bottom' },
       { id: 'categories', anchor: ANCHORS.suppliersCategories, placement: 'bottom' },
@@ -249,12 +272,13 @@ export const TOURS = {
   // copy for it exists in i18n for the day the web app gains a template editor.
 
 
+  /** No `arrivesFrom`, for the same reason as `suppliers` above: Reports is a sidebar
+   *  destination with its own step here, not something a seed has to point at. */
   reports: {
     id: 'reports',
     route: '/reports',
     gate: 'always',
     kind: 'elaboration',
-    arrivesFrom: 'reports',
     steps: [
       { id: 'two', anchor: ANCHORS.reportsCards, placement: 'bottom' },
       { id: 'export', anchor: ANCHORS.reportsExport, placement: 'bottom' },

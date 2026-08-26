@@ -34,6 +34,38 @@ export interface GateInputs {
   rentMode?: string | null;
 }
 
+/**
+ * Whether a gate can be answered *at all* yet, as opposed to what the answer is.
+ *
+ * `useGates` folds "not loaded" into `false`, which is the safe direction for a tour: an
+ * unanswerable gate defers it. `skipWhen` inverts that — false means "keep the step" — so
+ * a tour opening before the properties query settles would show the closing "start with
+ * one property" card to someone with a full portfolio. The controller waits on this
+ * instead, within the same anchor deadline.
+ */
+export function useGateKnown() {
+  const { data: properties } = useQuery({ queryKey: propertyKeys.all, queryFn: skipToken });
+  const { data: renters } = useQuery({ queryKey: renterKeys.all, queryFn: skipToken });
+
+  return useCallback(
+    (gate: GateId): boolean => {
+      switch (gate) {
+        case 'hasProperties':
+          return properties !== undefined;
+        case 'hasRenters':
+        case 'hasTransactions':
+          return renters !== undefined;
+        case 'listHasThreeItems':
+          return properties !== undefined && renters !== undefined;
+        // `always` and the rent-mode gates read no server data — they are always answerable.
+        default:
+          return true;
+      }
+    },
+    [properties, renters],
+  );
+}
+
 export function useGates() {
   const { data: properties } = useQuery({ queryKey: propertyKeys.all, queryFn: skipToken });
   const { data: renters } = useQuery({ queryKey: renterKeys.all, queryFn: skipToken });

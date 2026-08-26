@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { formatPropertyAddress } from '@/shared/utils/propertyAddress';
 import type { Property } from '@/shared/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface Props {
   properties: Property[];
@@ -16,6 +18,7 @@ const MAX_SQUARES = 12;
 export function PortfolioOccupancy({ properties, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const anchorRef = useTourAnchor(ANCHORS.homeOccupancy);
 
   const occupiedCount = properties.filter((p) => p.hasRenters).length;
   const vacantCount = properties.length - occupiedCount;
@@ -31,7 +34,7 @@ export function PortfolioOccupancy({ properties, loading }: Props) {
         : 'var(--color-exp-fg)';
 
   return (
-    <div>
+    <div ref={anchorRef}>
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.portfolioOccupancy')}
       </p>

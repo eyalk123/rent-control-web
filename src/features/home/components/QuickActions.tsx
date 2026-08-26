@@ -1,5 +1,7 @@
 import { TrendingUp, TrendingDown, Users, Building2, Store } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface Props {
   onNavigate: (path: string) => void;
@@ -15,9 +17,10 @@ const ACTIONS = [
 
 export function QuickActions({ onNavigate }: Props) {
   const { t } = useTranslation();
+  const anchorRef = useTourAnchor(ANCHORS.homeQuickActions);
 
   return (
-    <div>
+    <div ref={anchorRef}>
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.quickActions')}
       </p>

@@ -103,6 +103,19 @@ export interface TourStep {
    * budget: it is a step someone might see.
    */
   optional?: boolean;
+  /**
+   * A step dropped once this gate passes — the mirror of `gate` on a whole tour.
+   *
+   * `optional` asks "is the element there?"; this asks "is this step still worth saying?".
+   * The closing "start with one property" card is the case it exists for: it has to be the
+   * last thing an empty account sees, and it is noise to an account with a portfolio
+   * already. Without it the step would either be misplaced for everyone or missing for the
+   * one person it is written for.
+   *
+   * Resolved exactly like `optional` — excluded from the anchor wait, dropped at open time —
+   * so the step counter stays truthful. It still counts against the budget.
+   */
+  skipWhen?: GateId;
 }
 
 export interface TourDefinition {
@@ -111,7 +124,10 @@ export interface TourDefinition {
   route: string;
   gate: GateId;
   /**
-   * orientation — the one first-run tour.
+   * orientation — the first-login sweep. Two tours, not one: the chrome (`first-run`,
+   *               gate `always`) and then the home screen itself (`home`, gated on there
+   *               being something on it). They run back to back on a populated account and
+   *               read as a single sequence, which is why they share one ceiling.
    * page        — fires on first meaningful entry to a screen.
    * elaboration — fires when the user acts on a seed or picks a mode.
    */
@@ -129,7 +145,11 @@ export const callbackKey = (seed: SeedId) => `onboarding.callbacks.${seed}` as c
 
 /** Step/seed ceilings. This is the rule that keeps the tour from re-becoming a firehose. */
 export const BUDGET = {
-  orientation: { steps: 5, seeds: 3 },
+  // Nine is the web chrome, which is what the sweep has to cover: six sidebar
+  // destinations, the two top-bar controls, and the closing card. It was five when the
+  // orientation tour was assumed to be one tour of its own — but the home sweep opens the
+  // instant it closes, so five capped a definition rather than an experience.
+  orientation: { steps: 9, seeds: 3 },
   page: { steps: 3, seeds: 2 },
   // A destination can seed nested children of its own: notification settings
   // seeds the rule editor and the WhatsApp templates that sit inside it.

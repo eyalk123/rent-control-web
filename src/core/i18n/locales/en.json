@@ -1189,16 +1189,28 @@
           "body": "Money in, money out, and anything that needs you this month."
         },
         "portfolio": {
-          "title": "Your portfolio",
-          "body": "Properties are the units. Renters are the people in them, and their leases."
+          "title": "Your properties",
+          "body": "Every unit you own or manage, one card each."
+        },
+        "renters": {
+          "title": "Your renters",
+          "body": "The people in those units, and the lease behind each one."
         },
         "money": {
           "title": "Every shekel",
           "body": "Rent collected and expenses paid, all recorded here."
         },
+        "suppliers": {
+          "title": "Suppliers",
+          "body": "Save the plumber or the management company once, then attach them to any expense."
+        },
         "reports": {
           "title": "Reports",
           "body": "Income against expenses for any period, plus a full expense log."
+        },
+        "bell": {
+          "title": "The bell",
+          "body": "Every alert, with read and unread state."
         },
         "chat": {
           "title": "Ask anything",
@@ -1210,21 +1222,25 @@
         }
       },
       "home": {
+        "summary": {
+          "title": "The month so far",
+          "body": "Profit and cash flow, recalculated with every transaction you record."
+        },
+        "quickActions": {
+          "title": "Quick actions",
+          "body": "Record rent, log an expense, add a property or a renter — all from here."
+        },
         "attention": {
           "title": "Needs attention",
           "body": "Rent that hasn't arrived, leases about to expire, and CPI changes — all in one place."
         },
-        "reports": {
-          "title": "Reports live here",
-          "body": "Not in the tab bar — this card is the way in."
+        "occupancy": {
+          "title": "Occupancy",
+          "body": "Which units are let and which are standing empty, at a glance."
         },
-        "bell": {
-          "title": "The bell",
-          "body": "Every alert, with read and unread state."
-        },
-        "notifications": {
-          "title": "Reminder settings",
-          "body": "Manage notifications sits here under Needs Attention — not behind the Settings gear."
+        "recent": {
+          "title": "Recent activity",
+          "body": "The last few transactions, with the full ledger one click away."
         }
       },
       "properties-list": {

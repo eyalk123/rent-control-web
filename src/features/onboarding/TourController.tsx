@@ -10,7 +10,9 @@
  *   2. tours are not disabled;
  *   3. this tour has not been seen;
  *   4. its gate passes — see useGates for why a failing gate defers rather than consumes;
- *   5. every anchored step it needs is actually mounted *and visible*.
+ *   5. every anchored step it needs is actually mounted *and visible*;
+ *   6. every `skipWhen` gate it carries can be answered, so a step is not kept or dropped
+ *      on a guess made before the lists have loaded.
  *
  * (5) carries more weight on web than it did on mobile. The chrome renders all three
  * navigation variants at once and hides two of them with breakpoint classes, and a lazy
@@ -32,7 +34,7 @@ import { useAnchorRegistry } from './AnchorRegistry';
 import { useTourProgress } from './queries';
 import { TOURS } from './registry';
 import { TOURS_ENABLED } from './flags';
-import { useGates, type GateInputs } from './useGates';
+import { useGates, useGateKnown, type GateInputs } from './useGates';
 import type { SeedId, TourDefinition, TourId, TourStep } from './types';
 
 /** How long to wait for a page's anchors to mount before giving up on this visit. */
@@ -67,7 +69,16 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   const registry = useAnchorRegistry();
   const progress = useTourProgress();
   const evaluateGate = useGates();
+  const isGateKnown = useGateKnown();
   const { pathname } = useLocation();
+  // The anchor wait polls from a closure created when the tour was requested, so reading
+  // the gates directly would freeze them at the values they had before the lists loaded —
+  // which is exactly the moment a `skipWhen` step needs an answer. Kept current on every
+  // render, the same way the anchor registry reads through a ref.
+  const gatesRef = useRef({ evaluateGate, isGateKnown });
+  useEffect(() => {
+    gatesRef.current = { evaluateGate, isGateKnown };
+  }, [evaluateGate, isGateKnown]);
   const [active, setActive] = useState<ActiveTour | null>(null);
   // Tours already considered and rejected this session, so a page that re-renders
   // constantly does not re-run the whole check each time.
@@ -82,23 +93,38 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   /** Waits for the anchors a tour needs, then opens it. */
   const openWhenAnchored = useCallback(
     (tour: TourDefinition, arrivedFrom: SeedId | null) => {
-      // Optional steps are excluded from the wait: their whole point is that the element
-      // may legitimately be absent, and waiting on one would suppress the entire tour.
-      const needed = tour.steps
-        .filter((s) => !s.optional)
-        .map((s) => s.anchor)
-        .filter((a): a is string => Boolean(a));
       const deadline = Date.now() + ANCHOR_WAIT_MS;
+      const conditional = tour.steps.filter((s) => s.skipWhen);
 
       const attempt = () => {
         // Bail if the wait was cancelled meanwhile — a navigation, or a sign-out.
         if (openingRef.current !== tour.id) return;
 
-        if (needed.every((key) => registry?.has(key))) {
+        const { evaluateGate: gate, isGateKnown: known } = gatesRef.current;
+
+        // A step whose `skipWhen` gate has passed is not part of this tour at all — the
+        // closing "start with one property" card once there is a portfolio. Resolved
+        // first, so it counts for neither the wait nor the step counter.
+        const live = tour.steps.filter((s) => !s.skipWhen || !gate(s.skipWhen));
+
+        // Optional steps are excluded from the wait: their whole point is that the element
+        // may legitimately be absent, and waiting on one would suppress the entire tour.
+        const needed = live
+          .filter((s) => !s.optional)
+          .map((s) => s.anchor)
+          .filter((a): a is string => Boolean(a));
+
+        // Hold while a conditional step's gate is still unanswerable, so the tour does not
+        // open against a guess. Past the deadline it opens anyway with the step kept,
+        // which is the right way to be wrong: a new account must not lose the one
+        // instruction written for it.
+        const ready = conditional.every((s) => known(s.skipWhen!)) || Date.now() >= deadline;
+
+        if (ready && needed.every((key) => registry?.has(key))) {
           // Resolve optional steps once, here: a step whose element is not on screen at
           // the moment the tour opens is dropped, so the step counter stays truthful
           // rather than promising a step that will never render.
-          const steps = tour.steps.filter(
+          const steps = live.filter(
             (s) => !s.optional || (s.anchor != null && Boolean(registry?.has(s.anchor))),
           );
           setActive({

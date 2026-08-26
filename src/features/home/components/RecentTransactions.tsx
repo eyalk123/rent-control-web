@@ -6,6 +6,8 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { fmtTxDate } from '@/shared/utils/txDate';
 import type { Transaction } from '@/shared/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface Props {
   transactions: Transaction[];
@@ -15,9 +17,10 @@ interface Props {
 export function RecentTransactions({ transactions, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const anchorRef = useTourAnchor(ANCHORS.homeRecent);
 
   return (
-    <div>
+    <div ref={anchorRef}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
           {t('home.recentTransactions')}
