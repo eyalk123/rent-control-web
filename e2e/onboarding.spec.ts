@@ -47,11 +47,13 @@ test.describe('onboarding — first run', () => {
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Every shekel')).toBeVisible();
 
-    await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Suppliers')).toBeVisible();
-
+    // Reports then Suppliers, which is the order the sidebar draws them — Reports closes
+    // the main group and Suppliers sits below the "Manage" divider.
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Reports')).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Suppliers')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('The bell')).toBeVisible();
@@ -91,15 +93,18 @@ test.describe('onboarding — first run', () => {
     await expect(card.getByText('Your dashboard')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
 
-    // No click of the user's in between: the home tour opens as soon as first-run closes.
-    await expect(card.getByText('The month so far')).toBeVisible();
-    await expect(card.getByText('1 of 5')).toBeVisible();
+    // No click of the user's in between: the home tour opens as soon as first-run closes,
+    // and it opens on a page-level step — centred, no spotlight — rather than dropping
+    // straight from a control in the top bar onto a figure halfway down the page.
+    await expect(card.getByText("What's on this screen")).toBeVisible();
+    await expect(card.getByText('1 of 6')).toBeVisible();
 
-    for (const title of ['Quick actions', 'Needs attention', 'Occupancy', 'Recent activity']) {
+    const blocks = ['The month so far', 'Quick actions', 'Needs attention', 'Occupancy', 'Recent activity'];
+    for (const title of blocks) {
       await card.getByRole('button', { name: 'Next' }).click();
       await expect(card.getByText(title)).toBeVisible();
     }
-    await expect(card.getByText('5 of 5')).toBeVisible();
+    await expect(card.getByText('6 of 6')).toBeVisible();
 
     // The alert-actions seed moved here from first-run's Home step, where it named a
     // feature three screens away from anything it described.

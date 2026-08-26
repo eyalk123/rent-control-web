@@ -1222,6 +1222,10 @@
         }
       },
       "home": {
+        "overview": {
+          "title": "What's on this screen",
+          "body": "Everything Home shows you, one block at a time — starting at the top."
+        },
         "summary": {
           "title": "The month so far",
           "body": "Profit and cash flow, recalculated with every transaction you record."

@@ -28,12 +28,16 @@ export const TOURS = {
       { id: 'portfolio', anchor: ANCHORS.navProperties, placement: 'end', seed: { id: 'scan-lease', opens: 'lease-scan' } },
       { id: 'renters', anchor: ANCHORS.navRenters, placement: 'end' },
       { id: 'money', anchor: ANCHORS.navTransactions, placement: 'end' },
-      // Optional, both: Suppliers and Reports live only in the two sidebar variants. The
-      // bottom bar shows four tabs and puts the rest behind a "More" sheet whose items
-      // carry no anchor, so below `lg` neither resolves to a visible element — and a
-      // required step that never mounts suppresses the entire tour. They drop instead.
-      { id: 'suppliers', anchor: ANCHORS.navSuppliers, placement: 'end', optional: true },
+      // Reports before Suppliers because that is the order the sidebar draws them: Reports
+      // closes the main group, Suppliers sits below the "Manage" divider (navConfig.ts).
+      // The other way round the spotlight jumps down past Reports and then back up to it.
+      //
+      // Optional, both: they live only in the two sidebar variants. The bottom bar shows
+      // four tabs and puts the rest behind a "More" sheet whose items carry no anchor, so
+      // below `lg` neither resolves to a visible element — and a required step that never
+      // mounts suppresses the entire tour. They drop instead.
       { id: 'reports', anchor: ANCHORS.navReports, placement: 'end', optional: true },
+      { id: 'suppliers', anchor: ANCHORS.navSuppliers, placement: 'end', optional: true },
       { id: 'bell', anchor: ANCHORS.homeNotificationsBell, placement: 'bottom', seed: { id: 'notifications', opens: 'notifications' } },
       // Optional for the same reason: the launcher only renders once the assistant's
       // status request comes back enabled.
@@ -62,6 +66,11 @@ export const TOURS = {
     gate: 'hasRenters',
     kind: 'orientation',
     steps: [
+      // A beat before the first spotlight. Without it the sweep goes from a control in the
+      // top bar straight to a figure halfway down the page, with nothing saying you have
+      // arrived somewhere. Centred and unanchored, so the full scrim makes it read as being
+      // about the page rather than any one part of it.
+      { id: 'overview', anchor: null, placement: 'center' },
       { id: 'summary', anchor: ANCHORS.homeSummaryCards, placement: 'bottom' },
       { id: 'quickActions', anchor: ANCHORS.homeQuickActions, placement: 'bottom' },
       { id: 'attention', anchor: ANCHORS.homeNeedsAttention, placement: 'bottom', seed: { id: 'alert-actions', opens: null } },
