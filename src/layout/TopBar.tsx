@@ -18,6 +18,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
   const { open: openChat } = useChatPanel();
   const { data: agentStatus } = useAgentStatus();
   const bellAnchorRef = useTourAnchor(ANCHORS.homeNotificationsBell);
+  const chatAnchorRef = useTourAnchor(ANCHORS.chatLauncher);
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -44,6 +45,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
       <div className="flex items-center gap-2">
         {agentStatus?.enabled && (
           <button
+            ref={chatAnchorRef}
             onClick={openChat}
             title={t('agent.launcher')}
             aria-label={t('agent.launcher')}

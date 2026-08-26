@@ -38,8 +38,8 @@ function hasCopy(locale: Locale, key: string): boolean {
 const tours = Object.values(TOURS) as TourDefinition[];
 
 test.describe('onboarding registry', () => {
-  // Budget, plus seeds that open a tour this platform does not define — web has no `chat`
-  // tour and no WhatsApp template editor, so a dangling `opens` is a live risk here.
+  // Budget, plus seeds that open a tour this platform does not define — web has no
+  // WhatsApp template editor, so a dangling `opens` is a live risk here.
   test('the registry satisfies its own structural rules', () => {
     expect(validateRegistry()).toEqual([]);
   });

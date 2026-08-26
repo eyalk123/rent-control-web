@@ -32,7 +32,17 @@ export const ANCHORS = {
   homeNotificationsBell: 'home.notificationsBell', // web-only bell panel
 
   // Properties
+  /**
+   * The FIRST item in the list, not the list itself — claimed by the first card in card
+   * view and the first row in table view. Only one of those is ever mounted, and the
+   * registry resolves visible-first, so a single key covers both without branching.
+   *
+   * It used to be a wrapper around the whole content region. With a few hundred
+   * properties that rect was thousands of pixels tall, which put the highlight and the
+   * card off-screen and left the step invisible. Point at one item, not the collection.
+   */
   propertiesList: 'properties.list',
+  propertiesSearch: 'properties.search',
   // RESERVED: the properties tour explains the cards, not the add control.
   propertiesAddButton: 'properties.addButton',
   propertyFormStepper: 'propertyForm.stepper', // -> shared/components/ui Stepper
@@ -95,6 +105,13 @@ export const ANCHORS = {
   // RESERVED: the summary drawer only opens after an extraction, so the lease-scan tour
   // (which opens on the picker) cannot point at it — see registry.ts.
   scanSummary: 'scan.summary',
+
+  // Assistant — src/layout/TopBar.tsx and src/features/agent/
+  /** The launcher in the top bar. Absent when the account has no assistant, which is why
+   *  the first-run step pointing at it is `optional` (see registry.ts). */
+  chatLauncher: 'chat.launcher',
+  /** The composer inside the panel. Same key string as mobile, so the vocabulary matches. */
+  chatInput: 'chat.input',
 } as const;
 
 export type AnchorKey = (typeof ANCHORS)[keyof typeof ANCHORS];

@@ -89,6 +89,20 @@ export interface TourStep {
   placement?: Placement;
   /** At most one seed per step; at most two per tour (see `assertBudget`). */
   seed?: TourSeed;
+  /**
+   * A step whose element may legitimately not be there.
+   *
+   * A tour normally waits for *every* anchored step before it opens, so one absent element
+   * silently suppresses the whole tour. That is right for a step the tour is about, and
+   * wrong for one pointing at a feature the account may not have — the assistant launcher
+   * only renders once its status request says it is enabled, and without this flag a slow
+   * or disabled assistant would stop first-run itself from ever running.
+   *
+   * An optional step is excluded from the anchor wait, and dropped from the tour if its
+   * element is not present at the moment the tour opens. It still counts against the
+   * budget: it is a step someone might see.
+   */
+  optional?: boolean;
 }
 
 export interface TourDefinition {

@@ -60,9 +60,11 @@ interface PropertyCardProps {
   isSelected: boolean;
   onToggle: (id: number) => void;
   onLongPress: (id: number) => void;
+  /** Set on the first card only, so the tour highlights one card rather than the grid. */
+  anchorRef?: (el: HTMLElement | null) => void;
 }
 
-function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPress }: PropertyCardProps) {
+function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPress, anchorRef }: PropertyCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const color = getPropertyColor(property.id);
@@ -80,6 +82,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
 
   return (
     <div
+      ref={anchorRef}
       role="button"
       tabIndex={0}
       onClick={activate}
@@ -268,6 +271,7 @@ export function PropertiesListPage() {
   // nothing to spotlight and the tour simply defers.
   useTour('properties-list');
   const listAnchorRef = useTourAnchor(ANCHORS.propertiesList);
+  const searchAnchorRef = useTourAnchor(ANCHORS.propertiesSearch);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
@@ -406,8 +410,10 @@ export function PropertiesListPage() {
         )}
       </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Filter bar. Anchored on the bar rather than the view toggle inside it: the toggle
+          lives in a `hidden lg:flex` wrapper, so below 1024px it is invisible and a tour
+          pointed at it would defer for ever. */}
+      <div ref={searchAnchorRef} className="flex flex-wrap items-center gap-2">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -433,9 +439,10 @@ export function PropertiesListPage() {
         </div>
       </div>
 
-      {/* Content. The anchor sits on a wrapper rather than the grid or the table, because
-          which of those renders depends on the view mode and the viewport. */}
-      <div ref={listAnchorRef}>
+      {/* Content. The tour anchor is on the first card / first row inside, not on this
+          wrapper: the wrapper's height is the whole list, which with a real portfolio is
+          far taller than the screen. */}
+      <div>
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
@@ -457,7 +464,7 @@ export function PropertiesListPage() {
         />
       ) : view === 'card' || isMobile ? (
         <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-          {filtered.map((p) => (
+          {filtered.map((p, i) => (
             <PropertyCard
               key={p.id}
               property={p}
@@ -465,6 +472,10 @@ export function PropertiesListPage() {
               isSelected={sel.selectedIds.has(p.id)}
               onToggle={sel.toggle}
               onLongPress={sel.enter}
+              // Only the first card claims the anchor. The table below claims the same key
+              // from its first row; only one of the two is ever mounted, and the registry
+              // resolves visible-first, so one key serves both views.
+              anchorRef={i === 0 ? listAnchorRef : undefined}
             />
           ))}
         </div>
@@ -479,6 +490,7 @@ export function PropertiesListPage() {
           someSelected={sel.someSelected}
           onToggle={sel.toggle}
           onToggleAll={sel.toggleAll}
+          firstRowRef={listAnchorRef}
         />
       )}
       </div>

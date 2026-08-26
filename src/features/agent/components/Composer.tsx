@@ -2,10 +2,18 @@ import { useState, type KeyboardEvent } from 'react';
 import { Send, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useChatPanel } from '../PortfolioChatContext';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 
 export function Composer() {
   const { t } = useTranslation();
   const { send, stop, status } = useChatPanel();
+  // Asked from here rather than from AppShell or the panel: the Drawer unmounts its
+  // children when closed, so this component exists exactly when the assistant is open —
+  // which is also the only time its anchor is on screen.
+  useTour('chat');
+  const anchorRef = useTourAnchor(ANCHORS.chatInput);
   const [text, setText] = useState('');
   const streaming = status === 'streaming';
 
@@ -24,7 +32,7 @@ export function Composer() {
   };
 
   return (
-    <div className="flex items-end gap-2">
+    <div ref={anchorRef} className="flex items-end gap-2">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

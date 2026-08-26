@@ -80,6 +80,11 @@ interface DataTableProps<T> {
   someSelected?: boolean;
   onToggle?: (id: number) => void;
   onToggleAll?: () => void;
+  /**
+   * Attached to the first row only. The onboarding tour points at one row rather than the
+   * table, whose height grows without bound and takes the highlight off-screen with it.
+   */
+  firstRowRef?: (el: HTMLElement | null) => void;
 }
 
 const TH_CLASS =
@@ -95,6 +100,7 @@ export function DataTable<T>({
   someSelected = false,
   onToggle,
   onToggleAll,
+  firstRowRef,
 }: DataTableProps<T>) {
   const { i18n } = useTranslation();
   const rows = table.getRowModel().rows;
@@ -202,6 +208,7 @@ export function DataTable<T>({
             return (
               <tr
                 key={row.id}
+                ref={i === 0 ? firstRowRef : undefined}
                 onClick={() => (isSelectMode ? onToggle?.(id) : onRowClick?.(row.original))}
                 className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
                 style={{

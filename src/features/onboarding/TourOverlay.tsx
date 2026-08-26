@@ -60,6 +60,35 @@ function sameRect(a: AnchorRect | null, b: AnchorRect | null): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
+/**
+ * The part of an anchor that is actually on screen.
+ *
+ * An anchor can be far taller than the viewport — a table of two hundred properties, a
+ * month-grouped transaction list — and using its raw rect breaks the step twice over. The
+ * cutout becomes larger than the screen, so the `9999px` shadow lands entirely outside it
+ * and nothing looks dimmed at all; and Radix positions the card against a box whose top
+ * and bottom are both off-screen. Its `shift()` only clamps the *main* axis, which for a
+ * bottom-placed card is horizontal, so nothing pulls the card back into view vertically
+ * and it is simply not on screen.
+ *
+ * Clamping to the intersection with the viewport fixes both: the highlight tracks the
+ * visible slice, and the card is placed against something that exists. It is a no-op for
+ * any anchor that already fits, which is nearly all of them. Mobile solves the same
+ * problem with its own clamp — see its TourOverlay.
+ */
+function clampToViewport(rect: AnchorRect): AnchorRect {
+  const top = Math.max(rect.y, 0);
+  const left = Math.max(rect.x, 0);
+  const bottom = Math.min(rect.y + rect.height, window.innerHeight);
+  const right = Math.min(rect.x + rect.width, window.innerWidth);
+  return {
+    x: left,
+    y: top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+  };
+}
+
 export function TourOverlay() {
   const controller = useTourController();
   const registry = useAnchorRegistry();
@@ -79,8 +108,25 @@ export function TourOverlay() {
   const step = controller?.step ?? null;
   const anchorKey = step?.anchor ?? null;
 
-  /** The anchor element, handed to Radix as a virtual reference. */
+  /** The live anchor element. */
   const anchorRef = useRef<HTMLElement | null>(null);
+
+  /**
+   * What Radix actually positions against: the anchor's *visible slice*, not the element.
+   *
+   * Handing it the element directly means an over-tall anchor pushes the card off-screen
+   * entirely (see `clampToViewport`). Measuring on every call rather than caching keeps
+   * Radix's own reposition loop correct while the user scrolls.
+   */
+  const virtualAnchorRef = useRef<{ getBoundingClientRect: () => DOMRect }>({
+    getBoundingClientRect: () => {
+      const el = anchorRef.current;
+      if (!el) return new DOMRect(0, 0, 0, 0);
+      const box = el.getBoundingClientRect();
+      const c = clampToViewport({ x: box.x, y: box.y, width: box.width, height: box.height });
+      return new DOMRect(c.x, c.y, c.width, c.height);
+    },
+  });
 
   // Follow the anchor for as long as the tour is on screen. One measurement was enough on
   // mobile, where a tour covers a static screen; here the page underneath can still move —
@@ -135,6 +181,56 @@ export function TourOverlay() {
     return () => document.removeEventListener('keydown', onKey);
   }, [active, handleSkip]);
 
+  /**
+   * Swallow every click outside the card, without blocking scrolling.
+   *
+   * Those two requirements pull against each other for a single full-screen backdrop: one
+   * that receives pointer events stops the page scrolling (the backdrop is fixed on
+   * `body`, and a wheel over it chains to `documentElement`, which is `overflow-hidden` —
+   * the real scroller is a container inside AppShell, so the event never reaches it),
+   * while one that ignores them lets clicks straight through to the app underneath.
+   *
+   * So they are separated: the backdrop ignores pointer events, and clicks are cancelled
+   * here instead. Capture on `document` runs before React's root listener, so this stops
+   * React `onClick` handlers on the page as well as native activation.
+   */
+  useEffect(() => {
+    if (!active) return;
+    const swallow = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[data-tour-card]')) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const events = ['pointerdown', 'mousedown', 'click'] as const;
+    events.forEach((type) => document.addEventListener(type, swallow, true));
+    return () => events.forEach((type) => document.removeEventListener(type, swallow, true));
+  }, [active]);
+
+  /**
+   * Bring the anchor into view when a step opens.
+   *
+   * Without this a step opens against wherever the user happened to be scrolled — the
+   * spotlight is then somewhere off-screen and the step looks broken. `scrollIntoView`
+   * walks up to AppShell's scroller on its own, so nothing here needs to know about it.
+   *
+   * `nearest` for an anchor that already fits, so a visible one does not jump; `start` for
+   * one that is taller than the viewport or begins above the fold, since the top is the
+   * part worth reading. The capture-phase listener above re-measures once the scroll
+   * settles, so the spotlight follows without any extra work.
+   */
+  useEffect(() => {
+    if (!active || !anchorKey || !registry) return;
+    const el = registry.get(anchorKey);
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    const tooTall = box.height > window.innerHeight;
+    el.scrollIntoView({
+      block: tooTall || box.top < 0 ? 'start' : 'nearest',
+      behavior: 'smooth',
+    });
+  }, [active?.tour.id, active?.stepIndex, anchorKey, registry, active]);
+
   if (!active || !step) return null;
 
   const tourId = active.tour.id;
@@ -150,9 +246,10 @@ export function TourOverlay() {
 
   const card = (
     <div
-      // Stops a click on the card from reaching the backdrop, which advances the tour.
-      onClick={(e) => e.stopPropagation()}
-      className="w-[min(360px,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl"
+      // The one region clicks are not swallowed in — see the swallow effect above, which
+      // looks for this attribute.
+      data-tour-card
+      className="pointer-events-auto w-[min(360px,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-outline)',
@@ -220,26 +317,31 @@ export function TourOverlay() {
   // A step with no anchor is a statement about the product rather than about a control,
   // so it gets no cutout and no positioning — just the card, centred.
   const anchored = anchorKey !== null && rect !== null;
+  const visible = anchored && rect ? clampToViewport(rect) : null;
 
   return createPortal(
     <div
-      // Clicking the backdrop advances rather than dismisses — a stray click should not
-      // silently end a tour the user has not read. Same rule as mobile.
-      onClick={handleNext}
-      className="fixed inset-0 z-[1000]"
+      // Ignores pointer events on purpose: that is what lets the page underneath scroll
+      // (see the swallow effect above, which cancels the clicks instead). Clicking outside
+      // the card does nothing at all — it does not advance, and it does not dismiss. A
+      // stray click should neither skip a step the user has not read nor end the tour.
+      className="pointer-events-none fixed inset-0 z-[1000]"
       style={{ background: anchored ? 'transparent' : SCRIM }}
     >
-      {anchored && rect && (
+      {anchored && visible && (
         /* The cutout and the backdrop are one element: the shadow *is* the scrim, so it
            cannot drift out of register with the hole the way separate rects can. */
         <div
           aria-hidden
+          // Identified by attribute rather than by class: the backdrop above is also a
+          // `pointer-events-none fixed` div, so a class selector picks the wrong one.
+          data-tour-spotlight
           className="pointer-events-none fixed"
           style={{
-            top: rect.y - SPOTLIGHT_PAD,
-            left: rect.x - SPOTLIGHT_PAD,
-            width: rect.width + SPOTLIGHT_PAD * 2,
-            height: rect.height + SPOTLIGHT_PAD * 2,
+            top: visible.y - SPOTLIGHT_PAD,
+            left: visible.x - SPOTLIGHT_PAD,
+            width: visible.width + SPOTLIGHT_PAD * 2,
+            height: visible.height + SPOTLIGHT_PAD * 2,
             borderRadius: SPOTLIGHT_RADIUS,
             boxShadow: `0 0 0 ${SCRIM_SPREAD}px ${SCRIM}`,
             outline: '2px solid var(--color-accent)',
@@ -250,7 +352,7 @@ export function TourOverlay() {
 
       {anchored ? (
         <Popover.Root open modal={false}>
-          <Popover.Anchor virtualRef={anchorRef as React.RefObject<HTMLElement>} />
+          <Popover.Anchor virtualRef={virtualAnchorRef} />
           <Popover.Portal>
             <Popover.Content
               side={toSide(step.placement, isRtl)}
@@ -274,8 +376,8 @@ export function TourOverlay() {
           </Popover.Portal>
         </Popover.Root>
       ) : (
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <div role="dialog" aria-label={title}>
+        <div className="pointer-events-none fixed inset-0 flex items-center justify-center p-4">
+          <div className="pointer-events-auto" role="dialog" aria-label={title}>
             {card}
           </div>
         </div>

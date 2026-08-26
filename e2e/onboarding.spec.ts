@@ -26,7 +26,10 @@ test.describe('onboarding — first run', () => {
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
     await expect(card.getByText('Your dashboard')).toBeVisible();
-    await expect(card.getByText('1 of 4')).toBeVisible();
+    // Five because the mock reports the assistant enabled, so the optional launcher step
+    // is kept. With the assistant off it is dropped and this tour is four steps — that is
+    // the whole point of `optional`, and why the count is read rather than assumed.
+    await expect(card.getByText('1 of 5')).toBeVisible();
 
     // The seed: a feature named where the user cannot see it, one tier below the step's
     // own copy. Showing it must not consume the tour it advertises.
@@ -38,10 +41,13 @@ test.describe('onboarding — first run', () => {
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Every shekel')).toBeVisible();
 
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Ask anything')).toBeVisible();
+
     // The last step has no anchor — a statement about the product, centred, no cutout.
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Start with one property')).toBeVisible();
-    await expect(card.getByText('4 of 4')).toBeVisible();
+    await expect(card.getByText('5 of 5')).toBeVisible();
 
     await card.getByRole('button', { name: 'Got it' }).click();
     await expect(page.getByText('Start with one property')).toBeHidden();
@@ -85,7 +91,7 @@ test.describe('onboarding — first run', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
 
     const geometry = await page.evaluate(() => {
-      const spot = document.querySelector('div.pointer-events-none.fixed');
+      const spot = document.querySelector('[data-tour-spotlight]');
       const visible = [...document.querySelectorAll('a[href="/home"]')].find((el) =>
         (el as HTMLElement).checkVisibility(),
       );
@@ -105,5 +111,50 @@ test.describe('onboarding — first run', () => {
     await page.goto('/home');
     await waitForAppReady(page);
     await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
+  /**
+   * Both of these were reported from real use, and both were one-line causes with no test
+   * standing over them: the backdrop carried `onClick={next}`, so any stray click blew
+   * through a step; and being fixed on `body` it swallowed wheel events that then chained
+   * to an `overflow-hidden` documentElement, freezing a page whose real scroller lives
+   * inside AppShell.
+   */
+  test('clicking outside the card neither advances nor dismisses', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/home');
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your dashboard')).toBeVisible();
+
+    // Well away from the card and from the spotlit nav item.
+    await page.mouse.click(700, 450);
+    await page.mouse.click(700, 500);
+
+    // Same step, still open: not advanced, not skipped.
+    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await expect(card.getByText('1 of 5')).toBeVisible();
+  });
+
+  test('the page still scrolls while a step is showing', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/home');
+    await waitForAppReady(page);
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    // AppShell's scroller, not the window — nothing else on the page scrolls.
+    const scroller = page.locator('main > div.overflow-y-auto').first();
+    await expect(scroller).toBeVisible();
+    const before = await scroller.evaluate((el) => el.scrollTop);
+
+    await page.mouse.move(700, 450);
+    await page.mouse.wheel(0, 600);
+    await expect
+      .poll(() => scroller.evaluate((el) => el.scrollTop), { timeout: 5000 })
+      .toBeGreaterThan(before);
+
+    // And the tour is still up — scrolling is not a way out of it.
+    await expect(page.getByRole('dialog')).toBeVisible();
   });
 });

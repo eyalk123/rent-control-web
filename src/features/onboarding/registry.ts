@@ -4,10 +4,12 @@
  * Same schema and the same tour/seed IDs as mobile, so copy is shared and a user who
  * saw a tour on the phone does not see it again here. It diverges only where the
  * navigation genuinely differs:
- *   - no Chat tab (no `chat` tour);
+ *   - the assistant is a launcher in the top bar and a side panel, not a tab, so the
+ *     `chat` tour fires when the panel opens rather than on a route;
  *   - Suppliers and Reports are top-level sidebar entries, not nested, so their seeds
  *     move from Transactions/Home onto the sidebar step;
- *   - alerts also live in a bell panel, which the Home tour points at.
+ *   - alerts also live in a bell panel, which the Home tour points at;
+ *   - no `whatsapp-templates` tour, because web has no template editor.
  */
 import { ANCHORS } from './anchors';
 import { assertBudget, type TourDefinition, type TourId } from './types';
@@ -24,6 +26,10 @@ export const TOURS = {
       { id: 'home', anchor: ANCHORS.navHome, placement: 'end', seed: { id: 'alert-actions', opens: null } },
       { id: 'portfolio', anchor: ANCHORS.navProperties, placement: 'end', seed: { id: 'scan-lease', opens: 'lease-scan' } },
       { id: 'money', anchor: ANCHORS.navTransactions, placement: 'end', seed: { id: 'suppliers', opens: 'suppliers' } },
+      // Optional: the launcher only renders once the assistant's status request comes back
+      // enabled, and a required step whose element never mounts suppresses the whole tour.
+      // First-run is the last tour that may go missing, so this step gets dropped instead.
+      { id: 'chat', anchor: ANCHORS.chatLauncher, placement: 'bottom', optional: true },
       { id: 'start', anchor: null, placement: 'center' },
     ],
   },
@@ -54,7 +60,10 @@ export const TOURS = {
     kind: 'page',
     steps: [
       { id: 'cards', anchor: ANCHORS.propertiesList, placement: 'bottom' },
-      { id: 'persistence', anchor: ANCHORS.propertiesList, placement: 'bottom', seed: { id: 'bulk-select', opens: null } },
+      // Points at the search/filter bar, not the list: the copy is about search, filters
+      // and sort being remembered, which is a claim about that bar. Both steps used to
+      // highlight the same list wrapper, which said nothing and covered the screen.
+      { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom', seed: { id: 'bulk-select', opens: null } },
     ],
   },
 
@@ -114,6 +123,22 @@ export const TOURS = {
       { id: 'timeline', anchor: ANCHORS.renterDetailTimeline, placement: 'bottom' },
       { id: 'extend', anchor: ANCHORS.renterDetailExtend, placement: 'bottom', seed: { id: 'extend-lease', opens: 'extend-lease' } },
       { id: 'end', anchor: ANCHORS.renterDetailEndLease, placement: 'bottom', seed: { id: 'end-lease', opens: null } },
+    ],
+  },
+
+  /**
+   * The assistant is a side panel here rather than a tab, so `route` is nominal — the
+   * trigger is the composer mounting, which happens when the panel opens. First-run points
+   * at the launcher; this explains the thing once someone is actually inside it.
+   */
+  chat: {
+    id: 'chat',
+    route: '/home',
+    gate: 'hasRenters',
+    kind: 'page',
+    steps: [
+      { id: 'ask', anchor: ANCHORS.chatInput, placement: 'top' },
+      { id: 'scope', anchor: null, placement: 'center' },
     ],
   },
 
