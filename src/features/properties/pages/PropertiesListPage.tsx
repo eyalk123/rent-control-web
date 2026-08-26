@@ -31,6 +31,9 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Property, PropertyType } from '@/shared/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 
 import i18n from '@/core/i18n';
 
@@ -261,6 +264,10 @@ function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown
 }
 
 export function PropertiesListPage() {
+  // Gated on hasProperties: both steps point at the card list, so an empty page has
+  // nothing to spotlight and the tour simply defers.
+  useTour('properties-list');
+  const listAnchorRef = useTourAnchor(ANCHORS.propertiesList);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
@@ -426,7 +433,9 @@ export function PropertiesListPage() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content. The anchor sits on a wrapper rather than the grid or the table, because
+          which of those renders depends on the view mode and the viewport. */}
+      <div ref={listAnchorRef}>
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
@@ -472,6 +481,7 @@ export function PropertiesListPage() {
           onToggleAll={sel.toggleAll}
         />
       )}
+      </div>
 
       <PropertyFormDrawer
         open={drawerOpen}

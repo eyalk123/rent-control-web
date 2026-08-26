@@ -31,6 +31,9 @@ import { todayISO } from '@/shared/utils/dates';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import {
   type PeriodType,
   getMonthsForPeriod,
@@ -43,6 +46,22 @@ import { getCurrentMonthlyRent } from '@/shared/types';
 import type { Transaction, Renter, PaymentMethod } from '@/shared/types';
 
 type TxType = 'revenue' | 'expense';
+
+/**
+ * Mounted with the renter checklist, which only appears once properties are chosen — so
+ * the request happens when the amount-cell anchor actually exists. Asking from the form
+ * body would ask against an empty picker and defer the tour for the whole session.
+ */
+function RevenueFormTourRequest() {
+  useTour('revenue-form');
+  return null;
+}
+
+/** Mounted with the expense form, which is one of three things this drawer can show. */
+function ExpenseFormTourRequest() {
+  useTour('expense-form');
+  return null;
+}
 
 // ─── Enriched renter (knows which property it came from) ─────────────────────
 
@@ -211,6 +230,9 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   }, [selectedPropertyIds, properties, initialRenterId]);
 
   const allRenterIds = allRenters.map((r) => r.id);
+  const revenuePropertyAnchorRef = useTourAnchor(ANCHORS.revenuePropertyPicker);
+  const revenueAmountAnchorRef = useTourAnchor(ANCHORS.revenueAmountCell);
+  const firstRenterId = allRenters[0]?.id ?? null;
 
   // Prefill: check the renter this form was opened for, or — when opened from a property that
   // has exactly one renter — that renter. Runs once, so unchecking it doesn't re-check.
@@ -360,6 +382,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       )}
 
       {/* Properties */}
+      <div ref={revenuePropertyAnchorRef}>
       <PropertyMultiSelect
         label={t('transactions.property')}
         required
@@ -369,10 +392,12 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
         error={propertyError}
         placeholder={t('transactions.selectProperties')}
       />
+      </div>
 
       {/* Renter checklist */}
       {selectedPropertyIds.length > 0 && (
         <div className="flex flex-col gap-2">
+          <RevenueFormTourRequest />
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.tenantsSection')}<RequiredMark /></span>
             {allRenters.length > 0 && (
@@ -393,6 +418,9 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                 return (
                   <div
                     key={renter.id}
+                    // Every row would otherwise claim the amount-cell anchor and the last
+                    // registered would win. One row, chosen here.
+                    ref={renter.id === firstRenterId ? revenueAmountAnchorRef : undefined}
                     className="rounded-[10px] border px-4 py-2.5"
                     style={{ borderColor: 'var(--color-outline)', background: checked ? 'var(--color-input-filled-background)' : 'var(--color-surface)' }}
                   >
@@ -605,6 +633,8 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
   const singlePropertyId = selectedPropertyIds.length === 1 ? selectedPropertyIds[0] : null;
   const { data: createRenters } = usePropertyRenters(singlePropertyId);
+  const expensePropertyAnchorRef = useTourAnchor(ANCHORS.expensePropertyPicker);
+  const expenseCategoryAnchorRef = useTourAnchor(ANCHORS.expenseCategoryField);
 
   // ── Edit mode renter data ──────────────────────────────────────────────────
   const { data: editRenters } = usePropertyRenters(transaction?.property_id ?? null, true);
@@ -787,6 +817,8 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
   return (
     <form id="transaction-form" onSubmit={handleBulkCreate} autoComplete="off" className="space-y-4">
+      <ExpenseFormTourRequest />
+      <div ref={expensePropertyAnchorRef}>
       <PropertyMultiSelect
         label={t('transactions.property')}
         required
@@ -796,6 +828,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
         error={propertyError}
         placeholder={t('transactions.selectProperties')}
       />
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <FormInput
@@ -832,14 +865,16 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
         <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
       )} />
-      <CategoryMultiSelect
-        label={t('transactions.category')}
-        required
-        categories={categories ?? []}
-        selectedIds={selectedCategoryIds}
-        onChange={handleCategoryChange}
-        error={categoryError}
-      />
+      <div ref={expenseCategoryAnchorRef}>
+        <CategoryMultiSelect
+          label={t('transactions.category')}
+          required
+          categories={categories ?? []}
+          selectedIds={selectedCategoryIds}
+          onChange={handleCategoryChange}
+          error={categoryError}
+        />
+      </div>
       <div className="flex flex-col gap-1">
         <Controller control={control} name="supplierId" render={({ field }) => (
           <FormSelect

@@ -21,6 +21,9 @@ import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { PropertyImageField } from '../components/PropertyImageField';
 import { parseImageUrlKey } from '../constants/houseImagePresets';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
@@ -64,6 +67,16 @@ interface Props {
   renterContractFile?: File | null;
 }
 
+/**
+ * Step two owns the owner field — one of the tour's two anchors — so the request lives
+ * with it. Asking from the drawer would ask while the user is still on step one, find the
+ * owner field unmounted, and defer a tour that was one click away from being showable.
+ */
+function PropertyFormTourRequest() {
+  useTour('property-form');
+  return null;
+}
+
 export function PropertyFormDrawer({
   open,
   onClose,
@@ -96,6 +109,8 @@ export function PropertyFormDrawer({
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
+  const stepperAnchorRef = useTourAnchor(ANCHORS.propertyFormStepper);
+  const ownerAnchorRef = useTourAnchor(ANCHORS.propertyFormOwnerField);
   const [showDiscard, setShowDiscard] = useState(false);
   const [showRenterPrompt, setShowRenterPrompt] = useState(false);
   const [createdPropertyId, setCreatedPropertyId] = useState<number | null>(null);
@@ -357,7 +372,7 @@ export function PropertyFormDrawer({
       footer={footer}
     >
       {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-5">
+      <div ref={stepperAnchorRef} className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
           <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
         ))}
@@ -457,7 +472,9 @@ export function PropertyFormDrawer({
           </div>
         ) : (
           <div key="step-2" className="flex flex-col gap-4">
-            <FormCreatableSelect
+            <PropertyFormTourRequest />
+            <div ref={ownerAnchorRef}>
+              <FormCreatableSelect
                 control={control}
                 name="propertyOwner"
                 label={t('property.owner')}
@@ -468,6 +485,7 @@ export function PropertyFormDrawer({
                 createModalPlaceholder={t('property.ownerNamePlaceholder')}
                 error={errors.propertyOwner?.message}
               />
+            </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.inventoryNotes')}</label>
               <textarea

@@ -37,6 +37,9 @@ import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getLeaseUrgency } from '@/shared/utils/dates';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -296,6 +299,11 @@ type StatusFilter = 'all' | 'active' | 'expiring' | 'overdue' | 'ended';
 const STATUS_FILTERS: StatusFilter[] = ['all', 'active', 'expiring', 'overdue', 'ended'];
 
 export function RentersListPage() {
+  // Gated on hasRenters — an empty list has neither cards to explain nor an Ended tab
+  // worth pointing at.
+  useTour('renters-list');
+  const listAnchorRef = useTourAnchor(ANCHORS.rentersList);
+  const endedAnchorRef = useTourAnchor(ANCHORS.rentersEndedFilter);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: renters = [], isLoading, error, refetch } = useRenters();
@@ -494,6 +502,9 @@ export function RentersListPage() {
         {STATUS_TABS.map(({ key, label, tone }) => (
           <button
             key={key}
+            // Only the Ended tab is anchored: it is the one the seed names, and where a
+            // departed tenant's history actually lives.
+            ref={key === 'ended' ? endedAnchorRef : undefined}
             onClick={() => setStatusFilter(key)}
             className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 px-1 py-2.5 me-4 text-[13px] transition-colors"
             style={{
@@ -538,7 +549,7 @@ export function RentersListPage() {
       </div>
 
       {/* Content */}
-      <div className="pt-5">
+      <div ref={listAnchorRef} className="pt-5">
         {isLoading ? (
           <PageLoader />
         ) : filtered.length === 0 ? (

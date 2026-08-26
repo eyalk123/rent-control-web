@@ -63,6 +63,24 @@ export async function enableTours(page: Page) {
 }
 
 /**
+ * Press Escape until no tour is on screen.
+ *
+ * With tours armed there is no session cap — that is deliberate ("if a user wants to go
+ * through a lot in one session he can do it") — so finishing the first-run tour lets
+ * Home's own page tour open straight after it, and each page reached afterwards can open
+ * its own. The overlay is a click-blocking scrim, so a spec that navigates with tours
+ * armed has to clear whatever is open first. Escape skips the active tour.
+ */
+export async function dismissTours(page: Page) {
+  const dialog = page.getByRole('dialog');
+  for (let i = 0; i < 5; i++) {
+    if (!(await dialog.first().isVisible().catch(() => false))) return;
+    await page.keyboard.press('Escape');
+    await expect(dialog.first()).toBeHidden({ timeout: 5000 }).catch(() => {});
+  }
+}
+
+/**
  * Wait until a protected route has actually rendered.
  *
  * Replaces `waitForLoadState('networkidle')`, which Playwright itself discourages and

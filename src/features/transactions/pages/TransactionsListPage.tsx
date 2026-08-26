@@ -16,6 +16,9 @@ import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import { SelectionToolbar } from '@/shared/components/ui/SelectionToolbar';
 import { TriStateCheckbox } from '@/shared/components/ui/TriStateCheckbox';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -93,6 +96,11 @@ function TxRow({ tx, isSelectMode, isSelected, onToggle, onLongPress }: TxRowPro
 // ─── main page ───────────────────────────────────────────────────────────────
 
 export function TransactionsListPage() {
+  // Gated on hasProperties: a money screen with nothing in it teaches nothing, and a
+  // failed gate defers rather than consuming the tour.
+  useTour('transactions-list');
+  const listAnchorRef = useTourAnchor(ANCHORS.transactionsList);
+  const addAnchorRef = useTourAnchor(ANCHORS.transactionsAddButton);
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -185,6 +193,7 @@ export function TransactionsListPage() {
               <CheckSquare size={14} /> {t('common.select')}
             </button>
             <button
+              ref={addAnchorRef}
               onClick={() => setDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
               style={{ background: 'var(--color-primary)' }}
@@ -279,7 +288,9 @@ export function TransactionsListPage() {
         />
       </div>
 
-      {/* Content */}
+      {/* Content. The anchor is on a wrapper: which branch renders depends on loading and
+          filter state, and the tour points at "the list" in all of them. */}
+      <div ref={listAnchorRef}>
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
@@ -335,6 +346,7 @@ export function TransactionsListPage() {
           </div>
         </div>
       )}
+      </div>
 
       <TransactionFormDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); setInitialTxType(undefined); }} initialType={initialTxType} />
       <ConfirmDialog

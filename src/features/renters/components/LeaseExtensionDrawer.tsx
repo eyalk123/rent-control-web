@@ -10,6 +10,9 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { RentChangeField } from '@/shared/components/lease/RentChangeField';
 import { LeaseYearRow } from '@/shared/components/lease/LeaseYearRow';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import { LeaseTimeline } from './LeaseTimeline';
 import { useUpdateRenter } from '../queries';
 import { getApiErrorMessage } from '@/core/api/client';
@@ -81,10 +84,21 @@ function ruleValueMissing(rows: Row[]): boolean {
  * Offers the same escalation modes as the renter form (RentChangeField): in "custom" mode the
  * new years become hand-editable too, so every amount in the schedule can be priced by hand.
  */
+/**
+ * Rendered inside the Drawer, which unmounts its children when closed — so the request
+ * happens when the drawer actually opens, not when the detail page renders it shut.
+ */
+function ExtendLeaseTourRequest() {
+  useTour('extend-lease');
+  return null;
+}
+
 export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const updateMutation = useUpdateRenter(renter.id);
+  const stepperAnchorRef = useTourAnchor(ANCHORS.extendYearsStepper);
+  const previewAnchorRef = useTourAnchor(ANCHORS.extendPreview);
 
   // The existing lease years, individually editable. New years are derived from the counts
   // (and hand-editable in custom mode).
@@ -299,12 +313,13 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
         footer={footer}
       >
         <div className="flex flex-col gap-6">
+          <ExtendLeaseTourRequest />
           {/* Current lease (read-only reference) */}
           <LeaseTimeline renter={renter} />
 
           {/* Add years — the number inputs drive the schedule; no button */}
           <div className="rounded-[var(--radius-card)] p-4" style={{ border: '1px solid var(--color-outline)', background: 'var(--color-surface)' }}>
-            <div className="flex flex-wrap gap-4">
+            <div ref={stepperAnchorRef} className="flex flex-wrap gap-4">
               <Stepper
                 label={t('renter.yearsToAdd')}
                 unitLabel={t('renter.yearsUnit')}
@@ -352,7 +367,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
           </div>
 
           {/* New lease schedule = live preview */}
-          <div>
+          <div ref={previewAnchorRef}>
             <p className="text-sm font-medium mb-2 text-[var(--color-text-primary)]">{t('renter.newLeaseSchedule')}</p>
 
             {orderInvalid && (

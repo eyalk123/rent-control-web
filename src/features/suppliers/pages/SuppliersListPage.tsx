@@ -4,6 +4,9 @@ import { translateCategory } from '@/shared/utils/categories';
 import { Plus, Store, Building2 } from 'lucide-react';
 import { useSuppliers } from '../queries';
 import { useExpenseCategories } from '@/features/transactions/queries';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { Pill } from '@/shared/components/ui/Pill';
@@ -62,6 +65,11 @@ function SupplierCard({ supplier, catMap, onOpen }: { supplier: Supplier; catMap
 }
 
 export function SuppliersListPage() {
+  // Arrives from the `suppliers` seed on the transactions tour. Gate is `always`: the
+  // page explains what suppliers are for, which is worth saying on an empty list too.
+  useTour('suppliers');
+  const listAnchorRef = useTourAnchor(ANCHORS.suppliersList);
+  const categoriesAnchorRef = useTourAnchor(ANCHORS.suppliersCategories);
   const { t } = useTranslation();
   const [showInactive, setShowInactive] = useState(false);
   const [nameFilter, setNameFilter] = useState('all');
@@ -156,7 +164,7 @@ export function SuppliersListPage() {
             options={nameOptions}
           />
         </div>
-        <div className="w-full max-w-[240px]">
+        <div ref={categoriesAnchorRef} className="w-full max-w-[240px]">
           <FormSelect
             label={t('filters.category')}
             value={categoryFilter}
@@ -166,7 +174,9 @@ export function SuppliersListPage() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content. Anchored on a wrapper because which branch renders depends on loading
+          and filter state. */}
+      <div ref={listAnchorRef}>
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
@@ -193,6 +203,7 @@ export function SuppliersListPage() {
           {filtered.map((s) => <SupplierCard key={s.id} supplier={s} catMap={catMap} onOpen={setDetailSupplier} />)}
         </div>
       )}
+      </div>
 
       <SupplierDetailDrawer
         open={detailSupplier !== null}

@@ -4,6 +4,19 @@ import { Check, FileText, Loader2, Upload, X } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useScanSession } from '../ScanContext';
 import { mergeImagesToPdf } from '../utils/mergeImagesToPdf';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
+
+/**
+ * Rendered inside the Drawer, which unmounts its children when closed — so the request
+ * happens when the scan drawer actually opens. The picker is the tour's only anchored
+ * step; see registry.ts for why the review step is centred instead.
+ */
+function LeaseScanTourRequest() {
+  useTour('lease-scan');
+  return null;
+}
 
 const ACCEPT = 'image/*,application/pdf,.pdf,.docx';
 const isImage = (f: File) => f.type.startsWith('image/');
@@ -49,6 +62,7 @@ export function DocumentScanDrawer() {
   const [error, setError] = useState<string | null>(null);
   const [merging, setMerging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pickerAnchorRef = useTourAnchor(ANCHORS.scanPicker);
 
   // The extraction request itself lives in the provider (so it survives this drawer being
   // minimized); the drawer only reflects its status.
@@ -134,6 +148,7 @@ export function DocumentScanDrawer() {
   return (
     <Drawer open={open} onClose={dismissScan} onRequestClose={dismissScan} title={t('documentScan.title')} width={520} footer={footer}>
       <div className="flex flex-col gap-4">
+        <LeaseScanTourRequest />
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
           {t('documentScan.uploadPrompt')}
         </p>
@@ -146,6 +161,7 @@ export function DocumentScanDrawer() {
         ) : (
           <>
             <button
+              ref={pickerAnchorRef}
               type="button"
               onClick={() => inputRef.current?.click()}
               className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"

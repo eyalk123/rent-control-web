@@ -1,4 +1,4 @@
-import { test, expect, enableTours, waitForAppReady } from './fixtures';
+import { test, expect, dismissTours, enableTours, waitForAppReady } from './fixtures';
 
 /**
  * The first-run tour, which is the only tour that runs unconditionally (gate: `always`).
@@ -11,6 +11,11 @@ import { test, expect, enableTours, waitForAppReady } from './fixtures';
  *   - the spotlight has to land on the navigation variant the viewport is *showing*,
  *     since all three are in the DOM at every width;
  *   - finishing a tour has to keep it finished, including with no server to persist to.
+ *
+ * With every tour now wired, arming them arms all of them: Home's page tour opens as soon
+ * as first-run closes, and each page visited afterwards opens its own. That is the design
+ * (there is no session cap), so these specs assert on the first-run tour's own copy rather
+ * than on "no dialog anywhere", and clear whatever else is open before navigating.
  */
 test.describe('onboarding — first run', () => {
   test('walks the orientation tour and stays finished', async ({ page }) => {
@@ -39,16 +44,18 @@ test.describe('onboarding — first run', () => {
     await expect(card.getByText('4 of 4')).toBeVisible();
 
     await card.getByRole('button', { name: 'Got it' }).click();
-    await expect(card).toBeHidden();
+    await expect(page.getByText('Start with one property')).toBeHidden();
 
     // Leaving and coming back must not replay it. There is no server in this mode, so
     // this also covers the case where the write is never acknowledged.
+    await dismissTours(page);
     await page.getByRole('link', { name: 'Properties' }).click();
     await expect(page).toHaveURL(/\/properties/);
+    await dismissTours(page);
     await page.getByRole('link', { name: 'Home', exact: true }).click();
     await expect(page).toHaveURL(/\/home/);
     await waitForAppReady(page);
-    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByText('Your dashboard')).toBeHidden();
   });
 
   test('skipping counts as seen', async ({ page }) => {
@@ -59,12 +66,14 @@ test.describe('onboarding — first run', () => {
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
-    await expect(card).toBeHidden();
+    await expect(page.getByText('Your dashboard')).toBeHidden();
 
+    await dismissTours(page);
     await page.getByRole('link', { name: 'Renters' }).click();
+    await dismissTours(page);
     await page.getByRole('link', { name: 'Home', exact: true }).click();
     await waitForAppReady(page);
-    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByText('Your dashboard')).toBeHidden();
   });
 
   test('the spotlight lands on the navigation the viewport is actually showing', async ({

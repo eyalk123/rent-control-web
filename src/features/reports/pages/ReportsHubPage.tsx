@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { BarChart2, List, FileText, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReportHistory, deleteReportExport } from '../api/reports';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { useToast } from '@/shared/components/ui/Toast';
 import { ArrowRight } from 'lucide-react';
@@ -20,6 +23,11 @@ function useDeleteReport() {
 }
 
 export function ReportsHubPage() {
+  // Both anchors are on the page from the first render — the history list loads into a
+  // section that is already mounted, so there is nothing to wait for.
+  useTour('reports');
+  const cardsAnchorRef = useTourAnchor(ANCHORS.reportsCards);
+  const exportAnchorRef = useTourAnchor(ANCHORS.reportsExport);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: history = [], isLoading } = useReportHistory();
@@ -64,7 +72,7 @@ export function ReportsHubPage() {
       {/* Report type cards */}
       <section>
         <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.generateSection')}</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div ref={cardsAnchorRef} className="grid gap-4 sm:grid-cols-2">
           {reportCards.map((card) => (
             <div
               key={card.path}
@@ -92,8 +100,10 @@ export function ReportsHubPage() {
         </div>
       </section>
 
-      {/* Export history */}
-      <section>
+      {/* Export history. The export step points here: the hub has no export button — a
+          report is exported from its own page — and this is where the resulting files land
+          and get shared onwards. Mounted whether or not there is history in it. */}
+      <section ref={exportAnchorRef}>
         <div className="flex items-center justify-between mb-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.recentReports')}</p>
           <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.savedCount', { count: history.length })}</span>

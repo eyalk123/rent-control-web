@@ -201,7 +201,9 @@ export const TOURS = {
     steps: [
       { id: 'events', anchor: ANCHORS.notificationsEventList, placement: 'bottom' },
       { id: 'rules', anchor: ANCHORS.notificationsRulesEntry, placement: 'bottom', seed: { id: 'notification-rules', opens: 'notification-rules' } },
-      { id: 'templates', anchor: ANCHORS.notificationsTemplatesEntry, placement: 'bottom', seed: { id: 'whatsapp-templates', opens: 'whatsapp-templates' } },
+      // No `templates` step on web: the WhatsApp template editor is a mobile-only screen,
+      // so there is nothing here to point at and nothing for the seed to open. Restore the
+      // step (and the `whatsapp-templates` tour below) when the web app grows one.
     ],
   },
 
@@ -218,17 +220,9 @@ export const TOURS = {
     ],
   },
 
-  'whatsapp-templates': {
-    id: 'whatsapp-templates',
-    route: '/settings/notifications',
-    gate: 'always',
-    kind: 'elaboration',
-    arrivesFrom: 'whatsapp-templates',
-    steps: [
-      { id: 'placeholders', anchor: ANCHORS.templatePlaceholders, placement: 'bottom' },
-      { id: 'perLanguage', anchor: ANCHORS.templateLanguage, placement: 'bottom' },
-    ],
-  },
+  // 'whatsapp-templates' is deliberately absent — see the notifications tour above. The
+  // copy for it exists in i18n for the day the web app gains a template editor.
+
 
   reports: {
     id: 'reports',
@@ -242,6 +236,13 @@ export const TOURS = {
     ],
   },
 
+  /**
+   * The review step is centred, not anchored. `scanSummary` lives in the summary drawer,
+   * which only opens *after* an extraction has run — and a tour opens only when every
+   * anchored step's element is mounted at once, so pointing at it here would mean this
+   * tour could never open. Both remaining steps are promises about what happens next,
+   * which is what an elaboration arriving from the `scan-lease` seed is.
+   */
   'lease-scan': {
     id: 'lease-scan',
     route: '/properties',
@@ -250,7 +251,7 @@ export const TOURS = {
     arrivesFrom: 'scan-lease',
     steps: [
       { id: 'pick', anchor: ANCHORS.scanPicker, placement: 'bottom' },
-      { id: 'review', anchor: ANCHORS.scanSummary, placement: 'bottom' },
+      { id: 'review', anchor: null, placement: 'center' },
       { id: 'both', anchor: null, placement: 'center' },
     ],
   },

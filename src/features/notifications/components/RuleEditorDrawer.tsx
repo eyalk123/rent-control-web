@@ -6,6 +6,18 @@ import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { useCreateRule, useUpdateRule, previewRule } from '../queries';
 import type { NotificationEvent, NotificationRule, NotificationRuleDraft, RulePreview } from '../types';
 import { ScopeSelector, type ScopeValue } from './ScopeSelector';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
+
+/**
+ * Rendered inside the Drawer, which unmounts its children when closed — so the request
+ * happens when the editor actually opens, not when the settings page renders it shut.
+ */
+function RuleEditorTourRequest() {
+  useTour('notification-rules');
+  return null;
+}
 
 interface Props {
   open: boolean;
@@ -28,6 +40,8 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
     scope_renter_ids: [],
   });
   const [preview, setPreview] = useState<RulePreview | null>(null);
+  const offsetsAnchorRef = useTourAnchor(ANCHORS.ruleOffsets);
+  const scopeAnchorRef = useTourAnchor(ANCHORS.ruleScope);
 
   // Seed the form whenever the drawer (re)opens for a given rule.
   useEffect(() => {
@@ -109,6 +123,7 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
       }
     >
       <div className="flex flex-col gap-5">
+        <RuleEditorTourRequest />
         <div>
           <label className="block text-[13px] font-medium mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
             {t('notifications.ruleName')}
@@ -122,7 +137,8 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
           />
         </div>
 
-        <div>
+        {/* Offsets and their hint read as one control, so they share one anchor. */}
+        <div ref={offsetsAnchorRef}>
           <FormChipInput
             label={offsetLabel}
             placeholder={t('notifications.offsetPlaceholder')}
@@ -140,7 +156,9 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
           </p>
         </div>
 
-        <ScopeSelector value={scope} onChange={setScope} />
+        <div ref={scopeAnchorRef}>
+          <ScopeSelector value={scope} onChange={setScope} />
+        </div>
 
         <div
           className="rounded-[9px] px-3 py-2.5 text-[13px]"

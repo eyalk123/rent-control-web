@@ -11,6 +11,8 @@ import { useMarkRentPaid } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useNotifications, useDismissNotification } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 /** Rows shown per section before collapsing the rest behind "See all". Keeps the
  *  section's height stable so the neighbouring occupancy card can't be stretched by it. */
@@ -25,6 +27,7 @@ export function NeedsAttentionSection() {
   const { markPaid } = useMarkRentPaid();
   const dismissNotification = useDismissNotification();
   const [savingId, setSavingId] = useState<number | null>(null);
+  const anchorRef = useTourAnchor(ANCHORS.homeNeedsAttention);
 
   const overdue = items.filter((i) => i.type === 'overdue');
   const expiring = items.filter((i) => i.type === 'lease_expiring');
@@ -52,7 +55,7 @@ export function NeedsAttentionSection() {
   }
 
   return (
-    <div>
+    <div ref={anchorRef}>
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.needsAttention')}
       </p>

@@ -16,6 +16,10 @@ export function HomePage() {
   // The one orientation tour. Its gate is `always`, so this is the first thing a new
   // account sees; every other tour waits for the page it explains to have content.
   useTour('first-run');
+  // Gated on hasRenters, so it waits until Home actually has something on it — the
+  // needs-attention block, the alerts bell and the Reports nav entry are all mounted from
+  // the first render, so there is nothing else to wait for.
+  useTour('home');
 
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
   const { data: properties = [], isLoading: propsLoading } = useProperties();

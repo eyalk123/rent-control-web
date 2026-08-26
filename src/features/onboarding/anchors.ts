@@ -1,9 +1,16 @@
 /**
  * Onboarding — anchor inventory (web).
  *
- * Every key here is an element a tour points at. Phase 1 plumbs each one: the target
- * component registers itself under this key so the overlay can measure it. Nothing
- * outside this file should invent an anchor string.
+ * Every key here is an element a tour points at, *except* the handful marked RESERVED:
+ * those name a real element (or, for the WhatsApp template keys, an element the web app
+ * does not have yet) that no current tour step targets. They are kept rather than deleted
+ * because each is something the copy already talks about and a future step is the obvious
+ * use — but nothing plumbs a RESERVED key until a step points at it, so a reserved key is
+ * not expected to appear in the DOM.
+ *
+ * Phase 1 plumbs each non-reserved one: the target component registers itself under this
+ * key so the overlay can measure it. Nothing outside this file should invent an anchor
+ * string.
  *
  * The `// -> file` comment on each entry is the component that must carry it.
  */
@@ -11,10 +18,13 @@ export const ANCHORS = {
   // Sidebar — src/layout/
   navHome: 'nav.home',
   navProperties: 'nav.properties',
+  // RESERVED: plumbed on all three nav variants, but first-run spends its steps elsewhere.
   navRenters: 'nav.renters',
   navTransactions: 'nav.transactions',
+  // RESERVED: suppliers are introduced by a seed on the transactions tour, not a spotlight.
   navSuppliers: 'nav.suppliers',
   navReports: 'nav.reports',
+  // RESERVED: nothing points at Settings; the Phase 7 replay control lives inside it.
   navSettings: 'nav.settings',
 
   // Home — src/features/home/
@@ -23,6 +33,7 @@ export const ANCHORS = {
 
   // Properties
   propertiesList: 'properties.list',
+  // RESERVED: the properties tour explains the cards, not the add control.
   propertiesAddButton: 'properties.addButton',
   propertyFormStepper: 'propertyForm.stepper', // -> shared/components/ui Stepper
   propertyFormOwnerField: 'propertyForm.ownerField',
@@ -47,9 +58,13 @@ export const ANCHORS = {
 
   // Transactions — src/features/transactions/
   transactionsList: 'transactions.list',
-  transactionsSuppliersButton: 'transactions.suppliersButton', // -> SuppliersHeaderButton.tsx
+  // RESERVED: the `suppliers` seed names this in prose, but the seed is carried by the
+  // transactions add-button step, so nothing points a spotlight at it. Web reaches
+  // suppliers from the nav rather than a header button.
+  transactionsSuppliersButton: 'transactions.suppliersButton',
   transactionsAddButton: 'transactions.addButton',
   revenuePropertyPicker: 'revenueForm.propertyPicker',
+  // RESERVED: the revenue tour uses its three steps on scope, per-contract and saving.
   revenuePeriodPicker: 'revenueForm.periodPicker', // -> MonthGridPicker
   revenueAmountCell: 'revenueForm.amountCell', // "Per contract" / Override / Auto
   expenseCategoryField: 'expenseForm.categoryField', // -> CategoryMultiPickerField.tsx
@@ -62,9 +77,12 @@ export const ANCHORS = {
   // Notifications — src/features/notifications/
   notificationsEventList: 'notifications.eventList',
   notificationsRulesEntry: 'notifications.rulesEntry',
+  // RESERVED: the web app has no WhatsApp template editor — the screen is mobile-only, so
+  // the notifications tour drops its templates step here. See registry.ts.
   notificationsTemplatesEntry: 'notifications.templatesEntry',
   ruleOffsets: 'rule.offsets',
   ruleScope: 'rule.scope',
+  // RESERVED (both): no template editor on web — see notificationsTemplatesEntry above.
   templatePlaceholders: 'templates.placeholderChips',
   templateLanguage: 'templates.languageSwitch',
 
@@ -74,6 +92,8 @@ export const ANCHORS = {
 
   // Scan — src/features/document-scan/
   scanPicker: 'scan.picker',
+  // RESERVED: the summary drawer only opens after an extraction, so the lease-scan tour
+  // (which opens on the picker) cannot point at it — see registry.ts.
   scanSummary: 'scan.summary',
 } as const;
 

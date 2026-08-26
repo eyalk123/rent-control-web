@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useChatPanel } from '@/features/agent/PortfolioChatContext';
 import { useAgentStatus } from '@/features/agent/queries';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface TopBarProps {
   onOpenPalette: () => void;
@@ -15,6 +17,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
   const { openPanel, hasAlerts } = useAlertsPanel();
   const { open: openChat } = useChatPanel();
   const { data: agentStatus } = useAgentStatus();
+  const bellAnchorRef = useTourAnchor(ANCHORS.homeNotificationsBell);
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -60,6 +63,7 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
         </button>
 
         <button
+          ref={bellAnchorRef}
           onClick={openPanel}
           title={t('common.notifications')}
           aria-label={t('common.notifications')}

@@ -18,6 +18,9 @@ import {
   type NotificationSettings,
 } from '../types';
 import { RuleEditorDrawer } from '../components/RuleEditorDrawer';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 
 // ── small toggle switch ───────────────────────────────────────────────────
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -129,6 +132,15 @@ function scopeSummary(rule: NotificationRule, t: TFunction): string {
   return t('notifications.scopeAll');
 }
 
+/**
+ * Rendered inside the loaded branch — the page shows a "loading" line until the
+ * preferences arrive, and both anchors come with them.
+ */
+function NotificationsTourRequest() {
+  useTour('notifications');
+  return null;
+}
+
 export function NotificationsSettingsPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -142,6 +154,9 @@ export function NotificationsSettingsPage() {
 
   const settings = prefs?.settings;
   const masterOn = settings?.master_enabled ?? true;
+  const eventListAnchorRef = useTourAnchor(ANCHORS.notificationsEventList);
+  const rulesAnchorRef = useTourAnchor(ANCHORS.notificationsRulesEntry);
+  const firstRuleEvent = NOTIFICATION_EVENTS.find(isRuleEvent);
 
   const setSetting = (patch: Parameters<typeof updateSettings.mutate>[0]) =>
     updateSettings.mutate(patch, { onError: () => showToast(t('error.saveFailed'), 'error') });
@@ -179,6 +194,7 @@ export function NotificationsSettingsPage() {
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('common.loading')}</p>
       ) : (
         <div className="flex flex-col gap-6">
+          <NotificationsTourRequest />
           {/* Global settings */}
           <Card>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -191,6 +207,7 @@ export function NotificationsSettingsPage() {
           </Card>
 
           {/* Per-event sections */}
+          <div ref={eventListAnchorRef} className="flex flex-col gap-6">
           {NOTIFICATION_EVENTS.map((event) => {
             const rules = (prefs?.rules ?? []).filter((r) => r.event_type === event);
             const muted = isMuted(event);
@@ -204,7 +221,13 @@ export function NotificationsSettingsPage() {
                   <Toggle checked={!muted} onChange={(v) => toggleMute(event, v)} label={t(`notifications.event.${event}`)} />
                 </div>
 
-                <div style={{ opacity: dimmed ? 0.5 : 1, pointerEvents: dimmed ? 'none' : 'auto' }}>
+                {/* Only the first rule-bearing event carries the anchor — the block repeats
+                    per event, and it is present whether the event has rules yet or is
+                    still on its default. */}
+                <div
+                  ref={event === firstRuleEvent ? rulesAnchorRef : undefined}
+                  style={{ opacity: dimmed ? 0.5 : 1, pointerEvents: dimmed ? 'none' : 'auto' }}
+                >
                   {!isRuleEvent(event) ? (
                     <CpiThresholdCard settings={settings} onSave={setSetting} />
                   ) : rules.length === 0 ? (
@@ -264,6 +287,7 @@ export function NotificationsSettingsPage() {
               </section>
             );
           })}
+          </div>
         </div>
       )}
 
