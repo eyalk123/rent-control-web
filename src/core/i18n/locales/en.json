@@ -1477,9 +1477,11 @@
       "back": "Back",
       "done": "Got it",
       "stepOf": "{{current}} of {{total}}",
+      "sectionTitle": "Guided tours",
       "replayTitle": "Show tours again",
       "replayBody": "Reset every tour and tip so they appear again as you move around the app.",
       "replayAction": "Reset tours",
+      "replayDone": "Tours reset. They'll appear again as you go.",
       "disable": "Turn off tours"
     }
   }

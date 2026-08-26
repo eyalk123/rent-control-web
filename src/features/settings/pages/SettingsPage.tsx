@@ -2,13 +2,16 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as Sentry from '@sentry/react';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download, Sparkles } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { useToast } from '@/shared/components/ui/Toast';
 import { downloadAllData } from '../api/export';
+import { Toggle } from '@/shared/components/ui/Toggle';
+import { TOURS_ENABLED } from '@/features/onboarding/flags';
+import { useRecordTourProgress, useTourState } from '@/features/onboarding/queries';
 
 // ─── DeleteAccountModal ──────────────────────────────────────────────────────
 
@@ -140,6 +143,8 @@ export function SettingsPage() {
   const { showToast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const { state: tourState } = useTourState();
+  const recordTourProgress = useRecordTourProgress();
 
   const handleExport = async () => {
     setExporting(true);
@@ -151,6 +156,11 @@ export function SettingsPage() {
     } finally {
       setExporting(false);
     }
+  };
+
+  const handleResetTours = () => {
+    recordTourProgress.mutate({ reset: true });
+    showToast(t('onboarding.ui.replayDone'), 'success');
   };
 
   const handleSignOut = async () => {
@@ -170,6 +180,10 @@ export function SettingsPage() {
     { key: 'notifications', label: t('common.notifications'), icon: Bell },
     { key: 'appearance', label: t('settings.navAppearance'), icon: Sun },
     { key: 'language', label: t('settings.navLanguage'), icon: Globe },
+    // Only listed when the build actually has tours — see the section below.
+    ...(TOURS_ENABLED
+      ? [{ key: 'tours', label: t('onboarding.ui.sectionTitle'), icon: Sparkles }]
+      : []),
     { key: 'data', label: t('settings.navData'), icon: Shield },
     { key: 'legal', label: t('legal.sectionTitle'), icon: FileText },
     { key: 'about', label: t('settings.navAbout'), icon: Info },
@@ -269,6 +283,40 @@ export function SettingsPage() {
               last
             />
           </SettingsSection>
+
+          {/* Guided tours. Hidden entirely when the master switch is off (flags.ts): with
+              no tours in the build there is nothing to replay and nothing to turn off, and
+              the tour-state query does not even run, so its state would never load. */}
+          {TOURS_ENABLED && (
+            <SettingsSection id="tours" title={t('onboarding.ui.sectionTitle')}>
+              <SettingRow
+                label={t('onboarding.ui.replayTitle')}
+                hint={t('onboarding.ui.replayBody')}
+                control={
+                  <button
+                    onClick={handleResetTours}
+                    disabled={recordTourProgress.isPending}
+                    className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
+                    style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+                  >
+                    <Sparkles size={14} aria-hidden="true" />
+                    {t('onboarding.ui.replayAction')}
+                  </button>
+                }
+              />
+              <SettingRow
+                label={t('onboarding.ui.disable')}
+                control={
+                  <Toggle
+                    checked={tourState.toursDisabled}
+                    onChange={(v) => recordTourProgress.mutate({ toursDisabled: v })}
+                    label={t('onboarding.ui.disable')}
+                  />
+                }
+                last
+              />
+            </SettingsSection>
+          )}
 
           {/* Data */}
           <SettingsSection id="data" title={t('settings.dataPrivacy')}>

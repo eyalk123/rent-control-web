@@ -21,26 +21,7 @@ import { RuleEditorDrawer } from '../components/RuleEditorDrawer';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour } from '@/features/onboarding/TourController';
-
-// ── small toggle switch ───────────────────────────────────────────────────
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className="relative h-6 w-10 rounded-full transition-colors shrink-0"
-      style={{ background: checked ? 'var(--color-primary)' : 'var(--color-outline)' }}
-    >
-      <span
-        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
-        style={{ insetInlineStart: checked ? '1.125rem' : '0.125rem' }}
-      />
-    </button>
-  );
-}
+import { Toggle } from '@/shared/components/ui/Toggle';
 
 function Card({ children }: { children: React.ReactNode }) {
   return (

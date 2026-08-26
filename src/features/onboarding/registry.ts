@@ -259,7 +259,27 @@ export const TOURS = {
 
 export type WebTourId = keyof typeof TOURS;
 
-/** Run in a unit test — keeps the budget from quietly drifting as copy is added. */
+/**
+ * The registry's structural invariants — everything checkable without i18n loaded.
+ *
+ * Asserted from `e2e/onboarding-registry.spec.ts`, which additionally checks that every
+ * step, seed and callback has copy in both languages. The mobile repo runs this same
+ * function at import time under `__DEV__`, since it has no test layer.
+ */
 export function validateRegistry(): string[] {
-  return Object.values(TOURS as Record<string, TourDefinition>).flatMap(assertBudget);
+  const tours = Object.values(TOURS as Record<string, TourDefinition>);
+  const errors = tours.flatMap(assertBudget);
+  // A seed that opens a tour this platform does not define advertises a destination that
+  // can never open, and fails silently: nothing throws when the user finally gets there.
+  const defined = new Set(Object.keys(TOURS));
+  for (const tour of tours) {
+    for (const step of tour.steps) {
+      if (step.seed?.opens && !defined.has(step.seed.opens)) {
+        errors.push(
+          `${tour.id}.${step.id}: seed opens '${step.seed.opens}', which this platform has no tour for`,
+        );
+      }
+    }
+  }
+  return errors;
 }
