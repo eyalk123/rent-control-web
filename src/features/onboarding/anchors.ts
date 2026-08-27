@@ -85,9 +85,22 @@ export const ANCHORS = {
   extendPreview: 'extendLease.preview',
 
   // Transactions — src/features/transactions/
+  /**
+   * The FIRST month's rows, not the whole scrolling list — the same lesson as
+   * `propertiesList` above: a wrapper around every transaction is thousands of pixels
+   * tall on a real account, and a spotlight that size highlights nothing.
+   *
+   * It also means the anchor exists only once rows are on screen, so the tour waits for
+   * content instead of opening over a spinner, and defers entirely on an account with no
+   * transactions yet. That is the gate's own intent — a money screen with nothing in it
+   * teaches nothing — and it is what mobile already does.
+   */
   transactionsList: 'transactions.list',
   transactionsHero: 'transactions.hero',     // cash-flow chart + the KPI tiles beside it
   transactionsFilter: 'transactions.filter', // all / money in / money out
+  /** The "March 2026" heading above those rows. Only the first month claims the key —
+   *  it is the grouping the tour points at, not that particular month. */
+  transactionsMonthHeader: 'transactions.monthHeader',
   // RESERVED: the `suppliers` seed names this in prose, but the seed is carried by the
   // transactions add-button step, so nothing points a spotlight at it. Web reaches
   // suppliers from the nav rather than a header button.

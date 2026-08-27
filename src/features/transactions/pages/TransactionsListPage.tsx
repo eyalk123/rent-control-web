@@ -103,6 +103,7 @@ export function TransactionsListPage() {
   const addAnchorRef = useTourAnchor(ANCHORS.transactionsAddButton);
   const heroAnchorRef = useTourAnchor(ANCHORS.transactionsHero);
   const filterAnchorRef = useTourAnchor(ANCHORS.transactionsFilter);
+  const monthAnchorRef = useTourAnchor(ANCHORS.transactionsMonthHeader);
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -293,9 +294,9 @@ export function TransactionsListPage() {
         />
       </div>
 
-      {/* Content. The anchor is on a wrapper: which branch renders depends on loading and
-          filter state, and the tour points at "the list" in all of them. */}
-      <div ref={listAnchorRef}>
+      {/* Content. The tour's list anchor is *not* here — it is on the first month's rows
+          below, so it exists only when there is something to point at. */}
+      <div>
       {isLoading ? (
         <PageLoader />
       ) : filtered.length === 0 ? (
@@ -316,14 +317,16 @@ export function TransactionsListPage() {
         />
       ) : (
         <div className="space-y-5">
-          {months.map((month) => {
+          {months.map((month, i) => {
             const txs = grouped.get(month)!;
             const mRev = txs.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
             const mExp = txs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
             return (
               <div key={month}>
-                {/* Month header */}
-                <div className="flex items-center justify-between px-1.5 pb-2.5">
+                {/* Month header. The first one is the tour's anchor for "which month it
+                    pays for": rent lands under the month it is for, not the day it
+                    arrived, and this heading is where that is visible. */}
+                <div ref={i === 0 ? monthAnchorRef : undefined} className="flex items-center justify-between px-1.5 pb-2.5">
                   <p className="text-[13.5px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmtMonthYear(month, 'long')}</p>
                   <div className="flex gap-4 text-[12px] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     <LtrSpan style={{ color: 'var(--color-rev-fg)' }}>+{formatMoney(mRev)}</LtrSpan>
@@ -331,7 +334,7 @@ export function TransactionsListPage() {
                   </div>
                 </div>
                 {/* Transaction list */}
-                <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+                <div ref={i === 0 ? listAnchorRef : undefined} className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
                   {txs.map((tx) => (
                     <TxRow
                       key={tx.id}

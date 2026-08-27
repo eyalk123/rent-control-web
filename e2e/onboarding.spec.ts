@@ -1,4 +1,18 @@
+import type { Locator } from '@playwright/test';
 import { test, expect, dismissTours, enableTours, waitForAppReady } from './fixtures';
+
+/**
+ * How far the spotlight sits outside the element it is highlighting. The overlay pads
+ * by 8px on every side, so a step pointing at the right element reads `{ dx: 8, dy: 8 }`
+ * and one pointing at anything else does not. Null while either box is still settling,
+ * which is why callers poll.
+ */
+async function inset(spotlight: Locator, target: Locator) {
+  const spot = await spotlight.boundingBox();
+  const el = await target.boundingBox();
+  if (!spot || !el) return null;
+  return { dx: Math.round(el.x - spot.x), dy: Math.round(el.y - spot.y) };
+}
 
 /**
  * The first-run tour, which is the only tour that runs unconditionally (gate: `always`).
@@ -325,5 +339,60 @@ test.describe('onboarding — first run', () => {
 
     // And the tour is still up — scrolling is not a way out of it.
     await expect(page.getByRole('dialog')).toBeVisible();
+  });
+
+  /**
+   * Two adjacent steps must not point at the same thing.
+   *
+   * "Which month it pays for" and "Recording rent" were both anchored on the add button,
+   * so the tour spotlighted one control twice while saying unrelated things about it —
+   * reported as not understanding where the first step was meant to be looking. The month
+   * step now points at the month heading, which is where that fact is actually visible.
+   */
+  test('the month step and the recording step point at different things', async ({ page }) => {
+    await enableTours(page);
+    // Through Properties rather than straight to /transactions: this tour is gated on
+    // `hasProperties`, and the gate reads the query cache passively, so it cannot be
+    // answered until some screen has actually loaded properties. Landing directly on
+    // Transactions defers the tour — by design, see useGates.
+    await page.goto('/properties');
+    await waitForAppReady(page);
+    await dismissTours(page);
+    await page.getByRole('link', { name: 'Transactions' }).click();
+    await expect(page).toHaveURL(/\/transactions/);
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Every shekel, in one place')).toBeVisible();
+
+    // Overview, hero, filter bar, then the month heading — down the screen in order.
+    for (let i = 0; i < 3; i++) await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Which month it pays for')).toBeVisible();
+
+    // The heading above the first month's rows — "March 2026" — not the button below it.
+    const monthHeading = page
+      .locator('main p')
+      .filter({ hasText: /^[A-Za-z֐-׿]+ \d{4}$/ })
+      .first();
+    const spotlight = page.locator('[data-tour-spotlight]');
+    // The anchored element is the heading row, not the month text inside it.
+    await expect.poll(() => inset(spotlight, monthHeading.locator('..'))).toEqual({ dx: 8, dy: 8 });
+
+    const monthBox = (await spotlight.boundingBox())!;
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Two kinds of money')).toBeVisible();
+    // The seed rides here now, not on the month step above it.
+    await expect(card.getByText(/nothing is charged automatically/i)).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    // By heading: the seed line under it opens with the same two words.
+    await expect(card.getByRole('heading', { name: 'Recording rent' })).toBeVisible();
+    const addButton = page.getByRole('button', { name: /add transaction/i }).first();
+    await expect.poll(() => inset(spotlight, addButton)).toEqual({ dx: 8, dy: 8 });
+
+    // The point of the fix: the two steps do not highlight the same rectangle.
+    const addBox = (await spotlight.boundingBox())!;
+    expect(Math.abs(addBox.y - monthBox.y)).toBeGreaterThan(20);
   });
 });

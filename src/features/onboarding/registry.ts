@@ -175,8 +175,13 @@ export const TOURS = {
       { id: 'overview', anchor: null, placement: 'center' },
       { id: 'hero', anchor: ANCHORS.transactionsHero, placement: 'bottom' },
       { id: 'filter', anchor: ANCHORS.transactionsFilter, placement: 'bottom' },
-      { id: 'twoKinds', anchor: ANCHORS.transactionsList, placement: 'bottom' },
-      { id: 'forMonth', anchor: ANCHORS.transactionsAddButton, placement: 'bottom', seed: { id: 'no-auto-rent', opens: null } },
+      // Reading order down the screen from here: the month heading, then the rows under
+      // it, then the button that adds one. `forMonth` used to sit on the add button, the
+      // same element as `recording` below it, so two steps about unrelated things
+      // spotlighted one control twice — and the fact it describes, that rent files under
+      // the month it is *for*, is visible in the heading and nowhere near that button.
+      { id: 'forMonth', anchor: ANCHORS.transactionsMonthHeader, placement: 'bottom', optional: true },
+      { id: 'twoKinds', anchor: ANCHORS.transactionsList, placement: 'bottom', seed: { id: 'no-auto-rent', opens: null } },
       { id: 'recording', anchor: ANCHORS.transactionsAddButton, placement: 'bottom', seed: { id: 'bulk-rent', opens: 'revenue-form' } },
     ],
   },
