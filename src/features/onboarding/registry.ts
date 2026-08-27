@@ -110,13 +110,16 @@ export const TOURS = {
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
       { id: 'headline', anchor: ANCHORS.propertiesHeaderMeta, placement: 'bottom' },
-      { id: 'add', anchor: ANCHORS.propertiesAddButton, placement: 'bottom' },
-      { id: 'select', anchor: ANCHORS.propertiesSelect, placement: 'bottom', seed: { id: 'bulk-select', opens: null } },
+      // Shared with the renters tour, which is the same kind of screen: whichever tab
+      // is opened first says these, and the other stays quiet. See `sharedWith`.
+      { id: 'add', anchor: ANCHORS.propertiesAddButton, placement: 'bottom', sharedWith: ['renters-list'] },
+      { id: 'select', anchor: ANCHORS.propertiesSelect, placement: 'bottom', seed: { id: 'bulk-select', opens: null }, sharedWith: ['renters-list'] },
       // The copy is about search, filters and sort being remembered — a claim about this
       // bar, not about the list below it.
-      { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom' },
+      { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom', sharedWith: ['renters-list'] },
+      // Not shared: a property card and a renter card show different things.
       { id: 'cards', anchor: ANCHORS.propertiesList, placement: 'bottom' },
-      { id: 'table', anchor: ANCHORS.propertiesViewToggle, placement: 'bottom', optional: true },
+      { id: 'table', anchor: ANCHORS.propertiesViewToggle, placement: 'bottom', optional: true, sharedWith: ['renters-list'] },
     ],
   },
 
@@ -140,12 +143,13 @@ export const TOURS = {
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
       { id: 'headline', anchor: ANCHORS.rentersHeaderMeta, placement: 'bottom' },
-      { id: 'add', anchor: ANCHORS.rentersAddButton, placement: 'bottom' },
+      // Shared with the properties tour — see the note there.
+      { id: 'add', anchor: ANCHORS.rentersAddButton, placement: 'bottom', sharedWith: ['properties-list'] },
       { id: 'ended', anchor: ANCHORS.rentersEndedFilter, placement: 'bottom', seed: { id: 'ended-tenants', opens: null } },
-      { id: 'select', anchor: ANCHORS.rentersSelect, placement: 'bottom' },
-      { id: 'search', anchor: ANCHORS.rentersSearch, placement: 'bottom' },
+      { id: 'select', anchor: ANCHORS.rentersSelect, placement: 'bottom', sharedWith: ['properties-list'] },
+      { id: 'search', anchor: ANCHORS.rentersSearch, placement: 'bottom', sharedWith: ['properties-list'] },
       { id: 'cards', anchor: ANCHORS.rentersList, placement: 'bottom' },
-      { id: 'table', anchor: ANCHORS.rentersViewToggle, placement: 'bottom', optional: true },
+      { id: 'table', anchor: ANCHORS.rentersViewToggle, placement: 'bottom', optional: true, sharedWith: ['properties-list'] },
     ],
   },
 
@@ -368,12 +372,31 @@ export function validateRegistry(): string[] {
   // A seed that opens a tour this platform does not define advertises a destination that
   // can never open, and fails silently: nothing throws when the user finally gets there.
   const defined = new Set(Object.keys(TOURS));
+  const byId = TOURS as Record<string, TourDefinition | undefined>;
   for (const tour of tours) {
     for (const step of tour.steps) {
       if (step.seed?.opens && !defined.has(step.seed.opens)) {
         errors.push(
           `${tour.id}.${step.id}: seed opens '${step.seed.opens}', which this platform has no tour for`,
         );
+      }
+      // A shared step has to be declared from both ends. Named one way only, one tab
+      // suppresses the step while the other still shows it — which looks like working
+      // software from either side on its own, and is why this is checked rather than
+      // trusted.
+      for (const other of step.sharedWith ?? []) {
+        const partner = byId[other];
+        if (!partner) {
+          errors.push(
+            `${tour.id}.${step.id}: shared with '${other}', which this platform has no tour for`,
+          );
+          continue;
+        }
+        if (!partner.steps.some((s) => s.sharedWith?.includes(tour.id))) {
+          errors.push(
+            `${tour.id}.${step.id}: shared with '${other}', but nothing there shares back`,
+          );
+        }
       }
     }
   }

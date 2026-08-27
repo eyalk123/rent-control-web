@@ -75,10 +75,10 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   // the gates directly would freeze them at the values they had before the lists loaded —
   // which is exactly the moment a `skipWhen` step needs an answer. Kept current on every
   // render, the same way the anchor registry reads through a ref.
-  const gatesRef = useRef({ evaluateGate, isGateKnown });
+  const gatesRef = useRef({ evaluateGate, isGateKnown, hasSeenTour: progress.hasSeenTour });
   useEffect(() => {
-    gatesRef.current = { evaluateGate, isGateKnown };
-  }, [evaluateGate, isGateKnown]);
+    gatesRef.current = { evaluateGate, isGateKnown, hasSeenTour: progress.hasSeenTour };
+  }, [evaluateGate, isGateKnown, progress.hasSeenTour]);
   const [active, setActive] = useState<ActiveTour | null>(null);
   // Tours already considered and rejected this session, so a page that re-renders
   // constantly does not re-run the whole check each time.
@@ -100,12 +100,26 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         // Bail if the wait was cancelled meanwhile — a navigation, or a sign-out.
         if (openingRef.current !== tour.id) return;
 
-        const { evaluateGate: gate, isGateKnown: known } = gatesRef.current;
+        const { evaluateGate: gate, isGateKnown: known, hasSeenTour: seen } = gatesRef.current;
 
-        // A step whose `skipWhen` gate has passed is not part of this tour at all — the
-        // closing "start with one property" card once there is a portfolio. Resolved
-        // first, so it counts for neither the wait nor the step counter.
-        const live = tour.steps.filter((s) => !s.skipWhen || !gate(s.skipWhen));
+        // Two reasons a step is not part of this tour at all, both resolved first so
+        // they count for neither the wait nor the step counter:
+        //   - its `skipWhen` gate has passed — the closing "start with one property"
+        //     card, once there is a portfolio;
+        //   - a tour it is shared with has already run, so it has already been said.
+        const live = tour.steps.filter(
+          (s) =>
+            (!s.skipWhen || !gate(s.skipWhen)) &&
+            !s.sharedWith?.some((other) => seen(other)),
+        );
+
+        // Everything was said elsewhere. Do not open, and do not mark it seen: the same
+        // silent no-op a failed gate produces, so the tour stays available if the
+        // registry later gives it something of its own to say.
+        if (live.length === 0) {
+          openingRef.current = null;
+          return;
+        }
 
         // Excluded from the wait, for opposite reasons. An optional step's element may
         // legitimately be absent, and waiting on one would suppress the entire tour; a

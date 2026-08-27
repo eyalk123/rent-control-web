@@ -133,6 +133,24 @@ export interface TourStep {
    * — and because the alternative is discovering all of the above again from scratch.
    */
   revealsAnchor?: boolean;
+  /**
+   * Other tours that carry this same step. If any of them has been seen, this has already
+   * been said, and the step is dropped here.
+   *
+   * Properties and Renters are the same kind of screen, so their tours were explaining the
+   * Add menu, multi-select, search persistence and the table view once per tab, in wording
+   * that differed only in the noun. Whichever tab the user opens first is the one that
+   * says it; the other stays quiet.
+   *
+   * It needs no new persistence, which is the whole reason it is shaped this way: "has the
+   * other tour run" is a question `tours_seen` already answers. The cost is that skipping
+   * a tour also suppresses its shared steps elsewhere — skipping is declining the content,
+   * not deferring it, which is how the rest of the model already behaves.
+   *
+   * Both sides must name each other. A one-sided declaration makes one tab suppress while
+   * the other repeats, which nothing would catch by reading — `validateRegistry` checks it.
+   */
+  sharedWith?: TourId[];
 }
 
 export interface TourDefinition {

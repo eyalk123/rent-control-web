@@ -166,6 +166,44 @@ test.describe('onboarding — first run', () => {
   });
 
   /**
+   * Properties and Renters are the same kind of screen, so their tours were explaining the
+   * Add menu, multi-select, search persistence and the table view once per tab, in wording
+   * that differed only in the noun. Whichever tab is opened first says them.
+   *
+   * There is no server here, so this leans on the optimistic cache write surviving —
+   * `patchTourState` returns null in mock mode and `onSuccess` deliberately does not
+   * overwrite. One page session is therefore enough to cover both halves.
+   */
+  test('a step shared between Properties and Renters is only said once', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/renters');
+    await waitForAppReady(page);
+
+    // Renters first, in full: eight steps, ending on the table view.
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your renters')).toBeVisible();
+    await expect(card.getByText('1 of 8')).toBeVisible();
+    for (let i = 0; i < 7; i++) await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('And the same list as a table')).toBeVisible();
+    await card.getByRole('button', { name: 'Got it' }).click();
+
+    // Properties second: only what Renters could not have said.
+    await page.getByRole('link', { name: 'Properties' }).click();
+    await expect(page).toHaveURL(/\/properties/);
+    await waitForAppReady(page);
+
+    await expect(card.getByText('Your properties')).toBeVisible();
+    await expect(card.getByText('1 of 3')).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('The line that counts')).toBeVisible();
+    await card.getByRole('button', { name: 'Next' }).click();
+    // Kept, not shared: a property card and a renter card show different things.
+    await expect(card.getByText('Cards')).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Got it' })).toBeVisible();
+  });
+
+  /**
    * The display-mode demo. Two things have to hold: the list really does change behind
    * the card, and the user's saved preference is not touched by it — the tour overrides
    * what is rendered, it does not choose for them.
