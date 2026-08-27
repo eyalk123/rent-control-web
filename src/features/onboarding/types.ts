@@ -118,16 +118,19 @@ export interface TourStep {
   skipWhen?: GateId;
   /**
    * A step whose element does not exist until the step is reached — because reaching it is
-   * what creates the element.
+   * what creates the element. Excluded from the anchor wait like `optional`, but **never
+   * dropped**: the screen that owns the surface reveals the element when the step arrives
+   * and puts things back afterwards (see `useTourStep`).
    *
-   * The web home tour points at the notification-settings control, which lives inside the
-   * alerts panel: closed when the tour opens, opened by the screen when this step comes up.
-   * Neither existing flag fits. Waiting on it would stop the whole tour from ever opening,
-   * and `optional` would silently drop the one step the user asked for.
+   * **Nothing sets this today.** It was written for the web home tour's reminder-settings
+   * step, back when that control existed only at the foot of the alerts panel — the tour
+   * opened the panel to reach it. Neither other flag fitted: waiting would have stopped the
+   * whole tour from opening, and `optional` would have dropped the one step that was asked
+   * for. That case went away when the control moved onto the Home screen itself, which was
+   * the better answer to begin with.
    *
-   * So: excluded from the anchor wait like `optional`, but **never dropped**. The screen
-   * that owns the panel is responsible for revealing the element when the step arrives and
-   * putting things back afterwards (see `useTourStep`).
+   * Kept because the situation recurs — a step worth pointing at something inside a drawer
+   * — and because the alternative is discovering all of the above again from scratch.
    */
   revealsAnchor?: boolean;
 }

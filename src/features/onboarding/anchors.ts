@@ -31,6 +31,9 @@ export const ANCHORS = {
   homeSummaryCards: 'home.summaryCards', // net profit + cash flow, the pair at the top
   homeQuickActions: 'home.quickActions',
   homeNeedsAttention: 'home.needsAttention',
+  /** "Manage notifications", inline beside the Needs Attention label. Same key name as
+   *  mobile, where it sits in the same place. */
+  homeManageNotifications: 'home.manageNotifications',
   homeOccupancy: 'home.occupancy',
   homeRecent: 'home.recent',
   homeNotificationsBell: 'home.notificationsBell', // web-only bell panel
@@ -126,9 +129,11 @@ export const ANCHORS = {
   scanSummary: 'scan.summary',
 
   // Alerts — src/features/alerts/AlertsPanel.tsx
-  /** "Manage notifications", at the foot of the alerts panel. The panel is closed when the
-   *  home tour opens, so the step pointing here is `revealsAnchor` and AppShell opens the
-   *  panel when it comes up. */
+  /** RESERVED: "Manage notifications" at the foot of the alerts panel. Still plumbed,
+   *  but no step points at it — reminder settings are now reachable from the Home
+   *  screen itself (`homeManageNotifications`), which is what the home tour spotlights
+   *  and what mobile has always done. This one stays for the reader who is already in
+   *  the panel. */
   alertsSettingsButton: 'alerts.settingsButton',
 
   // Assistant — src/layout/TopBar.tsx and src/features/agent/

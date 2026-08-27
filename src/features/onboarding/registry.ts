@@ -80,10 +80,10 @@ export const TOURS = {
       { id: 'summary', anchor: ANCHORS.homeSummaryCards, placement: 'bottom' },
       { id: 'quickActions', anchor: ANCHORS.homeQuickActions, placement: 'bottom' },
       { id: 'attention', anchor: ANCHORS.homeNeedsAttention, placement: 'bottom', seed: { id: 'alert-actions', opens: null } },
-      // Inside the alerts panel, which is shut when this tour opens — AppShell opens it
-      // when this step comes up and closes it again after. `revealsAnchor` is what stops
-      // the absent element from either blocking the tour or quietly dropping the step.
-      { id: 'notifications', anchor: ANCHORS.alertsSettingsButton, placement: 'top', revealsAnchor: true },
+      // Beside the Needs Attention label, where mobile has always had it. It used to
+      // point inside the alerts panel and open it — the control existed nowhere else —
+      // which worked but made the tour reach into the app to reveal its own target.
+      { id: 'notifications', anchor: ANCHORS.homeManageNotifications, placement: 'bottom' },
       { id: 'occupancy', anchor: ANCHORS.homeOccupancy, placement: 'bottom' },
       { id: 'recent', anchor: ANCHORS.homeRecent, placement: 'top' },
     ],

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Clock, TrendingUp } from 'lucide-react';
+import { AlertCircle, Clock, Settings2, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
@@ -28,6 +28,7 @@ export function NeedsAttentionSection() {
   const dismissNotification = useDismissNotification();
   const [savingId, setSavingId] = useState<number | null>(null);
   const anchorRef = useTourAnchor(ANCHORS.homeNeedsAttention);
+  const manageAnchorRef = useTourAnchor(ANCHORS.homeManageNotifications);
 
   const overdue = items.filter((i) => i.type === 'overdue');
   const expiring = items.filter((i) => i.type === 'lease_expiring');
@@ -56,9 +57,26 @@ export function NeedsAttentionSection() {
 
   return (
     <div ref={anchorRef}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-        {t('home.needsAttention')}
-      </p>
+      {/* Reminder settings sit here, beside the label, rather than only at the foot of
+          the alerts panel. They are something you configure in the first week and then
+          forget, so being two clicks deep behind the bell made them easy to never find.
+          The copy in the panel stays: someone already reading alerts wants it there. */}
+      {/* Next to the label rather than pushed to the far end of the row: this column is
+          half the width of the page, so a right-aligned action sits against the
+          occupancy heading beside it and reads as though it belongs to that one. */}
+      <div className="flex items-center gap-3 mb-3">
+        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
+          {t('home.needsAttention')}
+        </p>
+        <button
+          ref={manageAnchorRef}
+          onClick={() => navigate('/settings/notifications')}
+          className="flex items-center gap-1.5 text-[11px] font-medium hover:opacity-70 transition-opacity"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          <Settings2 size={12} aria-hidden="true" /> {t('notifications.manageTitle')}
+        </button>
+      </div>
       <div className="space-y-3">
         {loading && (
           <div className="rounded-[var(--radius-card)] p-4 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>

@@ -126,13 +126,13 @@ test.describe('onboarding — first run', () => {
   });
 
   /**
-   * The reminder-settings control lives inside the alerts panel, so this step has to
-   * bring its own anchor into being. It is the only `revealsAnchor` step in either
-   * registry, and the failure it guards against is silent: the panel not opening leaves
-   * the card pointing at nothing, and a panel left open afterwards is a tour that did
-   * not clean up after itself.
+   * Reminder settings are reachable from Home itself, not only from inside the alerts
+   * panel. This is the step that says so, and the assertion that matters is that the
+   * spotlight is actually on the control — that step used to point inside the panel, and
+   * when the measurement missed it the step quietly degraded to a card highlighting
+   * nothing at all.
    */
-  test('the reminder-settings step opens the alerts panel, and closes it again', async ({ page }) => {
+  test('the reminder-settings step points at the control on Home', async ({ page }) => {
     await enableTours(page);
     await page.goto('/home');
     await waitForAppReady(page);
@@ -142,19 +142,13 @@ test.describe('onboarding — first run', () => {
     await card.getByRole('button', { name: 'Skip' }).click();
     await expect(card.getByText("What's on this screen")).toBeVisible();
 
-    const manage = page.getByRole('button', { name: /manage notifications/i });
-    await expect(manage).toBeHidden();
+    // On the page from the start, with no panel to open first.
+    const manage = page.getByRole('button', { name: /manage notifications/i }).first();
+    await expect(manage).toBeVisible();
 
     for (let i = 0; i < 4; i++) await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Reminder settings')).toBeVisible();
-    await expect(manage).toBeVisible();
 
-    // And the spotlight is actually on it. The panel's contents mount a render after
-    // the step becomes active, so a single measurement finds nothing and the step
-    // renders as a bare centred card — highlighting nothing, which is the one thing an
-    // anchored step must never do.
-    // Polled, not snapshotted: the panel slides in, so both the button and the
-    // spotlight chasing it are still moving for a couple of hundred milliseconds.
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -169,10 +163,6 @@ test.describe('onboarding — first run', () => {
         }),
       )
       .toEqual({ dx: 8, dy: 8 });
-
-    await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Occupancy')).toBeVisible();
-    await expect(manage).toBeHidden();
   });
 
   /**
