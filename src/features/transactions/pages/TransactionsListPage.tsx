@@ -101,6 +101,8 @@ export function TransactionsListPage() {
   useTour('transactions-list');
   const listAnchorRef = useTourAnchor(ANCHORS.transactionsList);
   const addAnchorRef = useTourAnchor(ANCHORS.transactionsAddButton);
+  const heroAnchorRef = useTourAnchor(ANCHORS.transactionsHero);
+  const filterAnchorRef = useTourAnchor(ANCHORS.transactionsFilter);
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -204,7 +206,9 @@ export function TransactionsListPage() {
         )}
       </div>
 
-      {/* Hero: chart + KPI tiles */}
+      {/* Hero: chart + KPI tiles. Anchored on a wrapper because which of the two branches
+          renders depends on loading, and a tour that opened mid-fetch would find nothing. */}
+      <div ref={heroAnchorRef}>
       {summaryLoading ? (
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1.6fr_1fr]">
           <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
@@ -266,9 +270,10 @@ export function TransactionsListPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div ref={filterAnchorRef} className="flex flex-wrap items-center gap-2">
         <SegToggle
           value={filter}
           onChange={(v) => setFilter(v as Filter)}

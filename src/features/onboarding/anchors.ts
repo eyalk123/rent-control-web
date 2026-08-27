@@ -46,15 +46,26 @@ export const ANCHORS = {
    * card off-screen and left the step invisible. Point at one item, not the collection.
    */
   propertiesList: 'properties.list',
+  propertiesHeaderMeta: 'properties.headerMeta', // the count/occupied/monthly summary line
+  propertiesAddButton: 'properties.addButton',   // the Add menu (add by hand / scan a lease)
+  propertiesSelect: 'properties.select',         // enters multi-select
   propertiesSearch: 'properties.search',
-  // RESERVED: the properties tour explains the cards, not the add control.
-  propertiesAddButton: 'properties.addButton',
+  /** The cards/table toggle. Inside `hidden lg:flex`, so it is absent on a narrow viewport
+   *  — which is exactly where the table cannot render either. The step that points here is
+   *  `optional`, so it drops itself at the width where it would be a lie. */
+  propertiesViewToggle: 'properties.viewToggle',
   propertyFormStepper: 'propertyForm.stepper', // -> shared/components/ui Stepper
   propertyFormOwnerField: 'propertyForm.ownerField',
 
   // Renters
   rentersList: 'renters.list',
-  rentersEndedFilter: 'renters.endedFilter',
+  rentersHeaderMeta: 'renters.headerMeta',
+  rentersAddButton: 'renters.addButton',
+  rentersSelect: 'renters.select',
+  rentersEndedFilter: 'renters.endedFilter', // the status tabs — 'Ended' is the seed target
+  rentersSearch: 'renters.search',
+  /** Same story as `propertiesViewToggle`. */
+  rentersViewToggle: 'renters.viewToggle',
   renterDetailTimeline: 'renterDetail.timeline', // -> RenterLeaseInfoDisplayCard
   renterDetailExtend: 'renterDetail.extendButton',
   renterDetailEndLease: 'renterDetail.endLeaseButton', // -> EndLeaseDialog trigger
@@ -72,6 +83,8 @@ export const ANCHORS = {
 
   // Transactions — src/features/transactions/
   transactionsList: 'transactions.list',
+  transactionsHero: 'transactions.hero',     // cash-flow chart + the KPI tiles beside it
+  transactionsFilter: 'transactions.filter', // all / money in / money out
   // RESERVED: the `suppliers` seed names this in prose, but the seed is carried by the
   // transactions add-button step, so nothing points a spotlight at it. Web reaches
   // suppliers from the nav rather than a header button.
@@ -102,6 +115,8 @@ export const ANCHORS = {
 
   // Reports — src/features/reports/
   reportsCards: 'reports.cards',
+  /** The export history list. The hub has no export button of its own — exports are made
+   *  inside a report and land here. */
   reportsExport: 'reports.exportButton',
 
   // Scan — src/features/document-scan/
@@ -109,6 +124,12 @@ export const ANCHORS = {
   // RESERVED: the summary drawer only opens after an extraction, so the lease-scan tour
   // (which opens on the picker) cannot point at it — see registry.ts.
   scanSummary: 'scan.summary',
+
+  // Alerts — src/features/alerts/AlertsPanel.tsx
+  /** "Manage notifications", at the foot of the alerts panel. The panel is closed when the
+   *  home tour opens, so the step pointing here is `revealsAnchor` and AppShell opens the
+   *  panel when it comes up. */
+  alertsSettingsButton: 'alerts.settingsButton',
 
   // Assistant — src/layout/TopBar.tsx and src/features/agent/
   /** The launcher in the top bar. Absent when the account has no assistant, which is why

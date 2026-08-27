@@ -39,7 +39,7 @@ import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import type { Renter } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
-import { useTour } from '@/features/onboarding/TourController';
+import { useTour, useTourStep } from '@/features/onboarding/TourController';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -304,6 +304,11 @@ export function RentersListPage() {
   useTour('renters-list');
   const listAnchorRef = useTourAnchor(ANCHORS.rentersList);
   const endedAnchorRef = useTourAnchor(ANCHORS.rentersEndedFilter);
+  const metaAnchorRef = useTourAnchor(ANCHORS.rentersHeaderMeta);
+  const addAnchorRef = useTourAnchor(ANCHORS.rentersAddButton);
+  const selectAnchorRef = useTourAnchor(ANCHORS.rentersSelect);
+  const searchAnchorRef = useTourAnchor(ANCHORS.rentersSearch);
+  const toggleAnchorRef = useTourAnchor(ANCHORS.rentersViewToggle);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: renters = [], isLoading, error, refetch } = useRenters();
@@ -316,6 +321,11 @@ export function RentersListPage() {
   const statusFilter = STATUS_FILTERS.includes(persistedStatus) ? persistedStatus : 'all';
   const [search, setSearch] = usePersistedState('app_list_search:renters', '');
   const [view, setView] = useViewMode('renters');
+  // Both display modes are demonstrated rather than described — see the same block in
+  // PropertiesListPage for why this is derived and never written.
+  const tourStep = useTourStep('renters-list');
+  const shownView: ViewMode =
+    tourStep === 'cards' ? 'card' : tourStep === 'table' ? 'table' : view;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
   // Document-scan (renter target) result: the mapped extraction, the finalised per-renter
@@ -459,7 +469,7 @@ export function RentersListPage() {
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.renters')}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+          <p ref={metaAnchorRef} className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
             {isLoading
               ? <Skeleton width={200} height={14} />
               : t('renter.headerMeta', { count: renters.length, expiring: counts.expiring, overdue: counts.overdue })}
@@ -480,6 +490,7 @@ export function RentersListPage() {
         ) : (
           <div className="flex items-center gap-2 shrink-0">
             <button
+              ref={selectAnchorRef}
               onClick={() => sel.enter()}
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
@@ -488,6 +499,7 @@ export function RentersListPage() {
               <CheckSquare size={14} /> {t('common.select')}
             </button>
             <AddMenu
+              anchorRef={addAnchorRef}
               label={t('property.addRenterAction')}
               onManual={openBlankRenterForm}
               onScan={() => beginScan({ target: 'renter', originPath: location.pathname })}
@@ -524,6 +536,7 @@ export function RentersListPage() {
         <div className="flex-1" />
         <div className="flex items-center gap-2 pb-2 w-full sm:w-auto">
           <input
+            ref={searchAnchorRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('renter.searchPlaceholder')}
@@ -534,9 +547,12 @@ export function RentersListPage() {
               color: 'var(--color-text-primary)',
             }}
           />
+          {/* Hidden below `lg`, and so is the table — which is what lets the tour's table
+              step drop itself at the width where it could not be demonstrated. */}
           <div className="hidden lg:flex items-center gap-2">
             <SegToggle
-              value={view}
+              anchorRef={toggleAnchorRef}
+              value={shownView}
               onChange={(v) => setView(v as ViewMode)}
               options={[
                 { value: 'card', label: t('common.cardsView') },
@@ -568,7 +584,7 @@ export function RentersListPage() {
               ) : undefined
             }
           />
-        ) : view === 'card' || isMobile ? (
+        ) : shownView === 'card' || isMobile ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map((r) => (
               <RenterCard

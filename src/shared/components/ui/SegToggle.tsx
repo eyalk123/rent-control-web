@@ -10,6 +10,8 @@ interface SegToggleProps<T extends string> {
   onChange: (value: T) => void;
   size?: 'sm' | 'md';
   className?: string;
+  /** Onboarding anchor, so a tour can point at the toggle itself. */
+  anchorRef?: (el: HTMLDivElement | null) => void;
 }
 
 export function SegToggle<T extends string>({
@@ -18,11 +20,12 @@ export function SegToggle<T extends string>({
   onChange,
   size = 'md',
   className = '',
+  anchorRef,
 }: SegToggleProps<T>) {
   const padClass = size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm';
 
   return (
-    <div className={`inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-input-filled-background)] p-0.5 gap-0.5 ${className}`}>
+    <div ref={anchorRef} className={`inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-input-filled-background)] p-0.5 gap-0.5 ${className}`}>
       {options.map((opt) => {
         const active = opt.value === value;
         return (

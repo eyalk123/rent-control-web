@@ -97,21 +97,84 @@ test.describe('onboarding — first run', () => {
     // and it opens on a page-level step — centred, no spotlight — rather than dropping
     // straight from a control in the top bar onto a figure halfway down the page.
     await expect(card.getByText("What's on this screen")).toBeVisible();
-    await expect(card.getByText('1 of 6')).toBeVisible();
+    await expect(card.getByText('1 of 7')).toBeVisible();
 
-    const blocks = ['The month so far', 'Quick actions', 'Needs attention', 'Occupancy', 'Recent activity'];
+    const blocks = [
+      'The month so far',
+      'Quick actions',
+      'Needs attention',
+      'Reminder settings',
+      'Occupancy',
+      'Recent activity',
+    ];
     for (const title of blocks) {
       await card.getByRole('button', { name: 'Next' }).click();
       await expect(card.getByText(title)).toBeVisible();
     }
-    await expect(card.getByText('6 of 6')).toBeVisible();
+    await expect(card.getByText('7 of 7')).toBeVisible();
 
     // The alert-actions seed moved here from first-run's Home step, where it named a
     // feature three screens away from anything it described.
-    await card.getByRole('button', { name: 'Back' }).click();
-    await card.getByRole('button', { name: 'Back' }).click();
+    for (let i = 0; i < 3; i++) await card.getByRole('button', { name: 'Back' }).click();
     await expect(card.getByText('Needs attention')).toBeVisible();
     await expect(card.getByText(/record the payment or message the renter/i)).toBeVisible();
+  });
+
+  /**
+   * The reminder-settings control lives inside the alerts panel, so this step has to
+   * bring its own anchor into being. It is the only `revealsAnchor` step in either
+   * registry, and the failure it guards against is silent: the panel not opening leaves
+   * the card pointing at nothing, and a panel left open afterwards is a tour that did
+   * not clean up after itself.
+   */
+  test('the reminder-settings step opens the alerts panel, and closes it again', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/home');
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await card.getByRole('button', { name: 'Skip' }).click();
+    await expect(card.getByText("What's on this screen")).toBeVisible();
+
+    const manage = page.getByRole('button', { name: /manage notifications/i });
+    await expect(manage).toBeHidden();
+
+    for (let i = 0; i < 4; i++) await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Reminder settings')).toBeVisible();
+    await expect(manage).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Occupancy')).toBeVisible();
+    await expect(manage).toBeHidden();
+  });
+
+  /**
+   * The display-mode demo. Two things have to hold: the list really does change behind
+   * the card, and the user's saved preference is not touched by it — the tour overrides
+   * what is rendered, it does not choose for them.
+   */
+  test('the properties tour shows both display modes without changing the saved one', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/properties');
+    await waitForAppReady(page);
+    await page.evaluate(() => localStorage.setItem('app_list_view:properties', 'card'));
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your properties')).toBeVisible();
+
+    for (let i = 0; i < 5; i++) await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Cards')).toBeVisible();
+    await expect(page.locator('main table')).toBeHidden();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('And the same list as a table')).toBeVisible();
+    await expect(page.locator('main table')).toBeVisible();
+
+    // Still the user's choice, both during the demo and after it.
+    expect(await page.evaluate(() => localStorage.getItem('app_list_view:properties'))).toBe('card');
+    await card.getByRole('button', { name: 'Got it' }).click();
+    await expect(page.locator('main table')).toBeHidden();
   });
 
   test('skipping counts as seen', async ({ page }) => {

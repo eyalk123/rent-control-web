@@ -116,6 +116,20 @@ export interface TourStep {
    * so the step counter stays truthful. It still counts against the budget.
    */
   skipWhen?: GateId;
+  /**
+   * A step whose element does not exist until the step is reached — because reaching it is
+   * what creates the element.
+   *
+   * The web home tour points at the notification-settings control, which lives inside the
+   * alerts panel: closed when the tour opens, opened by the screen when this step comes up.
+   * Neither existing flag fits. Waiting on it would stop the whole tour from ever opening,
+   * and `optional` would silently drop the one step the user asked for.
+   *
+   * So: excluded from the anchor wait like `optional`, but **never dropped**. The screen
+   * that owns the panel is responsible for revealing the element when the step arrives and
+   * putting things back afterwards (see `useTourStep`).
+   */
+  revealsAnchor?: boolean;
 }
 
 export interface TourDefinition {
@@ -150,7 +164,12 @@ export const BUDGET = {
   // orientation tour was assumed to be one tour of its own — but the home sweep opens the
   // instant it closes, so five capped a definition rather than an experience.
   orientation: { steps: 9, seeds: 3 },
-  page: { steps: 3, seeds: 2 },
+  // Eight because a page tour is now expected to *cover* its screen — an opening card that
+  // says what the screen is for, then every block on it — rather than pick the two or three
+  // things most worth saying. Three was the right number for the second kind and is far too
+  // few for the first. Still a ceiling and still asserted: it catches a tour that has run
+  // away, at a number that matches what a full walk of a screen actually costs.
+  page: { steps: 8, seeds: 3 },
   // A destination can seed nested children of its own: notification settings
   // seeds the rule editor and the WhatsApp templates that sit inside it.
   elaboration: { steps: 3, seeds: 2 },

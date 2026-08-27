@@ -1238,6 +1238,10 @@
           "title": "Needs attention",
           "body": "Rent that hasn't arrived, leases about to expire, and CPI changes — all in one place."
         },
+        "notifications": {
+          "title": "Reminder settings",
+          "body": "Which reminders go out, when, and to whom — set once, and they run themselves."
+        },
         "occupancy": {
           "title": "Occupancy",
           "body": "Which units are let and which are standing empty, at a glance."
@@ -1248,13 +1252,33 @@
         }
       },
       "properties-list": {
-        "cards": {
-          "title": "One card per unit",
-          "body": "Open one for its lease, its tenant, and the money it has made."
+        "overview": {
+          "title": "Your properties",
+          "body": "Every unit you manage, however you like to look at them. Here is the screen."
+        },
+        "headline": {
+          "title": "The line that counts",
+          "body": "How many units, how many are occupied, and what they bring in each month."
+        },
+        "add": {
+          "title": "Two ways in",
+          "body": "Type a property in yourself, or scan a lease and let us fill it in for you."
+        },
+        "select": {
+          "title": "Select more than one",
+          "body": "For the times you need to act on several at once instead of one after another."
         },
         "persistence": {
           "title": "It remembers you",
           "body": "Search, filters and sort stay exactly how you left them."
+        },
+        "cards": {
+          "title": "Cards",
+          "body": "A photo, the rent, and who is in it — built for recognising a place at a glance."
+        },
+        "table": {
+          "title": "And the same list as a table",
+          "body": "Watch it change behind this card. Every property on one row — sortable, comparable, better for a long list."
         }
       },
       "property-form": {
@@ -1268,13 +1292,41 @@
         }
       },
       "renters-list": {
-        "current": {
-          "title": "Who's leasing now",
-          "body": "Everyone with an active lease."
+        "overview": {
+          "title": "Your renters",
+          "body": "The people in your properties, and where each lease stands. Here is the screen."
+        },
+        "headline": {
+          "title": "The line that counts",
+          "body": "How many renters you have, and how many leases are running right now."
+        },
+        "add": {
+          "title": "Two ways in",
+          "body": "Add a renter and their lease by hand, or scan the lease and let us read it."
         },
         "ended": {
           "title": "And who used to",
           "body": "Ended tenants have their own filter."
+        },
+        "select": {
+          "title": "Select more than one",
+          "body": "For the times you need to act on several renters at once."
+        },
+        "search": {
+          "title": "Search stays put",
+          "body": "What you typed and the tab you were on are still here when you come back."
+        },
+        "cards": {
+          "title": "Cards",
+          "body": "A face, a phone number and the lease status — built for recognising a person."
+        },
+        "table": {
+          "title": "And the same list as a table",
+          "body": "Watch it change behind this card. Every renter on one row — sortable, comparable, better for a long list."
+        },
+        "current": {
+          "title": "Who's leasing now",
+          "body": "Everyone with an active lease."
         }
       },
       "lease-form": {
@@ -1292,6 +1344,18 @@
         }
       },
       "transactions-list": {
+        "overview": {
+          "title": "Every shekel, in one place",
+          "body": "What came in, what went out, and the shape of the last six months. Here is the screen."
+        },
+        "hero": {
+          "title": "Six months at a glance",
+          "body": "Money in against money out, with this month's totals beside it."
+        },
+        "filter": {
+          "title": "One kind at a time",
+          "body": "Narrow the list to money in or money out when you are looking for something specific."
+        },
         "twoKinds": {
           "title": "Two kinds of money",
           "body": "Revenue is rent coming in. Expenses are what you pay out."
@@ -1388,13 +1452,17 @@
         }
       },
       "suppliers": {
-        "what": {
-          "title": "The people you pay twice",
-          "body": "Plumber, electrician, management company. Save once, then attach to any expense."
+        "overview": {
+          "title": "Suppliers",
+          "body": "The plumber, the electrician, the management company — saved once, attached to any expense."
         },
         "categories": {
           "title": "Expense categories",
           "body": "They live here too, and they're what your expense reports group by."
+        },
+        "what": {
+          "title": "The people you pay twice",
+          "body": "Plumber, electrician, management company. Save once, then attach to any expense."
         }
       },
       "notifications": {
@@ -1436,6 +1504,10 @@
         }
       },
       "reports": {
+        "overview": {
+          "title": "Reports",
+          "body": "Two of them, and a record of everything you have exported. Here is the screen."
+        },
         "two": {
           "title": "Two reports",
           "body": "Income against expenses for any period, and a full expense log you can filter."

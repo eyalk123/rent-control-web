@@ -33,7 +33,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Property, PropertyType } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
-import { useTour } from '@/features/onboarding/TourController';
+import { useTour, useTourStep } from '@/features/onboarding/TourController';
 
 import i18n from '@/core/i18n';
 
@@ -272,11 +272,29 @@ export function PropertiesListPage() {
   useTour('properties-list');
   const listAnchorRef = useTourAnchor(ANCHORS.propertiesList);
   const searchAnchorRef = useTourAnchor(ANCHORS.propertiesSearch);
+  const metaAnchorRef = useTourAnchor(ANCHORS.propertiesHeaderMeta);
+  const addAnchorRef = useTourAnchor(ANCHORS.propertiesAddButton);
+  const selectAnchorRef = useTourAnchor(ANCHORS.propertiesSelect);
+  const toggleAnchorRef = useTourAnchor(ANCHORS.propertiesViewToggle);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: properties, isLoading, error, refetch } = useProperties();
   const [search, setSearch] = usePersistedState('app_list_search:properties', '');
   const [view, setView] = useViewMode('properties');
+  /**
+   * The tour demonstrates both display modes instead of describing them: the step that
+   * explains cards shows cards, the step that explains the table shows the table.
+   *
+   * Derived, never written. `setView` persists to localStorage, so driving the tour through
+   * it would quietly overwrite a preference the user chose — and would need restoring
+   * afterwards, which is a thing to get wrong. This overrides only what is *rendered* (and
+   * the toggle's own position, so the control is visibly doing it), stores nothing, and
+   * `useTourStep` returns null the moment the tour ends, which puts the user's choice back
+   * with no cleanup at all.
+   */
+  const tourStep = useTourStep('properties-list');
+  const shownView: ViewMode =
+    tourStep === 'cards' ? 'card' : tourStep === 'table' ? 'table' : view;
   const [drawerOpen, setDrawerOpen] = useState(false);
   // Document-scan result driving the (persistent) property form's prefill. Kept until the
   // next blank "Add property" — NOT cleared on the drawer's onClose, so the chained renter
@@ -368,7 +386,7 @@ export function PropertiesListPage() {
       <div className="flex flex-wrap items-start justify-between gap-4 gap-y-3 pb-2" style={{ borderBottom: '1px solid var(--color-outline)' }}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('screens.properties')}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+          <p ref={metaAnchorRef} className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
             {isLoading ? (
               <Skeleton width={220} height={14} />
             ) : (
@@ -394,6 +412,7 @@ export function PropertiesListPage() {
         ) : (
           <div className="flex items-center gap-2 shrink-0">
             <button
+              ref={selectAnchorRef}
               onClick={() => sel.enter()}
               disabled={filtered.length === 0}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
@@ -402,6 +421,7 @@ export function PropertiesListPage() {
               <CheckSquare size={14} /> {t('common.select')}
             </button>
             <AddMenu
+              anchorRef={addAnchorRef}
               label={t('property.addPropertyAction')}
               onManual={openBlankPropertyForm}
               onScan={() => beginScan({ target: 'property', originPath: location.pathname })}
@@ -426,9 +446,12 @@ export function PropertiesListPage() {
           }}
         />
         <div className="flex-1" />
+        {/* Hidden below `lg` — and so is the table itself (see `shownView` use below), which
+            is what lets the tour's table step drop itself at that width. */}
         <div className="hidden lg:flex items-center gap-2">
           <SegToggle
-            value={view}
+            anchorRef={toggleAnchorRef}
+            value={shownView}
             onChange={(v) => setView(v as ViewMode)}
             options={[
               { value: 'card', label: t('common.cardsView') },
@@ -462,7 +485,7 @@ export function PropertiesListPage() {
             ) : undefined
           }
         />
-      ) : view === 'card' || isMobile ? (
+      ) : shownView === 'card' || isMobile ? (
         <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {filtered.map((p, i) => (
             <PropertyCard

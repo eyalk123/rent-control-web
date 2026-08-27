@@ -15,12 +15,18 @@ import {
 } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
 import { useAlertsPanel } from './AlertsPanelContext';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 export function AlertsPanel() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { isOpen, closePanel, setHasAlerts } = useAlertsPanel();
+  // The home tour points at the Manage-notifications control below, which only exists
+  // while this panel is open — see the `revealsAnchor` step in the registry, and the
+  // subscriber in AppShell that opens the panel when that step comes up.
+  const settingsAnchorRef = useTourAnchor(ANCHORS.alertsSettingsButton);
 
   const { data: items = [] } = useNotifications('all');
   const { markPaid } = useMarkRentPaid();
@@ -242,6 +248,7 @@ export function AlertsPanel() {
         )}
 
         <button
+          ref={settingsAnchorRef}
           onClick={() => { navigate('/settings/notifications'); closePanel(); }}
           className="flex items-center gap-1.5 text-xs font-medium pt-1 hover:opacity-70 transition-opacity"
           style={{ color: 'var(--color-text-secondary)' }}

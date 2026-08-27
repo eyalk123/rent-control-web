@@ -7,16 +7,19 @@ interface Props {
   label: string;
   onManual: () => void;
   onScan: () => void;
+  /** Onboarding anchor, so a tour can point at the Add button. */
+  anchorRef?: (el: HTMLButtonElement | null) => void;
 }
 
 /** Primary "Add" button that opens a small chooser: enter manually, or scan a lease.
  *  Scanning is an input method of Add, not a separate action. */
-export function AddMenu({ label, onManual, onScan }: Props) {
+export function AddMenu({ label, onManual, onScan, anchorRef }: Props) {
   const { t, i18n } = useTranslation();
   return (
     <DropdownMenu.Root dir={i18n.dir()}>
       <DropdownMenu.Trigger asChild>
         <button
+          ref={anchorRef}
           className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity outline-none"
           style={{ background: 'var(--color-primary)' }}
         >

@@ -107,10 +107,12 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         // first, so it counts for neither the wait nor the step counter.
         const live = tour.steps.filter((s) => !s.skipWhen || !gate(s.skipWhen));
 
-        // Optional steps are excluded from the wait: their whole point is that the element
-        // may legitimately be absent, and waiting on one would suppress the entire tour.
+        // Excluded from the wait, for opposite reasons. An optional step's element may
+        // legitimately be absent, and waiting on one would suppress the entire tour; a
+        // `revealsAnchor` step's element is absent by definition until the step is reached,
+        // because reaching it is what creates it.
         const needed = live
-          .filter((s) => !s.optional)
+          .filter((s) => !s.optional && !s.revealsAnchor)
           .map((s) => s.anchor)
           .filter((a): a is string => Boolean(a));
 
@@ -124,6 +126,8 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
           // Resolve optional steps once, here: a step whose element is not on screen at
           // the moment the tour opens is dropped, so the step counter stays truthful
           // rather than promising a step that will never render.
+          // Only `optional` is resolved here. A `revealsAnchor` step is kept whatever the
+          // registry says right now — its element arrives later, on purpose.
           const steps = live.filter(
             (s) => !s.optional || (s.anchor != null && Boolean(registry?.has(s.anchor))),
           );
@@ -293,4 +297,25 @@ export function useTour(id: TourId, inputs: GateInputs = {}) {
   useEffect(() => {
     request?.(id, { rentMode });
   }, [request, id, rentMode]);
+}
+
+/**
+ * The step currently showing for `tourId`, or null when that tour is not running.
+ *
+ * This is how a screen *reacts* to a step without the registry growing side effects. The
+ * registry stays what it is — a description of what to say and where to point — and the
+ * behaviour lives in the component that already owns the state being touched:
+ *
+ *   - Properties and Renters switch their list to table view for the step that explains
+ *     the table, so the mode is demonstrated rather than described;
+ *   - AppShell opens the alerts panel for the step that points at a control inside it.
+ *
+ * Whatever a screen does here it must undo: this returns null the moment the tour ends, so
+ * derive from it rather than writing state, and the screen goes back to how the user left
+ * it with no cleanup to forget.
+ */
+export function useTourStep(tourId: TourId): string | null {
+  const controller = useTourController();
+  if (!controller?.active || controller.active.tour.id !== tourId) return null;
+  return controller.step?.id ?? null;
 }

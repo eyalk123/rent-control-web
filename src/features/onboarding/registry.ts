@@ -38,7 +38,9 @@ export const TOURS = {
       // mounts suppresses the entire tour. They drop instead.
       { id: 'reports', anchor: ANCHORS.navReports, placement: 'end', optional: true },
       { id: 'suppliers', anchor: ANCHORS.navSuppliers, placement: 'end', optional: true },
-      { id: 'bell', anchor: ANCHORS.homeNotificationsBell, placement: 'bottom', seed: { id: 'notifications', opens: 'notifications' } },
+      // No seed here any more: the home tour points a spotlight at the reminder-settings
+      // control itself, so a sentence naming it would say the same thing twice.
+      { id: 'bell', anchor: ANCHORS.homeNotificationsBell, placement: 'bottom' },
       // Optional for the same reason: the launcher only renders once the assistant's
       // status request comes back enabled.
       { id: 'chat', anchor: ANCHORS.chatLauncher, placement: 'bottom', optional: true },
@@ -74,6 +76,10 @@ export const TOURS = {
       { id: 'summary', anchor: ANCHORS.homeSummaryCards, placement: 'bottom' },
       { id: 'quickActions', anchor: ANCHORS.homeQuickActions, placement: 'bottom' },
       { id: 'attention', anchor: ANCHORS.homeNeedsAttention, placement: 'bottom', seed: { id: 'alert-actions', opens: null } },
+      // Inside the alerts panel, which is shut when this tour opens — AppShell opens it
+      // when this step comes up and closes it again after. `revealsAnchor` is what stops
+      // the absent element from either blocking the tour or quietly dropping the step.
+      { id: 'notifications', anchor: ANCHORS.alertsSettingsButton, placement: 'top', revealsAnchor: true },
       { id: 'occupancy', anchor: ANCHORS.homeOccupancy, placement: 'bottom' },
       { id: 'recent', anchor: ANCHORS.homeRecent, placement: 'top' },
     ],
@@ -81,17 +87,32 @@ export const TOURS = {
 
   /* ----------------------------------------------------------------- page tours */
 
+  /**
+   * The two display steps are a demonstration, not a description: the page renders cards
+   * while `cards` is showing and the table while `table` is, so the mode is something the
+   * user watches happen. PropertiesListPage derives that from the active step — it never
+   * writes the stored preference, which is the user's.
+   *
+   * `table` is `optional` because it points at the view toggle, which lives inside a
+   * `hidden lg:flex` wrapper. Below that width the page forces cards whatever the toggle
+   * says, so the step would be describing something that cannot appear — and dropping
+   * itself along with the toggle is exactly the right behaviour.
+   */
   'properties-list': {
     id: 'properties-list',
     route: '/properties',
     gate: 'hasProperties',
     kind: 'page',
     steps: [
+      { id: 'overview', anchor: null, placement: 'center' },
+      { id: 'headline', anchor: ANCHORS.propertiesHeaderMeta, placement: 'bottom' },
+      { id: 'add', anchor: ANCHORS.propertiesAddButton, placement: 'bottom' },
+      { id: 'select', anchor: ANCHORS.propertiesSelect, placement: 'bottom', seed: { id: 'bulk-select', opens: null } },
+      // The copy is about search, filters and sort being remembered — a claim about this
+      // bar, not about the list below it.
+      { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom' },
       { id: 'cards', anchor: ANCHORS.propertiesList, placement: 'bottom' },
-      // Points at the search/filter bar, not the list: the copy is about search, filters
-      // and sort being remembered, which is a claim about that bar. Both steps used to
-      // highlight the same list wrapper, which said nothing and covered the screen.
-      { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom', seed: { id: 'bulk-select', opens: null } },
+      { id: 'table', anchor: ANCHORS.propertiesViewToggle, placement: 'bottom', optional: true },
     ],
   },
 
@@ -106,14 +127,21 @@ export const TOURS = {
     ],
   },
 
+  /** Same shape as the properties tour, including the live display-mode demo. */
   'renters-list': {
     id: 'renters-list',
     route: '/renters',
     gate: 'hasRenters',
     kind: 'page',
     steps: [
-      { id: 'current', anchor: ANCHORS.rentersList, placement: 'bottom' },
+      { id: 'overview', anchor: null, placement: 'center' },
+      { id: 'headline', anchor: ANCHORS.rentersHeaderMeta, placement: 'bottom' },
+      { id: 'add', anchor: ANCHORS.rentersAddButton, placement: 'bottom' },
       { id: 'ended', anchor: ANCHORS.rentersEndedFilter, placement: 'bottom', seed: { id: 'ended-tenants', opens: null } },
+      { id: 'select', anchor: ANCHORS.rentersSelect, placement: 'bottom' },
+      { id: 'search', anchor: ANCHORS.rentersSearch, placement: 'bottom' },
+      { id: 'cards', anchor: ANCHORS.rentersList, placement: 'bottom' },
+      { id: 'table', anchor: ANCHORS.rentersViewToggle, placement: 'bottom', optional: true },
     ],
   },
 
@@ -136,6 +164,9 @@ export const TOURS = {
     gate: 'hasProperties',
     kind: 'page',
     steps: [
+      { id: 'overview', anchor: null, placement: 'center' },
+      { id: 'hero', anchor: ANCHORS.transactionsHero, placement: 'bottom' },
+      { id: 'filter', anchor: ANCHORS.transactionsFilter, placement: 'bottom' },
       { id: 'twoKinds', anchor: ANCHORS.transactionsList, placement: 'bottom' },
       { id: 'forMonth', anchor: ANCHORS.transactionsAddButton, placement: 'bottom', seed: { id: 'no-auto-rent', opens: null } },
       { id: 'recording', anchor: ANCHORS.transactionsAddButton, placement: 'bottom', seed: { id: 'bulk-rent', opens: 'revenue-form' } },
@@ -242,10 +273,11 @@ export const TOURS = {
     id: 'suppliers',
     route: '/suppliers',
     gate: 'always',
-    kind: 'elaboration',
+    kind: 'page',
     steps: [
-      { id: 'what', anchor: ANCHORS.suppliersList, placement: 'bottom' },
+      { id: 'overview', anchor: null, placement: 'center' },
       { id: 'categories', anchor: ANCHORS.suppliersCategories, placement: 'bottom' },
+      { id: 'what', anchor: ANCHORS.suppliersList, placement: 'bottom' },
     ],
   },
 
@@ -254,7 +286,8 @@ export const TOURS = {
     route: '/settings/notifications',
     gate: 'always',
     kind: 'elaboration',
-    arrivesFrom: 'notifications',
+    // No `arrivesFrom`: nothing seeds this any more — the home tour points straight at
+    // the control that leads here, so nobody arrives off a sentence read earlier.
     steps: [
       { id: 'events', anchor: ANCHORS.notificationsEventList, placement: 'bottom' },
       { id: 'rules', anchor: ANCHORS.notificationsRulesEntry, placement: 'bottom', seed: { id: 'notification-rules', opens: 'notification-rules' } },
@@ -287,10 +320,11 @@ export const TOURS = {
     id: 'reports',
     route: '/reports',
     gate: 'always',
-    kind: 'elaboration',
+    kind: 'page',
     steps: [
+      { id: 'overview', anchor: null, placement: 'center' },
       { id: 'two', anchor: ANCHORS.reportsCards, placement: 'bottom' },
-      { id: 'export', anchor: ANCHORS.reportsExport, placement: 'bottom' },
+      { id: 'export', anchor: ANCHORS.reportsExport, placement: 'top' },
     ],
   },
 
