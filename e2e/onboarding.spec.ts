@@ -395,4 +395,90 @@ test.describe('onboarding — first run', () => {
     const addBox = (await spotlight.boundingBox())!;
     expect(Math.abs(addBox.y - monthBox.y)).toBeGreaterThan(20);
   });
+
+  /**
+   * Resetting has to undo a *skip*, not only a completion.
+   *
+   * A skipped tour is remembered twice — in the persisted state, which "Show tours again"
+   * clears, and in a session-lived set inside the controller, which it could not reach. So
+   * the one tour a user had actively dismissed was the one the reset appeared to ignore.
+   */
+  test('resetting brings back a tour that was skipped, not only finished ones', async ({
+    page,
+  }) => {
+    await enableTours(page);
+    await page.goto('/properties');
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Your properties')).toBeVisible();
+    await card.getByRole('button', { name: 'Skip' }).click();
+    await expect(card).toBeHidden();
+
+    // Gone, as it should be until asked for again.
+    await page.getByRole('link', { name: 'Home', exact: true }).click();
+    await dismissTours(page);
+    await page.getByRole('link', { name: 'Properties' }).click();
+    await waitForAppReady(page);
+    await expect(page.getByText('Your properties')).toBeHidden();
+
+    // Through the nav, not `page.goto`: a full load would wipe the session-lived set this
+    // is about, and the test would pass with the bug still in place.
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await expect(page).toHaveURL(/\/settings/);
+    await waitForAppReady(page);
+    await dismissTours(page);
+    await page.getByRole('button', { name: 'Reset tours' }).click();
+
+    await page.getByRole('link', { name: 'Properties' }).click();
+    await waitForAppReady(page);
+    await expect(card.getByText('Your properties')).toBeVisible();
+  });
+
+  /**
+   * The form tours open with a card of their own and then walk a form whose second page is
+   * not mounted yet. The steps that point there are `revealsAnchor`, and the drawer *derives*
+   * the page it shows from the running step — so the last assertion here is the real one: when
+   * the tour ends the drawer is back on the page the user was actually filling in, because
+   * nothing ever wrote to its state.
+   */
+  test('the property form tour shows page two without moving the user off page one', async ({
+    page,
+  }) => {
+    await enableTours(page);
+    await page.goto('/properties');
+    await waitForAppReady(page);
+    await dismissTours(page);
+
+    await page.getByRole('button', { name: 'Add property' }).click();
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
+
+    const card = page.getByRole('dialog', { name: 'Adding a property' });
+    await expect(card).toBeVisible();
+    await expect(card.getByText('1 of 4')).toBeVisible();
+
+    // Page one, and the drawer still on it. The drawer's own indicator is what to assert
+    // against — it reads the page being shown, so it moves exactly when the demo does.
+    const drawer = page.getByRole('dialog', { name: 'Add Property' });
+    await expect(drawer.getByText('1/2')).toBeVisible();
+    await expect(drawer.getByRole('textbox', { name: 'Address' })).toBeVisible();
+
+    const tourCard = page.getByRole('dialog').filter({ hasText: 'of 4' });
+    await tourCard.getByRole('button', { name: 'Next' }).click();
+    await expect(tourCard.getByText('Two steps')).toBeVisible();
+
+    // The owner field lives on page two, which was not mounted a moment ago.
+    await tourCard.getByRole('button', { name: 'Next' }).click();
+    await expect(tourCard.getByText('Property owner')).toBeVisible();
+    await expect(drawer.getByText('2/2')).toBeVisible();
+    await expect(drawer.getByRole('textbox', { name: 'Address' })).toBeHidden();
+
+    await tourCard.getByRole('button', { name: 'Next' }).click();
+    await expect(tourCard.getByText('Bills and paperwork')).toBeVisible();
+    await tourCard.getByRole('button', { name: 'Got it' }).click();
+
+    // Back on page one: the tour demonstrated page two, it did not move anyone there.
+    await expect(drawer.getByText('1/2')).toBeVisible();
+    await expect(drawer.getByRole('textbox', { name: 'Address' })).toBeVisible();
+  });
 });

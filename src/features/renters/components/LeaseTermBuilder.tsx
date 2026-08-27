@@ -166,18 +166,17 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     amountsKey,
   ]);
 
-  // The lease tours are requested from here rather than from the drawer because this is
-  // what mounts on step two and it owns every anchor they point at. Asking from the drawer
-  // would ask while the user is still on step one, find nothing mounted, and defer a tour
-  // that was moments from being showable.
   const termAnchorRef = useTourAnchor(ANCHORS.leaseTermBuilder);
   const baseRentAnchorRef = useTourAnchor(ANCHORS.leaseBaseRent);
   const yearRowsAnchorRef = useTourAnchor(ANCHORS.leaseYearRows);
 
-  useTour('lease-form');
-  // Both elaborations are gated on the mode, so exactly one of these can ever open, and
-  // only once the user has actually chosen it. Selecting a mode changes `rentMode`, which
-  // re-runs the request — that is the whole trigger.
+  // `lease-form` is asked for by the drawer, not here: it covers the whole renter form now
+  // and has to open on page one, before this component exists. The two elaborations below
+  // stay, because they can only be reached from a control this component owns.
+  //
+  // Both are gated on the mode, so exactly one of them can ever open, and only once the user
+  // has actually chosen it. Selecting a mode changes `rentMode`, which re-runs the request —
+  // that is the whole trigger.
   useTour('cpi-mode', { rentMode: escMode });
   useTour('custom-mode', { rentMode: escMode });
 

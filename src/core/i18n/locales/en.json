@@ -1286,6 +1286,10 @@
         }
       },
       "property-form": {
+        "overview": {
+          "title": "Adding a property",
+          "body": "Address, city and type are all it asks for. Everything else can wait, and can be filled in later from the property itself."
+        },
         "twoSteps": {
           "title": "Two steps",
           "body": "Where it is, then the extras. You can save after the first."
@@ -1293,6 +1297,10 @@
         "owner": {
           "title": "Property owner",
           "body": "Worth filling in even with one property."
+        },
+        "records": {
+          "title": "Bills and paperwork",
+          "body": "Property tax, house committee, meter numbers, the contract itself. None of it is required, and all of it saves you looking things up later."
         }
       },
       "renters-list": {
@@ -1334,6 +1342,10 @@
         }
       },
       "lease-form": {
+        "overview": {
+          "title": "Adding a renter",
+          "body": "Who they are, then the lease. The lease half is what the rent reminders, the overdue alerts and the reports are all computed from."
+        },
         "term": {
           "title": "The term",
           "body": "Years and months — 'eighteen months' is as easy as 'two years'. The end date is calculated, never typed."
@@ -1345,6 +1357,10 @@
         "baseYear": {
           "title": "Year one",
           "body": "This is the starting rent. Every later year is computed forward from it."
+        },
+        "payment": {
+          "title": "When rent is due",
+          "body": "The payment day is what 'overdue' is counted from — nothing is charged, it is only the date an alert starts from. Type and frequency just describe how it usually arrives."
         }
       },
       "transactions-list": {
@@ -1422,9 +1438,17 @@
         }
       },
       "revenue-form": {
+        "overview": {
+          "title": "Rent coming in",
+          "body": "Built for collecting from everyone at once: choose the properties and renters, choose the months, and it writes a row for each."
+        },
         "scope": {
           "title": "Pick the scope",
           "body": "Properties — narrowed by owner if you manage for more than one — then a month, a quarter, your own set of months, or a whole contract year."
+        },
+        "period": {
+          "title": "Which months",
+          "body": "One month, a set of months you pick yourself, or a whole contract year. The rows below follow whatever you choose here."
         },
         "perContract": {
           "title": "Per contract",
@@ -1436,6 +1460,10 @@
         }
       },
       "expense-form": {
+        "overview": {
+          "title": "Money going out",
+          "body": "Anything you pay for a property — a repair, a bill, a supplier's invoice. What you record here is what the expense side of the reports is built from."
+        },
         "required": {
           "title": "What an expense needs",
           "body": "A property, an amount, a date, a payment method, and at least one category. Categories are what the reports group by."
@@ -1446,6 +1474,10 @@
         }
       },
       "extend-lease": {
+        "overview": {
+          "title": "Extending a lease",
+          "body": "Adds years or months onto the end of the lease that is already running. Nothing agreed so far is touched — the existing years stay as they are."
+        },
         "months": {
           "title": "Years or months",
           "body": "'Another three months' is more common than another whole year, so both are here."

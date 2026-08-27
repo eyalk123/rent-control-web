@@ -51,6 +51,12 @@ type TxType = 'revenue' | 'expense';
  * Mounted with the renter checklist, which only appears once properties are chosen — so
  * the request happens when the amount-cell anchor actually exists. Asking from the form
  * body would ask against an empty picker and defer the tour for the whole session.
+ *
+ * It means the tour's opening card arrives a moment after the form does, rather than with
+ * it. That is the honest trade: the two things it most needs to explain — what the per-renter
+ * amounts are, and what the period does — are not on screen until a property is picked, and
+ * they cannot be revealed the way a form page can, because it is the user's own selection
+ * that creates them.
  */
 function RevenueFormTourRequest() {
   useTour('revenue-form');
@@ -232,6 +238,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const allRenterIds = allRenters.map((r) => r.id);
   const revenuePropertyAnchorRef = useTourAnchor(ANCHORS.revenuePropertyPicker);
   const revenueAmountAnchorRef = useTourAnchor(ANCHORS.revenueAmountCell);
+  const revenuePeriodAnchorRef = useTourAnchor(ANCHORS.revenuePeriodPicker);
   const firstRenterId = allRenters[0]?.id ?? null;
 
   // Prefill: check the renter this form was opened for, or — when opened from a property that
@@ -497,7 +504,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       )}
 
       {/* Period type */}
-      <div className="flex flex-col gap-1.5">
+      <div ref={revenuePeriodAnchorRef} className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.timePeriod')}</label>
         <SegToggle
           value={periodType}

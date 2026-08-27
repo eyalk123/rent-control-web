@@ -23,7 +23,7 @@ import { parseImageUrlKey } from '../constants/houseImagePresets';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
-import { useTour } from '@/features/onboarding/TourController';
+import { useTour, useTourStep } from '@/features/onboarding/TourController';
 import type { ReviewItem, ProvenanceItem } from '@/features/document-scan/types';
 import type { MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
@@ -68,9 +68,9 @@ interface Props {
 }
 
 /**
- * Step two owns the owner field — one of the tour's two anchors — so the request lives
- * with it. Asking from the drawer would ask while the user is still on step one, find the
- * owner field unmounted, and defer a tour that was one click away from being showable.
+ * Asks for the tour from inside the drawer body, which `Drawer` renders only while it is
+ * open. The hook cannot live in the component itself: the drawer is mounted by the list page
+ * whether or not it is showing, so asking from there would open a form tour over the list.
  */
 function PropertyFormTourRequest() {
   useTour('property-form');
@@ -111,6 +111,17 @@ export function PropertyFormDrawer({
   const [step, setStep] = useState(1);
   const stepperAnchorRef = useTourAnchor(ANCHORS.propertyFormStepper);
   const ownerAnchorRef = useTourAnchor(ANCHORS.propertyFormOwnerField);
+  const recordsAnchorRef = useTourAnchor(ANCHORS.propertyFormRecords);
+
+  // The request itself is one render deeper, in PropertyFormTourRequest — see the note
+  // there. What this reads is the running step: the tour's last two point at page two, which
+  // is not mounted when it opens, so they are `revealsAnchor` and this is what reveals them.
+  const tourStep = useTourStep('property-form');
+  // Derived, never written: `useTourStep` goes null the moment the tour ends and the drawer
+  // is back on whichever page the user was actually filling in, with nothing to restore.
+  // Deriving also means `trigger(STEP_1_FIELDS)` never runs, so page one is not marked
+  // invalid behind the tour.
+  const shownStep = tourStep === 'owner' || tourStep === 'records' ? 2 : step;
   const [showDiscard, setShowDiscard] = useState(false);
   const [showRenterPrompt, setShowRenterPrompt] = useState(false);
   const [createdPropertyId, setCreatedPropertyId] = useState<number | null>(null);
@@ -323,6 +334,9 @@ export function PropertyFormDrawer({
     label: t(`property.type_${pt}` as never, pt),
   }));
 
+  // The footer follows the page on show, so the demonstrated page two is not sitting above
+  // a "Next" button. Nothing here is reachable while the tour is up — the overlay swallows
+  // clicks outside its card — and the handlers still act on the real step.
   const footer = (
     <div className="flex gap-3">
       <button
@@ -331,9 +345,9 @@ export function PropertyFormDrawer({
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
-        {step === 2 ? t('common.back') : t('common.cancel')}
+        {shownStep === 2 ? t('common.back') : t('common.cancel')}
       </button>
-      {step === 1 ? (
+      {shownStep === 1 ? (
         <button
           key="next"
           type="button"
@@ -371,17 +385,18 @@ export function PropertyFormDrawer({
       width={620}
       footer={footer}
     >
+      <PropertyFormTourRequest />
       {/* Step indicator */}
       <div ref={stepperAnchorRef} className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
+          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
         ))}
-        <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
+        <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{shownStep}/2</span>
       </div>
 
       <FieldReviewProvider items={reviewItems}>
       <form id="property-form" onSubmit={onSubmit} autoComplete="off" className="flex flex-col gap-4">
-        {step === 1 ? (
+        {shownStep === 1 ? (
           <div key="step-1" className="flex flex-col gap-4">
             {propertyConflicts.length > 0 && (
               <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}>
@@ -472,7 +487,6 @@ export function PropertyFormDrawer({
           </div>
         ) : (
           <div key="step-2" className="flex flex-col gap-4">
-            <PropertyFormTourRequest />
             <div ref={ownerAnchorRef}>
               <FormCreatableSelect
                 control={control}
@@ -495,6 +509,10 @@ export function PropertyFormDrawer({
                 {...register('inventoryNotes')}
               />
             </div>
+            {/* Bills, meters and documents under one anchor: the tour has a single thing
+                to say about all of them, and pointing at each in turn would be a card per
+                field. */}
+            <div ref={recordsAnchorRef} className="flex flex-col gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.propertyTax')} type="number" error={errors.propertyTax?.message} {...register('propertyTax')} />
               <FormInput label={t('property.houseCommittee')} type="number" error={errors.houseCommittee?.message} {...register('houseCommittee')} />
@@ -529,6 +547,7 @@ export function PropertyFormDrawer({
                 />
               )}
             />
+            </div>
           </div>
         )}
       </form>

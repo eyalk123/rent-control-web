@@ -85,6 +85,16 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   const declined = useRef(new Set<TourId>());
   const openingRef = useRef<TourId | null>(null);
 
+  // A skipped tour is remembered twice: in the persisted state, and here for the rest
+  // of the session. "Replay the tours" clears the first and could not reach the second,
+  // so a tab whose tour had been skipped stayed silent until a reload — the one case
+  // where reset visibly did nothing. Nothing-seen means either a reset or a brand-new
+  // account, and in both the right session memory is none.
+  const nothingSeen = progress.nothingSeen;
+  useEffect(() => {
+    if (nothingSeen) declined.current.clear();
+  }, [nothingSeen]);
+
   // TOURS_ENABLED is the master switch (see flags.ts). It is checked here as well as
   // on the query because this is the single place a tour can be opened from, so one
   // false here is a hard guarantee that nothing appears.

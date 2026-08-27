@@ -59,6 +59,12 @@ export const ANCHORS = {
   propertiesViewToggle: 'properties.viewToggle',
   propertyFormStepper: 'propertyForm.stepper', // -> shared/components/ui Stepper
   propertyFormOwnerField: 'propertyForm.ownerField',
+  /** The whole of the form's second page — bills, meter numbers, contract files. One
+   *  anchor for the group rather than one per field: the tour has a single thing to say
+   *  about all of it, which is that none of it is required and all of it feeds the
+   *  expense side later. Unmounted while page one shows, so the step is `revealsAnchor`
+   *  and the drawer flips the page for it. */
+  propertyFormRecords: 'propertyForm.records',
 
   // Renters
   rentersList: 'renters.list',
@@ -69,6 +75,10 @@ export const ANCHORS = {
   rentersSearch: 'renters.search',
   /** Same story as `propertiesViewToggle`. */
   rentersViewToggle: 'renters.viewToggle',
+  /** Payment day, type and frequency, as one group on the renter form's lease page. The
+   *  payment day is what 'overdue' is counted from, which nothing else in the product
+   *  says out loud. Also `revealsAnchor` — see `propertyFormRecords`. */
+  renterFormPayment: 'renterForm.payment',
   renterDetailTimeline: 'renterDetail.timeline', // -> RenterLeaseInfoDisplayCard
   renterDetailExtend: 'renterDetail.extendButton',
   renterDetailEndLease: 'renterDetail.endLeaseButton', // -> EndLeaseDialog trigger
@@ -107,8 +117,9 @@ export const ANCHORS = {
   transactionsSuppliersButton: 'transactions.suppliersButton',
   transactionsAddButton: 'transactions.addButton',
   revenuePropertyPicker: 'revenueForm.propertyPicker',
-  // RESERVED: the revenue tour uses its three steps on scope, per-contract and saving.
-  revenuePeriodPicker: 'revenueForm.periodPicker', // -> MonthGridPicker
+  /** One month / chosen months / a contract year. The `period` step points here — it was
+   *  reserved while the revenue tour had only three steps to spend. */
+  revenuePeriodPicker: 'revenueForm.periodPicker', // -> the period SegToggle + its picker
   revenueAmountCell: 'revenueForm.amountCell', // "Per contract" / Override / Auto
   expenseCategoryField: 'expenseForm.categoryField', // -> CategoryMultiPickerField.tsx
   expensePropertyPicker: 'expenseForm.propertyPicker',

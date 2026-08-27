@@ -122,15 +122,16 @@ export interface TourStep {
    * dropped**: the screen that owns the surface reveals the element when the step arrives
    * and puts things back afterwards (see `useTourStep`).
    *
-   * **Nothing sets this today.** It was written for the web home tour's reminder-settings
-   * step, back when that control existed only at the foot of the alerts panel — the tour
-   * opened the panel to reach it. Neither other flag fitted: waiting would have stopped the
-   * whole tour from opening, and `optional` would have dropped the one step that was asked
-   * for. That case went away when the control moved onto the Home screen itself, which was
-   * the better answer to begin with.
+   * The two-page forms are what this is for. Page two's fields are unmounted while page one
+   * shows, so a tour that covers the whole form has to reach steps whose elements do not
+   * exist when it opens. Neither other flag fits: waiting would suppress the entire tour,
+   * and `optional` would drop exactly the steps that were asked for. The form derives its
+   * shown page from the running step and flips back on its own when the tour ends.
    *
-   * Kept because the situation recurs — a step worth pointing at something inside a drawer
-   * — and because the alternative is discovering all of the above again from scratch.
+   * It was written earlier for the web home tour's reminder-settings step, when that control
+   * existed only at the foot of the alerts panel and the tour opened the panel to reach it.
+   * That case went away when the control moved onto Home itself — the better answer — and
+   * the flag was kept on the bet that the situation would recur. It did.
    */
   revealsAnchor?: boolean;
   /**
@@ -163,8 +164,13 @@ export interface TourDefinition {
    *               gate `always`) and then the home screen itself (`home`, gated on there
    *               being something on it). They run back to back on a populated account and
    *               read as a single sequence, which is why they share one ceiling.
-   * page        — fires on first meaningful entry to a screen.
-   * elaboration — fires when the user acts on a seed or picks a mode.
+   * page        — fires on first meaningful entry to a screen, a form included: a form the
+   *               user opens and works through is a screen in every sense this ceiling
+   *               cares about, and the forms were being squeezed into `elaboration` for no
+   *               better reason than that they had once been given two steps.
+   * elaboration — fires when the user acts on a seed or picks a mode. What is left here
+   *               answers one question — CPI, custom schedules, a rule editor — and stays
+   *               short by nature rather than by restraint.
    */
   kind: 'orientation' | 'page' | 'elaboration';
   /** If set, opening this tour after that seed shows a callback line first. */

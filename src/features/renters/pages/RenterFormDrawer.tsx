@@ -24,6 +24,9 @@ import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { fileNameFromUrl } from '@/shared/utils/fileName';
 import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour, useTourStep } from '@/features/onboarding/TourController';
 import { addressesMatch, type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import { diffScannedRenter, type RenterFieldConflict } from '@/features/document-scan/utils/diffRenter';
 import { formatConflictValue } from '@/features/document-scan/utils/conflictValue';
@@ -63,6 +66,12 @@ interface Props {
   matchStatus?: PropertyMatchStatus;
   scannedLeaseAddress?: { address?: string | null; city?: string | null; floor?: string | number | null; apartment?: string | null };
   onCreatePropertyFromScan?: () => void;
+}
+
+/** See PropertyFormTourRequest — same reason, same shape. */
+function RenterFormTourRequest() {
+  useTour('lease-form');
+  return null;
 }
 
 export function RenterFormDrawer({
@@ -112,6 +121,16 @@ export function RenterFormDrawer({
   const updateMutation = useUpdateRenter(effRenterId ?? 0);
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
+  const paymentAnchorRef = useTourAnchor(ANCHORS.renterFormPayment);
+
+  // The lease tour used to be asked for from inside the term builder, which lives on page
+  // two — so it could only ever open once the user was already there, and had nothing to say
+  // about the form as a whole. It opens with the drawer now; the request is one render deeper
+  // (see RenterFormTourRequest), and everything it points at is on page two, marked
+  // `revealsAnchor`, which the line below is what reveals.
+  const tourStep = useTourStep('lease-form');
+  // Derived, never written — see PropertyFormDrawer for why that matters.
+  const shownStep = tourStep && tourStep !== 'overview' ? 2 : step;
   const [showDiscard, setShowDiscard] = useState(false);
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
   const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
@@ -390,6 +409,8 @@ export function RenterFormDrawer({
     { value: 'bank_guarantee', label: t('renter.insuranceTypeBankGuarantee') },
   ];
 
+  // Follows the page on show, so a demonstrated page two is not sitting above a "Next"
+  // button. Unreachable while the tour is up — the overlay swallows clicks outside its card.
   const footer = (
     <div className="flex gap-3">
       <button
@@ -398,9 +419,9 @@ export function RenterFormDrawer({
         className="h-10 px-4 rounded-[9px] text-[13px] font-medium"
         style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
       >
-        {step === 2 ? t('common.back') : t('common.cancel')}
+        {shownStep === 2 ? t('common.back') : t('common.cancel')}
       </button>
-      {step === 1 ? (
+      {shownStep === 1 ? (
         <button
           key="next"
           type="button"
@@ -445,12 +466,13 @@ export function RenterFormDrawer({
         </p>
       )}
 
+      <RenterFormTourRequest />
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
+          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
         ))}
-        <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{step}/2</span>
+        <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{shownStep}/2</span>
       </div>
 
       <FieldReviewProvider items={effReview}>
@@ -459,7 +481,7 @@ export function RenterFormDrawer({
           "bad input" (a stray 'e', '-', double '.', …) — it renders blank but blocks
           the submit event before RHF/zod ever run, so Save does nothing with no error. */}
       <form id="renter-form" onSubmit={onSubmit} autoComplete="off" noValidate className="flex flex-col gap-4">
-        {step === 1 ? (
+        {shownStep === 1 ? (
           <>
             {(renterConflicts.length > 0 || contractConflict) && (
               <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}>
@@ -574,6 +596,9 @@ export function RenterFormDrawer({
               <WheelDatePicker mode="date" label={t('renter.leaseStart')} value={field.value} onChange={(v) => field.onChange(v)} error={errors.leaseStart?.message} reviewName="leaseStart" />
             )} />
             <LeaseTermBuilder control={control} setValue={setValue} />
+            {/* Day, type and frequency as one group — the tour's point is about the three
+                together, and the day in particular is what "overdue" is counted from. */}
+            <div ref={paymentAnchorRef} className="flex flex-col gap-4">
             <FormInput label={t('renter.paymentDay')} type="number" min={1} max={31} hint={t('renter.paymentDayHint')} error={errors.paymentDayOfMonth?.message} {...register('paymentDayOfMonth')} />
             <Controller control={control} name="paymentType" render={({ field }) => (
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} sorted={false} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
@@ -581,6 +606,7 @@ export function RenterFormDrawer({
             <Controller control={control} name="paymentFrequency" render={({ field }) => (
               <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} sorted={false} placeholder={t('renter.selectPaymentFrequency')} reviewName="paymentFrequency" />
             )} />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />

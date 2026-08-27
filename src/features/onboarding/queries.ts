@@ -110,6 +110,8 @@ export function useTourProgress() {
       /** Until this is true, no tour may run — better silent than repeated. */
       ready,
       toursDisabled: state.toursDisabled,
+      /** Nothing has ever been seen: a new account, or one that just reset. */
+      nothingSeen: Object.keys(state.toursSeen).length === 0,
       hasSeenTour: (id: TourId) => Boolean(state.toursSeen[id]),
       hasShownSeed: (id: SeedId) => Boolean(state.seedsShown[id]),
       completeTour,
