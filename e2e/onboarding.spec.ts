@@ -144,6 +144,27 @@ test.describe('onboarding — first run', () => {
     await expect(card.getByText('Reminder settings')).toBeVisible();
     await expect(manage).toBeVisible();
 
+    // And the spotlight is actually on it. The panel's contents mount a render after
+    // the step becomes active, so a single measurement finds nothing and the step
+    // renders as a bare centred card — highlighting nothing, which is the one thing an
+    // anchored step must never do.
+    // Polled, not snapshotted: the panel slides in, so both the button and the
+    // spotlight chasing it are still moving for a couple of hundred milliseconds.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const spot = document.querySelector('[data-tour-spotlight]');
+          const btn = [...document.querySelectorAll('button')].find((b) =>
+            /manage notifications/i.test(b.textContent ?? ''),
+          );
+          if (!spot || !btn) return null;
+          const s = spot.getBoundingClientRect();
+          const b = btn.getBoundingClientRect();
+          return { dx: Math.round(b.x - s.x), dy: Math.round(b.y - s.y) };
+        }),
+      )
+      .toEqual({ dx: 8, dy: 8 });
+
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Occupancy')).toBeVisible();
     await expect(manage).toBeHidden();

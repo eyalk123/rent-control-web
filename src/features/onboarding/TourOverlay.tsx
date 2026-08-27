@@ -36,6 +36,10 @@ const SPOTLIGHT_RADIUS = 12;
 const SCRIM_SPREAD = 9999;
 const SCRIM = 'rgba(8,14,24,0.72)';
 const CARD_OFFSET = 12;
+/** How long to keep looking for an anchor that is not on screen yet. Matches the
+ *  controller's own anchor wait, for the same reason: a step can point at something that
+ *  arrives a beat later. */
+const ANCHOR_APPEAR_MS = 1200;
 const EDGE_MARGIN = 16;
 
 type Side = 'top' | 'right' | 'bottom' | 'left';
@@ -158,23 +162,59 @@ export function TourOverlay() {
       setRect(null);
       return;
     }
-    const sync = () => {
-      anchorRef.current = registry.get(anchorKey);
+    const observer = new ResizeObserver(() => sync());
+    observer.observe(document.documentElement);
+    let observed: HTMLElement | null = null;
+
+    const sync = (): AnchorRect | null => {
+      const el = registry.get(anchorKey);
+      anchorRef.current = el;
       const next = registry.measure(anchorKey);
       setRect((prev) => (sameRect(prev, next) ? prev : next));
+      // Watch the element itself, from the first moment there is one to watch. This used
+      // to happen once, beside the first measurement, which meant an anchor that mounted
+      // later was never observed either.
+      if (el && el !== observed) {
+        if (observed) observer.unobserve(observed);
+        observer.observe(el);
+        observed = el;
+      }
+      return next;
     };
-    sync();
 
-    window.addEventListener('resize', sync);
-    window.addEventListener('scroll', sync, true);
-    const observer = new ResizeObserver(sync);
-    observer.observe(document.documentElement);
-    const el = registry.get(anchorKey);
-    if (el) observer.observe(el);
+    // Keep measuring for a beat rather than measuring once and giving up.
+    //
+    // Two failures, one cause. A step can point at something that is not there yet — the
+    // home tour's reminder-settings step opens the alerts panel, whose contents mount a
+    // render *after* the step becomes active — and one measurement found nothing, leaving
+    // `rect` null and the step rendered as a bare centred card, highlighting nothing.
+    // Stopping at first sight is not enough either: that panel slides in, so the first
+    // rect it has is 200px from where it comes to rest.
+    //
+    // So: follow it until it has been still for two passes, or the deadline runs out.
+    // Ten measurements at most, `sameRect` swallows the ones that changed nothing, and
+    // scroll and resize keep it honest from there on.
+    let timer = 0;
+    let settled = 0;
+    let last: AnchorRect | null = null;
+    const deadline = Date.now() + ANCHOR_APPEAR_MS;
+    const attempt = () => {
+      const next = sync();
+      settled = next && sameRect(next, last) ? settled + 1 : 0;
+      last = next;
+      if (settled >= 2 || Date.now() >= deadline) return;
+      timer = window.setTimeout(attempt, 120);
+    };
+    attempt();
+
+    const onMove = () => { sync(); };
+    window.addEventListener('resize', onMove);
+    window.addEventListener('scroll', onMove, true);
 
     return () => {
-      window.removeEventListener('resize', sync);
-      window.removeEventListener('scroll', sync, true);
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', onMove);
+      window.removeEventListener('scroll', onMove, true);
       observer.disconnect();
     };
   }, [anchorKey, registry, active?.tour.id, active?.stepIndex]);
