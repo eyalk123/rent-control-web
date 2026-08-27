@@ -298,12 +298,32 @@ export function TourOverlay() {
   const total = active.tour.steps.length;
   const current = active.stepIndex + 1;
 
+  /**
+   * A tour's title card: the unanchored step that *opens* it.
+   *
+   * Welcome, and the card at the head of each tab's tour. Nothing is highlighted and
+   * nothing else is on screen, so at the size built for sitting beside a spotlight it
+   * read as an alert rather than as an arrival. It gets its own proportions instead.
+   *
+   * Derived rather than flagged, because the rule is already exactly the distinction:
+   * an unanchored *first* step introduces a screen, while an unanchored step later in a
+   * tour is a note within one — the closing "start with one property" card, what the
+   * assistant can see, how the CPI lag works. Those keep the ordinary card, which is
+   * right: a footnote should not be dressed like a title.
+   */
+  const isTitleCard = anchorKey === null && Boolean(controller?.isFirst);
+
   const card = (
     <div
       // The one region clicks are not swallowed in — see the swallow effect above, which
       // looks for this attribute.
       data-tour-card
-      className="pointer-events-auto w-[min(360px,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl"
+      data-tour-title-card={isTitleCard || undefined}
+      className={`pointer-events-auto rounded-2xl shadow-2xl ${
+        isTitleCard
+          ? 'w-[min(520px,calc(100vw-2rem))] px-9 py-8'
+          : 'w-[min(360px,calc(100vw-2rem))] p-5'
+      }`}
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-outline)',
@@ -315,10 +335,16 @@ export function TourOverlay() {
         </p>
       )}
 
-      <h2 className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
+      <h2
+        className={isTitleCard ? 'text-[28px] font-bold leading-tight tracking-tight' : 'text-[15px] font-bold'}
+        style={{ color: 'var(--color-text-primary)' }}
+      >
         {title}
       </h2>
-      <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+      <p
+        className={isTitleCard ? 'mt-3 text-[15px] leading-relaxed' : 'mt-1 text-[13px] leading-relaxed'}
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
         {body}
       </p>
 
@@ -341,7 +367,7 @@ export function TourOverlay() {
         </div>
       )}
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className={`flex items-center justify-between gap-3 ${isTitleCard ? 'mt-8' : 'mt-5'}`}>
         <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
           {t('onboarding.ui.stepOf', { current, total })}
         </span>
@@ -349,7 +375,9 @@ export function TourOverlay() {
           <button
             type="button"
             onClick={controller?.isFirst ? handleSkip : handleBack}
-            className="rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[var(--color-input-filled-background)]"
+            className={`rounded-lg font-medium transition-colors hover:bg-[var(--color-input-filled-background)] ${
+              isTitleCard ? 'px-4 py-2.5 text-sm' : 'px-3 py-2 text-[13px]'
+            }`}
             style={{ color: 'var(--color-text-secondary)' }}
           >
             {controller?.isFirst ? t('onboarding.ui.skip') : t('onboarding.ui.back')}
@@ -358,7 +386,9 @@ export function TourOverlay() {
             type="button"
             onClick={handleNext}
             autoFocus
-            className="rounded-lg px-4 py-2 text-[13px] font-bold transition-opacity hover:opacity-90"
+            className={`rounded-lg font-bold transition-opacity hover:opacity-90 ${
+              isTitleCard ? 'px-6 py-2.5 text-sm' : 'px-4 py-2 text-[13px]'
+            }`}
             style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
           >
             {controller?.isLast ? t('onboarding.ui.done') : t('onboarding.ui.next')}

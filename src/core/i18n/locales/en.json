@@ -1184,6 +1184,10 @@
   "onboarding": {
     "tours": {
       "first-run": {
+        "welcome": {
+          "title": "Welcome to Rent Control",
+          "body": "Your properties, the people renting them, and every shekel between the two. Here is where everything lives — it takes a minute."
+        },
         "home": {
           "title": "Your dashboard",
           "body": "Money in, money out, and anything that needs you this month."
@@ -1200,13 +1204,13 @@
           "title": "Every shekel",
           "body": "Rent collected and expenses paid, all recorded here."
         },
-        "suppliers": {
-          "title": "Suppliers",
-          "body": "Save the plumber or the management company once, then attach them to any expense."
-        },
         "reports": {
           "title": "Reports",
           "body": "Income against expenses for any period, plus a full expense log."
+        },
+        "suppliers": {
+          "title": "Suppliers",
+          "body": "Save the plumber or the management company once, then attach them to any expense."
         },
         "bell": {
           "title": "The bell",

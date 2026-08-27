@@ -25,6 +25,11 @@ test.describe('onboarding — first run', () => {
 
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
+    // The tour arrives before it points at anything: an unanchored first step, drawn as a
+    // larger title card rather than the one built to sit beside a spotlight.
+    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.locator('[data-tour-title-card]').or(page.locator('[data-tour-title-card]'))).toHaveCount(1);
+    await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Your dashboard')).toBeVisible();
     // Eight, and every one of them is conditional on something, which is why the count is
     // read rather than assumed:
@@ -33,7 +38,7 @@ test.describe('onboarding — first run', () => {
     //   - the assistant step survives because the mock reports the assistant enabled;
     //   - "start with one property" is *gone*, because the mock account has properties.
     //     That is the ninth step, and it is the one an empty account sees instead.
-    await expect(card.getByText('1 of 8')).toBeVisible();
+    await expect(card.getByText('2 of 9')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Your properties')).toBeVisible();
@@ -60,7 +65,7 @@ test.describe('onboarding — first run', () => {
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Ask anything')).toBeVisible();
-    await expect(card.getByText('8 of 8')).toBeVisible();
+    await expect(card.getByText('9 of 9')).toBeVisible();
 
     await card.getByRole('button', { name: 'Got it' }).click();
     await expect(page.getByText('Ask anything')).toBeHidden();
@@ -90,7 +95,7 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
 
     // No click of the user's in between: the home tour opens as soon as first-run closes,
@@ -133,7 +138,7 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
     await expect(card.getByText("What's on this screen")).toBeVisible();
 
@@ -206,14 +211,14 @@ test.describe('onboarding — first run', () => {
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Your dashboard')).toBeHidden();
+    await expect(page.getByText('Welcome to Rent Control')).toBeHidden();
 
     await dismissTours(page);
     await page.getByRole('link', { name: 'Renters' }).click();
     await dismissTours(page);
     await page.getByRole('link', { name: 'Home', exact: true }).click();
     await waitForAppReady(page);
-    await expect(page.getByText('Your dashboard')).toBeHidden();
+    await expect(page.getByText('Welcome to Rent Control')).toBeHidden();
   });
 
   test('the spotlight lands on the navigation the viewport is actually showing', async ({
@@ -222,7 +227,9 @@ test.describe('onboarding — first run', () => {
     await enableTours(page);
     await page.goto('/home');
     await waitForAppReady(page);
-    await expect(page.getByRole('dialog')).toBeVisible();
+    // Past the welcome card: it is unanchored, so there is no spotlight on it to measure.
+    await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('dialog').getByText('Your dashboard')).toBeVisible();
 
     const geometry = await page.evaluate(() => {
       const spot = document.querySelector('[data-tour-spotlight]');
@@ -260,15 +267,15 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Your dashboard')).toBeVisible();
+    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
 
-    // Well away from the card and from the spotlit nav item.
-    await page.mouse.click(700, 450);
-    await page.mouse.click(700, 500);
+    // Well clear of the card, which on this step is the wide centred title card.
+    await page.mouse.click(150, 650);
+    await page.mouse.click(1100, 650);
 
     // Same step, still open: not advanced, not skipped.
-    await expect(card.getByText('Your dashboard')).toBeVisible();
-    await expect(card.getByText('1 of 8')).toBeVisible();
+    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('1 of 9')).toBeVisible();
   });
 
   test('the page still scrolls while a step is showing', async ({ page }) => {

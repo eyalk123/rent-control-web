@@ -24,6 +24,10 @@ export const TOURS = {
     gate: 'always',
     kind: 'orientation',
     steps: [
+      // Opening cold on a spotlight over a nav item points at something before saying
+      // what is happening. This is the arrival. Being unanchored *and* first is what
+      // gets it the larger title-card treatment — see TourOverlay.
+      { id: 'welcome', anchor: null, placement: 'center' },
       { id: 'home', anchor: ANCHORS.navHome, placement: 'end' },
       { id: 'portfolio', anchor: ANCHORS.navProperties, placement: 'end', seed: { id: 'scan-lease', opens: 'lease-scan' } },
       { id: 'renters', anchor: ANCHORS.navRenters, placement: 'end' },

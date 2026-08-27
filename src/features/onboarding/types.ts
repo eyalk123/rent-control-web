@@ -159,11 +159,11 @@ export const callbackKey = (seed: SeedId) => `onboarding.callbacks.${seed}` as c
 
 /** Step/seed ceilings. This is the rule that keeps the tour from re-becoming a firehose. */
 export const BUDGET = {
-  // Nine is the web chrome, which is what the sweep has to cover: six sidebar
-  // destinations, the two top-bar controls, and the closing card. It was five when the
-  // orientation tour was assumed to be one tour of its own — but the home sweep opens the
-  // instant it closes, so five capped a definition rather than an experience.
-  orientation: { steps: 9, seeds: 3 },
+  // Ten is the web chrome plus the two cards that frame it: a welcome, six sidebar
+  // destinations, the two top-bar controls, and the closing call to action. It was five
+  // when the orientation tour was assumed to be one tour of its own — but the home sweep
+  // opens the instant it closes, so five capped a definition rather than an experience.
+  orientation: { steps: 10, seeds: 3 },
   // Eight because a page tour is now expected to *cover* its screen — an opening card that
   // says what the screen is for, then every block on it — rather than pick the two or three
   // things most worth saying. Three was the right number for the second kind and is far too
