@@ -61,10 +61,7 @@ export function NeedsAttentionSection() {
           the alerts panel. They are something you configure in the first week and then
           forget, so being two clicks deep behind the bell made them easy to never find.
           The copy in the panel stays: someone already reading alerts wants it there. */}
-      {/* Next to the label rather than pushed to the far end of the row: this column is
-          half the width of the page, so a right-aligned action sits against the
-          occupancy heading beside it and reads as though it belongs to that one. */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center justify-between gap-3 mb-3">
         <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
           {t('home.needsAttention')}
         </p>
