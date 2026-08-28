@@ -435,7 +435,6 @@
     "yearsAdded_plural": "{{count}} years added",
     "yearsRemoved": "{{count}} year removed",
     "yearsRemoved_plural": "{{count}} years removed",
-    "leaseEnd": "Lease ends: {{date}}",
     "selectProperty": "Select property",
     "selectPaymentType": "Select payment type",
     "paymentDay": "Payment day",
@@ -636,6 +635,8 @@
     "lastNameRequired": "Last name is required.",
     "phoneRequired": "Phone is required.",
     "emailRequired": "Email is required.",
+    "emailInvalid": "Enter a valid email address.",
+    "passwordMinLength": "Password must be at least 6 characters.",
     "rentRequired": "Valid monthly rent is required.",
     "leaseStartRequired": "Lease start date is required.",
     "paymentDayInvalid": "Date of payment must be between 1 and 31.",
@@ -1073,7 +1074,7 @@
     "noAccount": "Don't have an account?",
     "registerLink": "Register",
     "signInDesc": "Welcome back. Pick up where you left off.",
-    "createAccountDesc": "Free for personal use. Cancel anytime.",
+    "createAccountDesc": "Free to use. One account, one portfolio.",
     "orContinueWithEmail": "OR CONTINUE WITH EMAIL",
     "resetPasswordTitle": "Reset password",
     "resetPasswordDesc": "Enter your email — we'll send a reset link.",
@@ -1386,7 +1387,7 @@
         },
         "recording": {
           "title": "Recording rent",
-          "body": "The revenue form is built for collecting from everyone at once."
+          "body": "Every payment that comes in is written down from here."
         }
       },
       "renter-detail": {
@@ -1466,7 +1467,7 @@
         },
         "split": {
           "title": "One bill, several units",
-          "body": "Select several properties and the amount splits evenly between them — one transaction each."
+          "body": "Select several properties and the amount splits evenly between them."
         },
         "required": {
           "title": "Categories",
@@ -1490,7 +1491,7 @@
       "suppliers": {
         "overview": {
           "title": "Suppliers",
-          "body": "The plumber, the electrician, the management company — saved once, attached to any expense."
+          "body": "Everyone you pay to keep the properties running, and the expense categories their work files under. Here is the screen."
         },
         "categories": {
           "title": "Expense categories",
@@ -1572,8 +1573,8 @@
       "alert-actions": "Rows here do more than warn — each one can record the payment or message the renter on WhatsApp without leaving the page.",
       "scan-lease": "Have the lease as a file? Scan it and we'll read it and create the property and the renter in one pass.",
       "suppliers": "Suppliers lives in here too — save the plumber or the management company once, then attach them to any expense.",
-      "reports": "Reports are on Home rather than the tab bar — income against expenses, and a full expense log.",
-      "notifications": "Reminder settings are under Needs Attention → Manage notifications, not behind the Settings gear.",
+      "reports": "Income against expenses for any period, and a full expense log you can filter and export.",
+      "notifications": "Rent, expiring leases and CPI changes each get their own reminder — change when it fires, or mute it.",
       "property-owner": "Set this if you ever manage units for more than one person — it later filters rent recording and scopes reminders.",
       "ended-tenants": "Past tenants are never deleted. They're under Ended, and search always looks in both.",
       "bulk-select": "Long-press any card to select several at once.",
@@ -1581,7 +1582,7 @@
       "custom-schedule": "Custom gives every year its own rule — ₪5,000, then +3%, then whatever the index does, then flat.",
       "no-auto-rent": "Nothing is charged automatically. 'Overdue' only means no payment is recorded yet — record it and the alert clears itself.",
       "bulk-rent": "Recording rent handles many renters across many months at once. You won't be typing them one by one.",
-      "expense-split": "Paying one bill for the whole building? Select several properties and it splits evenly between them.",
+      "expense-split": "Each property gets its own transaction, so a later correction touches only that one.",
       "extend-lease": "Extend adds years or months and prices them, with a live preview — and it clears the expiring-lease alert for you.",
       "end-lease": "Tenant leaving early? End lease records the exit without rewriting past rent or reports. It's undoable.",
       "notification-rules": "Custom rules change the reminder days and scope them to one owner, property or renter.",

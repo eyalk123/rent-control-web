@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 export function HomeGreeting() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const now = new Date();
   const hour = now.getHours();
@@ -10,7 +10,10 @@ export function HomeGreeting() {
     hour < 18 ? t('home.goodAfternoon') :
     t('home.goodEvening');
 
-  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  // The app language, not `undefined` — that resolves to the *browser's* locale, which
+  // printed a Hebrew date under an English greeting for anyone whose browser is set to
+  // Hebrew. Every other formatter in the app already keys off i18n.language.
+  const dateStr = now.toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
     <div>

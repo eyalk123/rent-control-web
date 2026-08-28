@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
@@ -10,6 +10,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { auth } from '@/core/auth/firebase';
+import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { loginSchema } from './authFormSchema';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { Check } from 'lucide-react';
@@ -34,6 +35,49 @@ function firebaseErrorMessage(err: unknown, t: (k: string) => string): string {
 }
 
 const TILE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+/**
+ * The only way to change language before signing in. Settings is behind the login, and
+ * the language is a per-browser localStorage value picked from `navigator.language`, so
+ * without this a Hebrew-defaulting browser gave an English speaker no way out.
+ *
+ * It replaces a plain `<span>EN · עברית</span>` that sat in the brand panel's spec line
+ * and read as a control without being one — people clicked it and nothing happened.
+ */
+function LanguageToggle({ className = '', style }: { className?: string; style?: CSSProperties }) {
+  const { language, setLanguage } = useLanguage();
+  const options: { code: SupportedLanguage; label: string }[] = [
+    { code: 'en', label: 'EN' },
+    { code: 'he', label: 'עברית' },
+  ];
+  return (
+    <div className={`flex items-center gap-1.5 ${className}`} style={style}>
+      {options.map((opt, i) => (
+        <Fragment key={opt.code}>
+          {i > 0 && <span aria-hidden="true">·</span>}
+          <button
+            type="button"
+            lang={opt.code}
+            onClick={() => setLanguage(opt.code)}
+            aria-pressed={language === opt.code}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: 'inherit',
+              font: 'inherit',
+              fontWeight: language === opt.code ? 700 : 400,
+              textDecoration: language === opt.code ? 'none' : 'underline',
+            }}
+          >
+            {opt.label}
+          </button>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
 
 export function SignInPage() {
   const { t } = useTranslation();
@@ -149,7 +193,7 @@ export function SignInPage() {
         <div className="flex items-center gap-4 text-[12.5px] opacity-60">
           <span>v1.0.0</span><span>·</span>
           <span>{t('auth.brandPlatforms')}</span><span>·</span>
-          <span>EN · עברית</span>
+          <LanguageToggle />
         </div>
       </div>
 
@@ -303,7 +347,11 @@ export function SignInPage() {
             </div>
           )}
 
-          <LegalLinks className="mt-8 text-center text-[12px]" />
+          <LanguageToggle
+            className="mt-8 justify-center text-[12px]"
+            style={{ color: 'var(--color-text-secondary)' }}
+          />
+          <LegalLinks className="mt-3 text-center text-[12px]" />
         </div>
       </div>
     </div>
