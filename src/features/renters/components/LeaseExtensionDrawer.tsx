@@ -23,7 +23,7 @@ import {
   materializeRuledYears,
   reconstructIntentFromLeaseYears,
 } from '@/shared/utils/leaseSchedule';
-import { getLeaseEndDate } from '@/shared/types';
+import { getLeaseEndDate, getScheduleEndDate } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { fmtDate } from '@/shared/utils/dates';
 import type {
@@ -140,6 +140,23 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
     setShowDiscard(false);
     setInitialSnapshot(JSON.stringify({ rows: seededRows, added: [], mode: seededMode, value: seededValue }));
   }, [open, renter]);
+
+  // Extending a lease that has already run out appends periods starting at the *old*
+  // schedule end, because lease periods are laid end to end from a single `lease_start` —
+  // the model has no way to express a break. That is right for the common case (the
+  // renewal was signed late and the tenant never left) and wrong for a genuine gap, so
+  // say plainly how many months are being back-dated and point at the alternative.
+  const backdatedMonths = useMemo(() => {
+    const end = getScheduleEndDate(renter);
+    if (!end) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (end >= today) return 0;
+    return (
+      (today.getFullYear() - end.getFullYear()) * 12 + (today.getMonth() - end.getMonth())
+    );
+  }, [renter]);
+  const scheduleEnd = getScheduleEndDate(renter);
 
   const isCustom = mode === 'custom';
 
@@ -314,6 +331,30 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
       >
         <div className="flex flex-col gap-6">
           <ExtendLeaseTourRequest />
+
+          {backdatedMonths > 0 && scheduleEnd && (
+            <div
+              className="flex items-start gap-2 rounded-[10px] p-3 text-[13px]"
+              style={{
+                background: 'var(--color-input-filled-background)',
+                border: '1px solid var(--color-outline)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <AlertTriangle size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }} />
+              <div>
+                <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                  {t('renter.extendBackdatedTitle', {
+                    date: fmtDate(scheduleEnd.toISOString().split('T')[0]),
+                  })}
+                </p>
+                <p className="mt-0.5">
+                  {t('renter.extendBackdatedBody', { count: backdatedMonths })}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Current lease (read-only reference) */}
           <LeaseTimeline renter={renter} />
 

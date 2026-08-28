@@ -44,11 +44,16 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
   const { t } = useTranslation();
   const extendAnchorRef = useTourAnchor(ANCHORS.renterDetailExtend);
   const endLeaseAnchorRef = useTourAnchor(ANCHORS.renterDetailEndLease);
-  // An ended lease has nothing left to extend or chase, and a days-until-expiry countdown
-  // on it is noise. Edit and Delete stay - a past tenancy's record can still need
-  // correcting - and the forward-looking stats swap for backward-looking ones.
+  // An ended lease has nothing left to chase, and a days-until-expiry countdown on it is
+  // noise. Edit and Delete stay - a past tenancy's record can still need correcting - and
+  // the forward-looking stats swap for backward-looking ones.
   const ended = getRenterLifecycle(renter) === 'ended';
   const terminated = isTerminated(renter);
+  // A lease that simply ran its term is the canonical thing you renew, and the tenant
+  // routinely stays on while the paperwork catches up — so Extend survives expiry. A
+  // *terminated* lease is different: the owner has declared the tenancy over, so the
+  // honest move is Reopen first. Extending it would silently un-end it.
+  const canExtend = !terminated;
   const avatarColor = getPropertyColor(renter.id);
   const avatarBg = getPropertyColorBg(renter.id, 0.18);
 
@@ -130,28 +135,28 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           >
             <Pencil size={14} /> {t('common.edit')}
           </button>
+          {canExtend && (
+            <button
+              ref={extendAnchorRef}
+              onClick={onExtendLease}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
+              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+            >
+              <CalendarPlus size={14} /> {t('renter.extendLease')}
+            </button>
+          )}
           {!ended && (
-            <>
-              <button
-                ref={extendAnchorRef}
-                onClick={onExtendLease}
-                className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
-                style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
-              >
-                <CalendarPlus size={14} /> {t('renter.extendLease')}
-              </button>
-              {/* Not styled destructive: ending a tenancy is a lifecycle event, and making
-                  it look like Delete pushes people back to editing the lease term by hand. */}
-              <button
-                ref={endLeaseAnchorRef}
-                onClick={onEndLease}
-                disabled={lifecyclePending}
-                className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
-                style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
-              >
-                <CalendarX size={14} /> {t('renter.endLease')}
-              </button>
-            </>
+            /* Not styled destructive: ending a tenancy is a lifecycle event, and making
+               it look like Delete pushes people back to editing the lease term by hand. */
+            <button
+              ref={endLeaseAnchorRef}
+              onClick={onEndLease}
+              disabled={lifecyclePending}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-50"
+              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+            >
+              <CalendarX size={14} /> {t('renter.endLease')}
+            </button>
           )}
           <button
             onClick={onDelete}
