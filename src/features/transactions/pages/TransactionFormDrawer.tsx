@@ -48,15 +48,13 @@ import type { Transaction, Renter, PaymentMethod } from '@/shared/types';
 type TxType = 'revenue' | 'expense';
 
 /**
- * Mounted with the renter checklist, which only appears once properties are chosen — so
- * the request happens when the amount-cell anchor actually exists. Asking from the form
- * body would ask against an empty picker and defer the tour for the whole session.
+ * Asked for as the bulk form renders, so the tour opens with the form.
  *
- * It means the tour's opening card arrives a moment after the form does, rather than with
- * it. That is the honest trade: the two things it most needs to explain — what the per-renter
- * amounts are, and what the period does — are not on screen until a property is picked, and
- * they cannot be revealed the way a form page can, because it is the user's own selection
- * that creates them.
+ * It used to be mounted with the renter checklist instead, which appears only once a property
+ * has been chosen — the reasoning being that the amount-cell anchor would then exist. The
+ * effect was that anyone who opened the form and looked at it got no tour at all, which is
+ * how it was reported. The amount-cell step is `optional` now and drops when the rows are not
+ * up; everything else this tour points at is on screen from the first render.
  */
 function RevenueFormTourRequest() {
   useTour('revenue-form');
@@ -377,6 +375,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   // ── Bulk create render ─────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
+      <RevenueFormTourRequest />
       {/* Owner filter — only shown when 2+ distinct owners */}
       {ownerOptions.length > 2 && (
         <FormSelect
@@ -404,7 +403,6 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       {/* Renter checklist */}
       {selectedPropertyIds.length > 0 && (
         <div className="flex flex-col gap-2">
-          <RevenueFormTourRequest />
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.tenantsSection')}<RequiredMark /></span>
             {allRenters.length > 0 && (

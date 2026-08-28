@@ -481,4 +481,53 @@ test.describe('onboarding — first run', () => {
     await expect(drawer.getByText('1/2')).toBeVisible();
     await expect(drawer.getByRole('textbox', { name: 'Address' })).toBeVisible();
   });
+
+  /**
+   * Both halves of the transaction form, and both were reported broken: revenue showed no
+   * tour at all, and expense walked its two steps in the wrong order.
+   *
+   * Revenue's tour used to be asked for from the renter checklist, which does not exist until
+   * a property has been chosen — so opening the form and looking at it got nothing. Expense
+   * pointed at the category field before the property picker, which is four fields above it.
+   */
+  test('the transaction form tours open with the form and read down it', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/transactions');
+    await waitForAppReady(page);
+    // First-run and then the transactions tour open back to back here, and the second one
+    // waits for the list to have rows — so "which is up" is a race. Clear until nothing is
+    // up and stays that way; the overlay swallows clicks outside its own card, so a tour
+    // left open makes the next click land on nothing.
+    for (let i = 0; i < 6; i++) {
+      await dismissTours(page);
+      await page.waitForTimeout(300);
+      if ((await page.getByRole('dialog').count()) === 0) break;
+    }
+
+    await page.getByRole('button', { name: 'Add transaction' }).click();
+    await page.getByRole('button', { name: 'Revenue', exact: true }).click();
+
+    // Nothing selected yet — which is exactly the state that used to show no tour.
+    const revenue = page.getByRole('dialog').filter({ hasText: 'of 4' });
+    await expect(revenue.getByText('Rent coming in')).toBeVisible();
+    await revenue.getByRole('button', { name: 'Next' }).click();
+    await expect(revenue.getByText('Pick the properties')).toBeVisible();
+    await revenue.getByRole('button', { name: 'Next' }).click();
+    await expect(revenue.getByText('Which months')).toBeVisible();
+    // Four, not five: the per-row override step drops while there are no rows to point at.
+    await revenue.getByRole('button', { name: 'Next' }).click();
+    await expect(revenue.getByText('4 of 4')).toBeVisible();
+    await revenue.getByRole('button', { name: 'Got it' }).click();
+
+    // Expense, down the form: the property picker first, the category field after it.
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Expense', exact: true }).click();
+
+    const expense = page.getByRole('dialog').filter({ hasText: 'of 3' });
+    await expect(expense.getByText('Money going out')).toBeVisible();
+    await expense.getByRole('button', { name: 'Next' }).click();
+    await expect(expense.getByText('One bill, several units')).toBeVisible();
+    await expense.getByRole('button', { name: 'Next' }).click();
+    await expect(expense.getByRole('heading', { name: 'Categories' })).toBeVisible();
+  });
 });

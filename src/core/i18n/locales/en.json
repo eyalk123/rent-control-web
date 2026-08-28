@@ -1443,16 +1443,16 @@
           "body": "Built for collecting from everyone at once: choose the properties and renters, choose the months, and it writes a row for each."
         },
         "scope": {
-          "title": "Pick the scope",
-          "body": "Properties — narrowed by owner if you manage for more than one — then a month, a quarter, your own set of months, or a whole contract year."
+          "title": "Pick the properties",
+          "body": "Their renters appear below, each with the rent they owe — taken from that renter's own schedule, so a mid-lease rise is applied for you. Narrow by owner first if you manage for more than one."
         },
         "period": {
           "title": "Which months",
           "body": "One month, a set of months you pick yourself, or a whole contract year. The rows below follow whatever you choose here."
         },
         "perContract": {
-          "title": "Per contract",
-          "body": "The amount comes from each renter's own schedule, so a mid-lease rise is applied for you. Override any row; Auto snaps it back."
+          "title": "Overriding a row",
+          "body": "Every amount is filled in from the contract. Type over any of them for a one-off — a partial payment, a discounted month — and Auto snaps it back."
         },
         "saving": {
           "title": "One row at a time",
@@ -1462,15 +1462,15 @@
       "expense-form": {
         "overview": {
           "title": "Money going out",
-          "body": "Anything you pay for a property — a repair, a bill, a supplier's invoice. What you record here is what the expense side of the reports is built from."
-        },
-        "required": {
-          "title": "What an expense needs",
-          "body": "A property, an amount, a date, a payment method, and at least one category. Categories are what the reports group by."
+          "body": "Anything you pay for a property — a repair, a bill, a supplier's invoice. It needs a property, an amount, a date, a payment method and at least one category. Everything else is optional."
         },
         "split": {
           "title": "One bill, several units",
           "body": "Select several properties and the amount splits evenly between them — one transaction each."
+        },
+        "required": {
+          "title": "Categories",
+          "body": "At least one, and they are what the reports group by — pick the one you would want a year-end total for. The supplier list narrows to match."
         }
       },
       "extend-lease": {

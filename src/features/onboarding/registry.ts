@@ -278,7 +278,13 @@ export const TOURS = {
       { id: 'overview', anchor: null, placement: 'center' },
       { id: 'scope', anchor: ANCHORS.revenuePropertyPicker, placement: 'bottom' },
       { id: 'period', anchor: ANCHORS.revenuePeriodPicker, placement: 'bottom' },
-      { id: 'perContract', anchor: ANCHORS.revenueAmountCell, placement: 'bottom' },
+      // Optional because the renter rows do not exist until a property is picked, and this
+      // tour has to be able to open before that — waiting on them is what kept it shut for
+      // anyone who opened the form and simply looked at it. The fact that matters most, that
+      // the amounts come from each contract, is said on `scope` above, which is anchored on a
+      // field that is always there; this step is the override detail, worth having when the
+      // rows happen to be up and not worth blocking the tour for.
+      { id: 'perContract', anchor: ANCHORS.revenueAmountCell, placement: 'bottom', optional: true },
       { id: 'saving', anchor: null, placement: 'center' },
     ],
   },
@@ -290,8 +296,11 @@ export const TOURS = {
     kind: 'page',
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
-      { id: 'required', anchor: ANCHORS.expenseCategoryField, placement: 'bottom' },
+      // Screen order: the property picker is the first field on this form and the category
+      // field sits four below it. These two were the other way round, so the tour jumped down
+      // the form and back up again.
       { id: 'split', anchor: ANCHORS.expensePropertyPicker, placement: 'bottom', seed: { id: 'expense-split', opens: null } },
+      { id: 'required', anchor: ANCHORS.expenseCategoryField, placement: 'bottom' },
     ],
   },
 
