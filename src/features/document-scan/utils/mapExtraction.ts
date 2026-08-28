@@ -1,5 +1,6 @@
 import type { PropertyFormValues } from '@/features/properties/validation/propertyValidation';
 import type { RenterFormValues } from '@/features/renters/validation/renterValidation';
+import { toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
 import type { ExtractedRenter, FieldNote, LeaseExtraction, ProvenanceItem, ReviewItem } from '../types';
 import { PROPERTY_SCAN_FIELDS } from './propertyFields';
 
@@ -36,6 +37,10 @@ const s = (v: string | number | null | undefined): string | undefined =>
 const INSURANCE_TYPES = new Set(['wire_transfer', 'bank_guarantee']);
 const insuranceType = (v: string | null): string | undefined =>
   v && INSURANCE_TYPES.has(v) ? v : undefined;
+
+// The backend already constrains payment_type to the PaymentMethod domain; re-map here so an
+// older/unknown value (e.g. the legacy 'wire_transfer') can't reach the select as free text.
+const paymentType = (v: string | null): string | undefined => toPaymentMethodOrNull(v) ?? undefined;
 
 // `field` is the backend snake-case field name (used to look up its uncertainty note);
 // `key` is the RHF form field; `i18n` the label key shown in the review banner.
@@ -97,6 +102,7 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
     { key: 'baseRent', i18n: 'renter.baseRent', field: 'base_rent', get: () => s(r.base_rent) },
     { key: 'escalationValue', i18n: 'renter.escalationValue', field: 'rent_escalation_value', get: () => s(r.rent_escalation_value) },
     { key: 'escalationMode', i18n: 'renter.escalationMode', field: 'rent_escalation_mode', get: () => r.rent_escalation_mode ?? undefined },
+    { key: 'paymentType', i18n: 'renter.paymentType', field: 'payment_type', get: () => paymentType(r.payment_type) },
     { key: 'paymentDayOfMonth', i18n: 'renter.paymentDay', field: 'payment_day_of_month', get: () => s(r.payment_day_of_month) },
     { key: 'insuranceType', i18n: 'renter.insuranceType', field: 'insurance_type', get: () => insuranceType(r.insurance_type) },
     { key: 'insuranceAmount', i18n: 'renter.insuranceAmount', field: 'insurance_amount', get: () => s(r.insurance_amount) },

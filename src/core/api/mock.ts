@@ -1050,7 +1050,7 @@ export const mockDocumentScanApi = {
           lease_start: '2025-08-01', lease_years: null, contract_term_years: 1, contract_term_months: 0,
           option_years: 1, option_term_months: 0,
           base_rent: null, rent_escalation_mode: 'none', rent_escalation_value: null,
-          number_of_payments: 12, payment_type: null, payment_day_of_month: 1,
+          number_of_payments: 12, payment_type: 'bank_transfer', payment_day_of_month: 1,
           insurance_type: null, insurance_amount: null, extra_contacts: null,
         },
         {
@@ -1058,7 +1058,7 @@ export const mockDocumentScanApi = {
           lease_start: '2025-08-01', lease_years: null, contract_term_years: 1, contract_term_months: 0,
           option_years: 1, option_term_months: 0,
           base_rent: null, rent_escalation_mode: 'none', rent_escalation_value: null,
-          number_of_payments: 12, payment_type: null, payment_day_of_month: 1,
+          number_of_payments: 12, payment_type: 'bank_transfer', payment_day_of_month: 1,
           insurance_type: null, insurance_amount: null, extra_contacts: null,
         },
       ],

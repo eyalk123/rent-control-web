@@ -16,6 +16,14 @@ const ENUM_LABELS: Record<string, Record<string, string>> = {
     wire_transfer: 'renter.insuranceTypeWireTransfer',
     bank_guarantee: 'renter.insuranceTypeBankGuarantee',
   },
+  // Includes the legacy 'wire_transfer' alias, which stored renters can still carry.
+  paymentType: {
+    cash: 'transactions.paymentMethodCash',
+    bank_transfer: 'transactions.paymentMethodBankTransfer',
+    wire_transfer: 'transactions.paymentMethodBankTransfer',
+    bit: 'transactions.paymentMethodBit',
+    check: 'transactions.paymentMethodCheck',
+  },
   paymentFrequency: {
     monthly: 'renter.frequencyMonthly',
     quarterly: 'renter.frequencyQuarterly',
