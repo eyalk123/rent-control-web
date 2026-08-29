@@ -19,11 +19,17 @@ test.describe('renters', () => {
     await expect(page.getByText('Sarah Johnson')).toBeVisible();
 
     // Her detail page is the unambiguous check: an expired lease used to render the green
-    // "Active" pill and still offer Extend, because status came from the overdue/expiring
-    // lists rather than the dates.
+    // "Active" pill, because status came from the overdue/expiring lists rather than the
+    // dates. End lease is the control that goes with it — there is nothing left to end.
     await page.goto('/renters/1');
     await expect(page.getByText(/Lease ended/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Extend lease' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^End lease/ })).toHaveCount(0);
+
+    // Extend deliberately survives expiry, and this used to assert the opposite. A lease
+    // that simply ran its term is the canonical thing you renew, and the tenant routinely
+    // stays on while the paperwork catches up. Only a *terminated* tenancy loses Extend —
+    // there the owner has declared it over, so Reopen has to come first (RenterDetailHero).
+    await expect(page.getByRole('button', { name: 'Extend lease' })).toBeVisible();
   });
 
   // Search crosses the tabs on purpose: "where did this tenant go" must not depend on
