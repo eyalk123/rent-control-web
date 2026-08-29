@@ -10,7 +10,6 @@ import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
 import type { Renter } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
-import { useTour } from '@/features/onboarding/TourController';
 
 interface Props {
   renter: Renter;
@@ -19,10 +18,6 @@ interface Props {
 export function LeaseInfoTab({ renter }: Props) {
   const { t } = useTranslation();
   const timelineAnchorRef = useTourAnchor(ANCHORS.renterDetailTimeline);
-  // Asked from the tab that owns the timeline anchor rather than from the page: the page
-  // renders a loader until the renter arrives, and the other two tabs have no timeline.
-  // The hero's Extend / End buttons are mounted alongside this tab, on a live lease.
-  useTour('renter-detail');
   const extras = renter.extra_contacts ?? [];
   const docs: { label: string; url: string }[] = [];
   if (renter.full_contract_url) docs.push({ label: t('documents.fullContract'), url: renter.full_contract_url });

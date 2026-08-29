@@ -98,7 +98,7 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
     { key: 'contractTermYears', i18n: 'renter.contractTermYears', field: 'contract_term_years', get: () => s(r.contract_term_years) },
     { key: 'contractTermMonths', i18n: 'renter.extraMonths', field: 'contract_term_months', get: () => s(r.contract_term_months) },
     { key: 'optionYears', i18n: 'renter.optionYears', field: 'option_years', get: () => s(r.option_years) },
-    { key: 'optionTermMonths', i18n: 'renter.extraMonths', field: 'option_term_months', get: () => s(r.option_term_months) },
+    { key: 'optionTermMonths', i18n: 'renter.extraOptionMonths', field: 'option_term_months', get: () => s(r.option_term_months) },
     { key: 'baseRent', i18n: 'renter.baseRent', field: 'base_rent', get: () => s(r.base_rent) },
     { key: 'escalationValue', i18n: 'renter.escalationValue', field: 'rent_escalation_value', get: () => s(r.rent_escalation_value) },
     { key: 'escalationMode', i18n: 'renter.escalationMode', field: 'rent_escalation_mode', get: () => r.rent_escalation_mode ?? undefined },

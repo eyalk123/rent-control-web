@@ -8,6 +8,7 @@ import {
   useUpdateExpenseTransaction,
   useExpenseCategories,
   usePropertyRenters,
+  useAllTransactions,
   transactionKeys,
 } from '../queries';
 import { createRevenueTransaction, createExpenseTransaction, updateExpenseTransaction } from '../api/transactions';
@@ -27,7 +28,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { PAYMENT_METHOD_VALUES, toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
-import { todayISO } from '@/shared/utils/dates';
+import { todayISO, fmtMonthYear } from '@/shared/utils/dates';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
@@ -72,6 +73,18 @@ function ExpenseFormTourRequest() {
 interface RenterWithProperty extends Renter {
   propertyId: number;
   propertyLabel: string;
+}
+
+/** One row the bulk revenue create is about to write. */
+interface BulkPayload {
+  property_id: number;
+  renter_id: number;
+  amount: number;
+  date_of_payment: string;
+  /** Always `YYYY-MM-01`. */
+  month_for: string;
+  payment_method?: PaymentMethod;
+  notes?: string;
 }
 
 /** Order-insensitive equality for the id collections behind the multi-selects. */
@@ -163,6 +176,26 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const [propertyError, setPropertyError] = useState('');
   const [renterError, setRenterError] = useState('');
   const [bulkDateError, setBulkDateError] = useState('');
+  // Months about to be written that already hold a payment, held between the submit and
+  // the confirmation. Never auto-skipped — the user decides whether to record them anyway.
+  const [duplicateWarning, setDuplicateWarning] = useState<
+    { payloads: BulkPayload[]; months: string[] } | null
+  >(null);
+
+  // Every revenue row the owner has, so the form can tell which of the months it is about
+  // to write are already recorded. Gated on a renter being checked, so opening the form
+  // costs nothing; one shared cache entry, not one query per renter.
+  const { data: existingRevenue } = useAllTransactions(
+    { type: 'revenue' },
+    { enabled: selectedRenterIds.size > 0 },
+  );
+  const recordedMonthKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const tx of existingRevenue ?? []) {
+      if (tx.month_for) set.add(`${tx.renter_id}:${tx.month_for.slice(0, 7)}`);
+    }
+    return set;
+  }, [existingRevenue]);
 
   // Report unsaved-changes state up to the drawer. Edit mode tracks the RHF form;
   // bulk-create tracks the property/renter selection and bulk fields (held outside RHF).
@@ -326,6 +359,22 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       }));
     });
 
+    // A month already on file is almost always a re-run of the same bulk create, and a
+    // second row does not correct the first — it doubles the month, which then shows up on
+    // the payment grid as one impossible amount. Warn, and let the user decide.
+    const clashing = payloads.filter((p) =>
+      recordedMonthKeys.has(`${p.renter_id}:${p.month_for.slice(0, 7)}`),
+    );
+    if (clashing.length > 0) {
+      const months = [...new Set(clashing.map((p) => p.month_for.slice(0, 7)))].sort();
+      setDuplicateWarning({ payloads, months });
+      return;
+    }
+
+    await runBulkCreate(payloads);
+  }
+
+  async function runBulkCreate(payloads: BulkPayload[]) {
     setBulkSubmitting(true);
     try {
       const results = await Promise.allSettled(payloads.map((p) => createRevenueTransaction(p)));
@@ -340,6 +389,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
       onClose();
     } finally {
       setBulkSubmitting(false);
+      setDuplicateWarning(null);
     }
   }
 
@@ -576,6 +626,25 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
         className="hidden"
         onClick={handleBulkSubmit}
         disabled={bulkSubmitting}
+      />
+
+      <ConfirmDialog
+        open={duplicateWarning != null}
+        tone="primary"
+        title={t('transactions.bulkRevenue.alreadyRecordedTitle')}
+        message={t(
+          (duplicateWarning?.months.length ?? 0) === 1
+            ? 'transactions.bulkRevenue.alreadyRecorded'
+            : 'transactions.bulkRevenue.alreadyRecorded_plural',
+          {
+            count: duplicateWarning?.months.length ?? 0,
+            months: (duplicateWarning?.months ?? []).map((m) => fmtMonthYear(m)).join(', '),
+          },
+        )}
+        confirmLabel={t('transactions.bulkRevenue.recordAnyway')}
+        loading={bulkSubmitting}
+        onConfirm={() => duplicateWarning && void runBulkCreate(duplicateWarning.payloads)}
+        onClose={() => setDuplicateWarning(null)}
       />
     </div>
   );

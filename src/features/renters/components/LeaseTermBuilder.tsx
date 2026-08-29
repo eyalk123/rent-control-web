@@ -247,7 +247,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           name="optionTermMonths"
           render={({ field }) => (
             <Stepper
-              label={t('renter.extraMonths')}
+              label={t('renter.extraOptionMonths')}
               unitLabel={t('renter.monthsUnit')}
               min={0}
               max={11}

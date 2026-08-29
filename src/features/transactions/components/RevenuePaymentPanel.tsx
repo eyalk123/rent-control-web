@@ -14,6 +14,7 @@ import {
   summariseRentYear,
   type MonthCell,
 } from '../utils/rentSchedule';
+import { MonthPaymentsDialog } from './MonthPaymentsDialog';
 import { RentMonthBox } from './RentMonthBox';
 import { YearChips } from './YearChips';
 
@@ -84,6 +85,8 @@ export function RevenuePaymentPanel({
   // months should never make you wait for the previous one to land.
   const [pending, setPending] = useState<ReadonlySet<string>>(() => new Set());
   const [editing, setEditing] = useState<Armed | null>(null);
+  // The month whose payment list is open — set only when a month holds more than one.
+  const [viewing, setViewing] = useState<Armed | null>(null);
   // Successes since the last time the grid went quiet, so a run of months produces one
   // summary toast instead of one per click.
   const recorded = useRef(0);
@@ -136,7 +139,22 @@ export function RevenuePaymentPanel({
   // supersede one another when several land at once, so an earlier write's promise can come
   // back before its own refetch has.
   useEffect(() => {
-    if (pending.size === 0) return;
+    // A cell can also be released outside the data path — when the write was refused
+    // because the month was already recorded, nothing changes in the data to release it.
+    // That must not swallow the summary toast for the writes that did land.
+    if (pending.size === 0) {
+      if (recorded.current > 0) {
+        const count = recorded.current;
+        recorded.current = 0;
+        showToast(
+          count === 1
+            ? t('transactions.rentGrid.paymentRecorded')
+            : t('transactions.rentGrid.paymentsRecorded', { count }),
+          'success',
+        );
+      }
+      return;
+    }
     const paid = new Set<string>();
     for (const rows of rowsByYear.values()) {
       for (const { renter, cells } of rows) {
@@ -199,13 +217,24 @@ export function RevenuePaymentPanel({
     setPending((prev) => new Set(prev).add(key));
 
     try {
-      await markPaid({
+      const result = await markPaid({
         property_id: targetProperty,
         renter_id: renter.id,
         amount: cell.expected,
         monthFor: cell.monthKey,
         paymentType: renter.payment_type,
       });
+      if (!result.created) {
+        // Nothing was written, so the data will never change to release this cell — and
+        // the grid should not have offered the box in the first place. Say so and let go.
+        showToast(t('transactions.rentGrid.markPaid.alreadyRecorded'), 'default');
+        setPending((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+        return;
+      }
       recorded.current += 1;
       // Deliberately *not* clearing `pending` here. The write returning only means the row
       // exists on the server; the grid derives "paid" from the transaction list, which has
@@ -239,8 +268,14 @@ export function RevenuePaymentPanel({
       }
       return;
     }
-    // A paid box is a shortcut into the money it represents.
-    if (cell.transactions.length > 0) navigate(`/transactions/${cell.transactions[0].id}`);
+    // A paid box is a shortcut into the money it represents — but only when there is one
+    // row behind it. A month with several is exactly the case the old straight-to-the-first
+    // navigation lied about, so it gets the list instead.
+    if (cell.transactions.length === 1) {
+      navigate(`/transactions/${cell.transactions[0].id}`);
+    } else if (cell.transactions.length > 1) {
+      setViewing({ renter, cell });
+    }
   };
 
   const renderRow = ({ renter, cells }: GridRow, showName: boolean) => (
@@ -385,6 +420,17 @@ export function RevenuePaymentPanel({
       </div>
 
       <Legend />
+
+      <MonthPaymentsDialog
+        open={viewing != null}
+        onClose={() => setViewing(null)}
+        cell={viewing?.cell ?? null}
+        monthLabel={
+          viewing
+            ? `${monthLabels[viewing.cell.monthIndex]} ${viewing.cell.monthKey.slice(0, 4)}`
+            : ''
+        }
+      />
 
       <TransactionFormDrawer
         open={editing != null}

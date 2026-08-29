@@ -26,6 +26,7 @@ export const TOUR_IDS = [
   'revenue-form',
   'expense-form',
   'renter-detail',
+  'property-detail',
   'extend-lease',
   'suppliers',
   'notifications',

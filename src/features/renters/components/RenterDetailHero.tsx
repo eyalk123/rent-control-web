@@ -28,6 +28,8 @@ interface Props {
   statsLoading?: boolean;
   /** Total collected across the whole tenancy - replaces the year totals once it ends. */
   lifetimeRevenue: number;
+  /** Total spent across the whole tenancy - replaces the year totals once it ends. */
+  lifetimeExpenses: number;
   /** Whole months between lease start and the effective end. */
   monthsTenanted: number | null;
   onEdit: () => void;
@@ -40,8 +42,9 @@ interface Props {
   lifecyclePending?: boolean;
 }
 
-export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalRevenue, totalExpenses, year, statsLoading, lifetimeRevenue, monthsTenanted, onEdit, onExtendLease, onAddTransaction, onDelete, onEndLease, onReopenLease, lifecyclePending }: Props) {
+export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, leaseEnd, totalRevenue, totalExpenses, year, statsLoading, lifetimeRevenue, lifetimeExpenses, monthsTenanted, onEdit, onExtendLease, onAddTransaction, onDelete, onEndLease, onReopenLease, lifecyclePending }: Props) {
   const { t } = useTranslation();
+  const statsAnchorRef = useTourAnchor(ANCHORS.renterDetailStats);
   const extendAnchorRef = useTourAnchor(ANCHORS.renterDetailExtend);
   const endLeaseAnchorRef = useTourAnchor(ANCHORS.renterDetailEndLease);
   // An ended lease has nothing left to chase, and a days-until-expiry countdown on it is
@@ -177,7 +180,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div ref={statsAnchorRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <HeroStat label={t('renter.monthlyRent')} value={formatMoney(monthly)} />
         {ended ? (
           <HeroStat
@@ -198,7 +201,11 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
         ) : (
           <HeroStat label={t('renter.totalRevenue', { year })} value={formatMoney(totalRevenue)} tone="success" loading={statsLoading} />
         )}
-        <HeroStat label={t('renter.totalExpenses', { year })} value={formatMoney(totalExpenses)} tone="danger" loading={statsLoading} />
+        {ended ? (
+          <HeroStat label={t('renter.totalSpent')} value={formatMoney(lifetimeExpenses)} tone="danger" loading={statsLoading} />
+        ) : (
+          <HeroStat label={t('renter.totalExpenses', { year })} value={formatMoney(totalExpenses)} tone="danger" loading={statsLoading} />
+        )}
       </div>
     </>
   );

@@ -245,6 +245,45 @@ test.describe('onboarding — first run', () => {
     await expect(page.locator('main table')).toBeHidden();
   });
 
+  /**
+   * The detail tours drive the tab the page is showing, which is the one genuinely new
+   * mechanism behind them: three steps in a row point at the same panel and what changes
+   * is what is inside it. The failure this pins down is the one that would look like
+   * working software — a tour that talks about the Renters tab while the Details tab is
+   * still on screen — plus the two ways driving it could damage the page underneath: the
+   * tab lives in the query string, and it is the user's, not the tour's.
+   */
+  test('the property tour walks the tabs and gives the page back', async ({ page }) => {
+    await enableTours(page);
+    await page.goto('/properties/1');
+    await waitForAppReady(page);
+
+    const card = page.getByRole('dialog');
+    await expect(card.getByText('Everything about one unit')).toBeVisible();
+    // The tab the user is on, and still on once the tour is done with the page.
+    await expect(page.getByText('Basic Information')).toBeVisible();
+
+    // overview -> stats -> tabs -> renters
+    for (let i = 0; i < 3; i++) await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Who is here, and who was')).toBeVisible();
+    await expect(page.getByText('Basic Information')).toBeHidden();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('The money this unit made')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Revenue' })).toBeVisible();
+
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Two slots, not a folder')).toBeVisible();
+    await expect(page.getByText('Upload new')).toBeVisible();
+
+    // Rendered, not stored: driving the demo through `setTab` would put the tour's tab in
+    // the query string and leave it there for the back button to find.
+    expect(page.url()).not.toContain('tab=');
+
+    await card.getByRole('button', { name: 'Got it' }).click();
+    await expect(page.getByText('Basic Information')).toBeVisible();
+  });
+
   test('skipping counts as seen', async ({ page }) => {
     await enableTours(page);
     await page.goto('/home');

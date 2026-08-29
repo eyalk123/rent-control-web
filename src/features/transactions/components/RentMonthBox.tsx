@@ -67,10 +67,17 @@ export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed
   // Screen readers get the full story in one string — the visual grid conveys it through
   // position and colour, neither of which survives linearisation.
   const amount = cell.status === 'paid' ? cell.paidSum : cell.expected;
+  // A month can hold several payments, and the box shows their *sum* — without this the
+  // total reads as one transaction, which is how a triple-recorded month looked like a
+  // single wildly wrong one.
+  const multiple = cell.transactions.length > 1;
+  const countLabel = multiple
+    ? t('transactions.rentGrid.paymentsCount', { count: cell.transactions.length })
+    : null;
   const ariaLabel = [
     monthLabel,
     statusLabel,
-    amount > 0 ? formatMoney(amount) : null,
+    amount > 0 ? (countLabel ? `${formatMoney(amount)} (${countLabel})` : formatMoney(amount)) : null,
     cell.hasAmountMismatch
       ? t('transactions.rentGrid.expectedWas', { amount: formatMoney(cell.expected) })
       : null,
@@ -148,7 +155,11 @@ export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed
         <span
           className="absolute end-1 top-1 h-2.5 w-2.5 rounded-full"
           style={{ background: 'var(--color-warning)' }}
-          title={t('transactions.rentGrid.legendMismatch')}
+          title={
+            multiple
+              ? `${t('transactions.rentGrid.legendMismatch')} · ${countLabel}`
+              : t('transactions.rentGrid.legendMismatch')
+          }
         />
       )}
 

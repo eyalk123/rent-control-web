@@ -388,7 +388,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
                 onChange={setAddOptionCount}
               />
               <Stepper
-                label={t('renter.extraMonths')}
+                label={t('renter.extraOptionMonths')}
                 unitLabel={t('renter.monthsUnit')}
                 min={0}
                 max={11}

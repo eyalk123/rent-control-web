@@ -21,7 +21,7 @@ import {
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { notificationKeys } from '@/features/notifications/queries';
 import { normalizePaymentType } from '@/shared/constants/paymentMethods';
-import type { TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
+import type { Transaction, TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
 import type { TransactionsListParams, TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
 
 const PAGE_SIZE = 10;
@@ -130,19 +130,44 @@ export interface MarkRentPaidInput {
  * alert path used to hardcode the current month, which mis-filed a payment for an alert
  * raised about an earlier one.
  */
+export type MarkRentPaidResult =
+  | { created: true; transaction: Transaction }
+  | { created: false; existing: Transaction };
+
 export function useMarkRentPaid() {
+  const qc = useQueryClient();
   const createRevenue = useCreateRevenueTransaction();
   return {
     ...createRevenue,
-    markPaid: (input: MarkRentPaidInput) =>
-      createRevenue.mutateAsync({
+    markPaid: async (input: MarkRentPaidInput): Promise<MarkRentPaidResult> => {
+      // Paid *is* the existence of a revenue row for the month, so a second "Mark paid" on
+      // a month already recorded does not update anything — it files a second payment, and
+      // the grid then reports the two summed as one implausible amount. The alert paths
+      // cannot see the grid, so the check lives here, at the one point all three callers
+      // share. Nothing is skipped silently: the caller is told, and decides what to say.
+      const filters = { type: 'revenue' as const, renterId: input.renter_id ?? undefined };
+      if (input.renter_id != null) {
+        const rows = await qc.fetchQuery({
+          queryKey: transactionKeys.allList(filters),
+          queryFn: () => getAllTransactions(filters),
+          // A run of months recorded back to back should not refetch the whole history per
+          // click. A create invalidates `transactions`, which overrides this anyway.
+          staleTime: 30_000,
+        });
+        const existing = rows.find((tx) => tx.month_for?.slice(0, 7) === input.monthFor);
+        if (existing) return { created: false, existing };
+      }
+
+      const transaction = await createRevenue.mutateAsync({
         property_id: input.property_id,
         renter_id: input.renter_id,
         amount: input.amount,
         date_of_payment: new Date().toISOString().slice(0, 10),
         month_for: `${input.monthFor}-01`,
         payment_method: normalizePaymentType(input.paymentType),
-      }),
+      });
+      return { created: true, transaction };
+    },
   };
 }
 

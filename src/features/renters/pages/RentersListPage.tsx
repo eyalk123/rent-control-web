@@ -328,6 +328,10 @@ export function RentersListPage() {
     tourStep === 'cards' ? 'card' : tourStep === 'table' ? 'table' : view;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [propertyDrawerOpen, setPropertyDrawerOpen] = useState(false);
+  // Which property the scan's property-review step edits: the matched property (review it
+  // against the lease before its renters), or undefined for the "create property from lease"
+  // pivot, which creates one.
+  const [propertyDrawerId, setPropertyDrawerId] = useState<number | undefined>(undefined);
   // Document-scan (renter target) result: the mapped extraction, the finalised per-renter
   // queue (joint-rent split applied), and which existing property it matched. Populated from
   // the app-global scan session once the user continues out of the summary.
@@ -427,7 +431,18 @@ export function RentersListPage() {
           matchedPropertyId: result.targetPropertyId,
           matchStatus: result.targetPropertyId != null ? 'matched' : 'none',
         });
-        setDrawerOpen(true);
+        // The lease describes the property as well as its renters. When it attached to an
+        // existing property, review that property against the lease first (blank fields
+        // filled, differing ones raised as conflicts) and let it chain into the renters —
+        // the same review step a property-target scan gets. With no property to attach to
+        // there is nothing to review, so go straight to the renter form, which offers the
+        // picker and the "create property from lease" pivot.
+        if (result.targetPropertyId != null) {
+          setPropertyDrawerId(result.targetPropertyId);
+          setPropertyDrawerOpen(true);
+        } else {
+          setDrawerOpen(true);
+        }
       }
     }
   }, [scanView, scanSession, location.pathname, consumeScan]);
@@ -623,13 +638,15 @@ export function RentersListPage() {
         matchStatus={scan?.matchStatus}
         scannedLeaseAddress={scan ? { address: scan.mapped.propertyPrefill.address, city: scan.mapped.propertyPrefill.city, floor: scan.mapped.propertyPrefill.floor, apartment: scan.mapped.propertyPrefill.apartment } : undefined}
         onCreatePropertyFromScan={
-          scan ? () => { setDrawerOpen(false); setPropertyDrawerOpen(true); } : undefined
+          scan ? () => { setDrawerOpen(false); setPropertyDrawerId(undefined); setPropertyDrawerOpen(true); } : undefined
         }
       />
-      {/* "Create property from lease" pivot — reuses the property+renter chain with the same scan. */}
+      {/* The scan's property step: reviewing the matched property against the lease, or the
+          "create property from lease" pivot. Either way it chains on into the renter queue. */}
       <PropertyFormDrawer
         open={propertyDrawerOpen}
         onClose={() => setPropertyDrawerOpen(false)}
+        propertyId={propertyDrawerId}
         logId={scan?.logId}
         prefill={scan?.mapped.propertyPrefill}
         reviewItems={scan?.mapped.propertyReview}

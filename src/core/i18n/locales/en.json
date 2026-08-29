@@ -400,6 +400,7 @@
     "renewalOptions": "Renewal options",
     "yearsUnit": "yrs",
     "extraMonths": "Extra months",
+    "extraOptionMonths": "Extra option months",
     "monthsUnit": "mo",
     "monthsCount": "{{count}} mo",
     "termYearsMonths": "{{years}} yr {{months}} mo",
@@ -501,6 +502,7 @@
     "previousTenants": "Previous tenants",
     "endedSuffix": "{{name}} (ended)",
     "totalCollected": "Total collected",
+    "totalSpent": "Total spent",
     "monthsTenanted": "Months tenanted",
     "allRentersCount": "{{count}} renters · {{expiring}} expiring soon · {{overdue}} overdue",
     "leaseExpired": "Expired",
@@ -726,7 +728,17 @@
       "expectedWas": "expected {{amount}}",
       "paidLate": "paid late",
       "legendMismatch": "Amount differs from the lease",
-      "legendLate": "Paid after the due day"
+      "legendLate": "Paid after the due day",
+      "paymentsCount": "{{count}} payments",
+      "monthPayments": {
+        "title": "Payments for {{month}}",
+        "recorded": "{{count}} payments totalling {{amount}}",
+        "paidOn": "Paid {{date}}",
+        "hint": "Open a payment to edit or delete it."
+      },
+      "markPaid": {
+        "alreadyRecorded": "A payment for this month is already recorded."
+      }
     },
     "recordPayment": {
       "armed": "Click {{month}} again to record",
@@ -789,6 +801,10 @@
       "selectedCount": "{{count}} selected",
       "noContracts": "No contracts found.",
       "noSelectionError": "Please select at least one renter.",
+      "alreadyRecordedTitle": "Some months are already paid",
+      "alreadyRecorded": "One of the months you selected already has a payment recorded: {{months}}. Recording it again adds a second payment for that month.",
+      "alreadyRecorded_plural": "{{count}} of the months you selected already have a payment recorded: {{months}}. Recording them again adds a second payment for each.",
+      "recordAnyway": "Record anyway",
       "invalidAmount": "Invalid amount for {{name}}.",
       "partialError": "{{success}} saved, {{failed}} failed.",
       "custom": "Custom",
@@ -1078,6 +1094,8 @@
     "registerLink": "Register",
     "signInDesc": "Welcome back. Pick up where you left off.",
     "createAccountDesc": "Free to use. One account, one portfolio.",
+    "acceptTerms": "I agree to the <terms> and <privacy>.",
+    "acceptTermsRequired": "Please accept the Terms of Service and Privacy Policy to continue.",
     "orContinueWithEmail": "OR CONTINUE WITH EMAIL",
     "resetPasswordTitle": "Reset password",
     "resetPasswordDesc": "Enter your email — we'll send a reset link.",
@@ -1394,17 +1412,59 @@
         }
       },
       "renter-detail": {
+        "overview": {
+          "title": "One tenancy, end to end",
+          "body": "Who the tenant is, what they agreed to pay, what they have actually paid, and the two controls that extend the lease or end it. Here is the screen."
+        },
+        "stats": {
+          "title": "This year, and the whole tenancy",
+          "body": "Revenue and expenses cover the current calendar year, counted by the month each payment is for rather than the day it was entered. Beside them are the lifetime figures and how long this tenant has been here."
+        },
+        "tabs": {
+          "title": "Three tabs",
+          "body": "The lease itself, the unit they live in, and their money. The tour goes through the first and the last \u2014 the middle one is a shortcut to that property."
+        },
         "timeline": {
           "title": "The lease, year by year",
-          "body": "Every period and the rent for it."
+          "body": "Every period of the lease with the rent for it, in order, including the rises still ahead \u2014 so the year that is about to get more expensive is visible now rather than a surprise later. A CPI-linked year that has not started yet is marked as a projection, because its index has not been published."
+        },
+        "payments": {
+          "title": "Did the rent come in?",
+          "body": "Revenue is a month-by-month grid, one box per month, so a month nobody paid for is a hole you can see rather than a number you have to work out. Expenses sit beside it grouped by category, because that is a different question."
         },
         "extend": {
-          "title": "Extend",
-          "body": "When they stay on."
+          "title": "Extending, not editing",
+          "body": "Adds years or months onto the end of the lease and leaves everything already agreed exactly as it is. A tenancy you ended by hand has to be reopened first \u2014 extending a terminated lease would quietly un-end it."
         },
         "end": {
-          "title": "End lease",
-          "body": "When they don't."
+          "title": "Ending a tenancy",
+          "body": "Marks the lease over from the date you choose, with a reason if there is one. Nothing is deleted: the tenant stays on the property, their payments stay in the reports, and the record can be reopened if it turns out they are staying."
+        }
+      },
+      "property-detail": {
+        "overview": {
+          "title": "Everything about one unit",
+          "body": "The address and its numbers at the top, and under them a tab each for what you entered, who lives there, the money, and the paperwork. Here is the screen."
+        },
+        "stats": {
+          "title": "This year, not all time",
+          "body": "Net, revenue and expenses cover the current calendar year, counted by the month each transaction is for rather than the day it was entered. The monthly rent beside them is what the lease says today."
+        },
+        "tabs": {
+          "title": "Four tabs",
+          "body": "What you entered about the place, who lives in it, the money it has made and cost, and the paperwork \u2014 one tab each. The tour walks the last three."
+        },
+        "renters": {
+          "title": "Who is here, and who was",
+          "body": "Current tenants first, past ones under them. A tenancy that ends is kept rather than removed, because it is the only record of who paid what while they were here."
+        },
+        "payments": {
+          "title": "The money this unit made",
+          "body": "Rent as a month-by-month grid, one box per month, so an unpaid month is a hole you can see. Expenses sit beside it grouped by category \u2014 what a place costs you is a different question from whether the rent came in."
+        },
+        "documents": {
+          "title": "Two slots, not a folder",
+          "body": "A property holds its own basic contract and its land registry extract. The signed lease and the tenant's ID belong to the renter rather than to the unit, so they live on the renter's page."
         }
       },
       "chat": {

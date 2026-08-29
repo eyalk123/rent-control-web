@@ -3,6 +3,8 @@ import { Pencil, Plus, MapPin, Trash2 } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { RenterRentStat } from './RenterRentStat';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
@@ -27,6 +29,7 @@ interface Props {
 
 export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
   const { t } = useTranslation();
+  const statsAnchorRef = useTourAnchor(ANCHORS.propertyDetailStats);
 
   return (
     <>
@@ -80,7 +83,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div ref={statsAnchorRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <RenterRentStat
           renters={property.renters ?? []}
           renterName={renterName}

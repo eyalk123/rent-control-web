@@ -15,6 +15,9 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
 import { useDetailBackTarget } from '@/shared/components/detail/useDetailBackTarget';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour, useTourStep } from '@/features/onboarding/TourController';
 import { RenterDetailHero } from '../components/RenterDetailHero';
 import { EndLeaseDialog } from '../components/EndLeaseDialog';
 import { LeaseInfoTab } from '../components/LeaseInfoTab';
@@ -62,6 +65,28 @@ export function RenterDetailPage() {
   // the generic renters list.
   const { backState, tab, setTab, searchParams, setSearchParams, location } =
     useDetailBackTarget(TAB_IDS, 'info');
+  /**
+   * Asked from the page, not from the info tab where it used to live. The tour drives the
+   * shown tab, so requesting it from a subtree the tour itself unmounts would kill the
+   * request halfway through. The page renders a loader until the renter arrives, which is
+   * fine: nothing opens until every anchored step has registered an element anyway.
+   */
+  useTour('renter-detail');
+  const tabsAnchorRef = useTourAnchor(ANCHORS.renterDetailTabs);
+  const panelAnchorRef = useTourAnchor(ANCHORS.renterDetailPanel);
+  /**
+   * The tab the tour is talking about, or the user's own when no tour is running.
+   *
+   * Derived, never written — `setTab` puts the tab in the query string, so driving the tour
+   * through it would rewrite the URL and need undoing afterwards. `useTourStep` goes null
+   * the moment the tour ends, which puts the user's tab back with no cleanup. Same
+   * arrangement as PropertyDetailPage and as PropertiesListPage's card/table demonstration.
+   */
+  const tourStep = useTourStep('renter-detail');
+  const shownTab: TabId =
+    tourStep === 'payments' ? 'transactions'
+    : tourStep === null ? tab
+    : 'info';
   const backTo = backState?.backTo ?? '/renters';
   const backLabel = backState?.backLabel
     ? t('renter.backToProperty', { name: backState.backLabel })
@@ -148,9 +173,14 @@ export function RenterDetailPage() {
   const totalExpenses = thisYearTx.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
   const heroBg = getPropertyColorBg(renter.id, 0.12);
 
-  // Whole-tenancy total, not the calendar year's — what the hero shows once a lease ends.
+  // Whole-tenancy totals, not the calendar year's — what the hero shows once a lease ends.
+  // Both sides switch together: a year-scoped expense next to a lifetime revenue would
+  // read as a margin the tenancy never had.
   const lifetimeRevenue = transactions
     .filter((tx) => tx.type === 'revenue')
+    .reduce((s, tx) => s + tx.amount, 0);
+  const lifetimeExpenses = transactions
+    .filter((tx) => tx.type === 'expense')
     .reduce((s, tx) => s + tx.amount, 0);
   const monthsTenanted = monthsBetween(renter.lease_start, leaseEnd);
 
@@ -194,6 +224,7 @@ export function RenterDetailPage() {
           year={String(currentYear)}
           statsLoading={txLoading}
           lifetimeRevenue={lifetimeRevenue}
+          lifetimeExpenses={lifetimeExpenses}
           monthsTenanted={monthsTenanted}
           onEdit={() => setEditDrawerOpen(true)}
           onExtendLease={() => setExtendDrawerOpen(true)}
@@ -203,14 +234,16 @@ export function RenterDetailPage() {
           onReopenLease={handleReopenLease}
           lifecyclePending={isTerminating || isReopening}
         />
-        <DetailTabBar tabs={TABS} activeId={tab} onChange={setTab} />
+        <div ref={tabsAnchorRef}>
+          <DetailTabBar tabs={TABS} activeId={shownTab} onChange={setTab} />
+        </div>
       </div>
 
       {/* Tab content */}
-      <div className="p-4 lg:p-10">
-        {tab === 'info' && <LeaseInfoTab renter={renter} />}
-        {tab === 'property' && <RenterPropertyTab renter={renter} />}
-        {tab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} />}
+      <div className="p-4 lg:p-10" ref={panelAnchorRef}>
+        {shownTab === 'info' && <LeaseInfoTab renter={renter} />}
+        {shownTab === 'property' && <RenterPropertyTab renter={renter} />}
+        {shownTab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} />}
       </div>
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />

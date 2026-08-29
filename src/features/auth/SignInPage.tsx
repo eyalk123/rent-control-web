@@ -79,6 +79,26 @@ function LanguageToggle({ className = '', style }: { className?: string; style?:
   );
 }
 
+/**
+ * Split a translated sentence on `<name>` slots and interleave nodes for them.
+ *
+ * The two document names inside the acceptance line have to be links, and the word order
+ * around them differs between English and Hebrew — so the order has to come from the
+ * translation, not from JSX. i18next's own `<Trans>` would do this, but nothing in either
+ * client uses it, and one sentence is not a reason to introduce a second interpolation
+ * mechanism alongside `t()`.
+ *
+ * Angle brackets rather than `{{ }}`: i18next resolves its own placeholders during `t()` and
+ * replaces any it has no value for with an empty string, so `{{terms}}` would be gone before
+ * this function ever saw it. It leaves `<terms>` untouched.
+ */
+function withLinks(sentence: string, nodes: Record<string, React.ReactNode>) {
+  return sentence.split(/(<\w+>)/g).map((part, i) => {
+    const key = part.match(/^<(\w+)>$/)?.[1];
+    return <Fragment key={i}>{key ? nodes[key] : part}</Fragment>;
+  });
+}
+
 export function SignInPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -87,12 +107,20 @@ export function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  // Deliberately not part of `loginSchema`: that schema is shared with the `login` and
+  // `forgot` modes, where this control does not exist and a required field would make
+  // both unsubmittable.
+  const [accepted, setAccepted] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, getValues } = useForm<FormData>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
+    if (mode === 'register' && !accepted) {
+      setError(t('auth.acceptTermsRequired'));
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -322,11 +350,38 @@ export function SignInPage() {
                   )}
                 </div>
 
+                {/* Registration only. The documents open in a new tab so a half-filled
+                    form is not thrown away to go and read them. */}
+                {mode === 'register' && (
+                  <label className="mt-1 flex items-start gap-2 text-[12.5px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={accepted}
+                      onChange={(e) => { setAccepted(e.target.checked); setError(''); }}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <span>
+                      {withLinks(t('auth.acceptTerms'), {
+                        terms: (
+                          <a href="/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--color-primary)' }}>
+                            {t('legal.termsOfService')}
+                          </a>
+                        ),
+                        privacy: (
+                          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--color-primary)' }}>
+                            {t('legal.privacyPolicy')}
+                          </a>
+                        ),
+                      })}
+                    </span>
+                  </label>
+                )}
+
                 {error && <p className="text-xs text-center" style={{ color: 'var(--color-error)' }}>{error}</p>}
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (mode === 'register' && !accepted)}
                   className="mt-1 h-11 w-full rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: 'var(--color-primary)' }}
                 >
@@ -337,7 +392,7 @@ export function SignInPage() {
               <div className="mt-5 text-center text-[12.5px]" style={{ color: 'var(--color-text-secondary)' }}>
                 {mode === 'login' ? t('auth.newHerePrompt') : t('auth.alreadyHaveAccountPrompt')}{' '}
                 <button
-                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                  onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setAccepted(false); }}
                   className="font-semibold"
                   style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
                 >

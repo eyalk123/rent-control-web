@@ -60,13 +60,18 @@ export function AlertsPanel() {
     try {
       // Overdue candidates are only ever generated for the current month
       // (`renter_repository.get_overdue_this_month`), so that is the month being paid for.
-      await markPaid({
+      const result = await markPaid({
         property_id: item.property_id,
         renter_id: item.renter_id,
         amount: item.data.amount ?? 0,
         monthFor: new Date().toISOString().slice(0, 7),
         paymentType: item.payment_type,
       });
+      // A payment already on file means the alert is stale, not that the user needs a
+      // second one recorded — dismiss it, and say why nothing was written.
+      if (!result.created) {
+        showToast(t('transactions.rentGrid.markPaid.alreadyRecorded'), 'default');
+      }
       dismissNotification.mutate(item.id);
     } catch {
       showToast(t('error.saveTransactionFailed'), 'error');
