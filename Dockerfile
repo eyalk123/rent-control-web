@@ -14,6 +14,14 @@ ARG VITE_FIREBASE_PROJECT_ID
 ARG VITE_FIREBASE_STORAGE_BUCKET
 ARG VITE_FIREBASE_APP_ID
 ARG VITE_SENTRY_DSN
+# Sentry's `environment` tag. It must NOT come from Vite's `import.meta.env.MODE`: that
+# is the build mode, which is "production" for every `vite build`, so a staging or
+# preview service would report as production and no alert rule could tell the two apart.
+# Resolved here the same way `resolve_environment()` does in the backend
+# (rent-control-backend/app/monitoring.py) — an explicit value wins, otherwise Railway's
+# injected environment name — so a new service is tagged correctly with nothing to set.
+ARG VITE_SENTRY_ENVIRONMENT
+ARG RAILWAY_ENVIRONMENT_NAME
 # Guided onboarding tours. Unset (the default) means off in any build; set it to `on`
 # as a Railway service variable to turn them on without touching code.
 ARG VITE_ONBOARDING_TOURS
@@ -34,6 +42,7 @@ ENV VITE_API_URL=$VITE_API_URL \
     VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_ONBOARDING_TOURS=$VITE_ONBOARDING_TOURS
+ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT:-$RAILWAY_ENVIRONMENT_NAME}
 
 COPY package.json package-lock.json ./
 RUN npm ci

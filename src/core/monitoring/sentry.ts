@@ -15,7 +15,14 @@ export function initSentry(): void {
 
   Sentry.init({
     dsn,
-    environment: import.meta.env.MODE,
+    // NOT `import.meta.env.MODE`: that is the build mode, and every deployed build is
+    // a `vite build`, so it reads "production" on a staging or preview service too —
+    // one undifferentiated bucket that no Sentry alert rule can filter. The Dockerfile
+    // resolves the real deploy target into this var (explicit value, else Railway's
+    // injected environment name), mirroring `resolve_environment()` in the backend.
+    // The fallback matches the Dockerfile's own, so a build outside Docker still lands
+    // in a real environment rather than an "unknown" bucket no alert rule watches.
+    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || 'production',
     tracesSampleRate: 0,
     sendDefaultPii: false,
     // `release` is deliberately not set here: @sentry/vite-plugin injects it at build
