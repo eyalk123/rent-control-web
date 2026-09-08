@@ -18,6 +18,8 @@ import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTranslation } from 'react-i18next';
 import { getPropertyColor } from '@/shared/utils/propertyColor';
 import { LegalLinks } from '@/features/legal/LegalLayout';
+import { withLinks } from '@/features/legal/withLinks';
+import { postLegalAcceptance } from '@/features/legal/api/legalAcceptance';
 import type { z } from 'zod';
 
 type FormData = z.infer<typeof loginSchema>;
@@ -79,26 +81,6 @@ function LanguageToggle({ className = '', style }: { className?: string; style?:
   );
 }
 
-/**
- * Split a translated sentence on `<name>` slots and interleave nodes for them.
- *
- * The two document names inside the acceptance line have to be links, and the word order
- * around them differs between English and Hebrew — so the order has to come from the
- * translation, not from JSX. i18next's own `<Trans>` would do this, but nothing in either
- * client uses it, and one sentence is not a reason to introduce a second interpolation
- * mechanism alongside `t()`.
- *
- * Angle brackets rather than `{{ }}`: i18next resolves its own placeholders during `t()` and
- * replaces any it has no value for with an empty string, so `{{terms}}` would be gone before
- * this function ever saw it. It leaves `<terms>` untouched.
- */
-function withLinks(sentence: string, nodes: Record<string, React.ReactNode>) {
-  return sentence.split(/(<\w+>)/g).map((part, i) => {
-    const key = part.match(/^<(\w+)>$/)?.[1];
-    return <Fragment key={i}>{key ? nodes[key] : part}</Fragment>;
-  });
-}
-
 export function SignInPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -128,6 +110,11 @@ export function SignInPage() {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       } else if (mode === 'register') {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
+        // Record what they just ticked, before navigating, so the consent gate does not
+        // greet them on the very next screen. Awaited so the request is in flight rather
+        // than abandoned by the redirect — but its failure is swallowed, because the gate
+        // is the safety net and a lost write is not a reason to fail a sign-up.
+        await postLegalAcceptance(['terms', 'privacy']).catch(() => {});
       } else {
         await sendPasswordResetEmail(auth, email.trim());
         setResetSent(true);

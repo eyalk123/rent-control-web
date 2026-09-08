@@ -6,7 +6,12 @@
     "accessibility": "Accessibility Statement",
     "backToSignIn": "Back to sign in",
     "lastUpdated": "Last updated",
-    "open": "Open"
+    "open": "Open",
+    "gateTitle": "One more thing",
+    "gateDescription": "We've updated what you need to agree to before using Rent Control. Please review the documents below and confirm to continue.",
+    "gateAccept": "Accept and continue",
+    "gateDecline": "Not now — sign out",
+    "gateError": "We couldn't record your acceptance. Please try again."
   },
   "a11y": {
     "openMenu": "Accessibility menu",

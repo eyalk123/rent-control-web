@@ -8,6 +8,11 @@
 // NOTE: These texts are drafted as a practical starting point and should be
 // reviewed by a qualified lawyer for your jurisdiction before relying on them.
 // Operator and contact details are centralised in the constants below.
+//
+// REVISING A DOCUMENT bumps its version constant below, which re-prompts every user for
+// consent on their next launch. Bump it in three places, in this order: this file, its
+// twin in the other client, then `CURRENT_TERMS_VERSION` / `CURRENT_PRIVACY_VERSION` in
+// the backend's `app/config.py`.
 
 export interface LegalSection {
   heading: string;
@@ -29,6 +34,21 @@ const OPERATOR_HE = 'אייל קוק';
 const CONTACT_EMAIL = 'eyalkook@gmail.com';
 const UPDATED_EN = 'June 9, 2026';
 const UPDATED_HE = '9 ביוני 2026';
+
+/**
+ * Machine-readable document versions — what gets stored against a user's acceptance.
+ *
+ * Separate from UPDATED_EN / UPDATED_HE, which are display strings in two languages and
+ * cannot be compared or stored. Separate from each other, too: revising the Terms must
+ * not invalidate — or falsely renew — the record of the Privacy Policy.
+ *
+ * This client gates on the version *it* bundles, never on one the server names. A build
+ * whose text is older than the server's current version records what it actually showed;
+ * asking someone to accept wording their build cannot render would be both meaningless
+ * and, for a mobile build waiting on store review, a lockout.
+ */
+export const TERMS_VERSION = '2026-06-09';
+export const PRIVACY_VERSION = '2026-06-09';
 
 // ─── Privacy Policy ──────────────────────────────────────────────────────────
 
