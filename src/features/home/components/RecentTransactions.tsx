@@ -5,6 +5,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { fmtTxDate } from '@/shared/utils/txDate';
+import { useOpenTransaction } from '@/features/transactions/useOpenTransaction';
 import type { Transaction } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -17,6 +18,7 @@ interface Props {
 export function RecentTransactions({ transactions, loading }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const openTx = useOpenTransaction();
   const anchorRef = useTourAnchor(ANCHORS.homeRecent);
 
   return (
@@ -57,7 +59,7 @@ export function RecentTransactions({ transactions, loading }: Props) {
         ) : transactions.map((tx, i) => (
           <button
             key={tx.id}
-            onClick={() => navigate(`/transactions/${tx.id}`)}
+            onClick={() => openTx(tx.id)}
             className="w-full flex items-center gap-3 px-4 py-3.5 text-start hover:opacity-90 transition-opacity"
             style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
           >

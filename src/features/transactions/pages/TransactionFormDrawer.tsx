@@ -241,9 +241,23 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     ];
   }, [properties, t]);
 
+  // Seed the owner filter from the property the form was opened for, so arriving from a
+  // property/renter detail page lands on that owner rather than "all owners". An effect,
+  // not an initial state, because `properties` may still be loading when the form mounts;
+  // one-shot, so switching back to "all owners" sticks. Setting the state directly (rather
+  // than going through the select's onValueChange) is deliberate — that handler clears the
+  // property/renter selection, which is exactly the prefill this is meant to match.
+  const ownerSeededRef = useRef(false);
+  useEffect(() => {
+    if (ownerSeededRef.current || isEdit || !initialPropertyId || !properties) return;
+    ownerSeededRef.current = true;
+    const owner = properties.find((p) => p.id === initialPropertyId)?.property_owner?.trim();
+    if (owner) setOwnerFilter(owner);
+  }, [properties, initialPropertyId, isEdit]);
+
   const filteredPropertyOptions = useMemo(() => {
     const all = properties ?? [];
-    const filtered = ownerFilter ? all.filter((p) => p.property_owner === ownerFilter) : all;
+    const filtered = ownerFilter ? all.filter((p) => p.property_owner?.trim() === ownerFilter) : all;
     return filtered.map((p) => ({ value: p.id, label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
   }, [properties, ownerFilter, t]);
 

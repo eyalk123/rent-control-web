@@ -26,7 +26,8 @@ import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyCol
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { formatMoney } from '@/shared/utils/money';
-import { getTotalCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { getLeaseEndDate } from '@/shared/types';
+import { getCurrentRenters, getTotalCurrentMonthlyRent } from '@/shared/utils/renterStatus';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -70,8 +71,12 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   const color = getPropertyColor(property.id);
   const bg = getPropertyColorBg(property.id, 0.35);
   const imageSrc = getPropertyImageSrc(property.image_url);
-  const activeRenter = property.renters?.[0];
-  const monthlyRent = property.renters?.length ? getTotalCurrentMonthlyRent(property.renters) : null;
+  // `renters` is every renter the property ever had, in no particular order, so `[0]` was
+  // as likely to be a tenant who moved out years ago — named on the card, with their lease
+  // end, under an "Occupied" pill. The card speaks for the tenancy running now.
+  const currentRenters = getCurrentRenters(property.renters);
+  const activeRenter = currentRenters[0];
+  const monthlyRent = currentRenters.length ? getTotalCurrentMonthlyRent(property.renters) : null;
   const leaseEnd = fmtLeaseDate(activeRenter);
   const longPress = useLongPress(() => onLongPress(property.id));
 

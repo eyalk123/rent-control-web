@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -7,6 +6,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import { getPaymentMethodLabel } from '@/shared/constants/paymentMethods';
+import { useOpenTransaction } from '../useOpenTransaction';
 import type { MonthCell } from '../utils/rentSchedule';
 
 interface Props {
@@ -15,6 +15,8 @@ interface Props {
   cell: MonthCell | null;
   /** "March 2026" — the month this cell stands for, already localised. */
   monthLabel: string;
+  /** Name of the detail page behind this dialog, for the back link on a transaction. */
+  backLabel?: string;
 }
 
 /**
@@ -29,10 +31,10 @@ interface Props {
  * Dates come from `fmtDate`, not `fmtTxDate`: the latter collapses revenue to its month,
  * which is exactly the distinction that matters here.
  */
-export function MonthPaymentsDialog({ open, onClose, cell, monthLabel }: Props) {
+export function MonthPaymentsDialog({ open, onClose, cell, monthLabel, backLabel }: Props) {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
-  const navigate = useNavigate();
+  const openTx = useOpenTransaction();
 
   if (!cell) return null;
 
@@ -43,7 +45,7 @@ export function MonthPaymentsDialog({ open, onClose, cell, monthLabel }: Props) 
 
   const open_ = (id: number) => {
     onClose();
-    navigate(`/transactions/${id}`);
+    openTx(id, backLabel);
   };
 
   return (

@@ -51,6 +51,7 @@ export function PropertyTransactionsTab({ property, transactions }: Props) {
           layout="single-year"
           year={revYear ? Number(revYear) : null}
           onYearChange={(y) => setRevYear(String(y))}
+          backLabel={property.address}
         />
       ) : (
         <ExpensePanel
@@ -61,6 +62,7 @@ export function PropertyTransactionsTab({ property, transactions }: Props) {
           onMonthChange={(m) => setExpMonth(m == null ? '' : String(m))}
           category={expCategory || null}
           onCategoryChange={(c) => setExpCategory(c ?? '')}
+          backLabel={property.address}
         />
       )}
     </div>

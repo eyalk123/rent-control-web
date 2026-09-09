@@ -24,7 +24,7 @@ import { PropertyRentersTab } from '../components/PropertyRentersTab';
 import { PropertyTransactionsTab } from '../components/PropertyTransactionsTab';
 import { PropertyDocumentsTab } from '../components/PropertyDocumentsTab';
 import { getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getTotalCurrentMonthlyRent } from '@/shared/types';
+import { getCurrentRenters, getTotalCurrentMonthlyRent } from '@/shared/utils/renterStatus';
 import { effectiveDate } from '@/shared/utils/txDate';
 
 type TabId = 'info' | 'renters' | 'transactions' | 'documents';
@@ -106,8 +106,12 @@ export function PropertyDetailPage() {
   if (isError || !property)
     return <DetailNotFound title={t('error.propertyNotFound')} detail={t('error.notFoundDetail')} />;
 
-  const activeRenter = property.renters?.[0];
-  const monthlyRent = property.renters?.length ? getTotalCurrentMonthlyRent(property.renters) : null;
+  // The hero's renter/rent tiles are about the tenancy running now, so an ended lease is
+  // out of both. The tab count below deliberately still counts everyone: the renters tab
+  // lists past tenants too, folded away.
+  const currentRenters = getCurrentRenters(property.renters);
+  const activeRenter = currentRenters[0];
+  const monthlyRent = currentRenters.length ? getTotalCurrentMonthlyRent(property.renters) : null;
   // Scoped to the current calendar year and bucketed by effective date, matching the renter
   // page and the payment grid below. These read as all-time before, which put an all-time
   // figure next to a per-year grid.
@@ -144,7 +148,7 @@ export function PropertyDetailPage() {
           expTotal={expTotal}
           year={String(currentYear)}
           renterName={activeRenter ? `${activeRenter.first_name} ${activeRenter.last_name}` : null}
-          rentersCount={rentersCount}
+          rentersCount={currentRenters.length}
           statsLoading={txLoading}
           onEdit={() => { setScan(null); setEditDrawerOpen(true); }}
           onAddTransaction={() => setTxDrawerOpen(true)}

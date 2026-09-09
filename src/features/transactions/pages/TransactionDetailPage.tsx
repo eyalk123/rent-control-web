@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { translateCategory } from '@/shared/utils/categories';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Building2, User, Store, Tag, CreditCard, Calendar, FileText, Receipt } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate, fmtMonthYear } from '@/shared/utils/dates';
 import { useToast } from '@/shared/components/ui/Toast';
+import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 
 function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
   if (!value) return null;
@@ -31,6 +32,7 @@ export function TransactionDetailPage() {
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const txId = Number(id);
   const { data: tx, isLoading, isError } = useTransaction(txId);
@@ -40,11 +42,22 @@ export function TransactionDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  // Where this page was opened from, when the opener said so; the global list otherwise
+  // (a deep link, a refresh, or an agent source chip carries no state).
+  const backState = location.state as DetailBackState | null;
+  const backTo = backState?.backTo ?? '/transactions';
+  const backLabel = backState?.backLabel
+    ? t('transactions.backTo', { name: backState.backLabel })
+    : t('transactions.allTransactions');
+
   const handleDelete = async () => {
     try {
       await deleteTx(txId);
       showToast(t('transactions.deleteSuccess'), 'success');
-      navigate('/transactions', { replace: true });
+      // Back to wherever this page was opened from — a property's or renter's transactions
+      // tab, filters and all — rather than always dumping the user on the global list.
+      // `replace`, not `navigate(-1)`: the row is gone, so this page must leave history.
+      navigate(backTo, { replace: true });
     } catch {
       setConfirmDeleteOpen(false);
       showToast(t('error.deleteFailed'), 'error');
@@ -77,8 +90,8 @@ export function TransactionDetailPage() {
     <div className="max-w-6xl mx-auto px-4 py-6 lg:px-8 lg:py-8">
       {/* Back + actions */}
       <div className="flex items-center justify-between gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('transactions.allTransactions')}
+        <button onClick={() => navigate(backTo)} className="inline-flex items-center gap-1 text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {backLabel}
         </button>
         <div className="flex items-center gap-2">
           <button onClick={() => setEditOpen(true)} className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium" style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}>

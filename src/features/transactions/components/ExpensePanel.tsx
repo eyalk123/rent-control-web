@@ -31,6 +31,8 @@ interface Props {
   onMonthChange: (month: number | null) => void;
   category: string | null;
   onCategoryChange: (category: string | null) => void;
+  /** Name of the detail page hosting this panel, for the back link on a transaction. */
+  backLabel?: string;
 }
 
 function formatK(v: number): string {
@@ -52,6 +54,7 @@ export function ExpensePanel({
   month: selectedMonth,
   onMonthChange,
   category: selectedCategory,
+  backLabel,
   onCategoryChange,
 }: Props) {
   const { t, i18n } = useTranslation();
@@ -297,7 +300,7 @@ export function ExpensePanel({
         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
       >
         {visible.map((tx) => (
-          <TransactionRow key={tx.id} tx={tx} />
+          <TransactionRow key={tx.id} tx={tx} backLabel={backLabel} />
         ))}
       </div>
     </div>

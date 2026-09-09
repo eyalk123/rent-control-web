@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -14,6 +13,7 @@ import {
   summariseRentYear,
   type MonthCell,
 } from '../utils/rentSchedule';
+import { useOpenTransaction } from '../useOpenTransaction';
 import { MonthPaymentsDialog } from './MonthPaymentsDialog';
 import { RentMonthBox } from './RentMonthBox';
 import { YearChips } from './YearChips';
@@ -33,6 +33,8 @@ interface Props {
   /** `single-year` only: the selected year, lifted so it survives a tab switch. */
   year?: number | null;
   onYearChange?: (year: number) => void;
+  /** Name of the detail page hosting this panel, for the back link on a transaction. */
+  backLabel?: string;
 }
 
 function useMonthLabels(): string[] {
@@ -72,9 +74,10 @@ export function RevenuePaymentPanel({
   layout = 'single-year',
   year: yearProp,
   onYearChange,
+  backLabel,
 }: Props) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openTx = useOpenTransaction();
   const { showToast } = useToast();
   const monthLabels = useMonthLabels();
   const { markPaid } = useMarkRentPaid();
@@ -272,7 +275,7 @@ export function RevenuePaymentPanel({
     // row behind it. A month with several is exactly the case the old straight-to-the-first
     // navigation lied about, so it gets the list instead.
     if (cell.transactions.length === 1) {
-      navigate(`/transactions/${cell.transactions[0].id}`);
+      openTx(cell.transactions[0].id, backLabel);
     } else if (cell.transactions.length > 1) {
       setViewing({ renter, cell });
     }
@@ -422,6 +425,7 @@ export function RevenuePaymentPanel({
       <Legend />
 
       <MonthPaymentsDialog
+        backLabel={backLabel}
         open={viewing != null}
         onClose={() => setViewing(null)}
         cell={viewing?.cell ?? null}

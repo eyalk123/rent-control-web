@@ -186,17 +186,20 @@ export function getRentForMonth(renter: Renter, monthStr: string): number {
   return years[years.length - 1].amount;
 }
 
-/** Monthly rent for the lease year that covers today. Use for headline "current rent" display. */
+/**
+ * Monthly rent for the lease year that covers today. Use for headline "current rent"
+ * display.
+ *
+ * Says nothing about whether the lease is still running: past its end the schedule has
+ * no further amount, so this reports the final period's rent — which is what a *past*
+ * tenancy's row should show, and is exactly why it must not be summed blind. For any
+ * "what does this property earn now" total use `getTotalCurrentMonthlyRent` in
+ * `@/shared/utils/renterStatus`, which drops ended tenancies first.
+ */
 export function getCurrentMonthlyRent(renter: Renter): number {
   const now = new Date();
   const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   return getRentForMonth(renter, monthStr);
-}
-
-/** Total monthly rent across a property's renters using each renter's current-year rent. */
-export function getTotalCurrentMonthlyRent(renters: Renter[] | null | undefined): number {
-  if (!renters?.length) return 0;
-  return renters.reduce((sum, r) => sum + getCurrentMonthlyRent(r), 0);
 }
 
 /**

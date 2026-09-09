@@ -9,22 +9,27 @@ interface Props {
   onScan: () => void;
   /** Onboarding anchor, so a tour can point at the Add button. */
   anchorRef?: (el: HTMLButtonElement | null) => void;
+  /** Replaces the default labelled button - a single focusable element, since Radix clones
+   *  its props onto it. `label` then survives only as the accessible name the caller sets. */
+  trigger?: React.ReactNode;
 }
 
 /** Primary "Add" button that opens a small chooser: enter manually, or scan a lease.
  *  Scanning is an input method of Add, not a separate action. */
-export function AddMenu({ label, onManual, onScan, anchorRef }: Props) {
+export function AddMenu({ label, onManual, onScan, anchorRef, trigger }: Props) {
   const { t, i18n } = useTranslation();
   return (
     <DropdownMenu.Root dir={i18n.dir()}>
       <DropdownMenu.Trigger asChild>
-        <button
-          ref={anchorRef}
-          className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity outline-none"
-          style={{ background: 'var(--color-primary)' }}
-        >
-          <Plus size={14} /> {label}
-        </button>
+        {trigger ?? (
+          <button
+            ref={anchorRef}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity outline-none"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            <Plus size={14} /> {label}
+          </button>
+        )}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content

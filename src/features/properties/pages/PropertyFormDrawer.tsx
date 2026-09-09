@@ -16,6 +16,7 @@ import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
+import type { Property } from '@/shared/types';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { PropertyImageField } from '../components/PropertyImageField';
@@ -65,6 +66,9 @@ interface Props {
    *  is created (one entry per co-tenant; verified in sequence). */
   renterQueue?: MappedRenter[];
   renterContractFile?: File | null;
+  /** When set, the drawer hands the created property back and closes instead of offering to
+   *  add a renter — the caller opened it because it already has one. */
+  onCreated?: (property: Property) => void;
 }
 
 /**
@@ -88,6 +92,7 @@ export function PropertyFormDrawer({
   addressEvidence,
   renterQueue,
   renterContractFile,
+  onCreated,
 }: Props) {
   const { t } = useTranslation();
   const isEditing = !!propertyId;
@@ -313,7 +318,12 @@ export function PropertyFormDrawer({
         setImagePreview(null);
         showToast(t('property.createSuccess'), 'success');
         setCreatedPropertyId(created.id);
-        if (logId) {
+        if (onCreated) {
+          // The caller has a renter waiting on this property, so the "add a renter?" prompt
+          // below would be asking a question already answered.
+          onClose();
+          onCreated(created);
+        } else if (logId) {
           // Scan flow: the renter was already extracted — continue straight into the renter
           // form instead of interrupting with the "add a renter?" prompt.
           onClose();

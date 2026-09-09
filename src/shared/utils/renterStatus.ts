@@ -1,4 +1,4 @@
-import { getLeaseEndDate, type Renter } from '@/shared/types';
+import { getCurrentMonthlyRent, getLeaseEndDate, getScheduleEndDate, type Renter } from '@/shared/types';
 
 /**
  * Where a renter sits in the lease lifecycle.
@@ -18,18 +18,39 @@ function startOfToday(): Date {
   return d;
 }
 
-/**
- * The date the tenancy actually stops: an early termination beats the signed end date.
- * Mirrors `_effective_lease_end` in the backend's renter repository, which is what the
- * server's own active-window queries use — so the badge and the alerts agree.
- */
-export function getEffectiveLeaseEnd(renter: Renter): Date | null {
-  const scheduled = getLeaseEndDate(renter);
+/** The earlier of an early termination and `scheduled`. Shared by the two end dates below. */
+function withTermination(renter: Renter, scheduled: Date | null): Date | null {
   if (!renter.terminated_on) return scheduled;
   const terminated = new Date(renter.terminated_on);
   if (isNaN(terminated.getTime())) return scheduled;
   if (!scheduled) return terminated;
   return terminated < scheduled ? terminated : scheduled;
+}
+
+/**
+ * The end date to *show*: the binding term (`getLeaseEndDate`), pulled in by an early
+ * termination. That is the date the landlord actually has to decide something, which is
+ * what the apps display and what the lease-expiring alerts count down to.
+ *
+ * Not the date that decides whether the lease is still running — see
+ * {@link getEffectiveScheduleEnd}.
+ */
+export function getEffectiveLeaseEnd(renter: Renter): Date | null {
+  return withTermination(renter, getLeaseEndDate(renter));
+}
+
+/**
+ * The date the tenancy actually stops: the whole signed schedule, options included,
+ * pulled in by an early termination.
+ *
+ * Options count because an option year is still a year the tenant may be living there and
+ * owing rent. Mirrors `effective_lease_end()` in the backend's renter repository —
+ * `coalesce(terminated_on, lease_end)`, where the stored `lease_end` is `schedule_end`,
+ * not `contract_end` — so the badge and the alerts agree. It read the contract end before, which
+ * filed a tenant in an exercised option year as a past tenant of a vacant flat.
+ */
+function getEffectiveScheduleEnd(renter: Renter): Date | null {
+  return withTermination(renter, getScheduleEndDate(renter));
 }
 
 export function isTerminated(renter: Renter): boolean {
@@ -44,7 +65,7 @@ export function getRenterLifecycle(renter: Renter, today: Date = startOfToday())
   // owed.)
   if (isTerminated(renter)) return 'ended';
 
-  const end = getEffectiveLeaseEnd(renter);
+  const end = getEffectiveScheduleEnd(renter);
   if (end && end < today) return 'ended';
 
   if (renter.lease_start) {
@@ -55,4 +76,29 @@ export function getRenterLifecycle(renter: Renter, today: Date = startOfToday())
   // No dates at all reads as active rather than ended — a half-entered renter is
   // something the owner is still working on, not an archived one.
   return 'active';
+}
+
+/**
+ * The renters a property's "current" figures are about — everyone whose lease has not
+ * ended. Same split the property renters tab shows as current vs. previous tenants.
+ *
+ * Upcoming leases stay in: one signed to start next month is the property's rent going
+ * forward, and dropping it would read as a bug. An ended one is gone, and nothing else
+ * removes it — `getCurrentMonthlyRent` keeps quoting a finished lease's last period
+ * forever, since the schedule has no amount after its final year.
+ */
+export function getCurrentRenters(renters: Renter[] | null | undefined): Renter[] {
+  if (!renters?.length) return [];
+  return renters.filter((r) => getRenterLifecycle(r) !== 'ended');
+}
+
+/**
+ * Total monthly rent a property brings in now: each *current* renter at its current
+ * lease-year amount. Ended tenancies are excluded — they are still on
+ * `property.renters` (they are the record of who was here and what they paid), so
+ * summing that list raw double-counts a unit that has since been re-let, and keeps
+ * billing a vacant one.
+ */
+export function getTotalCurrentMonthlyRent(renters: Renter[] | null | undefined): number {
+  return getCurrentRenters(renters).reduce((sum, r) => sum + getCurrentMonthlyRent(r), 0);
 }

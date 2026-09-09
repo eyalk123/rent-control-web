@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { translateCategory } from '@/shared/utils/categories';
@@ -16,6 +16,7 @@ import { CashFlowChart } from '@/shared/components/ui/CashFlowChart';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { TransactionFormDrawer } from './TransactionFormDrawer';
+import { useOpenTransaction } from '../useOpenTransaction';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour } from '@/features/onboarding/TourController';
@@ -52,13 +53,13 @@ interface TxRowProps {
 
 function TxRow({ tx, isSelectMode, isSelected, onToggle, onLongPress }: TxRowProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openTx = useOpenTransaction();
   const isRev = tx.type === 'revenue';
   const longPress = useLongPress(() => onLongPress(tx.id));
 
   const activate = () => {
     if (isSelectMode) onToggle(tx.id);
-    else navigate(`/transactions/${tx.id}`);
+    else openTx(tx.id);
   };
 
   return (

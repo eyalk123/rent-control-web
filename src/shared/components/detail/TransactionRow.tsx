@@ -1,23 +1,25 @@
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtTxDate } from '@/shared/utils/txDate';
 import { translateCategory } from '@/shared/utils/categories';
+import { useOpenTransaction } from '@/features/transactions/useOpenTransaction';
 import type { Transaction } from '@/shared/types';
 
 interface Props {
   tx: Transaction;
+  /** Name of the page this row sits on, for the detail page's back link. */
+  backLabel?: string;
 }
 
-export function TransactionRow({ tx }: Props) {
+export function TransactionRow({ tx, backLabel }: Props) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openTx = useOpenTransaction();
   const isRev = tx.type === 'revenue';
   return (
     <button
-      onClick={() => navigate(`/transactions/${tx.id}`)}
+      onClick={() => openTx(tx.id, backLabel)}
       className="flex items-center gap-3 w-full px-4 py-3 text-start transition-colors hover:bg-[var(--color-input-filled-background)]"
       style={{ borderBottom: '1px solid var(--color-outline)' }}
     >

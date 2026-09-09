@@ -5,26 +5,32 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
 import { formatMoney } from '@/shared/utils/money';
 import { getCurrentMonthlyRent } from '@/shared/types';
+import { getCurrentRenters } from '@/shared/utils/renterStatus';
 import type { Renter } from '@/shared/types';
 
 interface Props {
   renters: Renter[];
   /** First renter's full name (the tile headline). */
   renterName: string | null;
+  /** How many of them are current — drives the "+N more" caption and the popover. */
   rentersCount: number;
-  /** Total current monthly rent across renters (matches the "Monthly rent" tile). */
+  /** Total current monthly rent across current renters (matches the "Monthly rent" tile). */
   total: number | null;
 }
 
 /**
- * The hero "Renter" KPI tile. With 0–1 renters it is a plain {@link HeroStat}.
- * With 2+ renters it becomes a click-to-open popover breaking down each renter's
- * current monthly rent plus a total — so the parts add up to the hero's total,
- * per-renter rows use `getCurrentMonthlyRent` (current lease year), same basis as
- * `getTotalCurrentMonthlyRent`.
+ * The hero "Renter" KPI tile. With 0–1 current renters it is a plain {@link HeroStat}.
+ * With 2+ it becomes a click-to-open popover breaking down each renter's current monthly
+ * rent plus a total.
+ *
+ * The parts have to add up to the hero's total, so the rows are the same set
+ * `getTotalCurrentMonthlyRent` sums — `getCurrentRenters` (ended tenancies dropped), each
+ * at `getCurrentMonthlyRent` (current lease year). `renters` may still arrive with past
+ * tenants on it; filtering here keeps the two from drifting apart.
  */
 export function RenterRentStat({ renters, renterName, rentersCount, total }: Props) {
   const { t, i18n } = useTranslation();
+  const currentRenters = getCurrentRenters(renters);
 
   if (rentersCount <= 1) {
     return <HeroStat label={t('property.renter')} value={renterName ?? t('property.occupancy.vacant')} />;
@@ -60,7 +66,7 @@ export function RenterRentStat({ renters, renterName, rentersCount, total }: Pro
           <p className="px-2 pt-1 pb-2 text-[10.5px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
             {t('property.rentBreakdown')}
           </p>
-          {renters.map((r) => (
+          {currentRenters.map((r) => (
             <div key={r.id} className="flex items-center justify-between gap-6 px-2 py-1.5">
               <span className="text-[13px] truncate" style={{ color: 'var(--color-text-primary)' }}>
                 {r.first_name} {r.last_name}

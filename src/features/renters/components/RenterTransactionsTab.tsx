@@ -28,6 +28,7 @@ export function RenterTransactionsTab({ renter, transactions }: Props) {
   const [expYear, setExpYear] = useDetailParam<string>('expYear', '');
   const [expMonth, setExpMonth] = useDetailParam<string>('expMonth', '');
   const [expCategory, setExpCategory] = useDetailParam<string>('expCategory', '');
+  const renterName = `${renter.first_name} ${renter.last_name}`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,6 +49,7 @@ export function RenterTransactionsTab({ renter, transactions }: Props) {
           transactions={transactions}
           propertyId={renter.property_id}
           layout="stacked"
+          backLabel={renterName}
         />
       ) : (
         <ExpensePanel
@@ -58,6 +60,7 @@ export function RenterTransactionsTab({ renter, transactions }: Props) {
           onMonthChange={(m) => setExpMonth(m == null ? '' : String(m))}
           category={expCategory || null}
           onCategoryChange={(c) => setExpCategory(c ?? '')}
+          backLabel={renterName}
         />
       )}
     </div>
