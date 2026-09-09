@@ -392,6 +392,12 @@
     "addTitle": "הוסף דייר",
     "editTitle": "ערוך דייר",
     "createSuccess": "דייר נוצר",
+    "repricePast": {
+      "title": "השינוי משפיע גם על שנים שעברו",
+      "message": "שכר הדירה משתנה בשנת חוזה אחת שכבר החלה — {{detail}}. תשלומים שכבר נרשמו עבורה יסומנו כלא תואמים לחוזה.",
+      "message_plural": "שכר הדירה משתנה ב-{{count}} שנות חוזה שכבר החלו — {{detail}}. תשלומים שכבר נרשמו עבורן יסומנו כלא תואמים לחוזה.",
+      "confirm": "שמור בכל זאת"
+    },
     "updateSuccess": "דייר עודכן",
     "leaseYears": "שנות שכירות",
     "addYear": "הוסף שנה",
@@ -734,8 +740,11 @@
       "paymentRecorded": "התשלום נרשם",
       "paymentsRecorded": "{{count}} תשלומים נרשמו",
       "expectedWas": "צפוי {{amount}}",
+      "leaseNowSays": "בחוזה כעת {{amount}}",
+      "paidWhatWasAsked": "שולם {{amount}}, בהתאם לחוזה שהיה באותה עת",
       "paidLate": "שולם באיחור",
       "legendMismatch": "הסכום שונה מהחוזה",
+      "legendLeaseChanged": "תאם לחוזה בזמן התשלום; החוזה שונה מאז",
       "legendLate": "שולם אחרי מועד התשלום",
       "paymentsCount": "{{count}} תשלומים",
       "monthPayments": {

@@ -15,7 +15,7 @@ import type {
   Transaction,
   PropertyRenterSummary,
 } from '@/shared/types';
-import { getLeaseEndDate } from '@/shared/types';
+import { getLeaseEndDate, getRentForMonth } from '@/shared/types';
 import type { LeaseExtraction } from '@/features/document-scan/types';
 import type {
   AgentStatus,
@@ -123,6 +123,22 @@ const seedProperties: Property[] = [
     renters: null,
   },
 ];
+
+/**
+ * Start date for the lease-timeline fixtures (renters 7-9).
+ *
+ * A CPI year is only a *projection* until it starts, so those fixtures are read against
+ * today's date — which makes a hardcoded `lease_start` an expiring test. Renter #7 was
+ * pinned to 2024-09-01, its third year began on 2026-09-01, and the e2e suite went red
+ * with no code change behind it. Anchoring to the current month fixes the shape instead
+ * of the dates: 18 months back always leaves year 1 finished, year 2 underway, and every
+ * later year still in the future.
+ */
+function leaseTimelineStart(): string {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() - 18, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+}
 
 const seedRenters: Renter[] = [
   {
@@ -239,7 +255,7 @@ const seedRenters: Renter[] = [
       { amount: 25080, type: 'option' },
       { amount: 25080, type: 'option' },
     ],
-    lease_start: '2024-09-01',
+    lease_start: leaseTimelineStart(),
     base_rent: 24000,
     rent_escalation_mode: 'cpi',
     property: null,
@@ -260,7 +276,7 @@ const seedRenters: Renter[] = [
       { amount: 32130, type: 'option', rule: { mode: 'cpi' } },
       { amount: 32130, type: 'option', rule: { mode: 'cpi' } },
     ],
-    lease_start: '2024-11-01',
+    lease_start: leaseTimelineStart(),
     base_rent: 30000,
     rent_escalation_mode: 'custom',
     property: null,
@@ -281,7 +297,7 @@ const seedRenters: Renter[] = [
       { amount: 40000, type: 'contract' },
       { amount: 41000, type: 'option', rule: { mode: 'cpi' } },
     ],
-    lease_start: '2024-12-01',
+    lease_start: leaseTimelineStart(),
     property: null,
     contact_id: null,
   },
@@ -338,6 +354,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-01',
     month_for: '2026-03-01',
     amount: 2200,
+    expected_amount: 2200,
     currency_code: 'ILS',
     category_id: null,
     supplier_id: null,
@@ -356,6 +373,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-15',
     month_for: '2026-03-01',
     amount: 1900,
+    expected_amount: 1900,
     currency_code: 'ILS',
     category_id: null,
     supplier_id: null,
@@ -374,6 +392,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-01',
     month_for: '2026-03-01',
     amount: 1650,
+    expected_amount: 1650,
     currency_code: 'ILS',
     category_id: null,
     supplier_id: null,
@@ -392,6 +411,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-05',
     month_for: null,
     amount: 350,
+    expected_amount: null,
     currency_code: 'ILS',
     category_id: 1,
     supplier_id: 1,
@@ -410,6 +430,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-10',
     month_for: null,
     amount: 120,
+    expected_amount: null,
     currency_code: 'ILS',
     category_id: 2,
     supplier_id: 2,
@@ -428,6 +449,7 @@ const seedTransactions: Transaction[] = [
     date_of_payment: '2026-03-10',
     month_for: null,
     amount: 75,
+    expected_amount: null,
     currency_code: 'ILS',
     category_id: 3,
     supplier_id: 3,
@@ -657,8 +679,15 @@ export const mockTransactionsApi = {
     return enrichTransaction(t);
   },
   // Persist a new transaction and return it enriched (mirrors the real POST response).
-  addTransaction: (t: Omit<Transaction, 'id'>): Transaction => {
-    const created: Transaction = { ...(t as Transaction), id: nextTransactionId++ };
+  addTransaction: (t: Omit<Transaction, 'id' | 'expected_amount'>): Transaction => {
+    // Mirrors the server's `_expected_rent`: freeze what the lease quoted for this month,
+    // so the mock grid flags a mismatch on the same rule the real one does.
+    const renter = t.renter_id != null ? mockRenters.find((r) => r.id === t.renter_id) : undefined;
+    const expected_amount =
+      t.type === 'revenue' && renter && t.month_for
+        ? getRentForMonth(renter, t.month_for.slice(0, 7)) || null
+        : null;
+    const created: Transaction = { ...(t as Transaction), expected_amount, id: nextTransactionId++ };
     mockTransactions.push(created);
     return enrichTransaction(created);
   },

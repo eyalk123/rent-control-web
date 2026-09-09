@@ -391,6 +391,12 @@
     "addTitle": "Add Renter",
     "editTitle": "Edit Renter",
     "createSuccess": "Renter created",
+    "repricePast": {
+      "title": "This also changes past years",
+      "message": "Rent changes for {{count}} lease year that has already started — {{detail}}. Payments already recorded against it will be marked as no longer matching the lease.",
+      "message_plural": "Rent changes for {{count}} lease years that have already started — {{detail}}. Payments already recorded against them will be marked as no longer matching the lease.",
+      "confirm": "Save anyway"
+    },
     "updateSuccess": "Renter updated",
     "leaseYears": "Lease Years",
     "addYear": "Add year",
@@ -732,8 +738,11 @@
       "paymentRecorded": "Payment recorded",
       "paymentsRecorded": "{{count}} payments recorded",
       "expectedWas": "expected {{amount}}",
+      "leaseNowSays": "lease now says {{amount}}",
+      "paidWhatWasAsked": "paid {{amount}}, which matched the lease at the time",
       "paidLate": "paid late",
       "legendMismatch": "Amount differs from the lease",
+      "legendLeaseChanged": "Matched the lease when paid; the lease has changed since",
       "legendLate": "Paid after the due day",
       "paymentsCount": "{{count}} payments",
       "monthPayments": {

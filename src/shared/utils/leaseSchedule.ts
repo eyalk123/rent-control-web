@@ -361,3 +361,49 @@ export function reconstructIntentFromLeaseYears(
     escalationMode,
   };
 }
+
+/**
+ * Lease periods that have already begun and whose rent an edit would change.
+ *
+ * The schedule is the owner's own statement of what the rent is, so it stays fully
+ * editable — including retroactively, because people do make mistakes and a lease that
+ * cannot be corrected is worse than one that can be corrected by accident. What this
+ * exists for is the *by accident* half: `buildLeaseYears` re-derives every period from
+ * the base rent and the escalation rule, so nudging either one silently re-prices years
+ * that are long settled. Naming them at the point of saving is what turns that from a
+ * surprise into a choice.
+ *
+ * Only periods present in **both** schedules are compared: appended years are an
+ * extension, and a shortened schedule's dropped tail is a different decision entirely.
+ * Sub-shekel drift is rounding, not a repricing.
+ */
+export interface RepricedPeriod {
+  /** 0-based index into the schedule. */
+  index: number;
+  /** Calendar year the period starts in — how the warning names it. */
+  startYear: number;
+  before: number;
+  after: number;
+}
+
+export function repricedElapsedPeriods(
+  savedYears: LeaseYear[] | undefined,
+  nextYears: LeaseYear[] | undefined,
+  leaseStart: string | null | undefined,
+  today: Date = new Date(),
+): RepricedPeriod[] {
+  const saved = savedYears ?? [];
+  const next = nextYears ?? [];
+  const out: RepricedPeriod[] = [];
+  for (let i = 0; i < Math.min(saved.length, next.length); i += 1) {
+    const before = saved[i]?.amount ?? 0;
+    const after = next[i]?.amount ?? 0;
+    if (Math.abs(before - after) < 1) continue;
+    // Measured against the *saved* schedule: the periods being re-priced are where they
+    // were before this edit, not where the new one would put them.
+    const start = leaseYearStart(leaseStart, saved, i);
+    if (start === null || start > today) continue;
+    out.push({ index: i, startYear: start.getFullYear(), before, after });
+  }
+  return out;
+}

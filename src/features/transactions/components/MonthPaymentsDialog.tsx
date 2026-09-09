@@ -61,15 +61,31 @@ export function MonthPaymentsDialog({ open, onClose, cell, monthLabel, backLabel
             amount: formatMoney(cell.paidSum),
             count: payments.length,
           })}
-          {cell.expected > 0 && (
+          {cell.expected > 0 && !cell.leaseChangedSince && (
             <>
               {' · '}
               <span style={{ color: cell.hasAmountMismatch ? 'var(--color-warning-fg)' : undefined }}>
-                {t('transactions.rentGrid.expectedWas', { amount: formatMoney(cell.expected) })}
+                {t('transactions.rentGrid.expectedWas', {
+                  amount: formatMoney(cell.quotedAtPayment ?? cell.expected),
+                })}
               </span>
             </>
           )}
         </p>
+
+        {/* This month was settled for exactly what the lease asked at the time, and the
+            lease has been edited since. Spelled out in full rather than reduced to a
+            figure: the whole point is that the two numbers disagreeing is not a problem,
+            which "expected X" would imply and this does not. */}
+        {cell.leaseChangedSince && (
+          <p className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('transactions.rentGrid.paidWhatWasAsked', {
+              amount: formatMoney(cell.quotedAtPayment ?? cell.paidSum),
+            })}
+            {' · '}
+            {t('transactions.rentGrid.leaseNowSays', { amount: formatMoney(cell.expected) })}
+          </p>
+        )}
 
         <div className="flex flex-col gap-2">
           {payments.map((tx) => {

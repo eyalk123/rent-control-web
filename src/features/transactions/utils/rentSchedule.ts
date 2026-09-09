@@ -31,15 +31,39 @@ export interface MonthCell {
   /** 0-11 */
   monthIndex: number;
   status: MonthStatus;
-  /** Amount owed for this month's instalment. 0 when nothing is owed. */
+  /**
+   * Amount owed for this month's instalment, per the lease **as it stands today**. 0 when
+   * nothing is owed.
+   *
+   * Always the live schedule, including for months already settled. The schedule is the
+   * owner's own statement of what the rent is; editing it, even retroactively, is a
+   * deliberate act and not something to be second-guessed here.
+   */
   expected: number;
   /** Sum of revenue recorded against this month. */
   paidSum: number;
   transactions: Transaction[];
   /** Paid, but the earliest payment landed after the due day. */
   isLate: boolean;
-  /** Paid, but the total differs from the expected instalment. */
+  /**
+   * Paid, but not the amount that was being asked for at the time — a real shortfall or
+   * overpayment. Something to chase.
+   */
   hasAmountMismatch: boolean;
+  /**
+   * Paid exactly what was asked at the time, but the lease has been edited since and now
+   * says something different. Nothing went wrong and nobody owes anything, so this renders
+   * as a neutral marker, never the amber warning.
+   *
+   * Only knowable for payments carrying a snapshot; older rows can't tell this apart from
+   * a real shortfall and stay on {@link hasAmountMismatch}.
+   */
+  leaseChangedSince: boolean;
+  /**
+   * What the lease quoted for this instalment when it was paid, or null when no payment
+   * here recorded one. Explains a disagreement — it never replaces {@link expected}.
+   */
+  quotedAtPayment: number | null;
   /** The day rent was due, or null when nothing was owed. */
   dueDate: Date | null;
   /** True when pressing the cell should record a payment. */
@@ -123,6 +147,25 @@ function groupRevenueByMonth(transactions: Transaction[]): Map<string, Transacti
   return map;
 }
 
+/**
+ * The instalment the lease was quoting when this month's payments were recorded, or null
+ * when none of them carries a snapshot (anything saved before `expected_amount` existed).
+ *
+ * Several payments against one month should all have been quoted the same figure; if a
+ * lease was edited between them they won't be, and the *earliest* is the one the run of
+ * payments was started against — taking the latest would let a rent rise reach backwards,
+ * which is the whole problem this exists to stop. They are not summed: each row records
+ * what one instalment was worth, not a share of it.
+ */
+function snapshotExpected(txs: Transaction[]): number | null {
+  let earliest: Transaction | null = null;
+  for (const tx of txs) {
+    if (tx.expected_amount == null) continue;
+    if (earliest == null || tx.date_of_payment < earliest.date_of_payment) earliest = tx;
+  }
+  return earliest?.expected_amount ?? null;
+}
+
 /** Builds the 12 cells for one renter in one calendar year. */
 export function buildRentGrid(
   renter: Renter,
@@ -151,6 +194,8 @@ export function buildRentGrid(
       transactions: txs,
       isLate: false,
       hasAmountMismatch: false,
+      leaseChangedSince: false,
+      quotedAtPayment: null,
       dueDate: null,
       isPayable: false,
     };
@@ -178,6 +223,13 @@ export function buildRentGrid(
     }
 
     const expected = getRentForMonth(renter, monthKey) * interval;
+    // What the lease was quoting when these payments were recorded. Used only to explain a
+    // disagreement, never to replace `expected`. It is what separates "the tenant paid the
+    // wrong amount" from "you have since changed the lease" — identical arithmetic, and
+    // completely different news. The snapshot is per instalment, so it takes the same
+    // multiplier the live figure does.
+    const quoted = snapshotExpected(txs);
+    const quotedAtPayment = quoted != null ? quoted * interval : null;
 
     // Clamp to the month's length so a pay-day of 31 still resolves in February.
     const lastDayOfMonth = new Date(year, monthIndex + 1, 0).getDate();
@@ -188,14 +240,23 @@ export function buildRentGrid(
         .map((tx) => new Date(tx.date_of_payment))
         .filter((d) => !isNaN(d.getTime()))
         .sort((a, b) => a.getTime() - b.getTime())[0];
+      // Judged against what was actually being asked for at the time, so a month settled
+      // correctly is never reported as a shortfall just because the rent has since moved.
+      // Sub-shekel drift is rounding, not a shortfall.
+      const askedFor = quotedAtPayment ?? expected;
+      const paidWhatWasAsked = askedFor > 0 && Math.abs(paidSum - askedFor) < 1;
       return {
         ...base,
         status: 'paid',
         expected,
+        quotedAtPayment,
         dueDate,
         isLate: earliestPayment != null && earliestPayment > dueDate,
-        // Sub-shekel drift is rounding, not a shortfall.
-        hasAmountMismatch: expected > 0 && Math.abs(paidSum - expected) >= 1,
+        hasAmountMismatch: askedFor > 0 && !paidWhatWasAsked,
+        leaseChangedSince:
+          paidWhatWasAsked &&
+          quotedAtPayment != null &&
+          Math.abs(quotedAtPayment - expected) >= 1,
       };
     }
 

@@ -251,6 +251,17 @@ export interface Transaction {
   /** Month the transaction is for (YYYY-MM format or full date string), revenues only */
   month_for: string | null;
   amount: number;
+  /**
+   * What the lease schedule said was owed for `month_for`, frozen by the server when the
+   * payment was recorded. Revenues only; null on rows recorded before it existed.
+   *
+   * The schedule itself is mutable and keeps no history — raising a renter's base rent
+   * re-derives every lease year, elapsed ones included — so comparing a payment against
+   * the *live* schedule reports a correctly-paid month as short. This is the figure that
+   * was actually being charged at the time, which is what a mismatch should be measured
+   * against. See `hasAmountMismatch` in `features/transactions/utils/rentSchedule.ts`.
+   */
+  expected_amount: number | null;
   currency_code: string;
   category_id: number | null;
   category_ids?: number[];

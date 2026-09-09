@@ -169,7 +169,8 @@ test.describe('renters', () => {
   // A CPI-linked year that hasn't started has no published index yet, so its stored amount
   // is only a projection off the latest known reading. The timeline must say so — but only
   // for the future years: the ones already underway resolved against their own index and
-  // are frozen server-side. Renter #7 (Noa Levi) is a 4-year `cpi` lease from 2024-09-01.
+  // are frozen server-side. Renter #7 (Noa Levi) is a 4-year `cpi` lease whose fixture starts
+  // 18 months ago, so year 2 is always the one underway and years 3-4 always still ahead.
   test('lease timeline marks only future CPI years as projections', async ({ page }) => {
     await page.goto('/renters/7');
 

@@ -4,7 +4,11 @@ import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, Info, Plus, X } from 'lucide-react';
 import { renterFormSchema } from '../validation/renterValidation';
-import { reconstructIntentFromLeaseYears } from '@/shared/utils/leaseSchedule';
+import {
+  reconstructIntentFromLeaseYears,
+  repricedElapsedPeriods,
+  type RepricedPeriod,
+} from '@/shared/utils/leaseSchedule';
 import { LeaseTermBuilder } from '../components/LeaseTermBuilder';
 import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
 import { useProperties } from '@/features/properties/queries';
@@ -21,6 +25,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
+import { formatMoney } from '@/shared/utils/money';
 import { fileNameFromUrl } from '@/shared/utils/fileName';
 import { getApiErrorMessage } from '@/core/api/client';
 import { FieldReviewProvider } from '@/shared/components/form/FieldReviewContext';
@@ -132,6 +137,12 @@ export function RenterFormDrawer({
   // Derived, never written — see PropertyFormDrawer for why that matters.
   const shownStep = tourStep && tourStep !== 'overview' ? 2 : step;
   const [showDiscard, setShowDiscard] = useState(false);
+  // A save that would re-price lease periods which have already started, held until the
+  // owner confirms. The edit is never blocked — the schedule is their statement of what the
+  // rent is, and correcting a past year is legitimate. What is not legitimate is doing it
+  // *without being told*, which is what happens today when nudging the base rent silently
+  // re-derives every year from the formula. `run` is the save this was intercepted from.
+  const [reprice, setReprice] = useState<{ periods: RepricedPeriod[]; run: () => Promise<void> } | null>(null);
   const [idImageFile, setIdImageFile] = useState<File | null>(null);
   const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
@@ -295,6 +306,20 @@ export function RenterFormDrawer({
 
   const freqToPayments = (freq?: string) => freq === 'monthly' ? 12 : freq === 'quarterly' ? 4 : freq === 'yearly' ? 1 : null;
 
+  // Shared by the plain save and the one resumed from the re-pricing dialog, so a confirmed
+  // edit closes and toasts exactly like an unremarkable one.
+  const finishSave = () => {
+    showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
+    // Multi-renter scan: advance to the next co-tenant instead of closing — including when the
+    // just-saved entry was an in-place edit of an existing (duplicate) renter.
+    if (hasNextRenter) {
+      setStep(1);
+      setQueueIndex((i) => i + 1);
+    } else {
+      onClose();
+    }
+  };
+
   const onSubmit = handleSubmit(async (data) => {
     try {
       let idImageUrl = data.idImageUrl;
@@ -352,16 +377,32 @@ export function RenterFormDrawer({
       };
 
       if (isEditing && effRenterId) {
-        await updateMutation.mutateAsync(payload);
-        // Audit a scanned duplicate merged into an existing renter, same as a creation.
-        if (queuedExistingId != null && logId && effProvenance) {
-          updateExtractionLog(logId, {
-            entity_type: 'renter',
-            created_id: effRenterId,
-            contract_url: fullContractUrl ?? null,
-            ...diffProvenance(effProvenance, data as Record<string, unknown>),
-          });
+        const commit = async () => {
+          await updateMutation.mutateAsync(payload);
+          // Audit a scanned duplicate merged into an existing renter, same as a creation.
+          if (queuedExistingId != null && logId && effProvenance) {
+            updateExtractionLog(logId, {
+              entity_type: 'renter',
+              created_id: effRenterId,
+              contract_url: fullContractUrl ?? null,
+              ...diffProvenance(effProvenance, data as Record<string, unknown>),
+            });
+          }
+          finishSave();
+        };
+        const repriced = repricedElapsedPeriods(
+          existing?.lease_years,
+          payload.lease_years,
+          payload.lease_start,
+        );
+        if (repriced.length > 0) {
+          // Hand the save to the dialog and stop here — `finishSave` runs on the far side,
+          // so nothing closes or toasts until the owner has actually decided.
+          setReprice({ periods: repriced, run: commit });
+          return;
         }
+        await commit();
+        return;
       } else {
         const created = await createMutation.mutateAsync(payload as never);
         // Audit: record renter creation + which prefilled fields changed + the kept contract URL.
@@ -375,15 +416,7 @@ export function RenterFormDrawer({
         }
       }
 
-      showToast(t(isEditing ? 'renter.updateSuccess' : 'renter.createSuccess'), 'success');
-      // Multi-renter scan: advance to the next co-tenant instead of closing — including when the
-      // just-saved entry was an in-place edit of an existing (duplicate) renter.
-      if (hasNextRenter) {
-        setStep(1);
-        setQueueIndex((i) => i + 1);
-      } else {
-        onClose();
-      }
+      finishSave();
     } catch (err) { if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err); showToast(getApiErrorMessage(err, t('error.saveFailed')), 'error'); }
   });
 
@@ -639,6 +672,33 @@ export function RenterFormDrawer({
       confirmLabel={t('common.discard')}
       onConfirm={() => { setShowDiscard(false); onClose(); }}
       onClose={() => setShowDiscard(false)}
+    />
+
+    {/* Re-pricing years that have already started. Confirm, not block: the owner may well
+        mean it — a rent that was recorded wrong for two years is theirs to correct — so the
+        dialog names exactly which years move and by how much, and lets them through. */}
+    <ConfirmDialog
+      open={reprice !== null}
+      tone="primary"
+      title={t('renter.repricePast.title')}
+      message={t('renter.repricePast.message', {
+        count: reprice?.periods.length ?? 0,
+        detail: (reprice?.periods ?? [])
+          .map((p) => `${p.startYear}: ${formatMoney(p.before)} → ${formatMoney(p.after)}`)
+          .join(', '),
+      })}
+      confirmLabel={t('renter.repricePast.confirm')}
+      loading={isSubmitting}
+      onConfirm={() => {
+        const pending = reprice;
+        setReprice(null);
+        // Same failure handling as the uninterrupted path — the save is the same save.
+        void pending?.run().catch((err) => {
+          if (import.meta.env.DEV) console.error('[RenterFormDrawer] save failed:', err);
+          showToast(getApiErrorMessage(err, t('error.saveFailed')), 'error');
+        });
+      }}
+      onClose={() => setReprice(null)}
     />
     </>
   );

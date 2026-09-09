@@ -78,8 +78,17 @@ export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed
     monthLabel,
     statusLabel,
     amount > 0 ? (countLabel ? `${formatMoney(amount)} (${countLabel})` : formatMoney(amount)) : null,
+    // A shortfall names what was actually being asked for, which after a lease edit is not
+    // the same as what the lease says now. A month that was settled correctly and only
+    // disagrees with the *current* lease says so in those words instead — nobody owes
+    // anything, and reading "expected X" there would be an accusation.
     cell.hasAmountMismatch
-      ? t('transactions.rentGrid.expectedWas', { amount: formatMoney(cell.expected) })
+      ? t('transactions.rentGrid.expectedWas', {
+          amount: formatMoney(cell.quotedAtPayment ?? cell.expected),
+        })
+      : null,
+    cell.leaseChangedSince
+      ? t('transactions.rentGrid.leaseNowSays', { amount: formatMoney(cell.expected) })
       : null,
     cell.isLate ? t('transactions.rentGrid.paidLate') : null,
     armed ? t('transactions.recordPayment.armedHint') : null,
@@ -148,9 +157,10 @@ export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed
         </span>
       )}
 
-      {/* Paid, but not for the amount the lease says — a shortfall or an overpayment.
-          Each marker carries its own `title` rather than leaning on the button's, so
-          hovering the dot explains the dot and not the whole cell. */}
+      {/* Paid, but not the amount that was being asked for at the time — a shortfall or an
+          overpayment, and something to chase. Each marker carries its own `title` rather
+          than leaning on the button's, so hovering the dot explains the dot and not the
+          whole cell. */}
       {cell.hasAmountMismatch && !armed && !saving && (
         <span
           className="absolute end-1 top-1 h-2.5 w-2.5 rounded-full"
@@ -159,6 +169,24 @@ export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed
             multiple
               ? `${t('transactions.rentGrid.legendMismatch')} · ${countLabel}`
               : t('transactions.rentGrid.legendMismatch')
+          }
+        />
+      )}
+
+      {/* Paid exactly what was asked, and the lease has moved since. Deliberately *not*
+          the amber dot: nothing went wrong and nobody owes anything, so this is a note
+          rather than a warning. It is still shown, because an owner who changed the base
+          rent without realising it re-priced three settled years has no other way to find
+          out. A hollow ring in the muted text colour reads as "look here" without reading
+          as "something is broken", and the two markers never coexist on one cell. */}
+      {cell.leaseChangedSince && !armed && !saving && (
+        <span
+          className="absolute end-1 top-1 h-2.5 w-2.5 rounded-full border"
+          style={{ borderColor: 'var(--color-text-secondary)', opacity: 0.75 }}
+          title={
+            multiple
+              ? `${t('transactions.rentGrid.legendLeaseChanged')} · ${countLabel}`
+              : t('transactions.rentGrid.legendLeaseChanged')
           }
         />
       )}

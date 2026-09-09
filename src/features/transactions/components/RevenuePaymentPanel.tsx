@@ -476,6 +476,14 @@ function Legend() {
         <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--color-warning)' }} aria-hidden="true" />
         {t('transactions.rentGrid.legendMismatch')}
       </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className="h-2.5 w-2.5 rounded-full border"
+          style={{ borderColor: 'var(--color-text-secondary)', opacity: 0.75 }}
+          aria-hidden="true"
+        />
+        {t('transactions.rentGrid.legendLeaseChanged')}
+      </span>
       {/* The late marker was the one indicator with no legend entry. */}
       <span className="inline-flex items-center gap-1.5">
         <span
