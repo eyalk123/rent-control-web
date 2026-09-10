@@ -29,6 +29,7 @@ export const TOUR_IDS = [
   'property-detail',
   'extend-lease',
   'suppliers',
+  'supplier-form',
   'notifications',
   'notification-rules',
   'whatsapp-templates',
