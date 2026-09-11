@@ -26,14 +26,25 @@ Sentry (prod only). Backend: FastAPI.
   imports are `@/src/...`.**
 - `src/core/`: infrastructure — `api/` (Axios `client.ts` with auth-token getter + 401
   auto-sign-out, `mock.ts`), `auth/` (Firebase, `AuthContext`, `AuthTokenSync`,
-  `ProtectedRoute`), `i18n/`, `theme/`, `monitoring/` (Sentry).
-  - `theme/colors.ts` is a **manual copy** of the mobile repo's
-    `rent-control/src/core/theme/colors.ts` and says so in its header. Change a color token
-    in both repos in the same session or they drift. The palette's rationale, its accepted
-    deviations, and the log of design proposals considered and declined live in
-    **`rent-control/MOBILE-DESIGN.md`** — read §2 (Color) and §13 (Decisions log) before
-    touching a token. The rest of that file (radius, elevation, spacing, haptics, motion) is
-    mobile-specific and does not apply here; this app has its own Tailwind-based conventions.
+  `ProtectedRoute`), `i18n/`, `monitoring/` (Sentry).
+- **The palette lives in `src/index.css`** — CSS custom properties on `:root` and
+  `[data-theme="dark"]`, surfaced to Tailwind through the `@theme inline` block below them.
+  That file is the only source of truth. There is no TypeScript colour module here, and
+  nothing imports one.
+  - **The web palette has deliberately diverged from mobile, and is not kept in sync.** Web
+    is a near-neutral dark (`#121212` page, `#1E1E20` surface) with a Tailwind-derived accent
+    set; mobile is the "Landlord Ink" navy-cast charcoal. They are different products
+    visually and that is intentional.
+  - A `src/core/theme/` directory used to hold a hand-copied snapshot of the mobile tokens
+    (`colors.ts`, `spacing.ts`) plus a `cssVars.ts` that turned them into CSS variable
+    blocks. **Nothing ever imported any of it** — the app rendered from `index.css` the whole
+    time, while the copy sat there with a "keep in sync manually" header telling everyone it
+    was authoritative. It was deleted on 2026-09-11 rather than reconciled, because
+    reconciling would have meant overwriting this app's palette with a different product's.
+    Do not recreate it: to change a colour here, edit the variable in `index.css`.
+  - Mobile's palette rationale, its accepted deviations, and the log of proposals considered
+    and declined live in **`rent-control/MOBILE-DESIGN.md`** §2 (Color) and §13 (Decisions
+    log). Read it for reasoning worth borrowing, not for values to copy.
 - `src/features/`: feature slices (home, properties, renters, transactions, suppliers,
   reports, notifications, settings, auth, legal, alerts, document-scan, agent,
   onboarding). Each

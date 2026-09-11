@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/* ── Design Tokens — Rent Control Web palette ────────────────────── */
+/* ── Design Tokens — Rent Control Web palette ──────────────────────
+   SOURCE OF TRUTH for every colour in this app. Tailwind reads these through the
+   `@theme inline` block further down, so a token changed here changes everywhere.
+   This palette is intentionally NOT the mobile app's - see CLAUDE.md. */
 :root {
   /* Brand */
   --color-brand-navy:             #1A2D4A;
