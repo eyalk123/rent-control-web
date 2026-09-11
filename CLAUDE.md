@@ -27,6 +27,13 @@ Sentry (prod only). Backend: FastAPI.
 - `src/core/`: infrastructure — `api/` (Axios `client.ts` with auth-token getter + 401
   auto-sign-out, `mock.ts`), `auth/` (Firebase, `AuthContext`, `AuthTokenSync`,
   `ProtectedRoute`), `i18n/`, `theme/`, `monitoring/` (Sentry).
+  - `theme/colors.ts` is a **manual copy** of the mobile repo's
+    `rent-control/src/core/theme/colors.ts` and says so in its header. Change a color token
+    in both repos in the same session or they drift. The palette's rationale, its accepted
+    deviations, and the log of design proposals considered and declined live in
+    **`rent-control/MOBILE-DESIGN.md`** — read §2 (Color) and §13 (Decisions log) before
+    touching a token. The rest of that file (radius, elevation, spacing, haptics, motion) is
+    mobile-specific and does not apply here; this app has its own Tailwind-based conventions.
 - `src/features/`: feature slices (home, properties, renters, transactions, suppliers,
   reports, notifications, settings, auth, legal, alerts, document-scan, agent,
   onboarding). Each
