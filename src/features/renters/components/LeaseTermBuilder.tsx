@@ -196,66 +196,73 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div ref={termAnchorRef} className="flex flex-wrap gap-4">
-        <Controller
-          control={control}
-          name="contractTermYears"
-          render={({ field }) => (
-            <Stepper
-              label={t('renter.contractTerm')}
-              unitLabel={t('renter.yearsUnit')}
-              min={0}
-              max={20}
-              value={Number(field.value) || 0}
-              onChange={(v) => field.onChange(String(v))}
-            />
-          )}
-        />
+      {/* Two rows on purpose: the contract term and the renewal options are separate
+          decisions, and wrapping them into one row let an option stepper sit beside
+          the contract years and read as part of it. */}
+      <div ref={termAnchorRef} className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-4">
+          <Controller
+            control={control}
+            name="contractTermYears"
+            render={({ field }) => (
+              <Stepper
+                label={t('renter.contractTerm')}
+                unitLabel={t('renter.yearsUnit')}
+                min={0}
+                max={20}
+                value={Number(field.value) || 0}
+                onChange={(v) => field.onChange(String(v))}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="contractTermMonths"
-          render={({ field }) => (
-            <Stepper
-              label={t('renter.extraMonths')}
-              unitLabel={t('renter.monthsUnit')}
-              min={0}
-              max={11}
-              value={Number(field.value) || 0}
-              onChange={(v) => field.onChange(String(v))}
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="contractTermMonths"
+            render={({ field }) => (
+              <Stepper
+                label={t('renter.extraMonths')}
+                unitLabel={t('renter.monthsUnit')}
+                min={0}
+                max={11}
+                value={Number(field.value) || 0}
+                onChange={(v) => field.onChange(String(v))}
+              />
+            )}
+          />
+        </div>
 
-        <Controller
-          control={control}
-          name="optionYears"
-          render={({ field }) => (
-            <Stepper
-              label={t('renter.renewalOptions')}
-              unitLabel={t('renter.yearsUnit')}
-              min={0}
-              max={10}
-              value={Number(field.value) || 0}
-              onChange={(v) => field.onChange(String(v))}
-            />
-          )}
-        />
+        <div className="flex flex-wrap gap-4">
+          <Controller
+            control={control}
+            name="optionYears"
+            render={({ field }) => (
+              <Stepper
+                label={t('renter.renewalOptions')}
+                unitLabel={t('renter.yearsUnit')}
+                min={0}
+                max={10}
+                value={Number(field.value) || 0}
+                onChange={(v) => field.onChange(String(v))}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="optionTermMonths"
-          render={({ field }) => (
-            <Stepper
-              label={t('renter.extraOptionMonths')}
-              unitLabel={t('renter.monthsUnit')}
-              min={0}
-              max={11}
-              value={Number(field.value) || 0}
-              onChange={(v) => field.onChange(String(v))}
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="optionTermMonths"
+            render={({ field }) => (
+              <Stepper
+                label={t('renter.extraOptionMonths')}
+                unitLabel={t('renter.monthsUnit')}
+                min={0}
+                max={11}
+                value={Number(field.value) || 0}
+                onChange={(v) => field.onChange(String(v))}
+              />
+            )}
+          />
+        </div>
       </div>
 
       <div ref={baseRentAnchorRef}>

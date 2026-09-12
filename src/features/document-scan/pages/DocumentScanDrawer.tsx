@@ -149,10 +149,9 @@ export function DocumentScanDrawer() {
     <Drawer open={open} onClose={dismissScan} onRequestClose={dismissScan} title={t('documentScan.title')} width={520} footer={footer}>
       <div className="flex flex-col gap-4">
         <LeaseScanTourRequest />
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          {t('documentScan.uploadPrompt')}
-        </p>
 
+        {/* The prompt moved into the picker block below, so it no longer shows here: once
+            extraction is running, "upload a lease" is not the thing to be reading. */}
         {processing ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10">
             <Loader2 size={28} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
@@ -160,8 +159,14 @@ export function DocumentScanDrawer() {
           </div>
         ) : (
           <>
+            {/* The prompt is inside the anchor, not above it. It is the sentence that says
+                what happens to the file, and spotlighting the dropzone alone left the
+                explanation outside the cutout, beside a card explaining it. */}
+            <div ref={pickerAnchorRef} className="flex flex-col gap-4">
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {t('documentScan.uploadPrompt')}
+            </p>
             <button
-              ref={pickerAnchorRef}
               type="button"
               onClick={() => inputRef.current?.click()}
               className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-8 transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
@@ -172,6 +177,7 @@ export function DocumentScanDrawer() {
                 {files.length > 0 ? t('documentScan.addPage') : t('common.clickToUpload')}
               </span>
             </button>
+            </div>
             <input
               ref={inputRef}
               type="file"

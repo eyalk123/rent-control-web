@@ -151,10 +151,14 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
               )
             }
           />
-          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('notifications.offsetHint')}
-          </p>
         </div>
+        {/* Outside the anchor, on purpose. The hint is a whole line of small text, and
+            including it grew the cutout enough to reach the rule-name field above and make
+            the step look like it was pointing at the wrong control. The step's own card
+            says what the hint says. */}
+        <p className="text-[11px] -mt-3" style={{ color: 'var(--color-text-secondary)' }}>
+          {t('notifications.offsetHint')}
+        </p>
 
         <div ref={scopeAnchorRef}>
           <ScopeSelector value={scope} onChange={setScope} />

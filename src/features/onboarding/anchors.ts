@@ -90,6 +90,12 @@ export const ANCHORS = {
    *  payment day is what 'overdue' is counted from, which nothing else in the product
    *  says out loud. Also `revealsAnchor` — see `propertyFormRecords`. */
   renterFormPayment: 'renterForm.payment',
+  /** The extra-contacts block at the foot of the renter form's *first* page — a guarantor,
+   *  a partner, whoever else is on the lease. The one field on that page a tour stops for:
+   *  it is a repeating sub-form rather than an input, and nothing on it says who it is for
+   *  or that it is optional. Page one is what the drawer shows by default but not while a
+   *  later step runs, so this is `revealsAnchor` like the page-two steps. */
+  renterFormExtraContacts: 'renterForm.extraContacts',
   renterDetailStats: 'renterDetail.stats', // -> RenterDetailHero.tsx, the KPI strip
   renterDetailTabs: 'renterDetail.tabs',   // -> RenterDetailPage.tsx, the DetailTabBar
   /** The same held-still frame as `propertyDetailPanel` above. */
@@ -143,6 +149,15 @@ export const ANCHORS = {
 
   // Suppliers — src/features/suppliers/
   suppliersList: 'suppliers.list',
+  /** The add/edit supplier drawer's name field — the opening step's target, and one of the
+   *  two things the form actually requires. */
+  supplierFormName: 'supplierForm.name',
+  /** The categories chip block. Web puts it above the bank card, the other way round from
+   *  mobile, and the tour follows whichever order its own screen uses. */
+  supplierFormCategories: 'supplierForm.categories',
+  /** Bank, branch and account as one card. The one control in the product that looks like
+   *  it sets up a payment and does not — nothing here is ever paid, scheduled or sent. */
+  supplierFormBank: 'supplierForm.bankAccount',
   suppliersCategories: 'suppliers.categories',
 
   // Notifications — src/features/notifications/

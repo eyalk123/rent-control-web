@@ -14,11 +14,23 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
 import { AddCategoryModal } from '@/features/transactions/components/AddCategoryModal';
+import { ANCHORS } from '@/features/onboarding/anchors';
+import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
+import { useTour } from '@/features/onboarding/TourController';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   supplierId?: number;
+}
+
+/**
+ * One render deeper than the drawer, so the tour is asked for only while the form is
+ * actually mounted — the same arrangement the scan drawer uses.
+ */
+function SupplierFormTourRequest() {
+  useTour('supplier-form');
+  return null;
 }
 
 export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
@@ -31,6 +43,9 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
   const updateMutation = useUpdateSupplier(supplierId ?? 0);
   const { showToast } = useToast();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const nameAnchorRef = useTourAnchor(ANCHORS.supplierFormName);
+  const categoriesAnchorRef = useTourAnchor(ANCHORS.supplierFormCategories);
+  const bankAnchorRef = useTourAnchor(ANCHORS.supplierFormBank);
   const [showDiscard, setShowDiscard] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting, isDirty } } = useForm<SupplierFormValues>({
@@ -138,13 +153,16 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
       animateScrim={false}
     >
       <form id="supplier-form" onSubmit={onSubmit} className="space-y-4">
+        <SupplierFormTourRequest />
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-          <FormInput label={t('suppliers.name')} required error={errors.name?.message} {...register('name')} />
+          <div ref={nameAnchorRef}>
+            <FormInput label={t('suppliers.name')} required error={errors.name?.message} {...register('name')} />
+          </div>
           <FormInput label={t('suppliers.phone')} type="tel" {...register('phone')} />
           <FormInput label={t('suppliers.email')} type="email" {...register('email')} />
           <FormInput label={t('suppliers.notes')} {...register('notes')} />
 
-          <div>
+          <div ref={categoriesAnchorRef}>
             <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.category')}<RequiredMark /></p>
             {errors.categoryIds && <p className="text-xs mb-2" style={{ color: 'var(--color-error)' }}>{t(errors.categoryIds.message!, { defaultValue: errors.categoryIds.message })}</p>}
             <div className="flex flex-wrap gap-2">
@@ -190,7 +208,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
           />
         </div>
 
-        <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+        <div ref={bankAnchorRef} className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
           <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t('suppliers.bankAccount')}</p>
           <Controller
             control={control}

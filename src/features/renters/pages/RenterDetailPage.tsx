@@ -30,6 +30,8 @@ import { effectiveDate } from '@/shared/utils/txDate';
 
 type TabId = 'info' | 'property' | 'transactions';
 const TAB_IDS: TabId[] = ['info', 'property', 'transactions'];
+/** The `renter-detail` steps that are about the Transactions tab rather than the lease. */
+const TOUR_TX_STEPS = ['payments', 'expenses'];
 
 function daysUntil(d: Date | null): number | null {
   if (!d) return null;
@@ -84,9 +86,18 @@ export function RenterDetailPage() {
    */
   const tourStep = useTourStep('renter-detail');
   const shownTab: TabId =
-    tourStep === 'payments' ? 'transactions'
-    : tourStep === null ? tab
+    tourStep === null ? tab
+    : TOUR_TX_STEPS.includes(tourStep) ? 'transactions'
     : 'info';
+  /**
+   * Revenue and expenses are a segmented toggle on this tab, not two panels side by side,
+   * so a tour that only lands on the tab shows revenue and never mentions that the other
+   * half exists. Driven the same way as the tab, and undefined the moment the tour ends.
+   */
+  const tourSection =
+    tourStep === 'expenses' ? ('expenses' as const)
+    : tourStep === 'payments' ? ('revenue' as const)
+    : undefined;
   const backTo = backState?.backTo ?? '/renters';
   const backLabel = backState?.backLabel
     ? t('renter.backToProperty', { name: backState.backLabel })
@@ -243,7 +254,7 @@ export function RenterDetailPage() {
       <div className="p-4 lg:p-10" ref={panelAnchorRef}>
         {shownTab === 'info' && <LeaseInfoTab renter={renter} />}
         {shownTab === 'property' && <RenterPropertyTab renter={renter} />}
-        {shownTab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} />}
+        {shownTab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} tourSection={tourSection} />}
       </div>
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />

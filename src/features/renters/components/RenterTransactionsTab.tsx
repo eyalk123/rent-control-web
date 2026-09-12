@@ -11,6 +11,15 @@ const SECTIONS: readonly Section[] = ['revenue', 'expenses'];
 interface Props {
   renter: Renter;
   transactions: Transaction[];
+  /**
+   * Section the tour is talking about, or undefined to leave the user's own alone.
+   *
+   * Passed down rather than read here because the selection lives in the query string: the
+   * tour driving it directly would rewrite the URL and need undoing when the tour ends.
+   * The page derives this from the running step and it goes undefined again on its own —
+   * same arrangement as the tab above it.
+   */
+  tourSection?: Section;
 }
 
 /**
@@ -22,9 +31,10 @@ interface Props {
  * unmounts this whole subtree — component state would not survive the round trip, and
  * neither would a refresh or the back button.
  */
-export function RenterTransactionsTab({ renter, transactions }: Props) {
+export function RenterTransactionsTab({ renter, transactions, tourSection }: Props) {
   const { t } = useTranslation();
-  const [section, setSection] = useDetailParam<Section>('section', 'revenue', SECTIONS);
+  const [ownSection, setSection] = useDetailParam<Section>('section', 'revenue', SECTIONS);
+  const section = tourSection ?? ownSection;
   const [expYear, setExpYear] = useDetailParam<string>('expYear', '');
   const [expMonth, setExpMonth] = useDetailParam<string>('expMonth', '');
   const [expCategory, setExpCategory] = useDetailParam<string>('expCategory', '');

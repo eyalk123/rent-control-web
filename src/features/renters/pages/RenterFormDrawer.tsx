@@ -79,6 +79,9 @@ function RenterFormTourRequest() {
   return null;
 }
 
+/** The `lease-form` steps that belong to the drawer's *first* page. See `shownStep`. */
+const TOUR_PAGE_ONE_STEPS = ['overview', 'extraContacts'];
+
 export function RenterFormDrawer({
   open,
   onClose,
@@ -127,6 +130,7 @@ export function RenterFormDrawer({
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const paymentAnchorRef = useTourAnchor(ANCHORS.renterFormPayment);
+  const extraContactsAnchorRef = useTourAnchor(ANCHORS.renterFormExtraContacts);
 
   // The lease tour used to be asked for from inside the term builder, which lives on page
   // two — so it could only ever open once the user was already there, and had nothing to say
@@ -135,7 +139,13 @@ export function RenterFormDrawer({
   // `revealsAnchor`, which the line below is what reveals.
   const tourStep = useTourStep('lease-form');
   // Derived, never written — see PropertyFormDrawer for why that matters.
-  const shownStep = tourStep && tourStep !== 'overview' ? 2 : step;
+  //
+  // Page one is named by its steps rather than inferred from "not the opener": the tour now
+  // stops on the extra-contacts block, which is on page one, and the old rule sent that step
+  // to page two. A list also fails visibly — add a page-one step and forget this and it shows
+  // the wrong page the first time the tour runs — where the old rule failed the other way,
+  // silently.
+  const shownStep = !tourStep ? step : TOUR_PAGE_ONE_STEPS.includes(tourStep) ? 1 : 2;
   const [showDiscard, setShowDiscard] = useState(false);
   // A save that would re-price lease periods which have already started, held until the
   // owner confirms. The edit is never blocked — the schedule is their statement of what the
@@ -625,7 +635,7 @@ export function RenterFormDrawer({
               onChange={handleIdImageChange}
               preview={idImagePreview}
             />
-            <div>
+            <div ref={extraContactsAnchorRef}>
               <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('renter.extraContacts')}</p>
               <div className="space-y-2">
                 {contactFields.map((f, i) => (

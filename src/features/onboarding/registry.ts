@@ -180,9 +180,19 @@ export const TOURS = {
     kind: 'page',
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
+      // The one page-one field worth a stop of its own: a repeating sub-form where every
+      // other field on that page is a plain input, and nothing on it says who a second
+      // contact is for or that it is optional.
+      { id: 'extraContacts', anchor: ANCHORS.renterFormExtraContacts, placement: 'top', revealsAnchor: true },
       { id: 'term', anchor: ANCHORS.leaseTermBuilder, placement: 'bottom', revealsAnchor: true },
-      { id: 'mode', anchor: ANCHORS.leaseRentChangeField, placement: 'bottom', seed: { id: 'cpi', opens: 'cpi-mode' }, revealsAnchor: true },
+      // `baseYear` before `mode`, which is the order they are in on the screen: LeaseTermBuilder
+      // renders the first year's rent directly under the term and the rent-change control
+      // below that. Reversed, the tour jumped past the starting rent to explain how it
+      // changes, then came back up to say what it starts at. Each keeps the seed it carried —
+      // CPI belongs to the mode control, and a custom schedule is a rule per year, which is
+      // what the year-one card is already talking about.
       { id: 'baseYear', anchor: ANCHORS.leaseBaseRent, placement: 'bottom', seed: { id: 'custom-schedule', opens: 'custom-mode' }, revealsAnchor: true },
+      { id: 'mode', anchor: ANCHORS.leaseRentChangeField, placement: 'bottom', seed: { id: 'cpi', opens: 'cpi-mode' }, revealsAnchor: true },
       { id: 'payment', anchor: ANCHORS.renterFormPayment, placement: 'top', revealsAnchor: true },
     ],
   },
@@ -212,11 +222,12 @@ export const TOURS = {
    * the timeline — the only page tour in the product with no opening card — and said nothing
    * about the two thirds of the screen that are not the lease itself.
    *
-   * `payments` points at the tab panel and the page shows the Transactions tab for it: the
-   * month grid is the least-discovered thing on this screen, and a step that only *described*
-   * it would be describing something the user has never seen. Same demonstration the
-   * properties tour gives its two display modes — the page derives the shown tab from the
-   * running step and never writes the user's own (see RenterDetailPage).
+   * `payments` and `expenses` point at the tab panel and the page shows the Transactions tab
+   * for them: the month grid is the least-discovered thing on this screen, and a step that
+   * only *described* it would be describing something the user has never seen. Same
+   * demonstration the properties tour gives its two display modes — the page derives the
+   * shown tab, and the revenue/expenses segment under it, from the running step and never
+   * writes the user's own (see RenterDetailPage).
    *
    * `extend` and `end` are `optional` because the buttons are not on every tenancy: an
    * expired lease has no End, a terminated one has neither. Required, they would hold the
@@ -239,6 +250,12 @@ export const TOURS = {
       // ?tab= the back button restored.
       { id: 'timeline', anchor: ANCHORS.renterDetailTimeline, placement: 'bottom', revealsAnchor: true },
       { id: 'payments', anchor: ANCHORS.renterDetailPanel, placement: 'top' },
+      // The same anchor twice while the page flips the segment behind it — the
+      // property-detail arrangement, for the same reason. Revenue and expenses are a
+      // segmented toggle here rather than two panels side by side, so a tour that stopped
+      // at `payments` showed the rent grid, described expenses as sitting "beside" it, and
+      // left the user having never seen the half it was describing.
+      { id: 'expenses', anchor: ANCHORS.renterDetailPanel, placement: 'top' },
       { id: 'extend', anchor: ANCHORS.renterDetailExtend, placement: 'bottom', seed: { id: 'extend-lease', opens: 'extend-lease' }, optional: true },
       { id: 'end', anchor: ANCHORS.renterDetailEndLease, placement: 'bottom', seed: { id: 'end-lease', opens: null }, optional: true },
     ],
@@ -383,6 +400,31 @@ export const TOURS = {
       { id: 'overview', anchor: null, placement: 'center' },
       { id: 'categories', anchor: ANCHORS.suppliersCategories, placement: 'bottom' },
       { id: 'what', anchor: ANCHORS.suppliersList, placement: 'bottom' },
+    ],
+  },
+
+  /**
+   * The add/edit supplier drawer. `page`, like the other forms, though it only spends three
+   * of the eight steps a page tour may have — the form is five fields and most of them
+   * explain themselves.
+   *
+   * It exists for the bank-account card. That is the one control in the product that looks
+   * like it sets up a payment and does not: nothing in Rent Control ever moves money, and a
+   * landlord who assumes otherwise finds out by a supplier not being paid. Everything else
+   * here is the frame that step needs in order not to arrive cold.
+   *
+   * Categories before bank, which is the order this screen renders them — the reverse of
+   * mobile's form. The registry follows its own platform's screen, not the other one's.
+   */
+  'supplier-form': {
+    id: 'supplier-form',
+    route: '/suppliers',
+    gate: 'always',
+    kind: 'page',
+    steps: [
+      { id: 'overview', anchor: ANCHORS.supplierFormName, placement: 'bottom' },
+      { id: 'categories', anchor: ANCHORS.supplierFormCategories, placement: 'bottom' },
+      { id: 'bank', anchor: ANCHORS.supplierFormBank, placement: 'top' },
     ],
   },
 

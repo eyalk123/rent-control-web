@@ -360,41 +360,48 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
 
           {/* Add years — the number inputs drive the schedule; no button */}
           <div className="rounded-[var(--radius-card)] p-4" style={{ border: '1px solid var(--color-outline)', background: 'var(--color-surface)' }}>
-            <div ref={stepperAnchorRef} className="flex flex-wrap gap-4">
-              <Stepper
-                label={t('renter.yearsToAdd')}
-                unitLabel={t('renter.yearsUnit')}
-                min={0}
-                max={10}
-                value={addCount}
-                onChange={setAddCount}
-              />
-              {/* A few months is the common holdover, and the reason this stepper
-                  exists: extending by a whole year is often not what was agreed. */}
-              <Stepper
-                label={t('renter.extraMonths')}
-                unitLabel={t('renter.monthsUnit')}
-                min={0}
-                max={11}
-                value={addMonths}
-                onChange={setAddMonths}
-              />
-              <Stepper
-                label={t('renter.optionYearsToAdd')}
-                unitLabel={t('renter.yearsUnit')}
-                min={0}
-                max={10}
-                value={addOptionCount}
-                onChange={setAddOptionCount}
-              />
-              <Stepper
-                label={t('renter.extraOptionMonths')}
-                unitLabel={t('renter.monthsUnit')}
-                min={0}
-                max={11}
-                value={addOptionMonths}
-                onChange={setAddOptionMonths}
-              />
+            {/* Two rows on purpose: the option steppers extend the renewal options, not the
+                contract term, and one wrapping row let them sit beside the years to add. */}
+            <div ref={stepperAnchorRef} className="flex flex-col gap-4">
+              <div className="flex flex-wrap gap-4">
+                <Stepper
+                  label={t('renter.yearsToAdd')}
+                  unitLabel={t('renter.yearsUnit')}
+                  min={0}
+                  max={10}
+                  value={addCount}
+                  onChange={setAddCount}
+                />
+                {/* A few months is the common holdover, and the reason this stepper
+                    exists: extending by a whole year is often not what was agreed. */}
+                <Stepper
+                  label={t('renter.extraMonths')}
+                  unitLabel={t('renter.monthsUnit')}
+                  min={0}
+                  max={11}
+                  value={addMonths}
+                  onChange={setAddMonths}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <Stepper
+                  label={t('renter.optionYearsToAdd')}
+                  unitLabel={t('renter.yearsUnit')}
+                  min={0}
+                  max={10}
+                  value={addOptionCount}
+                  onChange={setAddOptionCount}
+                />
+                <Stepper
+                  label={t('renter.extraOptionMonths')}
+                  unitLabel={t('renter.monthsUnit')}
+                  min={0}
+                  max={11}
+                  value={addOptionMonths}
+                  onChange={setAddOptionMonths}
+                />
+              </div>
             </div>
 
             <RentChangeField
