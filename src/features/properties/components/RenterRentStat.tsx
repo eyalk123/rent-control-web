@@ -5,6 +5,7 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
 import { formatMoney } from '@/shared/utils/money';
 import { getCurrentMonthlyRent } from '@/shared/types';
+import { billedCadenceLabel } from '@/shared/utils/cadence';
 import { getCurrentRenters } from '@/shared/utils/renterStatus';
 import type { Renter } from '@/shared/types';
 
@@ -70,6 +71,9 @@ export function RenterRentStat({ renters, renterName, rentersCount, total }: Pro
             <div key={r.id} className="flex items-center justify-between gap-6 px-2 py-1.5">
               <span className="text-[13px] truncate" style={{ color: 'var(--color-text-primary)' }}>
                 {r.first_name} {r.last_name}
+                {billedCadenceLabel(r, t) ? (
+                  <span style={{ color: 'var(--color-text-secondary)' }}> ({billedCadenceLabel(r, t)})</span>
+                ) : null}
               </span>
               <LtrSpan className="text-[13px] font-semibold shrink-0" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {formatMoney(getCurrentMonthlyRent(r))}

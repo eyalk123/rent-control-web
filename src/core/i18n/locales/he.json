@@ -354,6 +354,11 @@
     "frequencyMonthly": "חודשי",
     "frequencyQuarterly": "רבעוני",
     "frequencyYearly": "שנתי",
+    "frequencyOther": "{{count}} בשנה",
+    "billedQuarterly": "בגבייה רבעונית",
+    "billedYearly": "בגבייה שנתית",
+    "billedOther": "בגבייה {{count}} פעמים בשנה",
+    "unsupportedFrequency": "בחוזה רשומים {{count}} תשלומים בשנה. האפליקציה תומכת בחודשי, רבעוני או שנתי; יש לבחור אחד.",
     "insuranceType": "סוג בטחונות",
     "insuranceTypeWireTransfer": "העברה בנקאית",
     "insuranceTypeBankGuarantee": "ערבות בנקאית",
@@ -728,7 +733,8 @@
       "paid": "שולם",
       "overdue": "באיחור",
       "due": "לתשלום עכשיו",
-      "future": "טרם הגיע מועד התשלום"
+      "future": "טרם הגיע מועד התשלום",
+      "notDue": "לא לתשלום"
     },
     "rentGrid": {
       "selectYear": "בחר שנה",
@@ -743,6 +749,7 @@
       "leaseNowSays": "בחוזה כעת {{amount}}",
       "paidWhatWasAsked": "שולם {{amount}}, בהתאם לחוזה שהיה באותה עת",
       "paidLate": "שולם באיחור",
+      "notDueReason": "אין תשלום בחודש זה (חוזה {{cadence}})",
       "legendMismatch": "הסכום שונה מהחוזה",
       "legendLeaseChanged": "תאם לחוזה בזמן התשלום; החוזה שונה מאז",
       "legendLate": "שולם אחרי מועד התשלום",
@@ -805,6 +812,9 @@
     "editTransaction": "עריכת תנועה",
     "updateTransaction": "עדכון תנועה",
     "bulkRevenue": {
+      "instalmentsNote": "{{cadence}}, {{count}} x {{amount}}",
+      "nothingDue": "{{cadence}}: אין תשלום בתקופה זו",
+      "skippedNothingDue": "דולג על {{count}} שאין להם תשלום בתקופה זו",
       "filters": "סינון",
       "ownerFilter": "בעלים",
       "allOwners": "כל הבעלים",

@@ -4,7 +4,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import type { Renter, Transaction } from '@/shared/types';
+import { isNonMonthlyCadence, paymentFrequencyLabel, type Renter, type Transaction } from '@/shared/types';
 import { useMarkRentPaid } from '../queries';
 import { TransactionFormDrawer } from '../pages/TransactionFormDrawer';
 import {
@@ -281,16 +281,41 @@ export function RevenuePaymentPanel({
     }
   };
 
-  const renderRow = ({ renter, cells }: GridRow, showName: boolean) => (
+  const renderRow = ({ renter, cells }: GridRow, showName: boolean) => {
+    // A quarterly or yearly lease leaves most of its row empty by design. The badge is what
+    // turns that from "why is this grid full of holes?" into "of course — it bills 4x a
+    // year", and it is the only place the cadence appears on this screen.
+    const cadence = isNonMonthlyCadence(renter.number_of_payments)
+      ? paymentFrequencyLabel(renter.number_of_payments)
+      : null;
+    const cadenceLabel = cadence ? t(cadence.key, { count: cadence.count }) : undefined;
+
+    return (
     <div key={renter.id} className="mb-3 last:mb-0">
-      {showName && (
-        <p
-          className="mb-1.5 truncate text-[13px] font-medium"
-          style={{ color: 'var(--color-text-primary)' }}
-          dir="auto"
-        >
-          <bdi>{`${renter.first_name} ${renter.last_name}`}</bdi>
-        </p>
+      {(showName || cadenceLabel) && (
+        <div className="mb-1.5 flex items-center gap-2">
+          {showName && (
+            <p
+              className="min-w-0 flex-1 truncate text-[13px] font-medium"
+              style={{ color: 'var(--color-text-primary)' }}
+              dir="auto"
+            >
+              <bdi>{`${renter.first_name} ${renter.last_name}`}</bdi>
+            </p>
+          )}
+          {cadenceLabel && (
+            <span
+              className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium"
+              style={{
+                background: 'var(--color-input-filled-background)',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-subtle-outline)',
+              }}
+            >
+              {cadenceLabel}
+            </span>
+          )}
+        </div>
       )}
       {/* Two rows of six on a phone: twelve across 390px leaves ~38px cells, below
           a usable touch target. Six keeps them at ~50px. `data-dense-grid` tells
@@ -305,11 +330,13 @@ export function RevenuePaymentPanel({
             onSelect={(c) => handleSelect(renter, c)}
             armed={armed?.renter.id === renter.id && armed?.cell.monthKey === cell.monthKey}
             saving={pending.has(cellKey(renter.id, cell.monthKey))}
+            cadenceLabel={cadenceLabel}
           />
         ))}
       </div>
     </div>
-  );
+    );
+  };
 
   const yearSummary = (rows: GridRow[]) => {
     const totals = summariseRentYear(rows.flatMap((r) => r.cells));

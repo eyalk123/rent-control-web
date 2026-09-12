@@ -102,3 +102,49 @@ test.describe('transactions', () => {
     await expect(page.getByText('Discard changes')).toHaveCount(0);
   });
 });
+
+/**
+ * Bulk revenue against a non-monthly lease.
+ *
+ * The form expands a chosen period into months, but a quarterly lease does not owe in every
+ * one of them — it owes once per quarter, and the whole instalment when it does. Writing a
+ * monthly row per month is what used to leave the payment grid flagging every cycle month as
+ * paid short, forever.
+ *
+ * Renter 4 (James Wilson, property 3) is the quarterly fixture; see src/core/api/mock.ts.
+ */
+test.describe('bulk revenue — payment cadence', () => {
+  test('a contract year writes one row per quarter, not one per month', async ({ page }) => {
+    await page.goto('/renters/4');
+    await page.getByRole('button', { name: 'Add transaction' }).first().click();
+    await page.getByRole('button', { name: 'Revenue', exact: true }).click();
+
+    await expect(page.getByRole('checkbox', { name: 'James Wilson' })).toBeChecked();
+
+    // The form opens on the current month, which for a lease billed Jan/Apr/Jul/Oct is very
+    // often an off-month. Saying so is the point: a checked renter that is about to be
+    // skipped has to account for itself, or the save just appears to lose them.
+    await expect(page.getByText(/Quarterly: nothing due in this period/)).toBeVisible();
+
+    // Widen to the whole contract year and the row states exactly what will be written.
+    await page.getByRole('button', { name: 'Contract Year' }).click();
+    await expect(page.getByText(/Quarterly, 4 x/)).toBeVisible();
+
+    await page.getByRole('button', { name: /^Save|^Add transaction$/ }).last().click();
+
+    // Four instalments, not twelve monthly rows.
+    await expectToast(page, '4 transactions saved');
+  });
+
+  // A monthly lease is untouched by any of this: the period still means exactly the months
+  // it names, and nothing extra is said about it.
+  test('a monthly lease still writes one row per month and shows no cadence note', async ({ page }) => {
+    await page.goto('/renters/1');
+    await page.getByRole('button', { name: 'Add transaction' }).first().click();
+    await page.getByRole('button', { name: 'Revenue', exact: true }).click();
+
+    await expect(page.getByRole('checkbox', { name: 'Sarah Johnson' })).toBeChecked();
+    await expect(page.getByText(/Quarterly,/)).toHaveCount(0);
+    await expect(page.getByText(/nothing due in this period/)).toHaveCount(0);
+  });
+});

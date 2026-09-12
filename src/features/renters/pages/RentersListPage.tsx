@@ -36,6 +36,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getLeaseUrgency } from '@/shared/utils/dates';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
+import { billedCadenceLabel } from '@/shared/utils/cadence';
 import type { Renter } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -150,7 +151,13 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
       {/* Stats row */}
       <div className="grid grid-cols-3 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
         {[
-          { label: t('property.rent'), value: <LtrSpan>{formatMoney(monthly)}</LtrSpan>, color: undefined as string | undefined },
+          {
+            // The label carries the cadence so the number stays a clean, comparable
+            // monthly figure rather than growing a suffix on every card.
+            label: billedCadenceLabel(renter, t) ?? t('property.rent'),
+            value: <LtrSpan>{formatMoney(monthly)}</LtrSpan>,
+            color: undefined as string | undefined,
+          },
           { label: t('renter.leaseEnds'), value: leaseEnd ?? '—', color: leaseUrgencyColor(renter) },
           { label: t('renter.payDay'), value: renter.payment_day_of_month ? t('renter.payDayShort', { day: renter.payment_day_of_month }) : '—', color: undefined },
         ].map(({ label, value, color }) => (

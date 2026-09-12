@@ -10,6 +10,11 @@ interface Props {
   saving?: boolean;
   /** Clicked once and waiting for the second click that records it. */
   armed?: boolean;
+  /**
+   * The lease's cadence in words ("Quarterly"), for the off-month cells to explain
+   * themselves with. Absent on a monthly lease, which has no off-months.
+   */
+  cadenceLabel?: string;
 }
 
 /**
@@ -18,7 +23,8 @@ interface Props {
  * Colour is never the only signal: `paid` also carries a check and `overdue` a triangle, so
  * the grid still reads for a colour-blind user and in the forced-colours high-contrast theme.
  *
- * `not-due` and `outside-lease` have no entry — they are not drawn at all (see below).
+ * `outside-lease` has no entry — those months are not drawn at all (see below). `not-due` is
+ * drawn, but never as a button: see the dedicated branch in the component.
  */
 const STATUS_STYLE: Record<
   Exclude<MonthStatus, 'not-due' | 'outside-lease'>,
@@ -49,15 +55,62 @@ const STATUS_STYLE: Record<
   },
 };
 
-export function RentMonthBox({ cell, monthLabel, onSelect, saving = false, armed = false }: Props) {
+export function RentMonthBox({
+  cell,
+  monthLabel,
+  onSelect,
+  saving = false,
+  armed = false,
+  cadenceLabel,
+}: Props) {
   const { t } = useTranslation();
 
-  // Months the lease never covered, and the off-months of a quarterly or yearly cycle, are
-  // not things the landlord can act on or reason about — drawing them as boxes only invited
-  // "what is the difference between these two grays?". They hold their column so the years
-  // (and the renters in the property matrix) stay aligned underneath one another.
-  if (cell.status === 'not-due' || cell.status === 'outside-lease') {
+  // Months the lease never covered. Nothing to say about them, so they are not drawn — they
+  // only hold their column so the years (and the renters in the property matrix) stay
+  // aligned underneath one another.
+  if (cell.status === 'outside-lease') {
     return <div className="aspect-square w-full" aria-hidden="true" />;
+  }
+
+  // An off-month of a quarterly or yearly cycle. Drawn, but visibly inert.
+  //
+  // These used to be blank like `outside-lease`, which read as missing data rather than as a
+  // deliberate gap: a yearly lease showed eleven holes and looked broken. So the cell keeps
+  // its outline and its month name, drops the fill, and carries a dash — present, plainly
+  // empty, and plainly not something to act on.
+  //
+  // It is a `div`, never a disabled `button`. There is no payment to record against a month
+  // the lease does not bill for, so the cell should not be focusable, hoverable, or clickable
+  // at all — not merely refuse the click.
+  if (cell.status === 'not-due') {
+    const reason = t('transactions.rentGrid.notDueReason', {
+      cadence: (cadenceLabel ?? '').toLowerCase(),
+    });
+    const label = `${monthLabel}, ${t('transactions.rentStatus.notDue')}${
+      cadenceLabel ? ` — ${reason}` : ''
+    }`;
+    return (
+      <div
+        role="img"
+        aria-label={label}
+        title={label}
+        data-status="not-due"
+        className="flex aspect-square w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[13px] font-medium"
+        style={{
+          // No fill: every actionable state in this grid is a tinted block, so an untinted
+          // outline is the one treatment that cannot be mistaken for one of them.
+          background: 'transparent',
+          border: '1px dashed var(--color-subtle-outline)',
+          color: 'var(--color-text-secondary)',
+          opacity: 0.55,
+        }}
+      >
+        <span aria-hidden="true">{monthLabel}</span>
+        <span aria-hidden="true" className="leading-none">
+          –
+        </span>
+      </div>
+    );
   }
 
   const style = STATUS_STYLE[cell.status];

@@ -203,6 +203,33 @@ export function getCurrentMonthlyRent(renter: Renter): number {
 }
 
 /**
+ * i18n key naming a lease's payment cadence, with the count for the case that has no name.
+ *
+ * The product offers monthly, quarterly and yearly only. A stored value outside those three
+ * is *not* quietly rounded into one of them — it is named for what it is ("6 per year"), so a
+ * lease that arrived from scanning with an unsupported cadence stays visible instead of
+ * rendering as a blank the user cannot account for.
+ *
+ * Null when nothing is stored. An unset cadence is treated as monthly by every calculation,
+ * but printing "Monthly" on a lease that never said so would be inventing a term.
+ */
+export function paymentFrequencyLabel(
+  numberOfPayments: number | null | undefined,
+): { key: string; count: number } | null {
+  const n = numberOfPayments;
+  if (n == null || !Number.isFinite(n) || n <= 0) return null;
+  if (n === 12) return { key: 'renter.frequencyMonthly', count: n };
+  if (n === 4) return { key: 'renter.frequencyQuarterly', count: n };
+  if (n === 1) return { key: 'renter.frequencyYearly', count: n };
+  return { key: 'renter.frequencyOther', count: n };
+}
+
+/** True when the lease is paid on a cycle longer than a month — quarterly, yearly, anything. */
+export function isNonMonthlyCadence(numberOfPayments: number | null | undefined): boolean {
+  return numberOfPayments != null && numberOfPayments > 0 && numberOfPayments < 12;
+}
+
+/**
  * End of the *binding* term — lease_start plus every contract period's length.
  *
  * Deliberately not the end of the whole schedule: an option period is not yet exercised,

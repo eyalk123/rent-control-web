@@ -226,3 +226,102 @@ test.describe('payment grid', () => {
     );
   });
 });
+
+/**
+ * Non-monthly leases.
+ *
+ * The cadence is stored as instalments per year (12 / 4 / 1) and every surface has to agree
+ * about it: the grid only bills on the months the cycle lands on, it bills the whole
+ * instalment when it does, and the months in between are drawn as deliberately empty rather
+ * than left blank — a yearly lease used to render as eleven holes and look broken.
+ *
+ * Seed data (src/core/api/mock.ts): renter 4 (James Wilson, property 3) is quarterly and
+ * renter 6 (Robert Thompson, property 4) is yearly, both starting 1 January two years ago.
+ * A January start is what puts the quarterly cycle on Jan/Apr/Jul/Oct.
+ */
+test.describe('payment grid — quarterly and yearly leases', () => {
+  const QUARTERLY_YEAR = new Date().getFullYear() - 1;
+
+  test('off-months are drawn, visibly inert, and not clickable', async ({ page }) => {
+    await page.goto('/renters/4?tab=transactions');
+    const year = page.locator(`[data-year="${QUARTERLY_YEAR}"]`);
+    await expect(year).toBeVisible();
+
+    // The whole point of the change: February is on screen and accounted for, where it used
+    // to be an unexplained gap.
+    const feb = year.locator('[data-status="not-due"]').filter({ hasText: 'Feb' });
+    await expect(feb).toBeVisible();
+    await expect(feb).toHaveAttribute('aria-label', /Not due/i);
+    await expect(feb).toHaveAttribute('aria-label', /quarterly/i);
+
+    // …and it is a div, not a disabled button: there is nothing here to press at all.
+    await expect(year.getByRole('button', { name: /^Feb/ })).toHaveCount(0);
+
+    // Eight of the twelve months are off-cycle.
+    await expect(year.locator('[data-status="not-due"]')).toHaveCount(8);
+  });
+
+  test('a quarterly lease bills only on its cycle months, and bills the whole instalment', async ({ page }) => {
+    await page.goto('/renters/4?tab=transactions');
+    const year = page.locator(`[data-year="${QUARTERLY_YEAR}"]`);
+
+    // Jan/Apr/Jul/Oct are the only payable cells.
+    for (const month of ['Jan', 'Apr', 'Jul', 'Oct']) {
+      await expect(year.getByRole('button', { name: new RegExp(`^${month}`) })).toBeVisible();
+    }
+    for (const month of ['Feb', 'Mar', 'May', 'Jun', 'Aug', 'Sep', 'Nov', 'Dec']) {
+      await expect(year.getByRole('button', { name: new RegExp(`^${month}`) })).toHaveCount(0);
+    }
+
+    // Year two of the lease is ₪25,900/month, so a quarter is three of those.
+    await expect(year.getByRole('button', { name: /^Jan/ })).toHaveAttribute(
+      'aria-label',
+      /77,700/,
+    );
+
+    // Four instalments of three months still adds up to a full year of rent, so the summary
+    // is unchanged by the cadence.
+    await expect(year.getByText(/collected of/)).toContainText('310,800');
+  });
+
+  test('the row names the cadence, and a monthly lease shows no badge', async ({ page }) => {
+    await page.goto('/renters/4?tab=transactions');
+    await expect(page.getByText('Quarterly', { exact: true }).first()).toBeVisible();
+
+    await page.goto('/renters/1?tab=transactions');
+    await expect(page.getByText('Quarterly', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Yearly', { exact: true })).toHaveCount(0);
+  });
+
+  test('a yearly lease owes once a year', async ({ page }) => {
+    await page.goto('/renters/6?tab=transactions');
+    const year = page.locator(`[data-year="${QUARTERLY_YEAR}"]`);
+
+    await expect(page.getByText('Yearly', { exact: true }).first()).toBeVisible();
+    await expect(year.locator('[data-status="not-due"]')).toHaveCount(11);
+    await expect(year.getByRole('button', { name: /^Jan/ })).toBeVisible();
+    // Twelve months of ₪24,100.
+    await expect(year.getByRole('button', { name: /^Jan/ })).toHaveAttribute('aria-label', /289,200/);
+  });
+
+  test('recording a quarterly month writes one whole instalment', async ({ page }) => {
+    await page.goto('/renters/4?tab=transactions');
+    const year = page.locator(`[data-year="${QUARTERLY_YEAR}"]`);
+
+    const jan = year.getByRole('button', { name: /^Jan/ });
+    await jan.click();
+    // The armed hint names the amount the second click will write — three months, not one.
+    await expect(page.getByText(/Click Jan .* again to record/)).toBeVisible();
+    await jan.click();
+    await expectToast(page, 'Payment recorded');
+
+    // Paid, and with no amber "differs from the lease" marker: the amount written is exactly
+    // what the schedule asked for. Writing three monthly rows instead is what used to leave a
+    // permanent mismatch flag on every cycle month.
+    await expect(year.getByRole('button', { name: /Jan.*Paid/i })).toBeVisible();
+    await expect(year.getByRole('button', { name: /Jan.*Paid/i })).not.toHaveAttribute(
+      'aria-label',
+      /expected/i,
+    );
+  });
+});

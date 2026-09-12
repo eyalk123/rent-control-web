@@ -6,6 +6,7 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent } from '@/shared/types';
+import { billedCadenceLabel } from '@/shared/utils/cadence';
 import { getEffectiveLeaseEnd } from '@/shared/utils/renterStatus';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Renter } from '@/shared/types';
@@ -29,6 +30,7 @@ export function RenterMiniCard({ renter, backTo, backLabel }: Props) {
   const color = getPropertyColor(renter.id);
   const bg = getPropertyColorBg(renter.id);
   const monthly = getCurrentMonthlyRent(renter);
+  const billed = billedCadenceLabel(renter, t);
   const countdown = leaseCountdown(renter);
   const countdownStr = countdown === 'expired'
     ? t('renter.leaseExpired')
@@ -48,7 +50,9 @@ export function RenterMiniCard({ renter, backTo, backLabel }: Props) {
           <p className="text-[14px] font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{renter.first_name} {renter.last_name}</p>
         </div>
         <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          <LtrSpan>{formatMoney(monthly)}</LtrSpan>/mo{countdownStr ? ` · ${countdownStr}` : ''}
+          <LtrSpan>{formatMoney(monthly)}</LtrSpan>/mo
+          {billed ? ` (${billed})` : ''}
+          {countdownStr ? ` · ${countdownStr}` : ''}
         </p>
       </div>
       {isRtl ? <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronLeft size={15} className="rotate-180" style={{ color: 'var(--color-text-secondary)' }} />}

@@ -147,7 +147,14 @@ export function RenterFormDrawer({
   const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
   const [fullContractFile, setFullContractFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
+  /**
+   * A stored `number_of_payments` that is none of 12 / 4 / 1 — which the select cannot
+   * represent, so it opens empty. Saving used to write `null` over it without a word; now
+   * the form names what is on file and refuses to save until the user picks one of the
+   * three, which is the only way the value converges on something the app can honour.
+   */
+  const [unsupportedFrequency, setUnsupportedFrequency] = useState<number | null>(null);
+  const { register, handleSubmit, control, reset, trigger, setValue, setError, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(renterFormSchema) as never,
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
@@ -182,6 +189,7 @@ export function RenterFormDrawer({
     if (existing && open) {
       const numPayments = existing.number_of_payments;
       const paymentFrequency = numPayments === 12 ? 'monthly' : numPayments === 4 ? 'quarterly' : numPayments === 1 ? 'yearly' : undefined;
+      setUnsupportedFrequency(numPayments != null && paymentFrequency === undefined ? numPayments : null);
       // Prefer the structured intent the backend persisted; otherwise infer it from
       // the materialized lease_years so the builder re-opens sensibly.
       // The stored intent records whole years only; the odd months live in the
@@ -321,6 +329,16 @@ export function RenterFormDrawer({
   };
 
   const onSubmit = handleSubmit(async (data) => {
+    // Refuse rather than wipe. The stored cadence is real information from the lease; if the
+    // app cannot express it, the user chooses its replacement — the save does not choose
+    // "none" for them.
+    if (unsupportedFrequency != null && !data.paymentFrequency) {
+      setError('paymentFrequency', {
+        type: 'manual',
+        message: t('renter.unsupportedFrequency', { count: unsupportedFrequency }),
+      });
+      return;
+    }
     try {
       let idImageUrl = data.idImageUrl;
       let fullContractUrl = data.fullContractUrl;
@@ -637,7 +655,21 @@ export function RenterFormDrawer({
               <FormSelect label={t('renter.paymentType')} value={field.value} onValueChange={field.onChange} options={paymentTypeOptions} sorted={false} placeholder={t('renter.selectPaymentType')} reviewName="paymentType" />
             )} />
             <Controller control={control} name="paymentFrequency" render={({ field }) => (
-              <FormSelect label={t('renter.paymentFrequency')} value={field.value} onValueChange={field.onChange} options={paymentFrequencyOptions} sorted={false} placeholder={t('renter.selectPaymentFrequency')} reviewName="paymentFrequency" />
+              <FormSelect
+                label={t('renter.paymentFrequency')}
+                value={field.value}
+                onValueChange={field.onChange}
+                options={paymentFrequencyOptions}
+                sorted={false}
+                placeholder={t('renter.selectPaymentFrequency')}
+                reviewName="paymentFrequency"
+                error={
+                  errors.paymentFrequency?.message ??
+                  (unsupportedFrequency != null && !field.value
+                    ? t('renter.unsupportedFrequency', { count: unsupportedFrequency })
+                    : undefined)
+                }
+              />
             )} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

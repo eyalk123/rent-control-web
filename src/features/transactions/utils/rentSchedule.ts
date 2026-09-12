@@ -1,4 +1,4 @@
-import { getRentForMonth, type Renter, type Transaction } from '@/shared/types';
+import { getRentForMonth, getScheduleEndDate, type Renter, type Transaction } from '@/shared/types';
 import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
 
 /**
@@ -76,6 +76,41 @@ export function paymentIntervalMonths(numberOfPayments: number | null | undefine
   return Math.max(1, Math.round(12 / numberOfPayments));
 }
 
+/**
+ * Does this renter owe an instalment in `monthKey` — "YYYY-MM", or any longer ISO date
+ * whose first seven characters are the month?
+ *
+ * The cycle is anchored on `lease_start` and counted in whole months, which is exactly what
+ * the backend's `_is_payment_due_month` does. The two have to agree: if they drift, the grid
+ * and the overdue alert end up disagreeing about the same month.
+ *
+ * Says nothing about whether the month falls inside the lease at all — callers that care
+ * about that check it separately.
+ */
+export function isPaymentDueMonth(renter: Renter, monthKey: string): boolean {
+  const interval = paymentIntervalMonths(renter.number_of_payments);
+  // Monthly, or a lease with no start to anchor the cycle on: every month owes.
+  if (interval <= 1) return true;
+  const leaseStart = parseLeaseStart(renter);
+  if (!leaseStart) return true;
+
+  const [year, month] = monthKey.slice(0, 7).split('-').map(Number);
+  if (!year || !month) return true;
+
+  const elapsed = monthsBetween(leaseStart, year, month - 1);
+  return elapsed >= 0 && elapsed % interval === 0;
+}
+
+/**
+ * The subset of `monthKeys` this renter actually owes an instalment in, input order kept.
+ *
+ * What the bulk revenue form narrows a chosen period down to: a quarterly renter picked out
+ * of a three-month period owes once, not three times.
+ */
+export function dueMonthsWithin(renter: Renter, monthKeys: string[]): string[] {
+  return monthKeys.filter((monthKey) => isPaymentDueMonth(renter, monthKey));
+}
+
 function monthsBetween(from: Date, year: number, monthIndex: number): number {
   return (year - from.getFullYear()) * 12 + (monthIndex - from.getMonth());
 }
@@ -87,16 +122,18 @@ function parseLeaseStart(renter: Renter): Date | null {
 }
 
 /**
- * End of the lease *schedule* — start plus one year per lease year, option years included.
+ * End of the lease *schedule* — start plus every period's own length, option years included.
  *
  * Deliberately not `getLeaseEndDate`, which counts only `contract` years because it drives
  * the expiry warning. Using that here would blank out the option years on the grid, and an
  * option year that has been taken up is a year rent is owed for.
+ *
+ * Delegates to `getScheduleEndDate` rather than counting a year per period: a lease can carry
+ * a short final period ("18 months", "28 months" — which lease scanning deliberately keeps
+ * rather than rounding), and assuming 12 ran the grid past the real end of the lease.
  */
 export function getLeaseScheduleEnd(renter: Renter): Date | null {
-  const start = parseLeaseStart(renter);
-  if (!start || !renter.lease_years?.length) return null;
-  return new Date(start.getFullYear() + renter.lease_years.length, start.getMonth(), start.getDate());
+  return getScheduleEndDate(renter);
 }
 
 /**
@@ -215,8 +252,10 @@ export function buildRentGrid(
         : { ...base, status: 'outside-lease', expected: 0 };
     }
 
-    // Off-months of a quarterly/yearly cycle owe nothing.
-    if (leaseStart && interval > 1 && monthsElapsed % interval !== 0) {
+    // Off-months of a quarterly/yearly cycle owe nothing. Routed through the shared
+    // predicate so the grid and the bulk revenue form can never disagree about which
+    // months a cycle lands on.
+    if (!isPaymentDueMonth(renter, monthKey)) {
       return paidSum > 0
         ? { ...base, status: 'paid', expected: 0 }
         : { ...base, status: 'not-due', expected: 0 };

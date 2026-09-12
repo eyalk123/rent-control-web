@@ -140,6 +140,18 @@ function leaseTimelineStart(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
+/**
+ * Lease start for the payment-cadence fixtures: 1 January, `yearsAgo` years back.
+ *
+ * January is deliberate — it puts a quarterly cycle on Jan/Apr/Jul/Oct and a yearly one on
+ * January, which the payment-grid specs can name directly instead of recomputing the cycle.
+ * Anchored to the current year for the same reason `leaseTimelineStart` is: renter #7 was
+ * pinned to a literal date and the suite went red a year later with no code change behind it.
+ */
+function cadenceLeaseStart(yearsAgo: number): string {
+  return `${new Date().getFullYear() - yearsAgo}-01-01`;
+}
+
 const seedRenters: Renter[] = [
   {
     id: 1,
@@ -204,7 +216,11 @@ const seedRenters: Renter[] = [
       { amount: 25900, type: 'contract' },
       { amount: 26600, type: 'contract' },
     ],
-    lease_start: '2024-04-15',
+    lease_start: cadenceLeaseStart(2),
+    // Quarterly: owes on Jan/Apr/Jul/Oct, three months' rent each time. The payment grid,
+    // the bulk revenue form and the overdue engine all have to agree about that.
+    number_of_payments: 4,
+    payment_day_of_month: 1,
     property: null,
     contact_id: null,
   },
@@ -232,7 +248,10 @@ const seedRenters: Renter[] = [
       { amount: 24100, type: 'contract' },
       { amount: 24800, type: 'contract' },
     ],
-    lease_start: '2024-05-01',
+    lease_start: cadenceLeaseStart(2),
+    // Yearly: one instalment a year, in January, worth twelve months' rent.
+    number_of_payments: 1,
+    payment_day_of_month: 1,
     property: null,
     contact_id: null,
   },
@@ -783,7 +802,10 @@ export const mockHomeApi = {
       .filter((r) => !params?.property_owner || mockProperties.find((p) => p.id === r.property_id)?.property_owner === params.property_owner)
       .map((r) => {
         const prop = mockProperties.find((p) => p.id === r.property_id);
-        const monthly = r.lease_years?.[0]?.amount ? Math.round(r.lease_years[0].amount / 12) : 0;
+        // Mirror `renter_service.get_overdue_this_month`: the stored amount is the MONTHLY
+        // rent (not annual), and a non-monthly lease is chased for the whole instalment.
+        const interval = r.number_of_payments ? Math.max(1, Math.round(12 / r.number_of_payments)) : 1;
+        const monthly = (r.lease_years?.[0]?.amount ?? 0) * interval;
         const payDay = r.payment_day_of_month ?? 1;
         const daysOverdue = today.getDate() > payDay ? today.getDate() - payDay : 0;
         return {

@@ -8,6 +8,7 @@ import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyCol
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getRenterLifecycle, isTerminated } from '@/shared/utils/renterStatus';
 import type { Renter } from '@/shared/types';
+import { billedCadenceLabel } from '@/shared/utils/cadence';
 
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -181,7 +182,13 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
 
       {/* KPI strip */}
       <div ref={statsAnchorRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-        <HeroStat label={t('renter.monthlyRent')} value={formatMoney(monthly)} />
+        <HeroStat
+          label={t('renter.monthlyRent')}
+          value={formatMoney(monthly)}
+          // The figure is monthly because that is how the lease stores it. Without this
+          // the screen quietly asserted that a quarterly tenant pays every month.
+          sub={billedCadenceLabel(renter, t) ?? undefined}
+        />
         {ended ? (
           <HeroStat
             label={t('renter.monthsTenanted')}

@@ -43,7 +43,11 @@ import {
   getRentForMonth,
   YEAR_OPTIONS,
 } from '../utils/periodUtils';
-import { getCurrentMonthlyRent } from '@/shared/types';
+import { getCurrentMonthlyRent, isNonMonthlyCadence, paymentFrequencyLabel } from '@/shared/types';
+import {
+  dueMonthsWithin,
+  paymentIntervalMonths,
+} from '../utils/rentSchedule';
 import type { Transaction, Renter, PaymentMethod } from '@/shared/types';
 
 type TxType = 'revenue' | 'expense';
@@ -179,7 +183,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   // Months about to be written that already hold a payment, held between the submit and
   // the confirmation. Never auto-skipped — the user decides whether to record them anyway.
   const [duplicateWarning, setDuplicateWarning] = useState<
-    { payloads: BulkPayload[]; months: string[] } | null
+    { payloads: BulkPayload[]; months: string[]; skippedNothingDue: number } | null
   >(null);
 
   // Every revenue row the owner has, so the form can tell which of the months it is about
@@ -342,6 +346,16 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     });
   }
 
+  /**
+   * The months the chosen period covers for one renter, before cadence is applied.
+   * Shared by the submit path and the per-renter note so the two cannot drift apart.
+   */
+  function periodMonthsFor(renter: RenterWithProperty): string[] {
+    if (periodType === 'year') return getContractYearMonths(Number(periodValue), renter.lease_start ?? '');
+    if (periodType === 'custom') return [...customMonths].sort();
+    return getMonthsForPeriod(periodType as '1month', periodValue);
+  }
+
   async function handleBulkSubmit() {
     setPropertyError('');
     setRenterError('');
@@ -354,24 +368,38 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     const checkedRenters = allRenters.filter((r) => selectedRenterIds.has(r.id));
 
     const payloads = checkedRenters.flatMap((renter) => {
-      const months = periodType === 'year'
-        ? getContractYearMonths(Number(periodValue), renter.lease_start ?? '')
-        : periodType === 'custom'
-        ? [...customMonths].sort()
-        : getMonthsForPeriod(periodType as '1month', periodValue);
+      const allMonths = periodMonthsFor(renter);
+      // A quarterly lease picked out of a three-month period owes once, not three times, and
+      // it owes the whole instalment when it does. Writing three monthly rows instead put
+      // the grid and the overdue engine permanently at odds with this form: both key off the
+      // instalment landing on the cycle month, so every quarter came back flagged as paid
+      // short. The per-renter note under the checkbox says what this will write.
+      const months = dueMonthsWithin(renter, allMonths);
+      const interval = paymentIntervalMonths(renter.number_of_payments);
       const overrideAmount = overriddenIds.has(renter.id)
         ? Number(overrideAmounts[renter.id])
         : null;
       return months.map((monthFor) => ({
         property_id: renter.propertyId,
         renter_id: renter.id,
-        amount: overrideAmount ?? getRentForMonth(renter, monthFor),
+        // An override is used exactly as typed — it is what the landlord says they actually
+        // received, so it is already the instalment and multiplying it would double-count.
+        amount: overrideAmount ?? getRentForMonth(renter, monthFor) * interval,
         date_of_payment: bulkDate,
         month_for: monthFor,
         payment_method: bulkPayment || undefined,
         notes: bulkNotes || undefined,
       }));
     });
+
+    // Every checked renter whose cadence has nothing falling in the chosen period. They are
+    // not an error — a quarterly lease simply owes nothing in two months out of three — but
+    // they are checked, so saying nothing would look like the save silently missed them.
+    const skippedNothingDue = checkedRenters.length - new Set(payloads.map((p) => p.renter_id)).size;
+    if (payloads.length === 0) {
+      setRenterError(t('transactions.bulkRevenue.skippedNothingDue', { count: checkedRenters.length }));
+      return;
+    }
 
     // A month already on file is almost always a re-run of the same bulk create, and a
     // second row does not correct the first — it doubles the month, which then shows up on
@@ -381,24 +409,29 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     );
     if (clashing.length > 0) {
       const months = [...new Set(clashing.map((p) => p.month_for.slice(0, 7)))].sort();
-      setDuplicateWarning({ payloads, months });
+      setDuplicateWarning({ payloads, months, skippedNothingDue });
       return;
     }
 
-    await runBulkCreate(payloads);
+    await runBulkCreate(payloads, skippedNothingDue);
   }
 
-  async function runBulkCreate(payloads: BulkPayload[]) {
+  async function runBulkCreate(payloads: BulkPayload[], skippedNothingDue = 0) {
     setBulkSubmitting(true);
     try {
       const results = await Promise.allSettled(payloads.map((p) => createRevenueTransaction(p)));
       qc.invalidateQueries({ queryKey: transactionKeys.all });
       const failed = results.filter((r) => r.status === 'rejected').length;
       const success = results.length - failed;
+      // A renter the cadence had nothing for is named rather than dropped in silence: they
+      // were checked, so an unexplained lower count reads as a save that went wrong.
+      const skipped = skippedNothingDue > 0
+        ? ` ${t('transactions.bulkRevenue.skippedNothingDue', { count: skippedNothingDue })}`
+        : '';
       if (failed === 0) {
-        showToast(t('transactions.createBulkSuccess', { count: success }), 'success');
+        showToast(t('transactions.createBulkSuccess', { count: success }) + skipped, 'success');
       } else {
-        showToast(t('transactions.bulkRevenue.partialError', { success, failed }), 'error');
+        showToast(t('transactions.bulkRevenue.partialError', { success, failed }) + skipped, 'error');
       }
       onClose();
     } finally {
@@ -484,6 +517,26 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                 const checked = selectedRenterIds.has(renter.id);
                 const overridden = overriddenIds.has(renter.id);
                 const overrideAmount = overrideAmounts[renter.id] ?? '';
+                // A non-monthly lease is the one case where what gets written is not simply
+                // "the chosen months". Say so on the row rather than letting the save quietly
+                // do something other than what the period picker implies.
+                const cadence = isNonMonthlyCadence(renter.number_of_payments)
+                  ? paymentFrequencyLabel(renter.number_of_payments)
+                  : null;
+                const cadenceLabel = cadence ? t(cadence.key, { count: cadence.count }) : null;
+                const dueMonths = cadenceLabel ? dueMonthsWithin(renter, periodMonthsFor(renter)) : [];
+                const instalment = dueMonths.length
+                  ? getRentForMonth(renter, dueMonths[0]) * paymentIntervalMonths(renter.number_of_payments)
+                  : 0;
+                const cadenceNote = !cadenceLabel
+                  ? null
+                  : dueMonths.length === 0
+                    ? t('transactions.bulkRevenue.nothingDue', { cadence: cadenceLabel })
+                    : t('transactions.bulkRevenue.instalmentsNote', {
+                        cadence: cadenceLabel,
+                        count: dueMonths.length,
+                        amount: overridden ? formatMoney(Number(overrideAmount) || 0) : formatMoney(instalment),
+                      });
                 return (
                   <div
                     key={renter.id}
@@ -508,6 +561,14 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                         </p>
                         {selectedPropertyIds.length > 1 && (
                           <p className="text-[11px] text-[var(--color-text-secondary)] truncate">{renter.propertyLabel}</p>
+                        )}
+                        {cadenceNote && (
+                          <p
+                            className="truncate text-[11px]"
+                            style={{ color: dueMonths.length === 0 ? 'var(--color-warning-fg)' : 'var(--color-text-secondary)' }}
+                          >
+                            {cadenceNote}
+                          </p>
                         )}
                       </div>
                       {!checked && (
@@ -657,7 +718,10 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
         )}
         confirmLabel={t('transactions.bulkRevenue.recordAnyway')}
         loading={bulkSubmitting}
-        onConfirm={() => duplicateWarning && void runBulkCreate(duplicateWarning.payloads)}
+        onConfirm={() =>
+          duplicateWarning &&
+          void runBulkCreate(duplicateWarning.payloads, duplicateWarning.skippedNothingDue)
+        }
         onClose={() => setDuplicateWarning(null)}
       />
     </div>

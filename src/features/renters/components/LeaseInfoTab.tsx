@@ -7,7 +7,7 @@ import { LeaseTimeline } from './LeaseTimeline';
 import { formatMoney } from '@/shared/utils/money';
 import { getPaymentMethodLabel } from '@/shared/constants/paymentMethods';
 import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
-import type { Renter } from '@/shared/types';
+import { paymentFrequencyLabel, type Renter } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
@@ -16,6 +16,10 @@ interface Props {
 }
 
 export function LeaseInfoTab({ renter }: Props) {
+  // Named, not numbered: "4" meant nothing on a screen whose own form offers
+  // Monthly / Quarterly / Yearly. An unsupported stored value still shows itself
+  // ("6 per year") rather than rendering blank.
+  const frequency = paymentFrequencyLabel(renter.number_of_payments);
   const { t } = useTranslation();
   const timelineAnchorRef = useTourAnchor(ANCHORS.renterDetailTimeline);
   const extras = renter.extra_contacts ?? [];
@@ -49,7 +53,7 @@ export function LeaseInfoTab({ renter }: Props) {
                 : t('renter.payDayDefaultValue', { day: DEFAULT_PAYMENT_DAY_NUM })
             }
           />
-          <DetailRow icon={Hash} label={t('renter.numberOfPayments')} value={renter.number_of_payments != null ? String(renter.number_of_payments) : null} last />
+          <DetailRow icon={Hash} label={t('renter.paymentFrequency')} value={frequency ? t(frequency.key, { count: frequency.count }) : null} last />
         </DetailPanel>
 
         <DetailPanel title={t('renter.insurancePanel')}>

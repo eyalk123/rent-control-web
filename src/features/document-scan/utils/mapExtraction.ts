@@ -88,6 +88,13 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
   const numberOfPayments = r.number_of_payments;
   const paymentFrequency =
     numberOfPayments === 12 ? 'monthly' : numberOfPayments === 4 ? 'quarterly' : numberOfPayments === 1 ? 'yearly' : undefined;
+  // The lease states a cadence the product does not offer (every two months, twice a year).
+  // It used to map to `undefined` and vanish: the field simply arrived blank, with nothing to
+  // say the document had in fact answered it. Surfacing it as a review item is the difference
+  // between "we could not read this" and "we read it, and you have to choose" — and the user
+  // is the only one who can decide which of the three it should become.
+  const unsupportedFrequency =
+    numberOfPayments != null && paymentFrequency === undefined ? numberOfPayments : null;
 
   const renterAssigns: Assign<keyof RenterFormValues>[] = [
     { key: 'firstName', i18n: 'renter.firstName', field: 'first_name', get: () => s(r.first_name) },
@@ -120,6 +127,18 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
     const source = note?.source_text ?? null;
     provenance.push({ formKey: a.key as string, labelKey: a.i18n, prefilledValue: v, source });
     if (note) review.push({ field: a.i18n, formKey: a.key as string, value: v, source, confidence: note.confidence });
+  }
+
+  // Pushed unconditionally, unlike the loop above which only flags what the model itself was
+  // unsure about. The model was perfectly sure here — it is the app that cannot represent
+  // the answer, so the user has to be told rather than the value quietly disappearing.
+  if (unsupportedFrequency != null) {
+    review.push({
+      field: 'renter.paymentFrequency',
+      formKey: 'paymentFrequency',
+      value: String(unsupportedFrequency),
+      source: notes.get(`renter.${index}.number_of_payments`)?.source_text ?? null,
+    });
   }
 
   // Nested structures (not part of the scalar review/diff). Only seed the year-by-year
