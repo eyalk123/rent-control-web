@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { currencySymbol } from '@/shared/utils/money';
 
 interface Props {
   /** "fixed" shows a leading ₪ affix; "percent" shows a trailing % affix. */
@@ -40,7 +41,9 @@ export function EscalationValueField({
         }`}
         style={{ borderColor: 'var(--color-input-border)' }}
       >
-        {mode === 'fixed' && <span className="text-sm text-[var(--color-text-secondary)] me-1">₪</span>}
+        {mode === 'fixed' && (
+          <span className="text-sm text-[var(--color-text-secondary)] me-1">{currencySymbol()}</span>
+        )}
         <input
           type="number"
           dir="ltr"

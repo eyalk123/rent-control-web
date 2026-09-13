@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { currencySymbol } from '@/shared/utils/money';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Bell, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -98,7 +99,7 @@ function CpiThresholdCard({
           {t('notifications.cpiThresholdHint')}
         </p>
         <div className="flex items-end gap-3">
-          {field('cpi-min-amount', t('notifications.cpiMinAmount'), amount, setAmount, 'cpi_min_change_amount', '₪')}
+          {field('cpi-min-amount', t('notifications.cpiMinAmount'), amount, setAmount, 'cpi_min_change_amount', currencySymbol())}
           {field('cpi-min-percent', t('notifications.cpiMinPercent'), percent, setPercent, 'cpi_min_change_percent', '%')}
         </div>
       </div>

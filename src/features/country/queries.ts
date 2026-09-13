@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { setActiveFormat } from '@/shared/utils/money';
 import {
   getCountries,
   getMyCountry,
@@ -95,4 +97,32 @@ export function useCountryConfig(countryCode: string | null): Country | undefine
   const { data } = useCountries(Boolean(countryCode));
   if (!countryCode) return undefined;
   return data?.find((c) => c.countryCode === countryCode);
+}
+
+/**
+ * Publishes the account's country to the money/date/number formatters.
+ *
+ * Module state rather than context because `formatMoney` is called from ~100 places, most
+ * of them deep inside render functions where threading a config through would mean touching
+ * every component in the chain. Mounted once, high in the tree.
+ *
+ * Until it resolves the formatters use their Israeli default, which is what the app did
+ * before any of this existed — so there is no wrong-currency flash, only the old behaviour
+ * for a moment.
+ */
+export function useApplyCountryFormat(): void {
+  const { country } = useMyCountry();
+  const config = useCountryConfig(country);
+
+  useEffect(() => {
+    if (!config) return;
+    setActiveFormat({
+      currency: config.currency,
+      currencySymbol: config.currencySymbol,
+      currencySymbolPosition: config.currencySymbolPosition,
+      numberFormat: config.numberFormat,
+      dateFormat: config.dateFormat,
+      areaUnit: config.areaUnit,
+    });
+  }, [config]);
 }

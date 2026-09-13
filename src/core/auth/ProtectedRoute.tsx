@@ -3,7 +3,7 @@ import { useAppAuth } from './AuthContext';
 import { ConsentGate } from '@/features/legal/ConsentGate';
 import { useLegalStatus } from '@/features/legal/queries';
 import { CountryGate } from '@/features/country/CountryGate';
-import { useMyCountry } from '@/features/country/queries';
+import { useApplyCountryFormat, useMyCountry } from '@/features/country/queries';
 
 function Spinner() {
   return (
@@ -25,6 +25,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // while a country is a setting within it. Asking where someone lives before they have
   // agreed to anything is also the wrong order to collect it in.
   const country = useMyCountry(isLoaded && isSignedIn && !legal.blocked);
+  // Publishes the account's currency, date and number formats to the shared
+  // formatters. Here rather than in each page: every protected route is a child of
+  // this component, so it is covered by construction.
+  useApplyCountryFormat();
 
   if (!isLoaded) return <Spinner />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;

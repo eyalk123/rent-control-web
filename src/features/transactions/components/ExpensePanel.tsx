@@ -5,7 +5,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { TransactionRow } from '@/shared/components/detail/TransactionRow';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { formatMoney } from '@/shared/utils/money';
+import { formatMoney, currencySymbol } from '@/shared/utils/money';
 import type { Transaction } from '@/shared/types';
 import { useExpenseCategories } from '../queries';
 import { YearChips } from './YearChips';
@@ -36,8 +36,9 @@ interface Props {
 }
 
 function formatK(v: number): string {
-  if (Math.abs(v) >= 1000) return `₪${(v / 1000).toFixed(0)}k`;
-  return `₪${v}`;
+  const s = currencySymbol();
+  if (Math.abs(v) >= 1000) return `${s}${(v / 1000).toFixed(0)}k`;
+  return `${s}${v}`;
 }
 
 /**

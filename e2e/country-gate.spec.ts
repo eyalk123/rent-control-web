@@ -92,6 +92,36 @@ test.describe('country gate', () => {
     await expect(page.getByRole('button', { name: "We'll let you know" })).toBeDisabled();
   });
 
+  test('the chosen country actually drives how money is formatted', async ({ page }) => {
+    /*
+      The formatters are module state, published once when the config resolves. That makes
+      every call site cheap but means a broken chain — config never fetched, effect never
+      mounted, wrong field mapped — shows up nowhere except on screen. Hence an integration
+      check rather than a unit test of the pure function.
+    */
+    await withoutCountry(page);
+    await page.goto('/home');
+    await page.getByLabel('Country').selectOption('US');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Get started' }).click();
+    await waitForAppReady(page);
+
+    const main = page.locator('main');
+    await expect(main).toContainText('$');
+    await expect(main).not.toContainText('₪');
+  });
+
+  test('an Israeli account still sees shekels', async ({ page }) => {
+    // The primary regression risk: the default must be Israel's existing behaviour, not a
+    // neutral placeholder, so nothing changes for the users who are already here.
+    await page.goto('/home');
+    await waitForAppReady(page);
+
+    const main = page.locator('main');
+    await expect(main).toContainText('₪');
+    await expect(main).not.toContainText('$');
+  });
+
   test('does not appear for an account that already has a country', async ({ page }) => {
     await page.goto('/home');
     await waitForAppReady(page);
