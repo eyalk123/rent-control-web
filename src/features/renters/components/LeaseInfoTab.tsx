@@ -27,6 +27,7 @@ export function LeaseInfoTab({ renter }: Props) {
   if (renter.full_contract_url) docs.push({ label: t('documents.fullContract'), url: renter.full_contract_url });
   if (renter.id_image_url) docs.push({ label: t('documents.idImage'), url: renter.id_image_url });
   const insuranceTypeLabels: Record<string, string> = {
+    none: t('renter.insuranceTypeNone'),
     wire_transfer: t('renter.insuranceTypeWireTransfer'),
     bank_guarantee: t('renter.insuranceTypeBankGuarantee'),
   };

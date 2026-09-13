@@ -1,5 +1,17 @@
 // Property type - backend expects lowercase
-export type PropertyType = 'apartment' | 'house' | 'commercial' | 'garden_apartment' | 'housing_unit';
+// Every value the column can hold, everywhere. `garden_apartment` and `housing_unit` are
+// Israeli categories and `bit` is an Israeli payment app — they stay in the unions because
+// an existing record can hold them and must keep rendering. Which of them a user may
+// *pick* is narrowed by capability, not here.
+export type PropertyType =
+  | 'apartment'
+  | 'house'
+  | 'commercial'
+  | 'garden_apartment'
+  | 'housing_unit'
+  | 'condo_townhouse'
+  | 'room'
+  | 'other';
 
 // Brief property shape (for nested in renter responses)
 export interface PropertyBrief {
@@ -266,7 +278,14 @@ export function getScheduleEndDate(renter: Renter): Date | null {
 
 export type TransactionType = 'revenue' | 'expense';
 
-export type PaymentMethod = 'bit' | 'cash' | 'bank_transfer' | 'check';
+export type PaymentMethod =
+  | 'bit'
+  | 'cash'
+  | 'bank_transfer'
+  | 'check'
+  | 'card'
+  | 'mobile_payment'
+  | 'other';
 
 export interface Transaction {
   id: number;

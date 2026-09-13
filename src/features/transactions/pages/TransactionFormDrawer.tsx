@@ -27,7 +27,7 @@ import { MonthGridPicker } from '@/shared/components/ui/MonthGridPicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
-import { PAYMENT_METHOD_VALUES, toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
+import { availablePaymentMethods, toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
 import { todayISO, fmtMonthYear } from '@/shared/utils/dates';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
@@ -137,7 +137,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     },
   });
 
-  const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
+  const paymentOptions = availablePaymentMethods().map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
   const renterOptions = (editRenters ?? []).map((r) => ({
     value: r.id.toString(),
     label: r.is_ended
@@ -823,7 +823,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
   const supplierOptions = suppliers.map((s) => ({ value: s.id.toString(), label: s.name }));
-  const paymentOptions = PAYMENT_METHOD_VALUES.map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
+  const paymentOptions = availablePaymentMethods().map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 
   const createRenterOptions = (createRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
   const editRenterOptions = (editRenters ?? []).map((r) => ({

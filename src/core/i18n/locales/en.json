@@ -194,7 +194,7 @@
     "ownerCreate": "Add new owner...",
     "createOwnerTitle": "Add property owner",
     "ownerNamePlaceholder": "Owner name",
-    "zipCode": "Zip Code",
+    "zipCode": "Postal code",
     "type": "Property Type",
     "typePlaceholder": "e.g. Apartment, House",
     "sqFt": "Square Feet",
@@ -220,7 +220,7 @@
     "changeImage": "Change Image",
     "atAGlance": "At a Glance",
     "floor": "Floor",
-    "apartment": "Apartment",
+    "apartment": "Unit",
     "uploadProfilePicture": "Upload Profile Picture",
     "surfaceArea": "Surface area",
     "numberOfRooms": "Number of rooms",
@@ -231,7 +231,7 @@
     "waterMeterNumber": "Water meter number",
     "waterAccountNumber": "Water account number",
     "propertyTax": "Property tax",
-    "houseCommittee": "House committee",
+    "houseCommittee": "Building / HOA fees",
     "details": "Details",
     "additionalDetails": "Additional details",
     "removePhoto": "Remove photo",
@@ -241,7 +241,7 @@
       "renters": "Renters",
       "transactions": "Transactions"
     },
-    "inventoryNotes": "Apartment Notes",
+    "inventoryNotes": "Unit notes",
     "inventoryNotesPlaceholder": "Furniture, appliances, items...",
     "noTransactions": "No transactions for this property",
     "basicInfoSubtitle": "Where the property is and what type it is.",
@@ -319,7 +319,22 @@
     "waterMeter": "Water meter",
     "waterAccount": "Water account",
     "annualPropertyTax": "Annual property tax",
-    "noInventoryNotes": "No inventory notes yet."
+    "noInventoryNotes": "No inventory notes yet.",
+    "typeCondoTownhouse": "Condo / Townhouse",
+    "typeRoom": "Room",
+    "typeOther": "Other",
+    "type_condo_townhouse": "Condo / Townhouse",
+    "type_room": "Room",
+    "type_other": "Other",
+    "registry": {
+      "parcel_number": "Parcel number",
+      "cadastral_ref": "Cadastral reference",
+      "title_number": "Title number",
+      "apn": "Parcel number (APN)",
+      "folio_number": "Folio number",
+      "lot_number": "Lot number",
+      "plan_number": "Plan number"
+    }
   },
   "renter": {
     "renter": "Renter",
@@ -358,9 +373,9 @@
     "billedYearly": "billed yearly",
     "billedOther": "billed {{count}}x per year",
     "unsupportedFrequency": "The lease says {{count}} payments a year. The app supports monthly, quarterly or yearly; pick one.",
-    "insuranceType": "Insurance type",
-    "insuranceTypeWireTransfer": "Bank transfer",
-    "insuranceTypeBankGuarantee": "Bank guarantee",
+    "insuranceType": "Security type",
+    "insuranceTypeWireTransfer": "Deposit",
+    "insuranceTypeBankGuarantee": "Guarantee",
     "insuranceAmount": "Insurance amount",
     "leaseStartPlaceholder": "e.g. 2024-01-01",
     "property": "Property",
@@ -545,7 +560,8 @@
     "leaseEnds": "Lease ends",
     "payDayShort": "Day {{day}}",
     "colRenter": "Renter",
-    "colPhone": "Phone"
+    "colPhone": "Phone",
+    "insuranceTypeNone": "None"
   },
   "empty": {
     "noProperties": "No properties yet. Tap + to add one.",
@@ -649,7 +665,7 @@
     "title": "Validation",
     "addressRequired": "Address is required.",
     "cityRequired": "City is required.",
-    "zipRequired": "Zip code is required.",
+    "zipRequired": "Postal code is required.",
     "typeRequired": "Property type is required.",
     "sqFtRequired": "Valid square footage is required.",
     "priceRequired": "Valid purchase price is required.",
@@ -869,7 +885,13 @@
     "notesLabel": "Notes",
     "noReceipt": "No receipt attached",
     "receiptImage": "Receipt",
-    "rentLabel": "Rent"
+    "rentLabel": "Rent",
+    "paymentMethodCard": "Card",
+    "paymentMethodMobilePayment": "Mobile payment",
+    "paymentMethodOther": "Other",
+    "paymentMethod_card": "Card",
+    "paymentMethod_mobile_payment": "Mobile payment",
+    "paymentMethod_other": "Other"
   },
   "categories": {
     "add": "Add",
@@ -958,7 +980,7 @@
     "uploadFromGallery": "Upload from Gallery",
     "uploading": "Uploading...",
     "uploadFailed": "Upload failed. Please try again.",
-    "landRegistry": "Land Registry Extract",
+    "landRegistry": "Ownership document",
     "idImage": "Tenant ID Image",
     "none": "No documents uploaded yet."
   },

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
+import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { propertyFormSchema, PROPERTY_TYPES } from '../validation/propertyValidation';
+import { propertyFormSchema, availablePropertyTypes } from '../validation/propertyValidation';
 import { useCreateProperty, useUpdateProperty, useProperty, useProperties } from '../queries';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -339,7 +340,7 @@ export function PropertyFormDrawer({
     }
   });
 
-  const propertyTypeOptions = PROPERTY_TYPES.map((pt) => ({
+  const propertyTypeOptions = availablePropertyTypes().map((pt) => ({
     value: pt,
     label: t(`property.type_${pt}` as never, pt),
   }));
@@ -463,8 +464,8 @@ export function PropertyFormDrawer({
             </div>
             <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t('property.block')} type="number" error={errors.block?.message} {...register('block')} />
-              <FormInput label={t('property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
+              <FormInput label={t(registryKey1())} type="number" error={errors.block?.message} {...register('block')} />
+              <FormInput label={t(registryKey2() ?? 'property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />

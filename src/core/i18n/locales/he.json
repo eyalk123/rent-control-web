@@ -320,7 +320,22 @@
     "waterMeter": "מונה מים",
     "waterAccount": "חשבון מים",
     "annualPropertyTax": "ארנונה שנתית",
-    "noInventoryNotes": "אין הערות מלאי עדיין."
+    "noInventoryNotes": "אין הערות מלאי עדיין.",
+    "typeCondoTownhouse": "דירת גן / בתי עיר",
+    "typeRoom": "חדר",
+    "typeOther": "אחר",
+    "type_condo_townhouse": "דירת גן / בתי עיר",
+    "type_room": "חדר",
+    "type_other": "אחר",
+    "registry": {
+      "parcel_number": "מספר חלקה",
+      "cadastral_ref": "מזהה קדסטראלי",
+      "title_number": "מספר בעלות",
+      "apn": "מספר חלקה (APN)",
+      "folio_number": "מספר תיק",
+      "lot_number": "מספר מגרש",
+      "plan_number": "מספר תוכנית"
+    }
   },
   "renter": {
     "renter": "שוכר",
@@ -547,7 +562,8 @@
     "leaseEnds": "תום חוזה",
     "payDayShort": "יום {{day}}",
     "colRenter": "דייר",
-    "colPhone": "טלפון"
+    "colPhone": "טלפון",
+    "insuranceTypeNone": "ללא"
   },
   "empty": {
     "noProperties": "אין נכסים עדיין. לחץ + להוספה.",
@@ -871,7 +887,13 @@
     "notesLabel": "הערות",
     "noReceipt": "לא צורף קבלה",
     "receiptImage": "קבלה",
-    "rentLabel": "שכירות"
+    "rentLabel": "שכירות",
+    "paymentMethodCard": "כרטיס אשראי",
+    "paymentMethodMobilePayment": "תשלום בנייד",
+    "paymentMethodOther": "אחר",
+    "paymentMethod_card": "כרטיס אשראי",
+    "paymentMethod_mobile_payment": "תשלום בנייד",
+    "paymentMethod_other": "אחר"
   },
   "categories": {
     "add": "הוסף",

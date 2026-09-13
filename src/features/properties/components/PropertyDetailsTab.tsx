@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
 import { MapPin, Car, Zap, Droplets, Receipt, Users } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { DetailRow } from '@/shared/components/detail/DetailRow';
@@ -22,8 +23,11 @@ export function PropertyDetailsTab({ property }: Props) {
         <DetailRow icon={Receipt} label={t('property.rooms')} value={property.number_of_rooms ? String(property.number_of_rooms) : null} />
         <DetailRow icon={Receipt} label={t('property.floor')} value={property.floor != null ? String(property.floor) : null} />
         <DetailRow icon={Receipt} label={t('property.apartment')} value={property.apartment} />
-        <DetailRow icon={MapPin} label={t('property.block')} value={property.block} />
-        <DetailRow icon={MapPin} label={t('property.plot')} value={property.plot} />
+        {/* Country decides which registry concept applies; the locale file says it. */}
+        <DetailRow icon={MapPin} label={t(registryKey1())} value={property.block} />
+        {registryKey2() && (
+          <DetailRow icon={MapPin} label={t(registryKey2()!)} value={property.plot} />
+        )}
         <DetailRow icon={Users} label={t('property.owner')} value={property.property_owner} last />
       </DetailPanel>
 

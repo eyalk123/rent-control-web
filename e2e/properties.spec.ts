@@ -33,9 +33,11 @@ test.describe('properties', () => {
 
     await page.getByLabel('Address').fill('999 E2E Boulevard');
     await page.getByLabel('City').fill('Testville');
-    // Property type is a Radix Select.
+    // Property type is a Radix Select. `exact` matters: getByRole's name matcher is a
+    // case-insensitive *substring* by default, and "House" is also inside "Condo /
+    // Townhouse" and "Housing Unit".
     await page.getByRole('combobox').first().click();
-    await page.getByRole('option', { name: 'House' }).click();
+    await page.getByRole('option', { name: 'House', exact: true }).click();
 
     await page.getByRole('button', { name: 'Next' }).click();
     // Regression for H1: Owner is genuinely optional — Save works without choosing one.
