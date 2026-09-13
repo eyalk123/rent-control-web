@@ -933,6 +933,21 @@
     "deactivateConfirm": "Deactivate this supplier?",
     "deactivateMessage": "This supplier will be hidden from active lists. You can reactivate it later by editing.",
     "deactivateSuccess": "Supplier deactivated"
+  },
+  "country": {
+    "gateTitle": "Where are your properties?",
+    "gateSubtitle": "This sets your currency, date and number formats. We ask once.",
+    "label": "Country",
+    "confirm": "Continue",
+    "continue": "Get started",
+    "saveError": "We couldn't save that. Please try again.",
+    "loadErrorTitle": "Something went wrong",
+    "loadErrorBody": "We couldn't load the country list. Check your connection and try again.",
+    "welcomeTitle": "Rent Control in {{country}}",
+    "skimmedNotice": "We don't have {{country}}-specific features yet. You'll get the full core app in {{currency}}, without rent index linkage or {{country}} tax reports.",
+    "openEndedNotice": "Tenancies in {{country}} are usually open-ended. Rent Control needs an end date on every lease — pick your best estimate and extend it whenever you like.",
+    "notifyMe": "Notify me when you add {{country}}",
+    "notifyRequested": "We'll let you know"
   },
   "documents": {
     "title": "Documents",

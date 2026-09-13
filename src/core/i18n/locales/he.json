@@ -935,6 +935,21 @@
     "deactivateConfirm": "לבטל את פעילות הספק?",
     "deactivateMessage": "הספק יוסתר מהרשימות הפעילות. ניתן להפעיל אותו מחדש על ידי עריכה.",
     "deactivateSuccess": "הספק בוטל"
+  },
+  "country": {
+    "gateTitle": "איפה הנכסים שלך?",
+    "gateSubtitle": "זה קובע את המטבע ואת תבניות התאריך והמספר. נשאל פעם אחת בלבד.",
+    "label": "מדינה",
+    "confirm": "המשך",
+    "continue": "בוא נתחיל",
+    "saveError": "לא הצלחנו לשמור. נסה שוב.",
+    "loadErrorTitle": "משהו השתבש",
+    "loadErrorBody": "לא הצלחנו לטעון את רשימת המדינות. בדוק את החיבור ונסה שוב.",
+    "welcomeTitle": "Rent Control ב{{country}}",
+    "skimmedNotice": "עדיין אין לנו תכונות יעודיות ל{{country}}. תקבל את האפליקציה המלאה ב{{currency}}, ללא הצמדה למדד וללא דוחות מס של {{country}}.",
+    "openEndedNotice": "חוזי שכירות ב{{country}} הם בדרך כלל ללא תאריך סיום. המערכת דורשת תאריך סיום לכל חוזה — בחר הערכה סבירה ותוכל להאריך בכל עת.",
+    "notifyMe": "עדכנו אותי כשתוסיף את {{country}}",
+    "notifyRequested": "נעדכן אותך"
   },
   "documents": {
     "title": "מסמכים",
