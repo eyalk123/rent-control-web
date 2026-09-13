@@ -890,7 +890,10 @@
     "gardening": "גינון",
     "air_conditioning": "מיזוג אוויר",
     "management_fee": "דמי ניהול",
-    "other": "אחר"
+    "other": "אחר",
+    "mortgage_interest": "ריבית משכנתא",
+    "building_fees": "דמי ועד בית",
+    "legal_professional": "שכר טרחה מקצועי"
   },
   "suppliers": {
     "title": "ספקים",

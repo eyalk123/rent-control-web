@@ -888,7 +888,10 @@
     "gardening": "Gardening",
     "air_conditioning": "Air conditioning",
     "management_fee": "Management fee",
-    "other": "Other"
+    "other": "Other",
+    "mortgage_interest": "Mortgage interest",
+    "building_fees": "Building / HOA fees",
+    "legal_professional": "Legal & professional fees"
   },
   "suppliers": {
     "title": "Suppliers",
