@@ -129,3 +129,66 @@ test.describe('country gate', () => {
     await expect(page.getByRole('heading', { name: 'Where are your properties?' })).toHaveCount(0);
   });
 });
+
+/**
+ * Capability gating, seen from the UI.
+ *
+ * The API is the enforcement point — it rejects an unavailable mode regardless of what the
+ * client renders. These tests cover the other half: that the app does not *offer* a control
+ * whose value the server will refuse, which is what turns a clean rejection into a user
+ * filling in a form and being told no at the end.
+ */
+test.describe('capability gating', () => {
+  /**
+   * Put the account in a country without going through the gate.
+   *
+   * The mock reads this key on every load, so setting it to a real code means the gate
+   * never fires — which is what these tests want. Using the gate here instead would
+   * re-arm it on the next navigation, because addInitScript runs per page load.
+   */
+  async function inCountry(page: Parameters<typeof waitForAppReady>[0], code: string) {
+    await page.addInitScript((c) => {
+      try {
+        localStorage.setItem('country.mockCountry', c);
+      } catch {
+        /* ignore */
+      }
+    }, code);
+  }
+
+  async function openLeaseStep(page: Parameters<typeof waitForAppReady>[0]) {
+    await page.goto('/renters/2');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+
+  test('an Israeli account is still offered CPI', async ({ page }) => {
+    // The primary regression risk. Israel must be completely unaffected.
+    await inCountry(page, 'IL');
+    await openLeaseStep(page);
+    await expect(page.getByRole('button', { name: 'CPI', exact: true })).toBeVisible();
+  });
+
+  test('a US account is not offered CPI at all', async ({ page }) => {
+    await inCountry(page, 'US');
+    await openLeaseStep(page);
+    await expect(page.getByRole('button', { name: 'CPI', exact: true })).toHaveCount(0);
+    // The modes that do not need an index are untouched.
+    await expect(page.getByRole('button', { name: 'Percent', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Fixed', exact: true })).toBeVisible();
+  });
+
+  test('the CPI notification section is absent for a US account', async ({ page }) => {
+    await inCountry(page, 'US');
+    await page.goto('/settings/notifications');
+    await waitForAppReady(page);
+    await expect(page.getByText(/Rent index change|CPI/i)).toHaveCount(0);
+  });
+
+  test('the CPI notification section is present for an Israeli account', async ({ page }) => {
+    await inCountry(page, 'IL');
+    await page.goto('/settings/notifications');
+    await waitForAppReady(page);
+    await expect(page.getByText(/CPI/i).first()).toBeVisible();
+  });
+});

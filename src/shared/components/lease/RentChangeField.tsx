@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { allowedModes } from '@/shared/utils/capabilities';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
 import type { RentEscalationMode } from '@/shared/types';
@@ -25,6 +26,15 @@ interface Props {
 export const RENT_ESCALATION_MODES: RentEscalationMode[] = ['custom', 'none', 'percent', 'fixed', 'cpi'];
 
 /**
+ * `cpi` needs an index source behind it; outside Israel there is none and the API refuses
+ * the value. The array above keeps every mode, because an existing lease can still hold
+ * `cpi` and must keep rendering — only the picker narrows.
+ */
+const MODE_REQUIREMENTS: Partial<Record<RentEscalationMode, 'cpiLinkage'>> = {
+  cpi: 'cpiLinkage',
+};
+
+/**
  * The "how does the rent change" control: mode toggle + the CPI explainer + the percent/₪
  * step field. Shared by the renter form (LeaseTermBuilder, driven by RHF Controllers) and
  * the lease-extension drawer (driven by useState) so the two can't drift apart on which
@@ -46,7 +56,10 @@ export function RentChangeField({
   const anchorRef = useTourAnchor(ANCHORS.leaseRentChangeField);
   const cpiAnchorRef = useTourAnchor(ANCHORS.leaseCpiBase);
 
-  const segments: { value: RentEscalationMode; label: string }[] = RENT_ESCALATION_MODES.map((m) => ({
+  const segments: { value: RentEscalationMode; label: string }[] = allowedModes(
+    RENT_ESCALATION_MODES,
+    MODE_REQUIREMENTS,
+  ).map((m) => ({
     value: m,
     label: t(
       {

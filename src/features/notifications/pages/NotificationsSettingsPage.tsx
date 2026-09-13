@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { currencySymbol } from '@/shared/utils/money';
+import { allowedModes } from '@/shared/utils/capabilities';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Bell, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -13,6 +14,7 @@ import {
 } from '../queries';
 import {
   NOTIFICATION_EVENTS,
+  EVENT_REQUIREMENTS,
   isRuleEvent,
   type NotificationEvent,
   type NotificationRule,
@@ -138,7 +140,12 @@ export function NotificationsSettingsPage() {
   const masterOn = settings?.master_enabled ?? true;
   const eventListAnchorRef = useTourAnchor(ANCHORS.notificationsEventList);
   const rulesAnchorRef = useTourAnchor(ANCHORS.notificationsRulesEntry);
-  const firstRuleEvent = NOTIFICATION_EVENTS.find(isRuleEvent);
+  // Only the events this country can actually receive. An account with no index source
+  // behind it can never get a `cpi_rent_change`, so listing it here would be a switch for
+  // something that cannot happen — and the materiality threshold below it would configure
+  // nothing at all.
+  const availableEvents = allowedModes(NOTIFICATION_EVENTS, EVENT_REQUIREMENTS);
+  const firstRuleEvent = availableEvents.find(isRuleEvent);
 
   const setSetting = (patch: Parameters<typeof updateSettings.mutate>[0]) =>
     updateSettings.mutate(patch, { onError: () => showToast(t('error.saveFailed'), 'error') });
@@ -190,7 +197,7 @@ export function NotificationsSettingsPage() {
 
           {/* Per-event sections */}
           <div ref={eventListAnchorRef} className="flex flex-col gap-6">
-          {NOTIFICATION_EVENTS.map((event) => {
+          {availableEvents.map((event) => {
             const rules = (prefs?.rules ?? []).filter((r) => r.event_type === event);
             const muted = isMuted(event);
             const dimmed = muted || !masterOn;

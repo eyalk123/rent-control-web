@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { setActiveFormat } from '@/shared/utils/money';
+import { setActiveCapabilities } from '@/shared/utils/capabilities';
 import {
   getCountries,
   getMyCountry,
@@ -116,6 +117,7 @@ export function useApplyCountryFormat(): void {
 
   useEffect(() => {
     if (!config) return;
+    setActiveCapabilities(config.capabilities);
     setActiveFormat({
       currency: config.currency,
       currencySymbol: config.currencySymbol,
