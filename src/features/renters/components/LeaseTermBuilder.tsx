@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { isOpenEndedCountry } from '@/shared/utils/capabilities';
 import {
   Controller,
   useFieldArray,
@@ -200,6 +201,18 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           decisions, and wrapping them into one row let an option stepper sit beside
           the contract years and read as part of it. */}
       <div ref={termAnchorRef} className="flex flex-col gap-4">
+        {/*
+          One line, not a modal. Where tenancies are open-ended the lease model cannot
+          express "no end date", so the honest thing is to say so at the one place it
+          matters — beside the stepper being asked for a number — and then get out of the
+          way. Extend stays available after expiry, so the estimate is genuinely workable
+          rather than a dead end.
+        */}
+        {isOpenEndedCountry() && (
+          <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('renter.openEndedTermNote')}
+          </p>
+        )}
         <div className="flex flex-wrap gap-4">
           <Controller
             control={control}

@@ -33,6 +33,23 @@ const ISRAEL: Capabilities = {
 
 let active: Capabilities = ISRAEL;
 
+/**
+ * Informational, not a capability: it never blocks anything and never turns a feature off.
+ * It drives one line of copy on the renter form and a longer default term, because the
+ * lease model cannot express "no end date" and saying so beats letting the user find out.
+ *
+ * Israel is false, so nothing changes there.
+ */
+let openEnded = false;
+
+export function setOpenEndedTenancies(value: boolean): void {
+  openEnded = value;
+}
+
+export function isOpenEndedCountry(): boolean {
+  return openEnded;
+}
+
 export function setActiveCapabilities(capabilities: Capabilities): void {
   active = capabilities;
 }

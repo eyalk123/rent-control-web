@@ -563,7 +563,9 @@
     "payDayShort": "יום {{day}}",
     "colRenter": "דייר",
     "colPhone": "טלפון",
-    "insuranceTypeNone": "ללא"
+    "insuranceTypeNone": "ללא",
+    "suppressExpiryAlerts": "אל תתריע לי על סיום החוזה",
+    "openEndedTermNote": "חוזי שכירות כאן הם בדרך כלל ללא תאריך סיום. המערכת דורשת תאריך סיום לכל חוזה — בחר הערכה סבירה ותוכל להאריך בכל עת."
   },
   "empty": {
     "noProperties": "אין נכסים עדיין. לחץ + להוספה.",

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { setActiveFormat } from '@/shared/utils/money';
-import { setActiveCapabilities } from '@/shared/utils/capabilities';
+import { setActiveCapabilities, setOpenEndedTenancies } from '@/shared/utils/capabilities';
 import { setActiveRegistryKeys } from '@/shared/utils/registryLabels';
 import {
   getCountries,
@@ -119,6 +119,7 @@ export function useApplyCountryFormat(): void {
   useEffect(() => {
     if (!config) return;
     setActiveCapabilities(config.capabilities);
+    setOpenEndedTenancies(config.openEndedTenancies);
     setActiveRegistryKeys(config.registryKey1, config.registryKey2);
     setActiveFormat({
       currency: config.currency,

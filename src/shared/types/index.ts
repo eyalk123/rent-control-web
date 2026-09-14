@@ -130,6 +130,8 @@ export interface Renter extends LeaseTermIntent {
    * accident. `lease_years` and `cpi_base_index` are untouched by it: the signed terms
    * stay on the record so past reports still reconstruct.
    */
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
   terminated_on?: string | null;
   termination_reason?: string | null;
   number_of_payments?: number | null;
@@ -455,6 +457,8 @@ export interface PropertyUpdate {
 
 // Create payload (POST /renters)
 export interface RenterCreate extends LeaseTermIntent {
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
   property_id?: number | null;
   first_name: string;
   last_name: string;
@@ -475,6 +479,8 @@ export interface RenterCreate extends LeaseTermIntent {
 
 // Update payload (PATCH /renters/{id}) - all fields optional
 export interface RenterUpdate extends LeaseTermIntent {
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
   property_id?: number | null;
   first_name?: string;
   last_name?: string;

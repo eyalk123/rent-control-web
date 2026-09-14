@@ -102,6 +102,7 @@ export const renterFormSchema = z.object({
   // and the API is what actually refuses an unavailable one.
   escalationMode: z.enum(['none', 'percent', 'fixed', 'custom', 'cpi']).optional(),
   escalationValue: optionalNumericString,
+  suppressExpiryAlerts: z.boolean(),
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
   idImageUrl: z.string().nullable().optional(),

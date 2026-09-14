@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { isOpenEndedCountry } from '@/shared/utils/capabilities';
+import { Toggle } from '@/shared/components/ui/Toggle';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +83,17 @@ function RenterFormTourRequest() {
 
 /** The `lease-form` steps that belong to the drawer's *first* page. See `shownStep`. */
 const TOUR_PAGE_ONE_STEPS = ['overview', 'extraContacts'];
+
+/**
+ * A longer starting term where tenancies are open-ended.
+ *
+ * The field is normally blank, not 1 — so this is a *pre-fill*, not a changed default, and
+ * it only reduces how often an invented end date needs revisiting. Empty everywhere else,
+ * which is exactly today's behaviour.
+ */
+function openEndedTermDefault(): { contractTermYears?: string } {
+  return isOpenEndedCountry() ? { contractTermYears: '5' } : {};
+}
 
 export function RenterFormDrawer({
   open,
@@ -169,7 +182,7 @@ export function RenterFormDrawer({
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
     // never shown; pre-filling discloses the default and leaves it editable.
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, ...openEndedTermDefault() },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -261,6 +274,9 @@ export function RenterFormDrawer({
         paymentType: existing.payment_type === 'wire_transfer' ? 'bank_transfer' : (existing.payment_type ?? undefined),
         paymentFrequency,
         extraContacts: existing.extra_contacts ?? [],
+        // A renter-level setting, not part of the lease-term intent — so it belongs here
+        // rather than inside the intent ternary, whose other branch would have dropped it.
+        suppressExpiryAlerts: existing.suppress_expiry_alerts ?? false,
         insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
         idImageUrl: existing.id_image_url ?? undefined,
@@ -303,13 +319,17 @@ export function RenterFormDrawer({
         propertyId: initialPropertyId?.toString() ?? '',
         paymentType: '',
         paymentDayOfMonth: DEFAULT_PAYMENT_DAY,
-        contractTermYears: '',
         contractTermMonths: '',
         optionYears: '',
         optionTermMonths: '',
         baseRent: '',
         escalationMode: 'none',
         escalationValue: '',
+        suppressExpiryAlerts: false,
+        contractTermYears: '',
+        // After the blank contract term, so an open-ended country's pre-fill wins — and
+        // before the prefill, so a scanned lease's own term still wins over both.
+        ...openEndedTermDefault(),
         ...(effPrefill ?? {}),
       });
       setFullContractFile(pendingContractFile ?? null);
@@ -388,6 +408,7 @@ export function RenterFormDrawer({
             : {}),
         })),
         contract_term_years: toNumOrNull(data.contractTermYears),
+        suppress_expiry_alerts: data.suppressExpiryAlerts,
         contract_term_months: toNumOrNull(data.contractTermMonths),
         option_years: toNumOrNull(data.optionYears),
         option_term_months: toNumOrNull(data.optionTermMonths),
@@ -686,6 +707,23 @@ export function RenterFormDrawer({
               />
             )} />
             </div>
+            {/*
+              The expiring alert counts down to the contract end date. Where a tenancy is
+              open-ended that date is the landlord's estimate, so the countdown is noise —
+              and an Israeli month-to-month holdover has exactly the same problem, which is
+              why this is offered to everyone rather than gated on the country.
+            */}
+            <Controller
+              control={control}
+              name="suppressExpiryAlerts"
+              render={({ field }) => (
+                <Toggle
+                  checked={Boolean(field.value)}
+                  onChange={field.onChange}
+                  label={t('renter.suppressExpiryAlerts')}
+                />
+              )}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />
