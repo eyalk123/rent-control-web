@@ -560,8 +560,7 @@
     "leaseEnds": "Lease ends",
     "payDayShort": "Day {{day}}",
     "colRenter": "Renter",
-    "colPhone": "Phone",
-    "insuranceTypeNone": "None",
+    "colPhone": "Phone",
     "suppressExpiryAlerts": "Don't warn me when this lease expires",
     "openEndedTermNote": "Tenancies here are usually open-ended. Rent Control needs an end date on every lease — pick your best estimate and extend it whenever you like."
   },

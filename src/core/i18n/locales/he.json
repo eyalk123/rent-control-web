@@ -375,7 +375,7 @@
     "billedOther": "בגבייה {{count}} פעמים בשנה",
     "unsupportedFrequency": "בחוזה רשומים {{count}} תשלומים בשנה. האפליקציה תומכת בחודשי, רבעוני או שנתי; יש לבחור אחד.",
     "insuranceType": "סוג בטחונות",
-    "insuranceTypeWireTransfer": "העברה בנקאית",
+    "insuranceTypeWireTransfer": "פיקדון",
     "insuranceTypeBankGuarantee": "ערבות בנקאית",
     "insuranceAmount": "סכום הביטחון",
     "leaseStartPlaceholder": "למשל 2024-01-01",
@@ -562,8 +562,7 @@
     "leaseEnds": "תום חוזה",
     "payDayShort": "יום {{day}}",
     "colRenter": "דייר",
-    "colPhone": "טלפון",
-    "insuranceTypeNone": "ללא",
+    "colPhone": "טלפון",
     "suppressExpiryAlerts": "אל תתריע לי על סיום החוזה",
     "openEndedTermNote": "חוזי שכירות כאן הם בדרך כלל ללא תאריך סיום. המערכת דורשת תאריך סיום לכל חוזה — בחר הערכה סבירה ותוכל להאריך בכל עת."
   },

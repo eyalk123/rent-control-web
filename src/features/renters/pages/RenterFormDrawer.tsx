@@ -486,11 +486,10 @@ export function RenterFormDrawer({
     { value: 'quarterly', label: t('renter.frequencyQuarterly') },
     { value: 'yearly', label: t('renter.frequencyYearly') },
   ];
-  // "None" is a real answer, not an omission: many tenancies outside Israel carry no
-  // security instrument at all, and a select with only two positive options implies one is
-  // required. Universal rather than gated — an Israeli lease can equally have none.
+  // No "none" entry: the field is already optional and its placeholder says so, so leaving
+  // it blank *is* "no security". A third option would be a second way to express the same
+  // fact — two values to handle in every reader, for no extra meaning.
   const insuranceTypeOptions = [
-    { value: 'none', label: t('renter.insuranceTypeNone') },
     { value: 'wire_transfer', label: t('renter.insuranceTypeWireTransfer') },
     { value: 'bank_guarantee', label: t('renter.insuranceTypeBankGuarantee') },
   ];
