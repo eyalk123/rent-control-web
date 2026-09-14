@@ -1127,7 +1127,11 @@
     "savedCount": "{{count}} שמורים",
     "generatedMeta": "הופק {{date}} · {{format}}",
     "deleteConfirm": "למחוק את הדוח?",
-    "deleteSuccess": "הדוח נמחק"
+    "deleteSuccess": "הדוח נמחק",
+    "basisAccrual": "מצטבר",
+    "basisCash": "מזומן",
+    "basisHint": "בשיטת המצטבר השכר נרשם לפי החודש שעבורו שולם; בשיטת המזומן — לפי מועד התקבול.",
+    "basisLabel": "הכרת הכנסה"
   },
   "auth": {
     "signInSubtitle": "התחבר לחשבונך",

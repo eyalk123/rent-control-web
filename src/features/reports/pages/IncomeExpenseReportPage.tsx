@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
-import { downloadIncomeExpenseReport, type ReportFormat } from '../api/reports';
+import {
+  defaultRevenueBasis,
+  downloadIncomeExpenseReport,
+  type ReportFormat,
+  type RevenueBasis,
+} from '../api/reports';
 import { getAllTransactions } from '@/features/transactions/api/transactions';
 import { useProperties } from '@/features/properties/queries';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
@@ -61,6 +66,9 @@ export function IncomeExpenseReportPage() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [isDownloading, setIsDownloading] = useState<ReportFormat | null>(null);
+  // Pre-selected, never forced: the country config says which option a landlord here most
+  // likely wants, and the user overrides it per report.
+  const [basis, setBasis] = useState<RevenueBasis>(defaultRevenueBasis);
 
   const { data: properties = [] } = useProperties();
   const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear);
@@ -105,7 +113,7 @@ export function IncomeExpenseReportPage() {
   const handleDownload = async (fmt: ReportFormat) => {
     setIsDownloading(fmt);
     try {
-      await downloadIncomeExpenseReport(selectedYear, fmt);
+      await downloadIncomeExpenseReport(selectedYear, fmt, basis);
       showToast(t('reports.downloadSuccess'), 'success');
     } catch {
       showToast(t('error.saveFailed'), 'error');
@@ -130,6 +138,21 @@ export function IncomeExpenseReportPage() {
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.calendarYear', { year: selectedYear })}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/*
+            Chosen per report, like the language, rather than stored on the account — a
+            stored preference would silently re-interpret history. Pre-selected from the
+            country (cash for the US, accrual elsewhere) and changeable every time, which
+            is why it sits beside the download buttons rather than in Settings.
+          */}
+          <SegToggle
+            size="sm"
+            value={basis}
+            onChange={setBasis}
+            options={[
+              { value: 'accrual', label: t('reports.basisAccrual') },
+              { value: 'cash', label: t('reports.basisCash') },
+            ]}
+          />
           <button
             onClick={() => handleDownload('pdf')}
             disabled={!!isDownloading}

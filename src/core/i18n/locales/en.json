@@ -1125,7 +1125,11 @@
     "savedCount": "{{count}} saved",
     "generatedMeta": "Generated {{date}} · {{format}}",
     "deleteConfirm": "Delete this report?",
-    "deleteSuccess": "Report deleted"
+    "deleteSuccess": "Report deleted",
+    "basisAccrual": "Accrual",
+    "basisCash": "Cash",
+    "basisHint": "Accrual counts rent toward the month it was for; cash counts it when it arrived.",
+    "basisLabel": "Revenue recognition"
   },
   "auth": {
     "signInSubtitle": "Sign in to your account",

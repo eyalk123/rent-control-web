@@ -49,3 +49,44 @@ test.describe('reports', () => {
     await expect(page.getByText('Total', { exact: true }).first()).toBeVisible();
   });
 });
+
+/**
+ * Revenue recognition basis.
+ *
+ * Chosen per report rather than stored on the account, which is the whole point: a stored
+ * preference would silently re-interpret history, so the same year's report would say two
+ * different things depending on when it was generated.
+ */
+test.describe('revenue recognition basis', () => {
+  test('both options are offered on the income & expense report', async ({ page }) => {
+    await page.goto('/reports/income-expense');
+    await expect(page.getByRole('button', { name: 'Accrual', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cash', exact: true })).toBeVisible();
+  });
+
+  test('accrual is pre-selected for an Israeli account', async ({ page }) => {
+    // The country config pre-selects; it never forces. Israel files on accrual, so nothing
+    // changes for an existing user opening this page.
+    await page.goto('/reports/income-expense');
+    await expect(page.getByRole('button', { name: 'Accrual', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  test('the basis reaches the server when a report is generated', async ({ page }) => {
+    await page.goto('/reports/income-expense');
+    await page.getByRole('button', { name: 'Cash', exact: true }).click();
+
+    const request = page.waitForRequest((r) => r.url().includes('/reports/income-expense?'));
+    await page.getByRole('button', { name: /^PDF/ }).click();
+    const url = (await request).url();
+    expect(url).toContain('basis=cash');
+  });
+
+  test('the expense log has no basis control', async ({ page }) => {
+    // Nothing to recognise: expenses already count on the date they were paid under both.
+    await page.goto('/reports/expense-log');
+    await expect(page.getByRole('button', { name: 'Accrual', exact: true })).toHaveCount(0);
+  });
+});

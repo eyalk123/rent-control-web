@@ -50,6 +50,23 @@ export function isOpenEndedCountry(): boolean {
   return openEnded;
 }
 
+/**
+ * Which revenue recognition basis to pre-select when generating a report — cash for the
+ * US, accrual for everyone else. A *pre-selection*, not a setting: the choice is made per
+ * report, and the user can pick the other one every time.
+ *
+ * Defaults to accrual, which is what every report was before the choice existed.
+ */
+let revenueBasis: 'accrual' | 'cash' = 'accrual';
+
+export function setRevenueBasisDefault(value: 'accrual' | 'cash'): void {
+  revenueBasis = value;
+}
+
+export function revenueBasisDefault(): 'accrual' | 'cash' {
+  return revenueBasis;
+}
+
 export function setActiveCapabilities(capabilities: Capabilities): void {
   active = capabilities;
 }
