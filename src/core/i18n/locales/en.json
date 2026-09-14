@@ -376,7 +376,7 @@
     "insuranceType": "Security type",
     "insuranceTypeWireTransfer": "Deposit",
     "insuranceTypeBankGuarantee": "Guarantee",
-    "insuranceAmount": "Insurance amount",
+    "insuranceAmount": "Security amount",
     "leaseStartPlaceholder": "e.g. 2024-01-01",
     "property": "Property",
     "propertyOptional": "Property (optional)",
