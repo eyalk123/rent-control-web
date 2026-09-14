@@ -32,6 +32,8 @@ export interface Country {
   areaUnit: 'sqm' | 'sqft';
   revenueBasisDefault: 'accrual' | 'cash';
   defaultCommsChannel: string;
+  /** E.164 calling code. '' means unknown — leave the number exactly as typed. */
+  dialCode: string;
   hasPostalCodes: boolean;
   registryKey1: string | null;
   registryKey2: string | null;
@@ -52,6 +54,7 @@ interface CountryDto {
   area_unit: 'sqm' | 'sqft';
   revenue_basis_default: 'accrual' | 'cash';
   default_comms_channel: string;
+  dial_code: string;
   has_postal_codes: boolean;
   registry_key_1: string | null;
   registry_key_2: string | null;
@@ -79,6 +82,7 @@ function fromDto(d: CountryDto): Country {
     areaUnit: d.area_unit,
     revenueBasisDefault: d.revenue_basis_default,
     defaultCommsChannel: d.default_comms_channel,
+    dialCode: d.dial_code,
     hasPostalCodes: d.has_postal_codes,
     registryKey1: d.registry_key_1,
     registryKey2: d.registry_key_2,
@@ -111,6 +115,7 @@ const MOCK_COUNTRIES: Country[] = [
     areaUnit: 'sqm',
     revenueBasisDefault: 'accrual',
     defaultCommsChannel: 'whatsapp',
+    dialCode: '972',
     hasPostalCodes: true,
     registryKey1: null,
     registryKey2: null,
@@ -136,6 +141,7 @@ const MOCK_COUNTRIES: Country[] = [
     areaUnit: 'sqft',
     revenueBasisDefault: 'cash',
     defaultCommsChannel: 'whatsapp',
+    dialCode: '1',
     hasPostalCodes: true,
     registryKey1: 'property.registry.apn',
     registryKey2: null,
@@ -161,6 +167,7 @@ const MOCK_COUNTRIES: Country[] = [
     areaUnit: 'sqft',
     revenueBasisDefault: 'accrual',
     defaultCommsChannel: 'whatsapp',
+    dialCode: '44',
     hasPostalCodes: true,
     registryKey1: 'property.registry.title_number',
     registryKey2: null,
