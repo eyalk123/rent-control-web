@@ -956,7 +956,9 @@
     "deactivate": "בטל פעילות",
     "deactivateConfirm": "לבטל את פעילות הספק?",
     "deactivateMessage": "הספק יוסתר מהרשימות הפעילות. ניתן להפעיל אותו מחדש על ידי עריכה.",
-    "deactivateSuccess": "הספק בוטל"
+    "deactivateSuccess": "הספק בוטל",
+    "paymentDetails": "פרטי תשלום",
+    "paymentDetailsPlaceholder": "פרטי חשבון או העברה"
   },
   "country": {
     "gateTitle": "איפה הנכסים שלך?",

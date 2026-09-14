@@ -954,7 +954,9 @@
     "deactivate": "Deactivate",
     "deactivateConfirm": "Deactivate this supplier?",
     "deactivateMessage": "This supplier will be hidden from active lists. You can reactivate it later by editing.",
-    "deactivateSuccess": "Supplier deactivated"
+    "deactivateSuccess": "Supplier deactivated",
+    "paymentDetails": "Payment details",
+    "paymentDetailsPlaceholder": "Account or transfer details"
   },
   "country": {
     "gateTitle": "Where are your properties?",

@@ -10,6 +10,7 @@ import { useExpenseCategories } from '@/features/transactions/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
+import { capabilities } from '@/shared/utils/capabilities';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -50,7 +51,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
 
   const { register, handleSubmit, reset, setValue, watch, control, formState: { errors, isSubmitting, isDirty } } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema) as never,
-    defaultValues: { name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' } },
+    defaultValues: { name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' }, paymentDetails: '' },
   });
 
   const selectedCategoryIds = watch('categoryIds') ?? [];
@@ -63,14 +64,18 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
 
   useEffect(() => {
     if (!open && !supplierId) {
-      reset({ name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' } });
+      reset({ name: '', phone: '', email: '', notes: '', categoryIds: [], bankAccount: { bank: '', branch: '', account: '' }, paymentDetails: '' });
     }
   }, [open, supplierId, reset]);
 
   useEffect(() => {
     if (existing && open) {
+      // One stored string, two ways to show it. Israel splits it back into bank/branch/
+      // account; everyone else sees exactly what was typed, because "12/345/6789" is a
+      // meaningful shape there and an arbitrary one everywhere else.
+      const structured = capabilities().structuredBankDetails;
       const parsedBankAccount = (() => {
-        if (!existing.bank_account) return { bank: '', branch: '', account: '' };
+        if (!structured || !existing.bank_account) return { bank: '', branch: '', account: '' };
         const parts = existing.bank_account.split('/');
         return { bank: parts[0] ?? '', branch: parts[1] ?? '', account: parts[2] ?? '' };
       })();
@@ -81,6 +86,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
         notes: existing.notes ?? '',
         categoryIds: existing.category_ids ?? [],
         bankAccount: parsedBankAccount as BankAccountValue,
+        paymentDetails: structured ? '' : (existing.bank_account ?? ''),
       });
     }
   }, [existing, open, reset]);
@@ -92,9 +98,11 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
         phone: data.phone || null,
         email: data.email || null,
         notes: data.notes || null,
-        bank_account: isValidBankAccount(data.bankAccount as BankAccountValue)
-          ? `${data.bankAccount.bank}/${data.bankAccount.branch}/${data.bankAccount.account}`
-          : null,
+        bank_account: capabilities().structuredBankDetails
+          ? isValidBankAccount(data.bankAccount as BankAccountValue)
+            ? `${data.bankAccount.bank}/${data.bankAccount.branch}/${data.bankAccount.account}`
+            : null
+          : data.paymentDetails.trim() || null,
         category_ids: data.categoryIds,
       };
 
@@ -209,19 +217,32 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
         </div>
 
         <div ref={bankAnchorRef} className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t('suppliers.bankAccount')}</p>
-          <Controller
-            control={control}
-            name="bankAccount"
-            render={({ field: { value, onChange }, fieldState: { error: fieldError } }) => (
-              <BankAccountInput
-                value={(value as BankAccountValue) ?? { bank: '', branch: '', account: '' }}
-                onChange={onChange}
-                disabled={isSubmitting}
-                error={fieldError?.message}
-              />
-            )}
-          />
+          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{capabilities().structuredBankDetails ? t('suppliers.bankAccount') : t('suppliers.paymentDetails')}</p>
+          {capabilities().structuredBankDetails ? (
+            <Controller
+              control={control}
+              name="bankAccount"
+              render={({ field: { value, onChange }, fieldState: { error: fieldError } }) => (
+                <BankAccountInput
+                  value={(value as BankAccountValue) ?? { bank: '', branch: '', account: '' }}
+                  onChange={onChange}
+                  disabled={isSubmitting}
+                  error={fieldError?.message}
+                />
+              )}
+            />
+          ) : (
+            /* Bank + branch + account picked from a list is an Israeli banking shape. No
+               IBAN, routing-number or sort-code validation: a rule that rejects a valid
+               account is worse than no rule. */
+            <FormInput
+              label={t('suppliers.paymentDetails')}
+              placeholder={t('suppliers.paymentDetailsPlaceholder')}
+              disabled={isSubmitting}
+              error={errors.paymentDetails?.message}
+              {...register('paymentDetails')}
+            />
+          )}
         </div>
       </form>
     </Drawer>

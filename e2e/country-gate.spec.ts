@@ -192,3 +192,38 @@ test.describe('capability gating', () => {
     await expect(page.getByText(/CPI/i).first()).toBeVisible();
   });
 });
+
+/**
+ * Supplier payment details.
+ *
+ * Bank + branch + account picked from a list is an Israeli banking shape. Everywhere else
+ * it is one free-text box, because an IBAN, a routing number and a sort code have nothing
+ * in common and a validation rule that rejects a valid account is worse than no rule.
+ */
+test.describe('supplier payment details', () => {
+  async function inCountry(page: Parameters<typeof waitForAppReady>[0], code: string) {
+    await page.addInitScript((c) => {
+      try {
+        localStorage.setItem('country.mockCountry', c);
+      } catch {
+        /* ignore */
+      }
+    }, code);
+  }
+
+  test('Israel keeps the structured bank picker', async ({ page }) => {
+    await inCountry(page, 'IL');
+    await page.goto('/suppliers');
+    await page.getByRole('button', { name: 'Add Supplier' }).click();
+    await expect(page.getByText('Bank account')).toBeVisible();
+    await expect(page.getByLabel('Payment details')).toHaveCount(0);
+  });
+
+  test('a US account gets one free-text field instead', async ({ page }) => {
+    await inCountry(page, 'US');
+    await page.goto('/suppliers');
+    await page.getByRole('button', { name: 'Add Supplier' }).click();
+    await expect(page.getByLabel('Payment details')).toBeVisible();
+    await expect(page.getByText('Bank account')).toHaveCount(0);
+  });
+});
