@@ -1,6 +1,9 @@
 import type { PropertyFormValues } from '@/features/properties/validation/propertyValidation';
 import type { RenterFormValues } from '@/features/renters/validation/renterValidation';
-import { toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
+import { PAYMENT_METHOD_REQUIREMENTS, toPaymentMethodOrNull } from '@/shared/constants/paymentMethods';
+import { PROPERTY_TYPE_REQUIREMENTS } from '@/features/properties/validation/propertyValidation';
+import { RENT_MODE_REQUIREMENTS } from '@/shared/constants/rentModes';
+import { capabilities, type Capabilities } from '@/shared/utils/capabilities';
 import type { ExtractedRenter, FieldNote, LeaseExtraction, ProvenanceItem, ReviewItem } from '../types';
 import { PROPERTY_SCAN_FIELDS } from './propertyFields';
 
@@ -41,6 +44,24 @@ const insuranceType = (v: string | null): string | undefined =>
 // The backend already constrains payment_type to the PaymentMethod domain; re-map here so an
 // older/unknown value (e.g. the legacy 'wire_transfer') can't reach the select as free text.
 const paymentType = (v: string | null): string | undefined => toPaymentMethodOrNull(v) ?? undefined;
+/**
+ * A value the model read off the lease correctly that this country has nowhere to put.
+ *
+ * Not the same thing as a value we could not read. The pickers narrow by capability, so a
+ * `garden_apartment` / `bit` / `cpi` arriving from the scanner reaches a control with no
+ * matching option: it renders blank and then fails the API's own guard on submit. Dropping
+ * it from the prefill is only half the fix — the other half is saying so, which is why each
+ * caller pushes an unconditional review item, exactly as `unsupportedFrequency` does.
+ */
+function gatedOut<T extends string>(
+  value: T | null | undefined,
+  gated: Partial<Record<T, keyof Capabilities>>,
+): T | null {
+  if (!value) return null;
+  const requires = gated[value];
+  return requires !== undefined && !capabilities()[requires] ? value : null;
+}
+
 
 // `field` is the backend snake-case field name (used to look up its uncertainty note);
 // `key` is the RHF form field; `i18n` the label key shown in the review banner.
@@ -57,17 +78,28 @@ export function mapExtraction(extraction: LeaseExtraction): MappedExtraction {
     notes.set(key, n);
   }
 
+  const unavailableType = gatedOut(p.type, PROPERTY_TYPE_REQUIREMENTS);
+
   const propertyPrefill: Partial<PropertyFormValues> = {};
   const propertyReview: ReviewItem[] = [];
   const propertyProvenance: ProvenanceItem[] = [];
   for (const a of PROPERTY_SCAN_FIELDS) {
-    const v = a.get(p);
+    const v = a.field === 'type' && unavailableType ? undefined : a.get(p);
     if (v === undefined) continue;
     (propertyPrefill as Record<string, unknown>)[a.key] = v;
     const note = notes.get(`property.${a.field}`);
     const source = note?.source_text ?? null;
     propertyProvenance.push({ formKey: a.key as string, labelKey: a.i18n, prefilledValue: v, source });
     if (note) propertyReview.push({ field: a.i18n, formKey: a.key as string, value: v, source, confidence: note.confidence });
+  }
+
+  if (unavailableType) {
+    propertyReview.push({
+      field: 'property.type',
+      formKey: 'type',
+      value: unavailableType,
+      source: notes.get('property.type')?.source_text ?? null,
+    });
   }
 
   const renters = (extraction.renters ?? []).map((r, i) => mapRenter(r, i, notes));
@@ -95,6 +127,9 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
   // is the only one who can decide which of the three it should become.
   const unsupportedFrequency =
     numberOfPayments != null && paymentFrequency === undefined ? numberOfPayments : null;
+  // The same idea, for values this country's capabilities exclude rather than the product.
+  const unavailableMode = gatedOut(r.rent_escalation_mode, RENT_MODE_REQUIREMENTS);
+  const unavailablePayment = gatedOut(toPaymentMethodOrNull(r.payment_type), PAYMENT_METHOD_REQUIREMENTS);
 
   const renterAssigns: Assign<keyof RenterFormValues>[] = [
     { key: 'firstName', i18n: 'renter.firstName', field: 'first_name', get: () => s(r.first_name) },
@@ -108,8 +143,8 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
     { key: 'optionTermMonths', i18n: 'renter.extraOptionMonths', field: 'option_term_months', get: () => s(r.option_term_months) },
     { key: 'baseRent', i18n: 'renter.baseRent', field: 'base_rent', get: () => s(r.base_rent) },
     { key: 'escalationValue', i18n: 'renter.escalationValue', field: 'rent_escalation_value', get: () => s(r.rent_escalation_value) },
-    { key: 'escalationMode', i18n: 'renter.escalationMode', field: 'rent_escalation_mode', get: () => r.rent_escalation_mode ?? undefined },
-    { key: 'paymentType', i18n: 'renter.paymentType', field: 'payment_type', get: () => paymentType(r.payment_type) },
+    { key: 'escalationMode', i18n: 'renter.escalationMode', field: 'rent_escalation_mode', get: () => (unavailableMode ? undefined : r.rent_escalation_mode ?? undefined) },
+    { key: 'paymentType', i18n: 'renter.paymentType', field: 'payment_type', get: () => (unavailablePayment ? undefined : paymentType(r.payment_type)) },
     { key: 'paymentDayOfMonth', i18n: 'renter.paymentDay', field: 'payment_day_of_month', get: () => s(r.payment_day_of_month) },
     { key: 'insuranceType', i18n: 'renter.insuranceType', field: 'insurance_type', get: () => insuranceType(r.insurance_type) },
     { key: 'insuranceAmount', i18n: 'renter.insuranceAmount', field: 'insurance_amount', get: () => s(r.insurance_amount) },
@@ -138,6 +173,22 @@ function mapRenter(r: ExtractedRenter, index: number, notes: Map<string, FieldNo
       formKey: 'paymentFrequency',
       value: String(unsupportedFrequency),
       source: notes.get(`renter.${index}.number_of_payments`)?.source_text ?? null,
+    });
+  }
+  if (unavailableMode) {
+    review.push({
+      field: 'renter.escalationMode',
+      formKey: 'escalationMode',
+      value: unavailableMode,
+      source: notes.get(`renter.${index}.rent_escalation_mode`)?.source_text ?? null,
+    });
+  }
+  if (unavailablePayment) {
+    review.push({
+      field: 'renter.paymentType',
+      formKey: 'paymentType',
+      value: unavailablePayment,
+      source: notes.get(`renter.${index}.payment_type`)?.source_text ?? null,
     });
   }
 

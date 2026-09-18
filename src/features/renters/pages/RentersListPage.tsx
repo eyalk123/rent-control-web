@@ -35,6 +35,7 @@ import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyCol
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { getLeaseUrgency } from '@/shared/utils/dates';
+import { isOpenEnded } from '@/shared/utils/renterStatus';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { billedCadenceLabel } from '@/shared/utils/cadence';
 import type { Renter } from '@/shared/types';
@@ -47,6 +48,9 @@ import { useTour, useTourStep } from '@/features/onboarding/TourController';
 import i18n from '@/core/i18n';
 
 function fmtLeaseEnd(renter: Renter): string | null {
+  // An open-ended lease has an end date, but the generator moves it every year — printing
+  // it would state an end the app invented. It says so instead.
+  if (isOpenEnded(renter)) return i18n.t('renter.openEndedShort');
   const d = getLeaseEndDate(renter);
   if (!d) return null;
   return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
@@ -54,7 +58,8 @@ function fmtLeaseEnd(renter: Renter): string | null {
 
 // Color for the "Lease ends" value: red when expired, amber when ending within 3 months.
 function leaseUrgencyColor(renter: Renter): string | undefined {
-  const urgency = getLeaseUrgency(getLeaseEndDate(renter));
+  // Nothing is urgent about a date that rolls forward on its own.
+  const urgency = getLeaseUrgency(isOpenEnded(renter) ? null : getLeaseEndDate(renter));
   if (urgency === 'expired') return 'var(--color-error)';
   if (urgency === 'soon') return 'var(--color-warning)';
   return undefined;

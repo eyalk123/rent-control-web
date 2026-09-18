@@ -34,7 +34,13 @@ import { useAnchorRegistry } from './AnchorRegistry';
 import { useTourProgress } from './queries';
 import { TOURS } from './registry';
 import { TOURS_ENABLED } from './flags';
-import { useGates, useGateKnown, type GateInputs } from './useGates';
+import {
+  useCapability,
+  useCapabilityKnown,
+  useGateKnown,
+  useGates,
+  type GateInputs,
+} from './useGates';
 import type { SeedId, TourDefinition, TourId, TourStep } from './types';
 
 /** How long to wait for a page's anchors to mount before giving up on this visit. */
@@ -70,15 +76,29 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
   const progress = useTourProgress();
   const evaluateGate = useGates();
   const isGateKnown = useGateKnown();
+  const hasCapability = useCapability();
+  const capabilityKnown = useCapabilityKnown();
   const { pathname } = useLocation();
   // The anchor wait polls from a closure created when the tour was requested, so reading
   // the gates directly would freeze them at the values they had before the lists loaded —
   // which is exactly the moment a `skipWhen` step needs an answer. Kept current on every
   // render, the same way the anchor registry reads through a ref.
-  const gatesRef = useRef({ evaluateGate, isGateKnown, hasSeenTour: progress.hasSeenTour });
+  const gatesRef = useRef({
+    evaluateGate,
+    isGateKnown,
+    hasCapability,
+    capabilityKnown,
+    hasSeenTour: progress.hasSeenTour,
+  });
   useEffect(() => {
-    gatesRef.current = { evaluateGate, isGateKnown, hasSeenTour: progress.hasSeenTour };
-  }, [evaluateGate, isGateKnown, progress.hasSeenTour]);
+    gatesRef.current = {
+      evaluateGate,
+      isGateKnown,
+      hasCapability,
+      capabilityKnown,
+      hasSeenTour: progress.hasSeenTour,
+    };
+  }, [evaluateGate, isGateKnown, hasCapability, capabilityKnown, progress.hasSeenTour]);
   const [active, setActive] = useState<ActiveTour | null>(null);
   // Tours already considered and rejected this session, so a page that re-renders
   // constantly does not re-run the whole check each time.
@@ -110,7 +130,13 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         // Bail if the wait was cancelled meanwhile — a navigation, or a sign-out.
         if (openingRef.current !== tour.id) return;
 
-        const { evaluateGate: gate, isGateKnown: known, hasSeenTour: seen } = gatesRef.current;
+        const {
+          evaluateGate: gate,
+          isGateKnown: known,
+          hasCapability: has,
+          capabilityKnown: capsKnown,
+          hasSeenTour: seen,
+        } = gatesRef.current;
 
         // Two reasons a step is not part of this tour at all, both resolved first so
         // they count for neither the wait nor the step counter:
@@ -120,6 +146,9 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         const live = tour.steps.filter(
           (s) =>
             (!s.skipWhen || !gate(s.skipWhen)) &&
+            // A step about something this country does not have. Dropping it here also
+            // drops its seed, because `finish` records only the steps that survived.
+            has(s.requires) &&
             !s.sharedWith?.some((other) => seen(other)),
         );
 
@@ -144,7 +173,16 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         // open against a guess. Past the deadline it opens anyway with the step kept,
         // which is the right way to be wrong: a new account must not lose the one
         // instruction written for it.
-        const ready = conditional.every((s) => known(s.skipWhen!)) || Date.now() >= deadline;
+        // The capability answer is held to the same standard as a `skipWhen` gate, and for
+        // a sharper reason: an unanswered `skipWhen` merely keeps a step, while an
+        // unanswered capability reads as Israel's full set and would keep a CPI step in a
+        // country that has no index.
+        const needsCapability =
+          tour.requires !== undefined || tour.steps.some((s) => s.requires || s.seed?.requires);
+        const ready =
+          (conditional.every((s) => known(s.skipWhen!)) &&
+            (!needsCapability || capsKnown)) ||
+          Date.now() >= deadline;
 
         if (ready && needed.every((key) => registry?.has(key))) {
           // Resolve optional steps once, here: a step whose element is not on screen at
@@ -207,12 +245,16 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
         return;
       }
 
+      // A whole tour about a capability this country lacks. Same silent no-op: if the
+      // country has not resolved yet, `hasCapability` says no and the tour simply waits.
+      if (!hasCapability(tour.requires)) return;
+
       openingRef.current = id;
       const arrivedFrom =
         tour.arrivesFrom && progress.hasShownSeed(tour.arrivesFrom) ? tour.arrivesFrom : null;
       openWhenAnchored(tour, arrivedFrom);
     },
-    [canRun, progress, evaluateGate, openWhenAnchored],
+    [canRun, progress, evaluateGate, hasCapability, openWhenAnchored],
   );
 
   const completeTour = progress.completeTour;
@@ -222,7 +264,9 @@ export function TourControllerProvider({ children }: PropsWithChildren) {
       // can open with its callback line later — and so a seed is never shown twice.
       const seeds: SeedId[] = [];
       tour.steps.forEach((s) => {
-        if (s.seed) seeds.push(s.seed.id);
+        // A seed suppressed by capability was never rendered, so recording it would burn
+        // it: the account would never see it even after the capability arrived.
+        if (s.seed && gatesRef.current.hasCapability(s.seed.requires)) seeds.push(s.seed.id);
       });
       completeTour(tour.id, seeds);
     },

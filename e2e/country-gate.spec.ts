@@ -7,10 +7,15 @@ import { test, expect, waitForAppReady } from './fixtures';
  * every other spec. This one arms the unanswered state through the same localStorage
  * override the mock reads, set in `addInitScript` so it lands before any app script runs.
  *
- * What is worth pinning down: that the gate blocks, that **no country is ever refused**,
- * that the skimmed disclosure actually gets seen rather than being skipped past by the
- * cache update, and that Israel goes straight through without being shown a screen telling
- * it nothing is missing.
+ * What is worth pinning down: that the gate blocks, that a list of ~250 countries can
+ * actually be searched, and that **every** country goes straight into the app. The gate
+ * used to show non-Israeli accounts a second screen listing what their country does not
+ * get yet; there is no tier branch here any more, and a test that one country is treated
+ * differently from another would now be testing for the bug.
+ *
+ * The screen opens on a *chip*, not on the search box: the browser's guess is seeded as a
+ * choice, and the search only exists while nothing is chosen. So every helper here that
+ * wants to search has to clear first — which is the behaviour under test, not a workaround.
  */
 async function withoutCountry(page: Parameters<typeof waitForAppReady>[0]) {
   await page.addInitScript(() => {
@@ -20,6 +25,26 @@ async function withoutCountry(page: Parameters<typeof waitForAppReady>[0]) {
       /* ignore */
     }
   });
+}
+
+/**
+ * Put the search back, whatever the browser guessed.
+ *
+ * Tolerant of the chip being absent so it can be called unconditionally: the guess depends
+ * on the runner's locale, and a helper that assumed a chip was there would be asserting
+ * something these tests are not about.
+ */
+async function clearChoice(page: Parameters<typeof waitForAppReady>[0]) {
+  const clear = page.getByRole('button', { name: 'Choose a different country' });
+  if (await clear.count()) await clear.click();
+}
+
+/** Type enough of the name to find it, then pick it out of the filtered list. */
+async function choose(page: Parameters<typeof waitForAppReady>[0], name: string) {
+  await clearChoice(page);
+  await page.getByPlaceholder('Search countries').fill(name);
+  await page.getByRole('option', { name, exact: false }).first().click();
+  await page.getByRole('button', { name: 'Continue' }).click();
 }
 
 test.describe('country gate', () => {
@@ -32,64 +57,89 @@ test.describe('country gate', () => {
     await expect(page.locator('main')).toHaveCount(0);
   });
 
-  test('Israel goes straight in, with nothing to disclose', async ({ page, pageErrors }) => {
+  /**
+   * The point of the chip: a choice you can see, and that nothing but the X can change.
+   *
+   * It used to be a tinted row inside a 250-row scroller — invisible once scrolled past,
+   * and replaceable by any stray click anywhere in the list.
+   */
+  test('the choice replaces the search, and only the X brings it back', async ({ page }) => {
     await withoutCountry(page);
     await page.goto('/home');
 
-    await page.getByLabel('Country').selectOption('IL');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    // Opens already answered, from the browser guess. No search box, no list.
+    await expect(page.getByPlaceholder('Search countries')).toHaveCount(0);
+    await expect(page.getByRole('option')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
 
-    // Tier N is the full product, so the skimmed notice must not appear at all.
-    await waitForAppReady(page);
-    await expect(page.getByText(/We don't have .*-specific features yet/)).toHaveCount(0);
-    expect(pageErrors, `uncaught errors:\n${pageErrors.join('\n')}`).toEqual([]);
+    await page.getByRole('button', { name: 'Choose a different country' }).click();
+    await expect(page.getByPlaceholder('Search countries')).toBeVisible();
+    await expect(page.getByRole('option')).toHaveCount(3);
+    // Nothing is chosen while the search is open, so there is nothing to confirm.
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+
+    await page.getByRole('option', { name: /United Kingdom/ }).click();
+    // Straight back to a chip naming it — the list is gone, so it cannot be mis-clicked.
+    await expect(page.getByRole('option')).toHaveCount(0);
+    await expect(page.getByPlaceholder('Search countries')).toHaveCount(0);
+    await expect(page.getByText('United Kingdom')).toBeVisible();
   });
 
-  test('a supported country is told what is missing before going in', async ({ page }) => {
+  test('typing narrows the list to what was typed', async ({ page }) => {
+    await withoutCountry(page);
+    await page.goto('/home');
+    await clearChoice(page);
+
+    const options = page.getByRole('option');
+    await expect(options).toHaveCount(3);
+
+    await page.getByPlaceholder('Search countries').fill('united');
+    await expect(options).toHaveCount(2);
+
+    // The ISO code is a match too, for anyone who thinks in codes.
+    await page.getByPlaceholder('Search countries').fill('il');
+    await expect(page.getByRole('option', { name: /Israel/ })).toBeVisible();
+
+    await page.getByPlaceholder('Search countries').fill('zzz');
+    await expect(options).toHaveCount(0);
+    await expect(page.getByText('No country matches that.')).toBeVisible();
+  });
+
+  test('Israel goes straight in', async ({ page, pageErrors }) => {
     await withoutCountry(page);
     await page.goto('/home');
 
-    await page.getByLabel('Country').selectOption('US');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await choose(page, 'Israel');
 
-    // The disclosure must survive the write — the mutation deliberately does not update
-    // the cache, or this screen would be unmounted before it could be read.
-    await expect(page.getByRole('heading', { name: 'Rent Control in United States' })).toBeVisible();
-    await expect(page.getByText(/without rent index linkage/)).toBeVisible();
-    await expect(page.getByText(/USD/)).toBeVisible();
-
-    await page.getByRole('button', { name: 'Get started' }).click();
     await waitForAppReady(page);
     await expect(page.getByRole('heading', { name: 'Where are your properties?' })).toHaveCount(0);
+    expect(pageErrors, `uncaught errors: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 
-  test('an open-ended-tenancy country gets the extra sentence, and is not blocked', async ({
+  test('a supported country goes straight in too, with nothing to read first', async ({
     page,
   }) => {
     await withoutCountry(page);
     await page.goto('/home');
 
-    await page.getByLabel('Country').selectOption('GB');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await choose(page, 'United States');
 
-    await expect(page.getByText(/usually open-ended/)).toBeVisible();
-    // The whole point of dropping the blocked tier: they still reach the app.
-    await page.getByRole('button', { name: 'Get started' }).click();
     await waitForAppReady(page);
     await expect(page.getByRole('heading', { name: 'Where are your properties?' })).toHaveCount(0);
+    // The screen that used to stand here. Its copy is gone from the locale files, so this
+    // is a guard against it being reintroduced rather than against a stale string.
+    await expect(page.getByText(/-specific features yet/)).toHaveCount(0);
+    await expect(page.getByText(/Notify me when you add/)).toHaveCount(0);
   });
 
-  test('notify-me is offered and acknowledges', async ({ page }) => {
+  test('an open-ended-tenancy country is not blocked either', async ({ page }) => {
     await withoutCountry(page);
     await page.goto('/home');
 
-    await page.getByLabel('Country').selectOption('US');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await choose(page, 'United Kingdom');
 
-    const notify = page.getByRole('button', { name: 'Notify me when you add United States' });
-    await expect(notify).toBeVisible();
-    await notify.click();
-    await expect(page.getByRole('button', { name: "We'll let you know" })).toBeDisabled();
+    await waitForAppReady(page);
+    await expect(page.getByRole('heading', { name: 'Where are your properties?' })).toHaveCount(0);
   });
 
   test('the chosen country actually drives how money is formatted', async ({ page }) => {
@@ -101,9 +151,7 @@ test.describe('country gate', () => {
     */
     await withoutCountry(page);
     await page.goto('/home');
-    await page.getByLabel('Country').selectOption('US');
-    await page.getByRole('button', { name: 'Continue' }).click();
-    await page.getByRole('button', { name: 'Get started' }).click();
+    await choose(page, 'United States');
     await waitForAppReady(page);
 
     const main = page.locator('main');

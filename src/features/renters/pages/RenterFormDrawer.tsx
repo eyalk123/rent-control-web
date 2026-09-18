@@ -85,14 +85,14 @@ function RenterFormTourRequest() {
 const TOUR_PAGE_ONE_STEPS = ['overview', 'extraContacts'];
 
 /**
- * A longer starting term where tenancies are open-ended.
+ * The switch's starting position.
  *
- * The field is normally blank, not 1 — so this is a *pre-fill*, not a changed default, and
- * it only reduces how often an invented end date needs revisiting. Empty everywhere else,
- * which is exactly today's behaviour.
+ * On where tenancies normally have no agreed end, off everywhere else — and only ever a
+ * *default*, because the switch is per lease: an Israeli month-to-month holdover is the
+ * same shape and can turn it on, a German fixed-term sublet can turn it off.
  */
-function openEndedTermDefault(): { contractTermYears?: string } {
-  return isOpenEndedCountry() ? { contractTermYears: '5' } : {};
+function openEndedDefault(): { openEnded: boolean } {
+  return { openEnded: isOpenEndedCountry() };
 }
 
 export function RenterFormDrawer({
@@ -182,7 +182,7 @@ export function RenterFormDrawer({
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
     // never shown; pre-filling discloses the default and leaves it editable.
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, ...openEndedTermDefault() },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, ...openEndedDefault() },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -190,6 +190,7 @@ export function RenterFormDrawer({
   // Document-scan property association: warn (softly) when the chosen property's address
   // doesn't match the scanned lease. The dropdown always stays the source of truth.
   const selectedPropertyId = useWatch({ control, name: 'propertyId' });
+  const openEndedWatch = Boolean(useWatch({ control, name: 'openEnded' }));
   const propertyMismatch =
     !!scannedLeaseAddress?.address && !!selectedPropertyId
       ? (() => {
@@ -277,6 +278,7 @@ export function RenterFormDrawer({
         // A renter-level setting, not part of the lease-term intent — so it belongs here
         // rather than inside the intent ternary, whose other branch would have dropped it.
         suppressExpiryAlerts: existing.suppress_expiry_alerts ?? false,
+        openEnded: existing.open_ended ?? false,
         insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
         idImageUrl: existing.id_image_url ?? undefined,
@@ -327,9 +329,10 @@ export function RenterFormDrawer({
         escalationValue: '',
         suppressExpiryAlerts: false,
         contractTermYears: '',
-        // After the blank contract term, so an open-ended country's pre-fill wins — and
-        // before the prefill, so a scanned lease's own term still wins over both.
-        ...openEndedTermDefault(),
+        // Before the prefill, so a scanned lease's own term still wins. The switch replaces
+        // the silent five-year pre-fill this used to carry: the same countries, but stated
+        // rather than guessed at, and the server keeps the schedule rolling from here.
+        ...openEndedDefault(),
         ...(effPrefill ?? {}),
       });
       setFullContractFile(pendingContractFile ?? null);
@@ -401,14 +404,20 @@ export function RenterFormDrawer({
           // Absent means twelve, so only a short tail carries it and an ordinary lease's
           // payload stays exactly the shape it has always been.
           ...(ly.months && ly.months < 12 ? { months: ly.months } : {}),
-          // Per-year rules only exist in custom mode, and "manual" is the absence of a
-          // rule — omit it so the payload stays the legacy shape for every other lease.
-          ...(data.escalationMode === 'custom' && ly.rule && ly.rule.mode !== 'manual'
-            ? { rule: { mode: ly.rule.mode, value: ly.rule.value ? Number(ly.rule.value) : undefined } }
-            : {}),
+          // Derived per-year rules only exist in custom mode. A `manual` rule is different:
+          // it is the mark that this amount was *typed*, which is what stops the whole-lease
+          // formula recomputing over it and what makes the years after it chain from it. It
+          // therefore has to survive in every mode. A year nobody touched still carries no
+          // rule at all, so an untouched lease's payload stays the shape it has always been.
+          ...(ly.rule?.mode === 'manual'
+            ? { rule: { mode: 'manual' as const } }
+            : data.escalationMode === 'custom' && ly.rule
+              ? { rule: { mode: ly.rule.mode, value: ly.rule.value ? Number(ly.rule.value) : undefined } }
+              : {}),
         })),
         contract_term_years: toNumOrNull(data.contractTermYears),
-        suppress_expiry_alerts: data.suppressExpiryAlerts,
+        suppress_expiry_alerts: data.suppressExpiryAlerts || data.openEnded,
+        open_ended: data.openEnded,
         contract_term_months: toNumOrNull(data.contractTermMonths),
         option_years: toNumOrNull(data.optionYears),
         option_term_months: toNumOrNull(data.optionTermMonths),
@@ -712,17 +721,37 @@ export function RenterFormDrawer({
               and an Israeli month-to-month holdover has exactly the same problem, which is
               why this is offered to everyone rather than gated on the country.
             */}
+            {/*
+              `Toggle` is the bare switch — it takes its label as `aria-label` and renders
+              no text of its own, on the stated assumption that the row around it says what
+              it is. Every other call site is such a row; this one was not, so the form had
+              an unexplained switch sitting between the payment fields and the insurance
+              ones, in both languages. The row is the missing half, not a change to Toggle.
+            */}
+            {/*
+              Hidden while the lease is open-ended, which already implies it: that countdown
+              is to a date the generator moves every year, so there is nothing left for this
+              switch to decide. Two controls for one outcome is worse than one, and the value
+              is still stored and editable for every lease that is not open-ended.
+            */}
+            {!openEndedWatch && (
             <Controller
               control={control}
               name="suppressExpiryAlerts"
               render={({ field }) => (
-                <Toggle
-                  checked={Boolean(field.value)}
-                  onChange={field.onChange}
-                  label={t('renter.suppressExpiryAlerts')}
-                />
+                <div className="flex items-center gap-4">
+                  <p className="flex-1 text-sm" style={{ color: 'var(--color-text-primary)' }}>
+                    {t('renter.suppressExpiryAlerts')}
+                  </p>
+                  <Toggle
+                    checked={Boolean(field.value)}
+                    onChange={field.onChange}
+                    label={t('renter.suppressExpiryAlerts')}
+                  />
+                </div>
               )}
             />
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />

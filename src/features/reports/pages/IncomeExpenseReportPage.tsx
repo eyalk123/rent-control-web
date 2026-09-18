@@ -17,7 +17,7 @@ import { PropTile } from '@/shared/components/ui/PropTile';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
-import { formatMoney } from '@/shared/utils/money';
+import { formatMoney, formatNumber } from '@/shared/utils/money';
 import { monthDivider, reportCols, reportTheme } from '../reportTheme';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -26,15 +26,21 @@ import type { Transaction } from '@/shared/types';
 import i18n from '@/core/i18n';
 
 /**
- * A monthly figure, in full, with thousands separators — the same `{:,.0f}` the PDF prints.
+ * A monthly figure, in full, with the account's thousands separators.
  *
  * This used to abbreviate to whole thousands, which rendered 4,100 revenue and 3,750 net both
  * as "4k": two different numbers wearing the same label, and a row whose own arithmetic looked
  * broken (4k − 350 = 4k). The columns have room for the real figures.
+ *
+ * Grouped by the account's **country**, through `formatNumber`, not by the reading language.
+ * This was the one place in the app that formatted a number without going through `money.ts`
+ * — it called `toLocaleString(i18n.language)`, so a Spanish account reading in English saw
+ * `2,289` in this grid and `2.289€` on every other screen. The month headings above still
+ * follow the language, because a month *name* is a word and this is a number.
  */
 function formatCell(v: number): string {
   if (v === 0) return '—';
-  return Math.round(v).toLocaleString(i18n.language);
+  return formatNumber(Math.round(v));
 }
 
 /**
@@ -45,15 +51,30 @@ function formatCell(v: number): string {
  * `get_income_expense_data` on the backend, or this preview and the PDF you download from it
  * put the same payment in different years.
  */
-function reportingDate(tx: Transaction): string {
-  return tx.type === 'revenue' ? (tx.month_for ?? tx.date_of_payment) : tx.date_of_payment;
+/**
+ * Which date decides the year and month a transaction lands in.
+ *
+ * **Only revenue moves with the basis.** Accrual counts rent toward the month it was
+ * *for*; cash counts it when it arrived. Expenses are the paid date under both, which is
+ * why they are not branched on here.
+ *
+ * The basis has to reach this function, not just the export: without it the table on
+ * screen stayed accrual while the downloaded PDF changed, which quietly broke the page's
+ * own promise that the preview is what you are about to export.
+ */
+function reportingDate(tx: Transaction, basis: RevenueBasis): string {
+  if (tx.type !== 'revenue') return tx.date_of_payment;
+  return basis === 'cash' ? tx.date_of_payment : (tx.month_for ?? tx.date_of_payment);
 }
 
-function useAllTransactionsForYear(year: number) {
+function useAllTransactionsForYear(year: number, basis: RevenueBasis) {
   return useQuery({
-    queryKey: ['transactions', 'all-for-year', year],
+    // The basis is part of the key: it changes which rows belong to the year, so a cached
+    // accrual result must not be reused for a cash view.
+    queryKey: ['transactions', 'all-for-year', year, basis],
     queryFn: () => getAllTransactions(),
-    select: (data: Transaction[]) => data.filter((tx) => reportingDate(tx).startsWith(String(year))),
+    select: (data: Transaction[]) =>
+      data.filter((tx) => reportingDate(tx, basis).startsWith(String(year))),
   });
 }
 
@@ -71,7 +92,7 @@ export function IncomeExpenseReportPage() {
   const [basis, setBasis] = useState<RevenueBasis>(defaultRevenueBasis);
 
   const { data: properties = [] } = useProperties();
-  const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear);
+  const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear, basis);
 
   const monthsLocale = Array.from({ length: 12 }, (_, idx) =>
     new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(selectedYear, idx, 1))
@@ -81,7 +102,7 @@ export function IncomeExpenseReportPage() {
   const rows = properties.map((p) => {
     const monthly = monthsLocale.map((_, idx) => {
       const prefix = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
-      const ptxs = transactions.filter((tx) => tx.property_id === p.id && reportingDate(tx).startsWith(prefix));
+      const ptxs = transactions.filter((tx) => tx.property_id === p.id && reportingDate(tx, basis).startsWith(prefix));
       const rev = ptxs.filter((tx) => tx.type === 'revenue').reduce((s, tx) => s + tx.amount, 0);
       const exp = ptxs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
       return { rev, exp };

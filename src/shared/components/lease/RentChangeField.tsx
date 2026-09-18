@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { allowedModes } from '@/shared/utils/capabilities';
+import { RENT_ESCALATION_MODES, RENT_MODE_REQUIREMENTS } from '@/shared/constants/rentModes';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
 import type { RentEscalationMode } from '@/shared/types';
@@ -15,24 +16,23 @@ interface Props {
   value: string;
   onValueChange: (value: string) => void;
   onValueBlur?: () => void;
+  /**
+   * Narrows the list to the modes an endless lease can be priced by.
+   *
+   * `custom` gives every year its own rule and `cpi` needs an index reading per year —
+   * neither can be written for a year the generator has not appended yet, which is why the
+   * API refuses both alongside the switch. Offering them here would only produce a save the
+   * server rejects.
+   */
+  openEnded?: boolean;
   className?: string;
 }
 
-/**
- * The escalation modes, in display order. Every caller offers all of them. `custom` leads
- * because it is the one that expresses a real lease — the other four are each a special case
- * of it. It is not the default; every caller sets `none` explicitly.
- */
-export const RENT_ESCALATION_MODES: RentEscalationMode[] = ['custom', 'none', 'percent', 'fixed', 'cpi'];
+// Re-exported so the existing import path keeps working; both now live in constants.
+export { RENT_ESCALATION_MODES, RENT_MODE_REQUIREMENTS };
 
-/**
- * `cpi` needs an index source behind it; outside Israel there is none and the API refuses
- * the value. The array above keeps every mode, because an existing lease can still hold
- * `cpi` and must keep rendering — only the picker narrows.
- */
-const MODE_REQUIREMENTS: Partial<Record<RentEscalationMode, 'cpiLinkage'>> = {
-  cpi: 'cpiLinkage',
-};
+/** The modes an open-ended lease can use — see the `openEnded` prop. */
+const CHAINABLE_OPEN_ENDED_MODES = new Set<RentEscalationMode>(['none', 'percent', 'fixed']);
 
 /**
  * The "how does the rent change" control: mode toggle + the CPI explainer + the percent/₪
@@ -47,6 +47,7 @@ export function RentChangeField({
   value,
   onValueChange,
   onValueBlur,
+  openEnded = false,
   className = '',
 }: Props) {
   const { t } = useTranslation();
@@ -58,8 +59,10 @@ export function RentChangeField({
 
   const segments: { value: RentEscalationMode; label: string }[] = allowedModes(
     RENT_ESCALATION_MODES,
-    MODE_REQUIREMENTS,
-  ).map((m) => ({
+    RENT_MODE_REQUIREMENTS,
+  )
+    .filter((m) => !openEnded || CHAINABLE_OPEN_ENDED_MODES.has(m))
+    .map((m) => ({
     value: m,
     label: t(
       {

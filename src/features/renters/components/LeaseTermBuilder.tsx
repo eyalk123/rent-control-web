@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { isOpenEndedCountry } from '@/shared/utils/capabilities';
+import { Toggle } from '@/shared/components/ui/Toggle';
 import {
   Controller,
   useFieldArray,
@@ -78,6 +78,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
   const baseRentStr = useWatch({ control, name: 'baseRent' }) as string | undefined;
   const escMode =
     (useWatch({ control, name: 'escalationMode' }) as RentEscalationMode | undefined) ?? 'none';
+  const openEnded = Boolean(useWatch({ control, name: 'openEnded' }));
   const escValStr = useWatch({ control, name: 'escalationValue' }) as string | undefined;
   const leaseStart = useWatch({ control, name: 'leaseStart' }) as string | undefined;
   const leaseYears =
@@ -208,12 +209,35 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           way. Extend stays available after expiry, so the estimate is genuinely workable
           rather than a dead end.
         */}
-        {isOpenEndedCountry() && (
-          <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            {t('renter.openEndedTermNote')}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-4">
+        {/*
+          The switch, not a warning. It used to be one line of copy telling the landlord the
+          model could not express their tenancy and to invent a date anyway; now they say so
+          and the server keeps the schedule rolling. Offered everywhere, defaulted on where
+          tenancies normally have no end — an Israeli month-to-month holdover is the same
+          shape, and gating the control would cost more than showing it.
+        */}
+        <Controller
+          control={control}
+          name="openEnded"
+          render={({ field }) => (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-4">
+                <p className="flex-1 text-sm" style={{ color: 'var(--color-text-primary)' }}>
+                  {t('renter.openEnded')}
+                </p>
+                <Toggle
+                  checked={Boolean(field.value)}
+                  onChange={field.onChange}
+                  label={t('renter.openEnded')}
+                />
+              </div>
+              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                {t(field.value ? 'renter.openEndedOnNote' : 'renter.openEndedOffNote')}
+              </p>
+            </div>
+          )}
+        />
+        <div className={`flex flex-wrap gap-4${openEnded ? ' hidden' : ''}`}>
           <Controller
             control={control}
             name="contractTermYears"
@@ -245,7 +269,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           />
         </div>
 
-        <div className="flex flex-wrap gap-4">
+        <div className={`flex flex-wrap gap-4${openEnded ? ' hidden' : ''}`}>
           <Controller
             control={control}
             name="optionYears"
@@ -314,6 +338,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
                 value={valueField.value ?? ''}
                 onValueChange={valueField.onChange}
                 onValueBlur={valueField.onBlur}
+                openEnded={openEnded}
               />
             )}
           />
@@ -394,13 +419,38 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
                   )}
                 />
               ) : (
-                <LeaseYearRow
+                // Editable under the whole-lease rules too, not only in `custom`. Correcting
+                // one year is not designing a schedule, and sending someone to Custom to fix
+                // a single number made them rebuild the lease to describe what the landlord
+                // actually did. `cpi` stays read-only — the server owns those amounts.
+                <Controller
                   key={index}
-                  label={getLeaseYearLabel(leaseStart, modelRows, index, i18n.language)}
-                  amount={String(row?.amount ?? '')}
-                  type={yearType}
-                  isCurrent={isCurrentLeaseYear(leaseStart, modelRows, index)}
-                  projected={isCpiProjected}
+                  control={control}
+                  name={`leaseYears.${index}.amount`}
+                  render={({ field: amountField }) => (
+                    <LeaseYearRow
+                      label={getLeaseYearLabel(leaseStart, modelRows, index, i18n.language)}
+                      amount={amountField.value ?? ''}
+                      type={yearType}
+                      isCurrent={isCurrentLeaseYear(leaseStart, modelRows, index)}
+                      projected={isCpiProjected}
+                      amountName={escMode === 'cpi' ? undefined : amountField.name}
+                      onAmountBlur={escMode === 'cpi' ? undefined : amountField.onBlur}
+                      onAmountChange={
+                        escMode === 'cpi'
+                          ? undefined
+                          : (v) => {
+                              amountField.onChange(v);
+                              // Pin it: the whole-lease rule no longer describes this year,
+                              // and everything after it chains from here instead of the base.
+                              setValue(`leaseYears.${index}.rule`, { mode: 'manual', value: '' }, { shouldDirty: true });
+                              // Year one *is* the first-year rent; keep the two in step or the
+                              // server (which prices year one off base_rent) overwrites it.
+                              if (index === 0) setValue('baseRent', v);
+                            }
+                      }
+                    />
+                  )}
                 />
               );
             })}

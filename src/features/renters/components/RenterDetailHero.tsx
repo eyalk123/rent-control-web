@@ -6,7 +6,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
-import { getRenterLifecycle, isTerminated } from '@/shared/utils/renterStatus';
+import { isOpenEnded, getRenterLifecycle, isTerminated } from '@/shared/utils/renterStatus';
 import type { Renter } from '@/shared/types';
 import { billedCadenceLabel } from '@/shared/utils/cadence';
 
@@ -52,6 +52,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
   // noise. Edit and Delete stay - a past tenancy's record can still need correcting - and
   // the forward-looking stats swap for backward-looking ones.
   const ended = getRenterLifecycle(renter) === 'ended';
+  const openEnded = isOpenEnded(renter);
   const terminated = isTerminated(renter);
   // A lease that simply ran its term is the canonical thing you renew, and the tenant
   // routinely stays on while the paperwork catches up — so Extend survives expiry. A
@@ -194,6 +195,17 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
             label={t('renter.monthsTenanted')}
             value={monthsTenanted != null ? String(monthsTenanted) : '—'}
             sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
+          />
+        ) : openEnded ? (
+          // No countdown, because there is nothing to count down to. An open-ended lease
+          // does carry an end date — the generator keeps a rolling five-year window so the
+          // "is this renter active" queries keep working — but that date moves every year,
+          // so printing it would assert an end the app invented and then quietly changed.
+          // The start date is the honest fact about the tenancy's length.
+          <HeroStat
+            label={t('renter.openEndedTenancy')}
+            value={t('renter.openEndedShort')}
+            sub={renter.lease_start ? fmtDate(renter.lease_start) : undefined}
           />
         ) : (
           <HeroStat

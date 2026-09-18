@@ -5,13 +5,16 @@ import axios from 'axios';
 import * as Sentry from '@sentry/react';
 import { auth } from '@/core/auth/firebase';
 import { signOut } from 'firebase/auth';
+import { CLIENT_HEADERS } from './clientHeaders';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
   baseURL,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
+  // CLIENT_HEADERS tells the backend which client this is, on every request — see
+  // clientHeaders.ts. Defaults rather than an interceptor: they never vary per request.
+  headers: { 'Content-Type': 'application/json', ...CLIENT_HEADERS },
 });
 
 if (import.meta.env.DEV) {

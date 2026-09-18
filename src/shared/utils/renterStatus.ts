@@ -40,6 +40,18 @@ export function getEffectiveLeaseEnd(renter: Renter): Date | null {
 }
 
 /**
+ * A tenancy with no agreed end.
+ *
+ * Every screen that shows a lease end has to consult this, because an open-ended lease
+ * *does* carry an end date — the server keeps a rolling five-year window so the queries that
+ * decide whether a renter is active keep working — and that date moves every year. Printing
+ * it would assert an end the app invented and then quietly changed.
+ */
+export function isOpenEnded(renter: Renter): boolean {
+  return renter.open_ended === true && !renter.terminated_on;
+}
+
+/**
  * The date the tenancy actually stops: the whole signed schedule, options included,
  * pulled in by an early termination.
  *

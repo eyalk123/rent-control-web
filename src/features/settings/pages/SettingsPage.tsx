@@ -7,11 +7,22 @@ import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { FormSelect } from '@/shared/components/form/FormSelect';
 import { useToast } from '@/shared/components/ui/Toast';
 import { downloadAllData } from '../api/export';
 import { Toggle } from '@/shared/components/ui/Toggle';
 import { TOURS_ENABLED } from '@/features/onboarding/flags';
 import { useRecordTourProgress, useTourState } from '@/features/onboarding/queries';
+import {
+  useCountryConfig,
+  useCurrencies,
+  useMyCountry,
+  useMyPreferences,
+  useSetPreferences,
+} from '@/features/country/queries';
+import { resolveEffectiveCurrency } from '@/features/country/effectiveCurrency';
+import { CountryFlag } from '@/shared/components/ui/CountryFlag';
+import { useProperties } from '@/features/properties/queries';
 
 // ─── DeleteAccountModal ──────────────────────────────────────────────────────
 
@@ -146,6 +157,30 @@ export function SettingsPage() {
   const { state: tourState } = useTourState();
   const recordTourProgress = useRecordTourProgress();
 
+  const { country } = useMyCountry();
+  const countryConfig = useCountryConfig(country);
+  const { data: currencies } = useCurrencies();
+  const { data: preferences } = useMyPreferences();
+  const setPreferences = useSetPreferences();
+  // The same list the account's own properties page reads, so this needs no new request:
+  // an empty portfolio is the entire condition for the currency still being changeable.
+  const { data: properties } = useProperties();
+  const currencyLocked = (properties?.length ?? 0) > 0;
+
+  const effectiveCurrency = resolveEffectiveCurrency(
+    countryConfig,
+    currencies,
+    preferences?.currency ?? null,
+  );
+  const activeCurrency = effectiveCurrency?.code ?? '';
+  const currencyLabel = effectiveCurrency
+    ? `${effectiveCurrency.code} ${effectiveCurrency.symbol === effectiveCurrency.code ? '' : effectiveCurrency.symbol}`.trim()
+    : '';
+  const currencyOptions = (currencies ?? []).map((c) => ({
+    value: c.code,
+    label: `${c.code} — ${c.name}${c.symbol === c.code ? '' : ` (${c.symbol})`}`,
+  }));
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -228,7 +263,27 @@ export function SettingsPage() {
                 {(user?.displayName ?? user?.email ?? 'U')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[17px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{user?.displayName ?? t('settings.user')}</p>
+                {/*
+                  The country, beside the name. It is chosen once at signup, behind a gate
+                  the user sees for about ten seconds and never again, and until now it
+                  appeared nowhere in the app afterwards — yet it decides the currency, the
+                  date order, the number grouping and which features exist. Somewhere to
+                  read it back is the least it needs. `countryConfig` was already loaded on
+                  this page for the currency row, so this costs no request.
+                */}
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <p className="text-[17px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{user?.displayName ?? t('settings.user')}</p>
+                  {countryConfig && (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-medium"
+                      style={{ background: 'var(--color-input-filled-background)', color: 'var(--color-text-secondary)' }}
+                      aria-label={`${t('country.label')}: ${countryConfig.name}`}
+                    >
+                      <CountryFlag code={countryConfig.countryCode} size={14} />
+                      {countryConfig.name}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{user?.email}</p>
               </div>
             </div>
@@ -272,7 +327,14 @@ export function SettingsPage() {
               control={
                 <SegToggle
                   value={language}
-                  onChange={(v) => setLanguage(v as SupportedLanguage)}
+                  onChange={(v) => {
+                    // Both, in this order: the device copy is what renders now, the
+                    // account copy is what follows the user to their next device. Before
+                    // this was stored server-side, signing in elsewhere silently reverted
+                    // the choice.
+                    setLanguage(v as SupportedLanguage);
+                    setPreferences.mutate({ language: v });
+                  }}
                   options={[
                     { value: 'en', label: t('settings.languageEn') },
                     { value: 'he', label: 'עברית' },
@@ -335,10 +397,36 @@ export function SettingsPage() {
                 </button>
               }
             />
+            {/*
+              Editable while the portfolio is empty, read-only after.
+
+              Every property freezes its currency at creation and every transaction
+              snapshots it, so the stored amounts do not move when this changes — only
+              their label does. Once anything is recorded, allowing the change would
+              restate a ₪5,000 rent as $5,000 on every screen with nothing saying so.
+              Before the first property there is nothing to restate, which is why the same
+              choice is free at signup. The API enforces this independently (409).
+            */}
             <SettingRow
               label={t('settings.currency')}
-              hint={t('settings.currencyHint')}
-              control={<span className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>{t('settings.currencyValue')}</span>}
+              hint={currencyLocked ? t('settings.currencyLockedHint') : t('settings.currencyHint')}
+              control={
+                currencyLocked ? (
+                  <span className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                    {currencyLabel}
+                  </span>
+                ) : (
+                  <FormSelect
+                    value={activeCurrency}
+                    onValueChange={(code) => setPreferences.mutate({ currency: code })}
+                    options={currencyOptions}
+                    disabled={setPreferences.isPending}
+                    compact
+                    className="min-w-[200px]"
+                    aria-label={t('settings.currency')}
+                  />
+                )
+              }
               last
             />
             {/* "Export data" row hidden until the export feature is implemented (S3). */}

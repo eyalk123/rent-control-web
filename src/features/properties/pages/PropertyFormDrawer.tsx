@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
+import { areaUnitLabel } from '@/shared/utils/money';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -258,7 +259,7 @@ export function PropertyFormDrawer({
         plot: data.plot || null,
         zip_code: data.zipCode || '',
         type: data.type,
-        sq_ft: data.sqFt ? Number(data.sqFt) : 0,
+        sq_ft: data.sqFt ? Number(data.sqFt) : null,
         property_owner: data.propertyOwner || null,
         inventory_notes: data.inventoryNotes || null,
         floor: data.floor ? Number(data.floor) : null,
@@ -463,13 +464,26 @@ export function PropertyFormDrawer({
               <FormInput label={t('property.apartment')} error={errors.apartment?.message} {...register('apartment')} />
             </div>
             <FormInput label={t('property.city')} required error={errors.city?.message} {...register('city')} />
+            {/*
+              Free text, not numbers. Israel's block and parcel are digits, but a UK title
+              number (NGL123456) and a cadastral reference are not — and the column behind
+              both has always been a string, so a numeric input was the only thing refusing
+              them. That made the country-specific labels unusable in most of the countries
+              they were added for.
+
+              The second field renders only where the country actually has a second
+              identifier. Falling back to "Plot" showed an Israeli concept to a country that
+              has one identifier — which the property's Details tab already knew not to do.
+            */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormInput label={t(registryKey1())} type="number" error={errors.block?.message} {...register('block')} />
-              <FormInput label={t(registryKey2() ?? 'property.plot')} type="number" error={errors.plot?.message} {...register('plot')} />
+              <FormInput label={t(registryKey1())} error={errors.block?.message} {...register('block')} />
+              {registryKey2() && (
+                <FormInput label={t(registryKey2()!)} error={errors.plot?.message} {...register('plot')} />
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.zipCode')} error={errors.zipCode?.message} {...register('zipCode')} />
-              <FormInput label={t('property.sqFt')} type="number" error={errors.sqFt?.message} {...register('sqFt')} />
+              <FormInput label={`${t('property.sqFt')} (${areaUnitLabel()})`} type="number" error={errors.sqFt?.message} {...register('sqFt')} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormInput label={t('property.numberOfRooms')} type="number" step="0.5" error={errors.numberOfRooms?.message} {...register('numberOfRooms')} />

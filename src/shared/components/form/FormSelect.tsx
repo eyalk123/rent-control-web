@@ -1,5 +1,5 @@
 import * as Select from '@radix-ui/react-select';
-import { ChevronDown, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
@@ -68,7 +68,13 @@ export function FormSelect<T extends string>({
             className={`flex items-center border bg-[var(--color-input-bg)] text-sm outline-none transition-colors focus:border-[var(--color-primary)] ${
               compact
                 ? 'w-full rounded-lg ps-2.5 pe-8 h-9'
-                : `w-full rounded-xl ps-3.5 py-2.5 ${showClear ? 'pe-14' : 'pe-10'}`
+                  // `min-h` because the trigger is sized by its own text: with an empty
+                  // value and no placeholder, Radix renders nothing inside `Select.Value`
+                  // and the box collapses to its padding, so a field that empties out
+                  // visibly shrinks next to its neighbours. 42px is exactly what py-2.5
+                  // plus one line of text-sm already measures, so this changes nothing
+                  // anywhere a value or placeholder is present.
+                : `w-full rounded-xl ps-3.5 py-2.5 min-h-[42px] ${showClear ? 'pe-14' : 'pe-10'}`
             } ${error ? 'border-[var(--color-error)]' : 'border-[var(--color-input-border)]'} ${!value ? 'text-[var(--color-placeholder)]' : 'text-[var(--color-text-primary)]'}`}
           >
             <Select.Value placeholder={placeholder} />
@@ -86,7 +92,25 @@ export function FormSelect<T extends string>({
           <ChevronDown size={16} aria-hidden="true" className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] ${compact ? 'end-2' : 'end-3.5'}`} />
         </div>
         <Select.Portal>
-          <Select.Content className="z-50 min-w-[8rem] overflow-hidden rounded-xl bg-[var(--color-surface)] border border-[var(--color-outline)] shadow-lg">
+          {/*
+            `popper` rather than Radix's default item-aligned positioning, and capped.
+            Item-aligned centres the menu on the selected row and grows to fill the window,
+            so a long list — every property on a transaction, the expense categories —
+            covered the page from top to bottom with no visible way to tell it was
+            scrollable. This drops the menu under the field like every other dropdown in
+            the product and stops it at 18rem, or sooner if there is less room than that on
+            screen. The two scroll buttons are the affordance that was missing: Radix only
+            renders them when the list actually overflows.
+          */}
+          <Select.Content
+            position="popper"
+            sideOffset={4}
+            className="z-50 min-w-[8rem] overflow-hidden rounded-xl bg-[var(--color-surface)] border border-[var(--color-outline)] shadow-lg"
+            style={{ maxHeight: 'min(18rem, var(--radix-select-content-available-height))' }}
+          >
+            <Select.ScrollUpButton className="flex items-center justify-center py-1 text-[var(--color-text-secondary)]">
+              <ChevronUp size={14} aria-hidden="true" />
+            </Select.ScrollUpButton>
             <Select.Viewport className="p-1">
               {items.map((opt) => (
                 <Select.Item
@@ -101,6 +125,9 @@ export function FormSelect<T extends string>({
                 </Select.Item>
               ))}
             </Select.Viewport>
+            <Select.ScrollDownButton className="flex items-center justify-center py-1 text-[var(--color-text-secondary)]">
+              <ChevronDown size={14} aria-hidden="true" />
+            </Select.ScrollDownButton>
           </Select.Content>
         </Select.Portal>
       </Select.Root>

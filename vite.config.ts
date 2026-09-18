@@ -11,7 +11,21 @@ const uploadSourcemaps = Boolean(
   sentryAuthToken && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT,
 )
 
+// The build this bundle is. Reused as the `X-Client-Version` telemetry header
+// (src/core/api/clientHeaders.ts) so an `owner_client_days` row and a Sentry issue name
+// the same build — hence the same env var the Sentry release below is cut from, rather
+// than a second version string that could disagree with it. Outside a Railway build there
+// is no release to name, so it stays empty and the header is omitted.
+//
+// Shortened: the backend caps the header at 32 characters and stores nothing longer, so a
+// full 40-char SHA would be discarded outright. Twelve is unambiguous and still prefixes
+// the Sentry release.
+const appVersion = (process.env.RAILWAY_GIT_COMMIT_SHA ?? '').slice(0, 12)
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   plugins: [
     react(),
     tailwindcss(),

@@ -73,7 +73,30 @@ export type GateId =
   | 'hasTransactions'
   | 'listHasThreeItems'
   | 'cpiSelected'
-  | 'customSelected';
+  | 'customSelected'
+  // The three negations exist for `skipWhen`, which drops a step once its gate *passes*.
+  // A tour that runs on an empty screen needs the opposite question — "is this step about
+  // content that is not there yet?" — and `skipWhen: 'noProperties'` is that question
+  // asked in the vocabulary the resolver already speaks. They are deliberately not usable
+  // as a tour `gate`: a tour that only ran while a screen was empty has nothing to say
+  // the moment it stops being.
+  | 'noProperties'
+  | 'noRenters'
+  | 'noTransactions';
+
+/**
+ * A capability flag name, as the country table publishes it.
+ *
+ * Spelled out here rather than imported, because this file is byte-identical across the
+ * web and mobile repos and their capability modules sit at different paths. The list is
+ * checked against `Capabilities` by the resolvers on each side.
+ */
+export type CapabilityName =
+  | 'cpiLinkage'
+  | 'taxTracks'
+  | 'israeliPropertyTypes'
+  | 'bitPayments'
+  | 'structuredBankDetails';
 
 /** Logical placement. `start`/`end` are direction-relative and flip under RTL. */
 export type Placement = 'top' | 'bottom' | 'start' | 'end' | 'center';
@@ -82,6 +105,23 @@ export interface TourSeed {
   id: SeedId;
   /** Tour this seed advertises, if any. Null = the sentence is the whole point. */
   opens: TourId | null;
+  /**
+   * A capability the account's country must actually have, or this is dropped.
+   *
+   * Distinct from `gate`/`skipWhen`, which ask about the account's *data* ("do they own
+   * anything yet?"). This asks whether the product offers the thing at all here: CPI rent
+   * linkage exists in Israel and nowhere else yet, so a seed promising to explain it in
+   * Spain advertises a control `RentChangeField` has already refused to render.
+   *
+   * Deliberately **not** a new `GateId`. `GateId` is a closed union whose resolvers end in
+   * `default: return false`, so a value shipped to one repo and not the other fails silently
+   * *and asymmetrically* — as a tour `gate` it suppresses the tour, as a `skipWhen` it keeps
+   * the step. A separate optional field is absent-means-yes on both platforms.
+   *
+   * Resolved from the reactive country query, never from `capabilities()` module state,
+   * whose default is Israel's full set — see `useCapability`.
+   */
+  requires?: CapabilityName;
 }
 
 export interface TourStep {
@@ -89,6 +129,23 @@ export interface TourStep {
   /** Anchor key from `anchors.ts`. Null renders a centered card with no highlight. */
   anchor: string | null;
   placement?: Placement;
+  /**
+   * A capability the account's country must actually have, or this is dropped.
+   *
+   * Distinct from `gate`/`skipWhen`, which ask about the account's *data* ("do they own
+   * anything yet?"). This asks whether the product offers the thing at all here: CPI rent
+   * linkage exists in Israel and nowhere else yet, so a seed promising to explain it in
+   * Spain advertises a control `RentChangeField` has already refused to render.
+   *
+   * Deliberately **not** a new `GateId`. `GateId` is a closed union whose resolvers end in
+   * `default: return false`, so a value shipped to one repo and not the other fails silently
+   * *and asymmetrically* — as a tour `gate` it suppresses the tour, as a `skipWhen` it keeps
+   * the step. A separate optional field is absent-means-yes on both platforms.
+   *
+   * Resolved from the reactive country query, never from `capabilities()` module state,
+   * whose default is Israel's full set — see `useCapability`.
+   */
+  requires?: CapabilityName;
   /** At most one seed per step; at most two per tour (see `assertBudget`). */
   seed?: TourSeed;
   /**
@@ -177,6 +234,23 @@ export interface TourDefinition {
   kind: 'orientation' | 'page' | 'elaboration';
   /** If set, opening this tour after that seed shows a callback line first. */
   arrivesFrom?: SeedId;
+  /**
+   * A capability the account's country must actually have, or this is dropped.
+   *
+   * Distinct from `gate`/`skipWhen`, which ask about the account's *data* ("do they own
+   * anything yet?"). This asks whether the product offers the thing at all here: CPI rent
+   * linkage exists in Israel and nowhere else yet, so a seed promising to explain it in
+   * Spain advertises a control `RentChangeField` has already refused to render.
+   *
+   * Deliberately **not** a new `GateId`. `GateId` is a closed union whose resolvers end in
+   * `default: return false`, so a value shipped to one repo and not the other fails silently
+   * *and asymmetrically* — as a tour `gate` it suppresses the tour, as a `skipWhen` it keeps
+   * the step. A separate optional field is absent-means-yes on both platforms.
+   *
+   * Resolved from the reactive country query, never from `capabilities()` module state,
+   * whose default is Israel's full set — see `useCapability`.
+   */
+  requires?: CapabilityName;
   steps: TourStep[];
 }
 

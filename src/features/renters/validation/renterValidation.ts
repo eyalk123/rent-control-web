@@ -103,6 +103,8 @@ export const renterFormSchema = z.object({
   escalationMode: z.enum(['none', 'percent', 'fixed', 'custom', 'cpi']).optional(),
   escalationValue: optionalNumericString,
   suppressExpiryAlerts: z.boolean(),
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  openEnded: z.boolean(),
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
   idImageUrl: z.string().nullable().optional(),

@@ -31,7 +31,8 @@ export interface Property {
   city: string;
   zip_code: string;
   type: PropertyType;
-  sq_ft: number;
+  /** Square **metres**, despite the name — the column predates the unit work. */
+  sq_ft: number | null;
   image_url: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -90,6 +91,13 @@ export interface LeaseYear {
    * not a thing that happens, and the form cannot express one.
    */
   months?: number;
+  /**
+   * Written by the server's lease generator, never by a form: this period is part of the
+   * rolling horizon an open-ended lease carries, not a term anyone agreed to. The clients
+   * label it as automatic rather than as Contract or Option, and it is also what a later
+   * job would read to tell its own rows from ones the owner has corrected by hand.
+   */
+  generated?: boolean;
 }
 
 /** How the monthly rent changes from one lease year to the next. */
@@ -132,6 +140,15 @@ export interface Renter extends LeaseTermIntent {
    */
   /** "Don't warn me when this lease expires" — see the renter form. */
   suppress_expiry_alerts?: boolean;
+  /**
+   * A tenancy with no agreed end. It does **not** mean the lease has no end date: a nightly
+   * job keeps a rolling five-year window of periods on it, so everything that reads a lease
+   * end still reads a real one — it just moves. The generated periods carry `generated: true`.
+   *
+   * Per lease, not per country: an Israeli month-to-month holdover is open-ended too. Implies
+   * `suppress_expiry_alerts`, because the countdown would be to a date that keeps moving.
+   */
+  open_ended?: boolean;
   terminated_on?: string | null;
   termination_reason?: string | null;
   number_of_payments?: number | null;
@@ -409,7 +426,8 @@ export interface PropertyCreate {
   city: string;
   zip_code: string;
   type: PropertyType;
-  sq_ft: number;
+  /** Square metres. Optional since the API stopped requiring it. */
+  sq_ft?: number | null;
   image_url?: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -435,7 +453,7 @@ export interface PropertyUpdate {
   city?: string;
   zip_code?: string;
   type?: PropertyType;
-  sq_ft?: number;
+  sq_ft?: number | null;
   image_url?: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -459,6 +477,8 @@ export interface PropertyUpdate {
 export interface RenterCreate extends LeaseTermIntent {
   /** "Don't warn me when this lease expires" — see the renter form. */
   suppress_expiry_alerts?: boolean;
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  open_ended?: boolean;
   property_id?: number | null;
   first_name: string;
   last_name: string;
@@ -481,6 +501,8 @@ export interface RenterCreate extends LeaseTermIntent {
 export interface RenterUpdate extends LeaseTermIntent {
   /** "Don't warn me when this lease expires" — see the renter form. */
   suppress_expiry_alerts?: boolean;
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  open_ended?: boolean;
   property_id?: number | null;
   first_name?: string;
   last_name?: string;

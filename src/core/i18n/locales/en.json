@@ -129,8 +129,8 @@
     "languageSubtitle": "Switch app language. Hebrew triggers RTL layout.",
     "dataPrivacy": "Data & privacy",
     "currency": "Currency",
-    "currencyHint": "Currently fixed to ₪ ILS.",
-    "currencyValue": "₪ ILS",
+    "currencyHint": "Set when you created your account. Changeable until you add a property.",
+    "currencyLockedHint": "Locked once you add a property, so amounts already recorded keep their meaning.",
     "exportData": "Export all data",
     "exportDataHint": "Download a ZIP of properties, renters, transactions, and files.",
     "exportDataAction": "Download",
@@ -521,7 +521,7 @@
     "endedLease": "Lease ended {{date}}",
     "terminatedLease": "Lease terminated {{date}}",
     "terminatedReason": "Reason: {{reason}}",
-    "endLease": "End lease…",
+    "endLease": "End lease",
     "endLeaseTitle": "End this lease",
     "endLeaseDateLabel": "Last day of the tenancy",
     "endLeaseReasonLabel": "Reason (optional)",
@@ -560,8 +560,16 @@
     "leaseEnds": "Lease ends",
     "payDayShort": "Day {{day}}",
     "colRenter": "Renter",
-    "colPhone": "Phone",
+    "colPhone": "Phone",
+
     "suppressExpiryAlerts": "Don't warn me when this lease expires",
+    "openEnded": "Open-ended lease",
+    "openEndedOnNote": "No agreed end date. We keep the next five years on the schedule and add another each year — correct any year's rent whenever it changes.",
+    "openEndedOffNote": "Tenancies here usually have no end date. Turn this on and we'll keep the schedule running instead of asking you to invent one.",
+    "openEndedShort": "Open-ended",
+    "openEndedTenancy": "Tenancy",
+    "openEndedGenerated": "Auto",
+    "openEndedGeneratedNote": "The later years are projections that extend automatically. Edit any amount to correct it.",
     "openEndedTermNote": "Tenancies here are usually open-ended. Rent Control needs an end date on every lease — pick your best estimate and extend it whenever you like."
   },
   "empty": {
@@ -958,21 +966,22 @@
     "deactivateSuccess": "Supplier deactivated",
     "paymentDetails": "Payment details",
     "paymentDetailsPlaceholder": "Account or transfer details"
-  },
+  },
+
   "country": {
     "gateTitle": "Where are your properties?",
-    "gateSubtitle": "This sets your currency, date and number formats. We ask once.",
+    "gateSubtitle": "This sets your date and number formats. We ask once.",
     "label": "Country",
+    "clearChoice": "Choose a different country",
+    "searchPlaceholder": "Search countries",
+    "noMatches": "No country matches that.",
     "confirm": "Continue",
-    "continue": "Get started",
     "saveError": "We couldn't save that. Please try again.",
     "loadErrorTitle": "Something went wrong",
     "loadErrorBody": "We couldn't load the country list. Check your connection and try again.",
-    "welcomeTitle": "Rent Control in {{country}}",
-    "skimmedNotice": "We don't have {{country}}-specific features yet. You'll get the full core app in {{currency}}, without rent index linkage or {{country}} tax reports.",
-    "openEndedNotice": "Tenancies in {{country}} are usually open-ended. Rent Control needs an end date on every lease — pick your best estimate and extend it whenever you like.",
-    "notifyMe": "Notify me when you add {{country}}",
-    "notifyRequested": "We'll let you know"
+    "currencyLabel": "Currency",
+    "currencyFollowsCountry": "Follows your country",
+    "languageLabel": "Language"
   },
   "documents": {
     "title": "Documents",
@@ -1282,7 +1291,7 @@
       "first-run": {
         "welcome": {
           "title": "Welcome to Rent Control",
-          "body": "Your properties, the people renting them, and every shekel between the two. Here is where everything lives — it takes a minute."
+          "body": "Your properties, the people renting them, and every payment between the two. Here is where everything lives — it takes a minute."
         },
         "home": {
           "title": "Your dashboard",
@@ -1297,7 +1306,7 @@
           "body": "The people in those units, and the lease behind each one."
         },
         "money": {
-          "title": "Every shekel",
+          "title": "Every payment",
           "body": "Rent collected and expenses paid, all recorded here."
         },
         "reports": {
@@ -1336,7 +1345,7 @@
         },
         "attention": {
           "title": "Needs attention",
-          "body": "Rent that hasn't arrived, leases about to expire and CPI changes — the same three things your reminders watch, shown here the moment they happen. Each row can be acted on without leaving Home."
+          "body": "Everything your reminders watch — rent that hasn't arrived, leases about to expire, and any rent changes — shown here the moment they happen. Each row can be acted on without leaving Home."
         },
         "notifications": {
           "title": "The same three, on your terms",
@@ -1452,7 +1461,7 @@
         },
         "mode": {
           "title": "How the rent moves",
-          "body": "Flat, a fixed percentage, a fixed amount, index-linked, or your own schedule."
+          "body": "Flat, a fixed percentage, a fixed amount, or your own schedule — whichever of these your country supports."
         },
         "baseYear": {
           "title": "Year one",
@@ -1465,7 +1474,7 @@
       },
       "transactions-list": {
         "overview": {
-          "title": "Every shekel, in one place",
+          "title": "Every payment, in one place",
           "body": "What came in, what went out, and the shape of the last six months. Here is the screen."
         },
         "hero": {
@@ -1504,7 +1513,7 @@
         },
         "timeline": {
           "title": "The lease, year by year",
-          "body": "Every period of the lease with the rent for it, in order, including the rises still ahead \u2014 so the year that is about to get more expensive is visible now rather than a surprise later. A CPI-linked year that has not started yet is marked as a projection, because its index has not been published."
+          "body": "Every period of the lease with the rent for it, in order, including the rises still ahead \u2014 so the year that is about to get more expensive is visible now rather than a surprise later. A year whose rent is not yet fixed is marked as a projection."
         },
         "payments": {
           "title": "Over on Transactions: did the rent come in?",
@@ -1576,11 +1585,11 @@
       "custom-mode": {
         "perYear": {
           "title": "A rule per year",
-          "body": "Each year after the first: type an amount, repeat last year, add a percentage, add a fixed sum, or link it to the index."
+          "body": "Each year after the first: type an amount, repeat last year, add a percentage, or add a fixed sum."
         },
         "forward": {
           "title": "Computed forward",
-          "body": "Each year builds on the previous year's resolved rent — so ₪5,000, then +3%, then whatever the index does, then flat, is expressible exactly."
+          "body": "Each year builds on the previous year's resolved rent — so an amount you type, then +3%, then a fixed sum, then flat, is expressible exactly."
         }
       },
       "revenue-form": {
@@ -1664,7 +1673,7 @@
       "notifications": {
         "events": {
           "title": "Three things we watch",
-          "body": "Rent that hasn't arrived, leases about to expire, and CPI rent changes. Mute any of them, or all of them."
+          "body": "Rent that hasn't arrived, leases about to expire, and rent changes. Mute any of them, or all of them."
         },
         "rules": {
           "title": "Custom rules",
@@ -1733,12 +1742,12 @@
       "scan-lease": "Have the lease as a file? Scan it and we'll read it and create the property and the renter in one pass.",
       "suppliers": "Suppliers lives in here too — save the plumber or the management company once, then attach them to any expense.",
       "reports": "Income against expenses for any period, and a full expense log you can filter and export.",
-      "notifications": "Rent, expiring leases and CPI changes each get their own reminder — change when it fires, or mute it.",
+      "notifications": "Rent, expiring leases and rent changes each get their own reminder — change when it fires, or mute it.",
       "property-owner": "Set this if you ever manage units for more than one person — it later filters rent recording and scopes reminders.",
       "ended-tenants": "Past tenants are never deleted. They're under Ended, and search always looks in both.",
       "bulk-select": "Long-press any card to select several at once.",
       "cpi": "CPI links the rent to the Israeli consumer price index. Choose it and we'll explain what that means for your rent.",
-      "custom-schedule": "Custom gives every year its own rule — ₪5,000, then +3%, then whatever the index does, then flat.",
+      "custom-schedule": "Custom gives every year its own rule — an amount you type, then +3%, then a fixed sum, then flat.",
       "no-auto-rent": "Nothing is charged automatically. 'Overdue' only means no payment is recorded yet — record it and the alert clears itself.",
       "bulk-rent": "Recording rent handles many renters across many months at once. You won't be typing them one by one.",
       "expense-split": "Each property gets its own transaction, so a later correction touches only that one.",

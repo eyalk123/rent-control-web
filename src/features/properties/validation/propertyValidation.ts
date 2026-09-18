@@ -54,8 +54,11 @@ const optionalNumericString = z
 export const propertyFormSchema = z.object({
   address: nonEmptyTrimmed,
   city: nonEmptyTrimmed,
-  block: optionalNumericString,
-  plot: optionalNumericString,
+  // Free text, not numeric. Israel's block and parcel are digits; a UK title number and a
+  // cadastral reference are not, and the column has always been a string. See the note on
+  // the fields in PropertyFormDrawer.
+  block: optionalString,
+  plot: optionalString,
   zipCode: optionalString,
   type: z.custom<PropertyType>((val) => typeof val === 'string' && PROPERTY_TYPES.includes(val as PropertyType), {
     message: 'common.required',

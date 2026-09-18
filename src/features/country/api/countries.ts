@@ -26,6 +26,8 @@ export interface Country {
   currency: string;
   currencySymbol: string;
   currencySymbolPosition: 'prefix' | 'suffix';
+  /** Whether a space sits between amount and symbol. Only ever true for a suffix. */
+  currencySymbolSpaced: boolean;
   locale: string;
   dateFormat: 'DMY' | 'MDY' | 'YMD';
   numberFormat: string;
@@ -48,6 +50,7 @@ interface CountryDto {
   currency: string;
   currency_symbol: string;
   currency_symbol_position: 'prefix' | 'suffix';
+  currency_symbol_spaced: boolean;
   locale: string;
   date_format: 'DMY' | 'MDY' | 'YMD';
   number_format: string;
@@ -76,6 +79,7 @@ function fromDto(d: CountryDto): Country {
     currency: d.currency,
     currencySymbol: d.currency_symbol,
     currencySymbolPosition: d.currency_symbol_position,
+    currencySymbolSpaced: d.currency_symbol_spaced,
     locale: d.locale,
     dateFormat: d.date_format,
     numberFormat: d.number_format,
@@ -109,6 +113,7 @@ const MOCK_COUNTRIES: Country[] = [
     currency: 'ILS',
     currencySymbol: '₪',
     currencySymbolPosition: 'suffix',
+    currencySymbolSpaced: false,
     locale: 'he',
     dateFormat: 'DMY',
     numberFormat: '1,234.56',
@@ -135,6 +140,7 @@ const MOCK_COUNTRIES: Country[] = [
     currency: 'USD',
     currencySymbol: '$',
     currencySymbolPosition: 'prefix',
+    currencySymbolSpaced: false,
     locale: 'en',
     dateFormat: 'MDY',
     numberFormat: '1,234.56',
@@ -161,6 +167,7 @@ const MOCK_COUNTRIES: Country[] = [
     currency: 'GBP',
     currencySymbol: '£',
     currencySymbolPosition: 'prefix',
+    currencySymbolSpaced: false,
     locale: 'en',
     dateFormat: 'DMY',
     numberFormat: '1,234.56',
@@ -218,10 +225,4 @@ export async function setMyCountry(countryCode: string): Promise<string> {
     country: countryCode,
   });
   return response.data.country ?? countryCode;
-}
-
-/** "Tell me when you add {Country}". Optional; nothing depends on it succeeding. */
-export async function requestCountryNotification(countryCode: string): Promise<void> {
-  if (USE_MOCK_API) return;
-  await apiClient.post('/users/me/notify-country', { country_code: countryCode });
 }

@@ -64,7 +64,7 @@ test.describe('onboarding — first run', () => {
     await expect(card.getByText('Your renters')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Every shekel')).toBeVisible();
+    await expect(card.getByText('Every payment')).toBeVisible();
 
     // Reports then Suppliers, which is the order the sidebar draws them — Reports closes
     // the main group and Suppliers sits below the "Manage" divider.
@@ -390,10 +390,9 @@ test.describe('onboarding — first run', () => {
    */
   test('the month step and the recording step point at different things', async ({ page }) => {
     await enableTours(page);
-    // Through Properties rather than straight to /transactions: this tour is gated on
-    // `hasProperties`, and the gate reads the query cache passively, so it cannot be
-    // answered until some screen has actually loaded properties. Landing directly on
-    // Transactions defers the tour — by design, see useGates.
+    // Through Properties rather than straight to /transactions. The tour itself no longer
+    // needs it — its gate is `always` — but arriving via another screen is the ordinary
+    // path, and it leaves the properties tour dismissed rather than queued behind this one.
     await page.goto('/properties');
     await waitForAppReady(page);
     await dismissTours(page);
@@ -402,7 +401,10 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Every shekel, in one place')).toBeVisible();
+    await expect(card.getByText('Every payment, in one place')).toBeVisible();
+    // The "nothing is charged automatically" seed rides on the opener, which is the only
+    // step of this tour that is present whether or not anything has been recorded yet.
+    await expect(card.getByText(/nothing is charged automatically/i)).toBeVisible();
 
     // Overview, hero, filter bar, then the month heading — down the screen in order.
     for (let i = 0; i < 3; i++) await card.getByRole('button', { name: 'Next' }).click();
@@ -421,8 +423,6 @@ test.describe('onboarding — first run', () => {
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Two kinds of money')).toBeVisible();
-    // The seed rides here now, not on the month step above it.
-    await expect(card.getByText(/nothing is charged automatically/i)).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
     // By heading: the seed line under it opens with the same two words.

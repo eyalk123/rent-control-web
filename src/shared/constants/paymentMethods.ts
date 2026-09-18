@@ -25,13 +25,18 @@ export const PAYMENT_METHOD_REQUIREMENTS: Partial<Record<PaymentMethod, 'bitPaym
 export const availablePaymentMethods = (): PaymentMethod[] =>
   allowedModes(PAYMENT_METHOD_VALUES, PAYMENT_METHOD_REQUIREMENTS);
 
+/**
+ * The four methods a picker offers, out of the seven a stored transaction may hold. The other
+ * three exist so an imported or legacy value still renders; they were never on the menu.
+ */
+const PAYMENT_METHOD_PICKER: PaymentMethod[] = ['cash', 'bank_transfer', 'bit', 'check'];
+
+/** The picker's options, narrowed to what this country can use — mobile already did this. */
 export function getPaymentMethodOptions(t: TFunction) {
-  return [
-    { value: 'cash' as PaymentMethod, label: t('transactions.paymentMethodCash') },
-    { value: 'bank_transfer' as PaymentMethod, label: t('transactions.paymentMethodBankTransfer') },
-    { value: 'bit' as PaymentMethod, label: t('transactions.paymentMethodBit') },
-    { value: 'check' as PaymentMethod, label: t('transactions.paymentMethodCheck') },
-  ];
+  return allowedModes(PAYMENT_METHOD_PICKER, PAYMENT_METHOD_REQUIREMENTS).map((value) => ({
+    value,
+    label: t(PAYMENT_METHOD_LABEL_KEYS[value]),
+  }));
 }
 
 // Renter `payment_type` is a free-form string that historically diverged between clients:

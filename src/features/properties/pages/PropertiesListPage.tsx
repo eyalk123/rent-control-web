@@ -26,7 +26,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
-import { formatMoney } from '@/shared/utils/money';
+import { formatArea, formatMoney } from '@/shared/utils/money';
 import { getLeaseEndDate } from '@/shared/types';
 import { getCurrentRenters, getTotalCurrentMonthlyRent } from '@/shared/utils/renterStatus';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -144,7 +144,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
           {[
             { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
             { label: t('property.renters'), value: property.renters?.length ?? 0 },
-            { label: t('property.size'), value: `${property.sq_ft}m²` },
+            { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
