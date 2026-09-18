@@ -25,8 +25,15 @@ Sentry (prod only). Backend: FastAPI.
   `@/shared/...` — **note this differs from the mobile app, where `@` is the repo root and
   imports are `@/src/...`.**
 - `src/core/`: infrastructure — `api/` (Axios `client.ts` with auth-token getter + 401
-  auto-sign-out, `mock.ts`), `auth/` (Firebase, `AuthContext`, `AuthTokenSync`,
-  `ProtectedRoute`), `i18n/`, `monitoring/` (Sentry).
+  auto-sign-out, `mock.ts`, `clientHeaders.ts`), `auth/` (Firebase, `AuthContext`,
+  `AuthTokenSync`, `ProtectedRoute`), `i18n/`, `monitoring/` (Sentry).
+  - `clientHeaders.ts` sends `X-Client-App`/`-Platform`/`-Version` on every request so the
+    backend can tell this app from the mobile one (`owner_client_days`). Both are `'web'`
+    here; the version is the short commit SHA that `vite.config.ts` also cuts the Sentry
+    release from, so a usage row and a Sentry issue name the same build. **Anything else
+    that talks to the API without going through the Axios instance must spread
+    `CLIENT_HEADERS` in too** — `features/agent/api/agentStream.ts` does, because sending
+    an agent message counts as real work and would otherwise be attributed to no client.
 - **The palette lives in `src/index.css`** — CSS custom properties on `:root` and
   `[data-theme="dark"]`, surfaced to Tailwind through the `@theme inline` block below them.
   That file is the only source of truth. There is no TypeScript colour module here, and

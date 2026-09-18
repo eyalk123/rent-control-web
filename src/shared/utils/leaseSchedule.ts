@@ -187,6 +187,63 @@ export function isUnsettledCpiYear(
   return start !== null && start > today;
 }
 
+/** Modes whose amounts can be walked forward one period at a time. */
+const CHAINABLE_MODES = new Set(['none', 'percent', 'fixed']);
+
+/**
+ * Whether the user has typed over a year's amount.
+ *
+ * A typed amount carries `rule: { mode: 'manual' }` — "this number was entered, not
+ * derived". In `custom` that has always been true; it now means the same thing under
+ * `percent` / `fixed` / `none`, which is what lets someone correct the one year their
+ * landlord actually raised differently without rebuilding the whole schedule as Custom.
+ */
+function hasManualPin(rows: LeaseYear[] | undefined): boolean {
+  return (rows ?? []).some((row) => row?.rule?.mode === 'manual');
+}
+
+/**
+ * A whole-lease schedule in which at least one year has been corrected by hand.
+ *
+ * The formula path prices every year off the base (`base * (1 + r) ** i`), which cannot
+ * express "…and then it went up by more than we agreed". This walks instead, giving each
+ * year the whole-lease rule and each pinned year its own amount, so everything after a
+ * correction continues from the corrected figure. Reuses `materializeRuledYears`, the same
+ * walk `custom` mode has always used — and the same one the server's generator chains with.
+ *
+ * Only reached when a pin exists, so a lease nobody has edited by hand takes the original
+ * code path and comes out byte-identical.
+ */
+function walkWithPins(
+  sizes: number[],
+  contract: number,
+  base: number,
+  mode: RentEscalationMode,
+  value: number,
+  existingRows: LeaseYear[] | undefined,
+): LeaseYear[] {
+  const rows = sizes.map((size, i) => {
+    const existing = existingRows?.[i];
+    const pinned = existing?.rule?.mode === 'manual';
+    return {
+      amount: existing?.amount ?? base,
+      type: (i < contract ? 'contract' : 'option') as LeaseYearType,
+      // A short tail holds the rent rather than stepping it, exactly as the formula path
+      // does — a three-month extension is an alignment stub, not a repricing event.
+      rule: pinned
+        ? ({ mode: 'manual' } as LeaseYearRule)
+        : ({ mode: size < 12 ? 'none' : (mode as LeaseYearRule['mode']), value } as LeaseYearRule),
+      ...(size < 12 ? { months: size } : {}),
+    };
+  });
+  // Strip the synthesised rules on the way out. Rules are a `custom` concept in the stored
+  // payload; only the pins are real, and keeping the rest would turn an ordinary percent
+  // lease into something that reads as hand-built when it reopens.
+  return materializeRuledYears(rows, base).map((row) =>
+    row.rule?.mode === 'manual' ? row : { amount: row.amount, type: row.type, ...(row.months ? { months: row.months } : {}) },
+  );
+}
+
 /**
  * Builds the materialized lease-year schedule from term intent. The Contract /
  * Option split is always positional — the first `contractYears` are `contract`,
@@ -215,6 +272,15 @@ export function buildLeaseYears(
   const isCustom = input.escalationMode === 'custom';
   const preserveExisting =
     isCustom || (input.escalationMode === 'cpi' && !opts?.resetCpiAmounts);
+
+  // A hand-corrected year under a whole-lease rule. Handled before the formula loop below,
+  // because the formula prices every year off the base and so has no way to carry a
+  // correction forward. Nothing takes this path until someone types over an amount, which
+  // is what keeps every untouched lease on exactly the code it has always run.
+  if (CHAINABLE_MODES.has(input.escalationMode) && hasManualPin(existingRows)) {
+    return walkWithPins(sizes, contract, base, input.escalationMode, input.escalationValue, existingRows);
+  }
+
   const result: LeaseYear[] = [];
   for (let i = 0; i < total; i += 1) {
     const type: LeaseYearType = i < contract ? 'contract' : 'option';

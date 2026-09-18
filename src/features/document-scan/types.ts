@@ -52,7 +52,10 @@ export interface ExtractedRenter {
   option_years: number | null;
   option_term_months: number | null;
   base_rent: number | null;
-  rent_escalation_mode: 'none' | 'percent' | 'fixed' | 'custom' | null;
+  /** Includes 'cpi': the backend returns it wherever a lease is index-linked, and it was
+   *  missing here — the type asserted a value the scanner really does send could never
+   *  arrive, which is why nothing gated it for a country that cannot store it. */
+  rent_escalation_mode: 'none' | 'percent' | 'fixed' | 'custom' | 'cpi' | null;
   rent_escalation_value: number | null;
   number_of_payments: number | null;
   payment_type: string | null;

@@ -7,7 +7,7 @@ import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent } from '@/shared/types';
 import { billedCadenceLabel } from '@/shared/utils/cadence';
-import { getEffectiveLeaseEnd } from '@/shared/utils/renterStatus';
+import { isOpenEnded, getEffectiveLeaseEnd } from '@/shared/utils/renterStatus';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Renter } from '@/shared/types';
 
@@ -16,6 +16,9 @@ interface Props extends DetailBackState {
 }
 
 function leaseCountdown(renter: Renter): { days: number } | 'expired' | null {
+  // An open-ended lease is never counting down: its end date is a rolling horizon the
+  // server moves, so "ends in 1,825d" would be a number that resets every year.
+  if (isOpenEnded(renter)) return null;
   // An early termination moves the end date; the signed schedule stays put.
   const d = getEffectiveLeaseEnd(renter);
   if (!d) return null;

@@ -8,6 +8,7 @@ import { LeaseYearTypeText } from '@/shared/components/form/LeaseYearTypeText';
 import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { formatMoney } from '@/shared/utils/money';
+import { allowedModes } from '@/shared/utils/capabilities';
 import type { LeaseYearRuleMode, LeaseYearType } from '@/shared/types';
 
 /**
@@ -23,6 +24,19 @@ export const LEASE_YEAR_RULE_MODES: LeaseYearRuleMode[] = [
   'fixed',
   'cpi',
 ];
+
+/**
+ * Which of those a country may actually pick. `cpi` needs an index source behind it, and
+ * outside Israel there is none — the API refuses the value, so offering it would only
+ * produce a rejected save.
+ *
+ * The full list above is deliberately left intact: an existing lease can still *hold* a
+ * `cpi` rule and must keep rendering, and `LEASE_YEAR_RULE_LABEL_KEYS` still needs its
+ * label. Only the picker narrows.
+ */
+const RULE_MODE_REQUIREMENTS: Partial<Record<LeaseYearRuleMode, 'cpiLinkage'>> = {
+  cpi: 'cpiLinkage',
+};
 
 export const LEASE_YEAR_RULE_LABEL_KEYS: Record<LeaseYearRuleMode, string> = {
   manual: 'renter.rentChangeManual',
@@ -103,7 +117,7 @@ export function LeaseYearRow({
   // estimate — and typing over it would silently drop the rule. Show it, don't let it be edited.
   const amountEditable = Boolean(onAmountChange) && ruleMode !== 'cpi';
 
-  const ruleOptions = LEASE_YEAR_RULE_MODES.map((m) => ({
+  const ruleOptions = allowedModes(LEASE_YEAR_RULE_MODES, RULE_MODE_REQUIREMENTS).map((m) => ({
     value: m,
     label: t(LEASE_YEAR_RULE_LABEL_KEYS[m]),
   }));

@@ -1,4 +1,5 @@
 import { Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
+import { currencySymbol } from '@/shared/utils/money';
 import { useTranslation } from 'react-i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -15,8 +16,9 @@ interface CashFlowChartProps {
 }
 
 function formatK(v: number): string {
-  if (v >= 1000) return `₪${(v / 1000).toFixed(0)}k`;
-  return `₪${v}`;
+  const s = currencySymbol();
+  if (v >= 1000) return `${s}${(v / 1000).toFixed(0)}k`;
+  return `${s}${v}`;
 }
 
 export function CashFlowChart({ data, height = 200, compact = false }: CashFlowChartProps) {

@@ -126,6 +126,16 @@ export function ReportsHubPage() {
                   </p>
                   <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                     {t('reports.generatedMeta', { date: new Date(item.created_at).toLocaleDateString(), format: item.format.toUpperCase() })}
+                    {/*
+                      Which basis produced it. Absent on an expense log (no revenue to
+                      recognise) and on anything exported before the choice existed — which
+                      was accrual by definition. Shown so two income reports for the same
+                      year, differing by a month's rent, can be told apart before opening
+                      either one.
+                    */}
+                    {item.revenue_basis ? (
+                      <> · {t(item.revenue_basis === 'cash' ? 'reports.basisCash' : 'reports.basisAccrual')}</>
+                    ) : null}
                   </p>
                 </div>
                 <button

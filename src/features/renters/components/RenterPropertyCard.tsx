@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { formatArea } from '@/shared/utils/money';
 import { useTranslation } from 'react-i18next';
 import { MapPin } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
@@ -61,7 +62,7 @@ export function RenterPropertyCard({ property, monthlyRent, backTo, backLabel }:
         <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
           {[
             { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
-            { label: t('property.size'), value: `${property.sq_ft}m²` },
+            { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>

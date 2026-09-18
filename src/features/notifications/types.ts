@@ -16,6 +16,17 @@ export const RULE_EXEMPT_EVENTS: NotificationEvent[] = ['cpi_rent_change'];
 
 export const isRuleEvent = (event: NotificationEvent) => !RULE_EXEMPT_EVENTS.includes(event);
 
+// Events that only exist where the capability behind them does. `cpi_rent_change` fires
+// when an index moves, so an account whose country has no index source can never receive
+// one — listing it in settings would be a switch for something that cannot happen.
+//
+// The type and the array above keep every event: a *historical* CPI notification must still
+// render for an Israeli account, and the feed does not ask permission before displaying
+// what the server sent. Only the settings list narrows.
+export const EVENT_REQUIREMENTS: Partial<Record<NotificationEvent, 'cpiLinkage'>> = {
+  cpi_rent_change: 'cpiLinkage',
+};
+
 // The two stages of a cpi_rent_change: an estimate before the lease anniversary, and the
 // confirmed amount once the index for it is published.
 export type CpiChangeStage = 'upcoming' | 'changed';

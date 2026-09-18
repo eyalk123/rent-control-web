@@ -43,10 +43,14 @@ test.describe('renters', () => {
 
   test('ending a lease moves the renter to Ended, and undo brings it back', async ({ page }) => {
     await page.goto('/renters/2');
-    // The trigger carries an ellipsis ("End lease…"); the dialog's confirm does not. Both
-    // are also substrings of "Extend lease", hence the exact matches.
-    await page.getByRole('button', { name: 'End lease…', exact: true }).click();
+    // The trigger and the dialog's confirm now read identically — the ellipsis came off
+    // the trigger — so the confirm is reached through the dialog rather than by wording.
+    // `exact` stays because both are substrings of "Extend lease".
     await page.getByRole('button', { name: 'End lease', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'End lease', exact: true })
+      .click();
 
     await expectToast(page, 'Lease ended');
     // Extend disappears; the banner and its undo take over.

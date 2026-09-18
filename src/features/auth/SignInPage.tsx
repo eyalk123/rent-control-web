@@ -38,6 +38,12 @@ function firebaseErrorMessage(err: unknown, t: (k: string) => string): string {
 
 const TILE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
+/** Sign-in wallpaper tile geometry, scaled as one unit so the 4x3 grid keeps its proportions. */
+const TILE_W = 122;
+const TILE_H = 159;
+const TILE_GAP = 17;
+const TILE_ICON = 54;
+
 /**
  * The only way to change language before signing in. Settings is behind the login, and
  * the language is a per-browser localStorage value picked from `navigator.language`, so
@@ -82,7 +88,8 @@ function LanguageToggle({ className = '', style }: { className?: string; style?:
 }
 
 export function SignInPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [error, setError] = useState('');
@@ -185,18 +192,29 @@ export function SignInPage() {
           </p>
         </div>
 
-        {/* Decorative property tiles grid */}
+        {/* Decorative property tiles grid. It counterweights the hero copy, so it sits on the
+            side opposite the text — right in English, left in Hebrew — with the tilt mirrored to
+            match. Inset from that edge rather than bled off it, so it reads as floating in the
+            panel instead of being clipped into the corner. The physical side is picked from
+            `isRtl` on purpose: `insetInlineEnd` would resolve against the `direction: ltr` this
+            element needs to keep the tile colours in the same order in both languages. */}
         <div
           className="absolute pointer-events-none"
-          style={{ insetInlineEnd: -120, top: -80, opacity: 0.16, transform: 'rotate(-8deg)' }}
+          style={{
+            [isRtl ? 'left' : 'right']: 48,
+            top: -60,
+            direction: 'ltr',
+            opacity: 0.16,
+            transform: `rotate(${isRtl ? 8 : -8}deg)`,
+          }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 100px)', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(4, ${TILE_W}px)`, gap: TILE_GAP }}>
             {TILE_IDS.map((id) => (
               <div
                 key={id}
-                style={{ width: 100, height: 130, borderRadius: 10, background: getPropertyColor(id), display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: TILE_W, height: TILE_H, borderRadius: 12, background: getPropertyColor(id), display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                <svg width={TILE_ICON} height={TILE_ICON} viewBox="0 0 24 24" fill="none">
                   <path d="M3 11l9-8 9 8v10H3z" fill="rgba(255,255,255,0.55)" />
                 </svg>
               </div>

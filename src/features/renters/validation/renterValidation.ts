@@ -96,8 +96,15 @@ export const renterFormSchema = z.object({
   optionYears: optionalNumericString,
   optionTermMonths: optionalNumericString,
   baseRent: optionalNumericString,
+  // Every mode stays accepted here, `cpi` included. The schema also validates an existing
+  // lease being *edited*, and an Israeli lease that already holds `cpi` must not fail its
+  // own form. Which modes a user can *pick* is narrowed in the picker (RentChangeField),
+  // and the API is what actually refuses an unavailable one.
   escalationMode: z.enum(['none', 'percent', 'fixed', 'custom', 'cpi']).optional(),
   escalationValue: optionalNumericString,
+  suppressExpiryAlerts: z.boolean(),
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  openEnded: z.boolean(),
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
   idImageUrl: z.string().nullable().optional(),

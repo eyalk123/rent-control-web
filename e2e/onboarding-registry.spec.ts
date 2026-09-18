@@ -83,6 +83,59 @@ test.describe('onboarding registry', () => {
     expect(missing).toEqual([]);
   });
 
+  /**
+   * Copy that names a capability-gated feature must sit behind `requires`.
+   *
+   * The bug this pins: `onboarding.seeds.cpi` promised to explain the Israeli consumer
+   * price index to a Spanish account, on a step whose rent-change control had already
+   * filtered CPI out — the app offering to explain a button that is not on the screen.
+   *
+   * A static check rather than a tour walk on purpose. Driving a tour through five steps
+   * to read one sentence is slow and brittle (the overlay's spotlight is a real hole, so
+   * stray clicks land on the app underneath), and it would only prove the one path it
+   * walked. This proves the invariant for every tour at once, and fails at the moment
+   * someone adds ungated CPI copy rather than whenever that tour is next exercised.
+   */
+  test('copy that names a gated feature is only reachable behind `requires`', () => {
+    // Words that only mean something where `cpiLinkage` is on. Hebrew "מדד" is the index
+    // itself; the English terms are the ones that leaked.
+    const GATED_TERMS = /CPI|consumer price index|index-linked|צמוד מדד|שינויי מדד/i;
+
+    const read = (locale: Locale, key: string): string => {
+      const value = key.split('.').reduce<unknown>(
+        (node, part) => (node && typeof node === 'object' ? (node as Locale)[part] : undefined),
+        locale,
+      );
+      return typeof value === 'string' ? value : '';
+    };
+
+    const ungated: string[] = [];
+    for (const tour of tours) {
+      const tourGated = tour.requires !== undefined;
+      for (const step of tour.steps) {
+        const stepGated = tourGated || step.requires !== undefined;
+        for (const part of ['title', 'body'] as const) {
+          const key = tourStepKey(tour.id, step.id, part);
+          for (const lang of ['en', 'he'] as const) {
+            if (!stepGated && GATED_TERMS.test(read(LOCALES[lang], key))) {
+              ungated.push(`${lang}: ${key}`);
+            }
+          }
+        }
+        if (step.seed) {
+          const seedGated = stepGated || step.seed.requires !== undefined;
+          const key = seedKey(step.seed.id);
+          for (const lang of ['en', 'he'] as const) {
+            if (!seedGated && GATED_TERMS.test(read(LOCALES[lang], key))) {
+              ungated.push(`${lang}: ${key}`);
+            }
+          }
+        }
+      }
+    }
+    expect(ungated).toEqual([]);
+  });
+
   test('the ui strings the overlay and the settings control need exist', () => {
     const missing: string[] = [];
     const keys = [

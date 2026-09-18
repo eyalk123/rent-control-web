@@ -61,7 +61,14 @@ export function LeaseTimeline({ renter }: Props) {
             const isOption = y.type === 'option';
             const months = periodMonths(y);
             const bgColor = isCurrent ? 'var(--color-rev-bg)' : isOption ? 'var(--color-input-filled-background)' : 'var(--color-surface)';
-            const typeLabel = isOption ? t('renter.optionYear') : t('renter.contractYear');
+            // A generated period is neither a term the owner agreed nor an option the tenant
+            // took — it is the horizon the server keeps ahead of today. "Contract" would be
+            // the one wrong word to put on it.
+            const typeLabel = y.generated
+              ? t('renter.openEndedGenerated')
+              : isOption
+                ? t('renter.optionYear')
+                : t('renter.contractYear');
             return (
               <div
                 key={i}

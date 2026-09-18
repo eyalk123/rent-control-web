@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { availablePropertyTypes } from '../validation/propertyValidation';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,20 +26,23 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
-import { formatMoney } from '@/shared/utils/money';
+import { formatArea, formatMoney } from '@/shared/utils/money';
 import { getLeaseEndDate } from '@/shared/types';
 import { getCurrentRenters, getTotalCurrentMonthlyRent } from '@/shared/utils/renterStatus';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import type { Property, PropertyType } from '@/shared/types';
+import type { Property,} from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour, useTourStep } from '@/features/onboarding/TourController';
 
 import i18n from '@/core/i18n';
 
-const PROPERTY_TYPES: PropertyType[] = ['apartment', 'house', 'commercial', 'garden_apartment'];
+// Derived from the one shared list rather than repeated here. The local copy used to omit
+// `housing_unit`, which made those properties invisible to this filter while showing fine
+// everywhere else (PLATFORM.md §16). Sharing the source fixes that for Israel as a side
+// effect of gating it for everyone else.
 import type { Renter } from '@/shared/types';
 
 function fmtLeaseDate(renter: Renter | undefined): string | null {
@@ -140,7 +144,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
           {[
             { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
             { label: t('property.renters'), value: property.renters?.length ?? 0 },
-            { label: t('property.size'), value: `${property.sq_ft}m²` },
+            { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
               <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
@@ -208,7 +212,7 @@ function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown
       meta: {
         filter: 'select',
         filterPlaceholder: t('common.all'),
-        filterOptions: PROPERTY_TYPES.map((ty) => ({ value: ty, label: t(`property.type_${ty}` as never, ty) })),
+        filterOptions: availablePropertyTypes().map((ty) => ({ value: ty, label: t(`property.type_${ty}` as never, ty) })),
       },
       cell: ({ row }) => (
         <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>

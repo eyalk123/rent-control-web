@@ -480,11 +480,31 @@ const seedTransactions: Transaction[] = [
   },
 ];
 
-let mockProperties: Property[] = [...seedProperties];
-let mockRenters: Renter[] = [...seedRenters];
+/**
+ * Arms a brand-new account: properties, renters and transactions all empty, while the
+ * reference data an account gets for free — expense categories — stays.
+ *
+ * Read once at module load, from a key an e2e spec sets in `addInitScript`, so the seeds
+ * are simply never installed rather than filtered out on every call. It exists because the
+ * behaviour worth pinning down for a new account is what the app does when there is
+ * nothing anywhere, and every other fixture in this file is a populated portfolio.
+ */
+export const EMPTY_ACCOUNT_MOCK_KEY = 'mock.emptyAccount';
+
+const EMPTY_ACCOUNT = (() => {
+  try {
+    return localStorage.getItem(EMPTY_ACCOUNT_MOCK_KEY) === '1';
+  } catch {
+    // Storage can be unavailable (private mode, blocked cookies). Not a reason to fail.
+    return false;
+  }
+})();
+
+let mockProperties: Property[] = EMPTY_ACCOUNT ? [] : [...seedProperties];
+let mockRenters: Renter[] = EMPTY_ACCOUNT ? [] : [...seedRenters];
 const mockExpenseCategories: ExpenseCategory[] = [...seedExpenseCategories];
-const mockSuppliers: Supplier[] = [...seedSuppliers];
-let mockTransactions: Transaction[] = [...seedTransactions];
+const mockSuppliers: Supplier[] = EMPTY_ACCOUNT ? [] : [...seedSuppliers];
+let mockTransactions: Transaction[] = EMPTY_ACCOUNT ? [] : [...seedTransactions];
 let nextPropertyId = 6;
 // Derived, not hardcoded: adding a seed renter used to silently collide with the first
 // id handed out by createRenter, which React surfaced as a duplicate-key warning.

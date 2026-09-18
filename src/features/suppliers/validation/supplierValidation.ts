@@ -27,6 +27,14 @@ export const supplierFormSchema = z.object({
     .array(z.number())
     .min(1, { message: 'common.required' }),
   bankAccount: bankAccountSchema,
+  // The free-text alternative, used where `structuredBankDetails` is off. Kept as its own
+  // field rather than widening `bankAccount` to a union: the structured value has a
+  // validation rule that a free-text string can never satisfy, and one of the two is always
+  // empty. Israel's path is then literally unchanged.
+  //
+  // No format validation on purpose — an IBAN, a routing number and a sort code have
+  // nothing in common, and a wrong rule that rejects a valid account is worse than no rule.
+  paymentDetails: optionalString,
 });
 
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>;

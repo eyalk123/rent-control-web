@@ -69,7 +69,13 @@ export const TOURS = {
   home: {
     id: 'home',
     route: '/home',
-    gate: 'hasRenters',
+    // `hasProperties`, not `hasRenters`: a landlord who has entered two properties and no
+    // tenants yet was being shown nothing here, and every card on this screen is about the
+    // portfolio before it is about the people in it. Not `always`, unlike the list tours —
+    // this one opens the instant `first-run` closes, and `first-run` ends on the single
+    // instruction written for an empty account ("start with one property"). Seven more
+    // cards on top of that call to action buries the one thing we want acted on.
+    gate: 'hasProperties',
     kind: 'orientation',
     steps: [
       // A beat before the first spotlight. Without it the sweep goes from a control in the
@@ -105,7 +111,11 @@ export const TOURS = {
   'properties-list': {
     id: 'properties-list',
     route: '/properties',
-    gate: 'hasProperties',
+    // `always`. This screen is where a new account lands first and it is the one that has
+    // to explain the two ways a property gets in, so gating the tour on there already
+    // being properties withheld it from exactly the person it was written for. Only the
+    // step that points at a card needs a portfolio, and it says so itself below.
+    gate: 'always',
     kind: 'page',
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
@@ -118,7 +128,11 @@ export const TOURS = {
       // bar, not about the list below it.
       { id: 'persistence', anchor: ANCHORS.propertiesSearch, placement: 'bottom', sharedWith: ['renters-list'] },
       // Not shared: a property card and a renter card show different things.
-      { id: 'cards', anchor: ANCHORS.propertiesList, placement: 'bottom' },
+      // The anchor is the first card, so on an empty list there is nothing to point at.
+      // `skipWhen` rather than `optional`: optional would drop the step whenever the
+      // element merely has not rendered *yet*, and the header and filter bar mount before
+      // the list does, so a real portfolio would lose this step on a slow load.
+      { id: 'cards', anchor: ANCHORS.propertiesList, placement: 'bottom', skipWhen: 'noProperties' },
       { id: 'table', anchor: ANCHORS.propertiesViewToggle, placement: 'bottom', optional: true, sharedWith: ['renters-list'] },
     ],
   },
@@ -149,7 +163,8 @@ export const TOURS = {
   'renters-list': {
     id: 'renters-list',
     route: '/renters',
-    gate: 'hasRenters',
+    // `always`, for the reason the properties tour is — see the note there.
+    gate: 'always',
     kind: 'page',
     steps: [
       { id: 'overview', anchor: null, placement: 'center' },
@@ -159,7 +174,10 @@ export const TOURS = {
       { id: 'ended', anchor: ANCHORS.rentersEndedFilter, placement: 'bottom', seed: { id: 'ended-tenants', opens: null } },
       { id: 'select', anchor: ANCHORS.rentersSelect, placement: 'bottom', sharedWith: ['properties-list'] },
       { id: 'search', anchor: ANCHORS.rentersSearch, placement: 'bottom', sharedWith: ['properties-list'] },
-      { id: 'cards', anchor: ANCHORS.rentersList, placement: 'bottom' },
+      // Unlike the properties tour this anchor is the list *wrapper*, so it is present
+      // even when empty — and would spotlight an empty state while the copy described a
+      // face and a phone number. Dropped when there is nobody to show.
+      { id: 'cards', anchor: ANCHORS.rentersList, placement: 'bottom', skipWhen: 'noRenters' },
       { id: 'table', anchor: ANCHORS.rentersViewToggle, placement: 'bottom', optional: true, sharedWith: ['properties-list'] },
     ],
   },
@@ -192,7 +210,7 @@ export const TOURS = {
       // CPI belongs to the mode control, and a custom schedule is a rule per year, which is
       // what the year-one card is already talking about.
       { id: 'baseYear', anchor: ANCHORS.leaseBaseRent, placement: 'bottom', seed: { id: 'custom-schedule', opens: 'custom-mode' }, revealsAnchor: true },
-      { id: 'mode', anchor: ANCHORS.leaseRentChangeField, placement: 'bottom', seed: { id: 'cpi', opens: 'cpi-mode' }, revealsAnchor: true },
+      { id: 'mode', anchor: ANCHORS.leaseRentChangeField, placement: 'bottom', seed: { id: 'cpi', opens: 'cpi-mode', requires: 'cpiLinkage' }, revealsAnchor: true },
       { id: 'payment', anchor: ANCHORS.renterFormPayment, placement: 'top', revealsAnchor: true },
     ],
   },
@@ -200,10 +218,20 @@ export const TOURS = {
   'transactions-list': {
     id: 'transactions-list',
     route: '/transactions',
-    gate: 'hasProperties',
+    // `always`. The one step that needs a ledger to exist drops itself; what is left —
+    // what the screen is, how to filter it, where rent gets recorded — is the part a new
+    // account needs most.
+    gate: 'always',
     kind: 'page',
     steps: [
-      { id: 'overview', anchor: null, placement: 'center' },
+      // Carries `no-auto-rent` because the step that used to — `twoKinds` below — is the
+      // one that drops on an empty ledger, and "nothing is charged automatically" is most
+      // worth saying to someone who has not recorded anything yet. The opener is the only
+      // step here that is present either way.
+      { id: 'overview', anchor: null, placement: 'center', seed: { id: 'no-auto-rent', opens: null } },
+      // No `skipWhen` here: the summary endpoint pads to six months with zeros, so the
+      // chart card renders whether or not anything has been recorded, and a flat line at
+      // zero is a fair thing to point at while saying what the card is.
       { id: 'hero', anchor: ANCHORS.transactionsHero, placement: 'bottom' },
       { id: 'filter', anchor: ANCHORS.transactionsFilter, placement: 'bottom' },
       // Reading order down the screen from here: the month heading, then the rows under
@@ -212,7 +240,9 @@ export const TOURS = {
       // spotlighted one control twice — and the fact it describes, that rent files under
       // the month it is *for*, is visible in the heading and nowhere near that button.
       { id: 'forMonth', anchor: ANCHORS.transactionsMonthHeader, placement: 'bottom', optional: true },
-      { id: 'twoKinds', anchor: ANCHORS.transactionsList, placement: 'bottom', seed: { id: 'no-auto-rent', opens: null } },
+      // This one does drop: its anchor is the first month's rows, which do not exist until
+      // there is a ledger to group.
+      { id: 'twoKinds', anchor: ANCHORS.transactionsList, placement: 'bottom', skipWhen: 'noTransactions' },
       { id: 'recording', anchor: ANCHORS.transactionsAddButton, placement: 'bottom', seed: { id: 'bulk-rent', opens: 'revenue-form' } },
     ],
   },
@@ -296,7 +326,11 @@ export const TOURS = {
   chat: {
     id: 'chat',
     route: '/home',
-    gate: 'hasRenters',
+    // `always`: this one fires when the user deliberately opens the panel, and both its
+    // steps are about what the assistant is allowed to do rather than about any data. If
+    // somebody opens it on their first day, telling them what it can and cannot see is
+    // the answer to the question they just asked.
+    gate: 'always',
     kind: 'page',
     steps: [
       { id: 'ask', anchor: ANCHORS.chatInput, placement: 'top' },
@@ -310,6 +344,10 @@ export const TOURS = {
     id: 'cpi-mode',
     route: '/renters',
     gate: 'cpiSelected',
+    // Belt and braces: `cpiSelected` can never be true where the mode is not offered, so
+    // this tour was already unreachable. Saying so explicitly means the next person does
+    // not have to re-derive that chain to know why.
+    requires: 'cpiLinkage',
     kind: 'elaboration',
     arrivesFrom: 'cpi',
     steps: [
@@ -453,7 +491,7 @@ export const TOURS = {
     steps: [
       { id: 'offsets', anchor: ANCHORS.ruleOffsets, placement: 'bottom' },
       { id: 'scope', anchor: ANCHORS.ruleScope, placement: 'bottom' },
-      { id: 'cpiException', anchor: null, placement: 'center' },
+      { id: 'cpiException', anchor: null, placement: 'center', requires: 'cpiLinkage' },
     ],
   },
 

@@ -19,7 +19,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Same alias as the app. A spec that imports app source (rather than driving it through
+       a browser) pulls that module's own "@/..." imports in with it, and the checker has to
+       resolve them the way Playwright already does at runtime. */
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["playwright.config.ts", "e2e"]
 }

@@ -1,5 +1,17 @@
 // Property type - backend expects lowercase
-export type PropertyType = 'apartment' | 'house' | 'commercial' | 'garden_apartment' | 'housing_unit';
+// Every value the column can hold, everywhere. `garden_apartment` and `housing_unit` are
+// Israeli categories and `bit` is an Israeli payment app — they stay in the unions because
+// an existing record can hold them and must keep rendering. Which of them a user may
+// *pick* is narrowed by capability, not here.
+export type PropertyType =
+  | 'apartment'
+  | 'house'
+  | 'commercial'
+  | 'garden_apartment'
+  | 'housing_unit'
+  | 'condo_townhouse'
+  | 'room'
+  | 'other';
 
 // Brief property shape (for nested in renter responses)
 export interface PropertyBrief {
@@ -19,7 +31,8 @@ export interface Property {
   city: string;
   zip_code: string;
   type: PropertyType;
-  sq_ft: number;
+  /** Square **metres**, despite the name — the column predates the unit work. */
+  sq_ft: number | null;
   image_url: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -78,6 +91,13 @@ export interface LeaseYear {
    * not a thing that happens, and the form cannot express one.
    */
   months?: number;
+  /**
+   * Written by the server's lease generator, never by a form: this period is part of the
+   * rolling horizon an open-ended lease carries, not a term anyone agreed to. The clients
+   * label it as automatic rather than as Contract or Option, and it is also what a later
+   * job would read to tell its own rows from ones the owner has corrected by hand.
+   */
+  generated?: boolean;
 }
 
 /** How the monthly rent changes from one lease year to the next. */
@@ -118,6 +138,17 @@ export interface Renter extends LeaseTermIntent {
    * accident. `lease_years` and `cpi_base_index` are untouched by it: the signed terms
    * stay on the record so past reports still reconstruct.
    */
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
+  /**
+   * A tenancy with no agreed end. It does **not** mean the lease has no end date: a nightly
+   * job keeps a rolling five-year window of periods on it, so everything that reads a lease
+   * end still reads a real one — it just moves. The generated periods carry `generated: true`.
+   *
+   * Per lease, not per country: an Israeli month-to-month holdover is open-ended too. Implies
+   * `suppress_expiry_alerts`, because the countdown would be to a date that keeps moving.
+   */
+  open_ended?: boolean;
   terminated_on?: string | null;
   termination_reason?: string | null;
   number_of_payments?: number | null;
@@ -266,7 +297,14 @@ export function getScheduleEndDate(renter: Renter): Date | null {
 
 export type TransactionType = 'revenue' | 'expense';
 
-export type PaymentMethod = 'bit' | 'cash' | 'bank_transfer' | 'check';
+export type PaymentMethod =
+  | 'bit'
+  | 'cash'
+  | 'bank_transfer'
+  | 'check'
+  | 'card'
+  | 'mobile_payment'
+  | 'other';
 
 export interface Transaction {
   id: number;
@@ -388,7 +426,8 @@ export interface PropertyCreate {
   city: string;
   zip_code: string;
   type: PropertyType;
-  sq_ft: number;
+  /** Square metres. Optional since the API stopped requiring it. */
+  sq_ft?: number | null;
   image_url?: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -414,7 +453,7 @@ export interface PropertyUpdate {
   city?: string;
   zip_code?: string;
   type?: PropertyType;
-  sq_ft?: number;
+  sq_ft?: number | null;
   image_url?: string | null;
   number_of_rooms?: number | null;
   parking_numbers?: string[] | null;
@@ -436,6 +475,10 @@ export interface PropertyUpdate {
 
 // Create payload (POST /renters)
 export interface RenterCreate extends LeaseTermIntent {
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  open_ended?: boolean;
   property_id?: number | null;
   first_name: string;
   last_name: string;
@@ -456,6 +499,10 @@ export interface RenterCreate extends LeaseTermIntent {
 
 // Update payload (PATCH /renters/{id}) - all fields optional
 export interface RenterUpdate extends LeaseTermIntent {
+  /** "Don't warn me when this lease expires" — see the renter form. */
+  suppress_expiry_alerts?: boolean;
+  /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
+  open_ended?: boolean;
   property_id?: number | null;
   first_name?: string;
   last_name?: string;

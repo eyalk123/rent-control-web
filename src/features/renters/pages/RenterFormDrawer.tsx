@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { isOpenEndedCountry } from '@/shared/utils/capabilities';
+import { Toggle } from '@/shared/components/ui/Toggle';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +83,17 @@ function RenterFormTourRequest() {
 
 /** The `lease-form` steps that belong to the drawer's *first* page. See `shownStep`. */
 const TOUR_PAGE_ONE_STEPS = ['overview', 'extraContacts'];
+
+/**
+ * The switch's starting position.
+ *
+ * On where tenancies normally have no agreed end, off everywhere else — and only ever a
+ * *default*, because the switch is per lease: an Israeli month-to-month holdover is the
+ * same shape and can turn it on, a German fixed-term sublet can turn it off.
+ */
+function openEndedDefault(): { openEnded: boolean } {
+  return { openEnded: isOpenEndedCountry() };
+}
 
 export function RenterFormDrawer({
   open,
@@ -169,7 +182,7 @@ export function RenterFormDrawer({
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
     // never shown; pre-filling discloses the default and leaves it editable.
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '' },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, ...openEndedDefault() },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -177,6 +190,7 @@ export function RenterFormDrawer({
   // Document-scan property association: warn (softly) when the chosen property's address
   // doesn't match the scanned lease. The dropdown always stays the source of truth.
   const selectedPropertyId = useWatch({ control, name: 'propertyId' });
+  const openEndedWatch = Boolean(useWatch({ control, name: 'openEnded' }));
   const propertyMismatch =
     !!scannedLeaseAddress?.address && !!selectedPropertyId
       ? (() => {
@@ -261,6 +275,10 @@ export function RenterFormDrawer({
         paymentType: existing.payment_type === 'wire_transfer' ? 'bank_transfer' : (existing.payment_type ?? undefined),
         paymentFrequency,
         extraContacts: existing.extra_contacts ?? [],
+        // A renter-level setting, not part of the lease-term intent — so it belongs here
+        // rather than inside the intent ternary, whose other branch would have dropped it.
+        suppressExpiryAlerts: existing.suppress_expiry_alerts ?? false,
+        openEnded: existing.open_ended ?? false,
         insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
         idImageUrl: existing.id_image_url ?? undefined,
@@ -303,13 +321,18 @@ export function RenterFormDrawer({
         propertyId: initialPropertyId?.toString() ?? '',
         paymentType: '',
         paymentDayOfMonth: DEFAULT_PAYMENT_DAY,
-        contractTermYears: '',
         contractTermMonths: '',
         optionYears: '',
         optionTermMonths: '',
         baseRent: '',
         escalationMode: 'none',
         escalationValue: '',
+        suppressExpiryAlerts: false,
+        contractTermYears: '',
+        // Before the prefill, so a scanned lease's own term still wins. The switch replaces
+        // the silent five-year pre-fill this used to carry: the same countries, but stated
+        // rather than guessed at, and the server keeps the schedule rolling from here.
+        ...openEndedDefault(),
         ...(effPrefill ?? {}),
       });
       setFullContractFile(pendingContractFile ?? null);
@@ -381,13 +404,20 @@ export function RenterFormDrawer({
           // Absent means twelve, so only a short tail carries it and an ordinary lease's
           // payload stays exactly the shape it has always been.
           ...(ly.months && ly.months < 12 ? { months: ly.months } : {}),
-          // Per-year rules only exist in custom mode, and "manual" is the absence of a
-          // rule — omit it so the payload stays the legacy shape for every other lease.
-          ...(data.escalationMode === 'custom' && ly.rule && ly.rule.mode !== 'manual'
-            ? { rule: { mode: ly.rule.mode, value: ly.rule.value ? Number(ly.rule.value) : undefined } }
-            : {}),
+          // Derived per-year rules only exist in custom mode. A `manual` rule is different:
+          // it is the mark that this amount was *typed*, which is what stops the whole-lease
+          // formula recomputing over it and what makes the years after it chain from it. It
+          // therefore has to survive in every mode. A year nobody touched still carries no
+          // rule at all, so an untouched lease's payload stays the shape it has always been.
+          ...(ly.rule?.mode === 'manual'
+            ? { rule: { mode: 'manual' as const } }
+            : data.escalationMode === 'custom' && ly.rule
+              ? { rule: { mode: ly.rule.mode, value: ly.rule.value ? Number(ly.rule.value) : undefined } }
+              : {}),
         })),
         contract_term_years: toNumOrNull(data.contractTermYears),
+        suppress_expiry_alerts: data.suppressExpiryAlerts || data.openEnded,
+        open_ended: data.openEnded,
         contract_term_months: toNumOrNull(data.contractTermMonths),
         option_years: toNumOrNull(data.optionYears),
         option_term_months: toNumOrNull(data.optionTermMonths),
@@ -465,6 +495,9 @@ export function RenterFormDrawer({
     { value: 'quarterly', label: t('renter.frequencyQuarterly') },
     { value: 'yearly', label: t('renter.frequencyYearly') },
   ];
+  // No "none" entry: the field is already optional and its placeholder says so, so leaving
+  // it blank *is* "no security". A third option would be a second way to express the same
+  // fact — two values to handle in every reader, for no extra meaning.
   const insuranceTypeOptions = [
     { value: 'wire_transfer', label: t('renter.insuranceTypeWireTransfer') },
     { value: 'bank_guarantee', label: t('renter.insuranceTypeBankGuarantee') },
@@ -682,6 +715,43 @@ export function RenterFormDrawer({
               />
             )} />
             </div>
+            {/*
+              The expiring alert counts down to the contract end date. Where a tenancy is
+              open-ended that date is the landlord's estimate, so the countdown is noise —
+              and an Israeli month-to-month holdover has exactly the same problem, which is
+              why this is offered to everyone rather than gated on the country.
+            */}
+            {/*
+              `Toggle` is the bare switch — it takes its label as `aria-label` and renders
+              no text of its own, on the stated assumption that the row around it says what
+              it is. Every other call site is such a row; this one was not, so the form had
+              an unexplained switch sitting between the payment fields and the insurance
+              ones, in both languages. The row is the missing half, not a change to Toggle.
+            */}
+            {/*
+              Hidden while the lease is open-ended, which already implies it: that countdown
+              is to a date the generator moves every year, so there is nothing left for this
+              switch to decide. Two controls for one outcome is worse than one, and the value
+              is still stored and editable for every lease that is not open-ended.
+            */}
+            {!openEndedWatch && (
+            <Controller
+              control={control}
+              name="suppressExpiryAlerts"
+              render={({ field }) => (
+                <div className="flex items-center gap-4">
+                  <p className="flex-1 text-sm" style={{ color: 'var(--color-text-primary)' }}>
+                    {t('renter.suppressExpiryAlerts')}
+                  </p>
+                  <Toggle
+                    checked={Boolean(field.value)}
+                    onChange={field.onChange}
+                    label={t('renter.suppressExpiryAlerts')}
+                  />
+                </div>
+              )}
+            />
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Controller control={control} name="insuranceType" render={({ field }) => (
                 <FormSelect label={t('renter.insuranceType')} value={field.value} onValueChange={field.onChange} options={insuranceTypeOptions} placeholder={t('common.optional')} reviewName="insuranceType" />
