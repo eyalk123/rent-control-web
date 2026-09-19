@@ -8,6 +8,7 @@ import { fmtDate } from '@/shared/utils/dates';
 import { getLeaseEndDate, periodMonths } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { isUnsettledCpiYear } from '@/shared/utils/leaseSchedule';
+import { indexLabelKey } from '@/shared/utils/indexLabels';
 import type { Renter } from '@/shared/types';
 
 interface Props {
@@ -91,7 +92,7 @@ export function LeaseTimeline({ renter }: Props) {
                 {isProjected && (
                   <Pill tone="info" size="sm" className="gap-1 mt-1">
                     <TrendingUp size={12} />
-                    {t('renter.rentChangeCpi')}
+                    {t(indexLabelKey())}
                   </Pill>
                 )}
                 <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}>

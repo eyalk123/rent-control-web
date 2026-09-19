@@ -152,6 +152,35 @@ test.describe('renters', () => {
     await expect(page.getByText('Dana Cohen')).toBeVisible();
   });
 
+  /**
+   * The open-ended switch narrows the rent-change control — to four modes, not three.
+   *
+   * CPI was excluded alongside Custom at first, on the reading that index linkage also
+   * describes a schedule that has to end. It does not: every period is priced from the base
+   * index frozen at signing, which never asks where the schedule stops. Custom genuinely
+   * cannot work, because it needs a rule for a year the generator has not appended yet, and
+   * the API refuses that pairing — so this pins both halves at once.
+   */
+  test('an open-ended lease offers index linkage but not Custom', async ({ page }) => {
+    await page.goto('/renters');
+    await page.getByRole('button', { name: 'Add renter' }).click();
+    await page.getByRole('menuitem', { name: 'Enter manually' }).click();
+
+    await page.getByLabel('First Name').fill('Tessa');
+    await page.getByLabel('Last Name').fill('Tester');
+    await page.getByLabel('Phone').fill('512-555-9999');
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    // Mock mode answers Israel, so the capability filter leaves every mode in place and
+    // what is left is entirely the open-ended narrowing.
+    await expect(page.getByRole('button', { name: 'Custom', exact: true })).toBeVisible();
+
+    await page.getByRole('switch', { name: 'Open-ended lease' }).click();
+
+    await expect(page.getByRole('button', { name: 'CPI', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Custom', exact: true })).toHaveCount(0);
+  });
+
   // Regression for H2: name + phone is enough to create a renter (optional Controller
   // fields no longer block submission, and the payment-day wheel is truly optional).
   test('can create a renter (round-trip)', async ({ page }) => {

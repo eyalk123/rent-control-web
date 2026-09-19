@@ -48,6 +48,12 @@ export const TOURS = {
       // Optional for the same reason: the launcher only renders once the assistant's
       // status request comes back enabled.
       { id: 'chat', anchor: ANCHORS.chatLauncher, placement: 'bottom', optional: true },
+      // Third of the three top-bar controls, and named here rather than seeded because it
+      // is on screen at this moment — a sentence about a button the spotlight could be
+      // pointing at is the one case a seed is the wrong shape. Not `optional`: unlike the
+      // assistant it is there for every account. Mobile has no such button and carries a
+      // seed on its `chat` step instead.
+      { id: 'feedback', anchor: ANCHORS.feedbackButton, placement: 'bottom' },
       // The closing call to action, and only for someone who still needs it. An account
       // with a portfolio drops it, which is also what puts the home sweep immediately
       // after the assistant instead of after a card telling them to do what they did
@@ -202,6 +208,11 @@ export const TOURS = {
       // other field on that page is a plain input, and nothing on it says who a second
       // contact is for or that it is optional.
       { id: 'extraContacts', anchor: ANCHORS.renterFormExtraContacts, placement: 'top', revealsAnchor: true },
+      // Before `term`, because it is above it on the screen and because it decides what
+      // `term` even shows: with the switch on the steppers are gone and there is no end
+      // date to explain. Ungated — the switch is per lease, not per country, and the
+      // Israeli month-to-month holdover is exactly the tenancy it was written for.
+      { id: 'openEnded', anchor: ANCHORS.leaseOpenEnded, placement: 'bottom', revealsAnchor: true },
       { id: 'term', anchor: ANCHORS.leaseTermBuilder, placement: 'bottom', revealsAnchor: true },
       // `baseYear` before `mode`, which is the order they are in on the screen: LeaseTermBuilder
       // renders the first year's rent directly under the term and the rent-change control

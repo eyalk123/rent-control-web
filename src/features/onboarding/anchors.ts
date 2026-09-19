@@ -107,6 +107,11 @@ export const ANCHORS = {
   renterDetailEndLease: 'renterDetail.endLeaseButton', // -> EndLeaseDialog trigger
 
   // Lease form — src/shared/components/ui/ + feature forms
+  /** The open-ended switch at the top of the lease block. It is the control that decides
+   *  the shape of everything under it — term steppers hidden, rent-change modes narrowed,
+   *  expiry alert muted — so it earns a stop before the term rather than after it. Also
+   *  `revealsAnchor`: it sits on the drawer's second page. */
+  leaseOpenEnded: 'leaseForm.openEnded', // -> LeaseTermBuilder.tsx
   leaseTermBuilder: 'leaseForm.termBuilder', // -> LeaseTermBuilder.tsx
   leaseRentChangeField: 'leaseForm.rentChangeField', // -> RentChangeField.tsx
   leaseBaseRent: 'leaseForm.baseRent',
@@ -198,6 +203,15 @@ export const ANCHORS = {
   chatLauncher: 'chat.launcher',
   /** The composer inside the panel. Same key string as mobile, so the vocabulary matches. */
   chatInput: 'chat.input',
+
+  // Feedback — src/layout/TopBar.tsx
+  /** The "send us a message" button, third of the three top-bar controls. Not `optional`
+   *  like its neighbours: unlike the assistant it is there for every account, and unlike
+   *  Reports and Suppliers it does not move into a "More" sheet at narrow widths.
+   *
+   *  Mobile has no equivalent — the form lives behind Settings there — so that platform
+   *  carries a seed instead of a step. See both registries. */
+  feedbackButton: 'feedback.button',
 } as const;
 
 export type AnchorKey = (typeof ANCHORS)[keyof typeof ANCHORS];

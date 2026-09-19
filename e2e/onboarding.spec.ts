@@ -45,14 +45,16 @@ test.describe('onboarding — first run', () => {
     await expect(card.locator('[data-tour-title-card]').or(page.locator('[data-tour-title-card]'))).toHaveCount(1);
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Your dashboard')).toBeVisible();
-    // Eight, and every one of them is conditional on something, which is why the count is
+    // Nine, and every one of them is conditional on something, which is why the count is
     // read rather than assumed:
     //   - Suppliers and Reports are sidebar-only, so they survive at this viewport (1280)
     //     and are dropped below `lg`, where the bottom bar hides them behind "More";
     //   - the assistant step survives because the mock reports the assistant enabled;
+    //   - the feedback step is unconditional — that button is there for every account and
+    //     at every width, which is why it is a step here and a seed on mobile;
     //   - "start with one property" is *gone*, because the mock account has properties.
-    //     That is the ninth step, and it is the one an empty account sees instead.
-    await expect(card.getByText('2 of 9')).toBeVisible();
+    //     That is the tenth step, and it is the one an empty account sees instead.
+    await expect(card.getByText('2 of 10')).toBeVisible();
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Your properties')).toBeVisible();
@@ -79,10 +81,15 @@ test.describe('onboarding — first run', () => {
 
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Ask anything')).toBeVisible();
-    await expect(card.getByText('9 of 9')).toBeVisible();
+
+    // The third top-bar control closes the chrome sweep. It is the last thing named
+    // because it is the one you reach for when something on any of the others is wrong.
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Talk to us')).toBeVisible();
+    await expect(card.getByText('10 of 10')).toBeVisible();
 
     await card.getByRole('button', { name: 'Got it' }).click();
-    await expect(page.getByText('Ask anything')).toBeHidden();
+    await expect(page.getByText('Talk to us')).toBeHidden();
 
     // Leaving and coming back must not replay it. There is no server in this mode, so
     // this also covers the case where the write is never acknowledged.
@@ -356,7 +363,7 @@ test.describe('onboarding — first run', () => {
 
     // Same step, still open: not advanced, not skipped.
     await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
-    await expect(card.getByText('1 of 9')).toBeVisible();
+    await expect(card.getByText('1 of 10')).toBeVisible();
   });
 
   test('the page still scrolls while a step is showing', async ({ page }) => {

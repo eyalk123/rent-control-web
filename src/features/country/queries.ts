@@ -7,6 +7,7 @@ import {
   setRevenueBasisDefault,
 } from '@/shared/utils/capabilities';
 import { setActiveRegistryKeys } from '@/shared/utils/registryLabels';
+import { setActiveIndexKeys } from '@/shared/utils/indexLabels';
 import { useLanguage } from '@/hooks/useLanguage';
 import { getCountries, getMyCountry, setMyCountry, type Country } from './api/countries';
 import {
@@ -193,6 +194,7 @@ export function useApplyCountryFormat(): void {
     setOpenEndedTenancies(config.openEndedTenancies);
     setRevenueBasisDefault(config.revenueBasisDefault);
     setActiveRegistryKeys(config.registryKey1, config.registryKey2);
+    setActiveIndexKeys(config.indexLabelKey, config.indexNoteKey);
 
     // The chosen currency where there is one, the country's own otherwise. Resolved here
     // rather than in `money.ts` so the formatter stays a formatter and the rule lives in

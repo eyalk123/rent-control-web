@@ -9,6 +9,7 @@ import { EscalationValueField } from '@/shared/components/form/EscalationValueFi
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { formatMoney } from '@/shared/utils/money';
 import { allowedModes } from '@/shared/utils/capabilities';
+import { indexLabelKey } from '@/shared/utils/indexLabels';
 import type { LeaseYearRuleMode, LeaseYearType } from '@/shared/types';
 
 /**
@@ -119,7 +120,8 @@ export function LeaseYearRow({
 
   const ruleOptions = allowedModes(LEASE_YEAR_RULE_MODES, RULE_MODE_REQUIREMENTS).map((m) => ({
     value: m,
-    label: t(LEASE_YEAR_RULE_LABEL_KEYS[m]),
+    // `cpi` is the one mode whose name the country decides — see `indexLabels.ts`.
+    label: t(m === 'cpi' ? indexLabelKey() : LEASE_YEAR_RULE_LABEL_KEYS[m]),
   }));
 
   return (
@@ -158,7 +160,7 @@ export function LeaseYearRow({
             {projected && (
               <Pill tone="info" size="sm" className="gap-1">
                 <TrendingUp size={12} />
-                {t('renter.rentChangeCpi')}
+                {t(indexLabelKey())}
               </Pill>
             )}
           </div>
@@ -193,7 +195,7 @@ export function LeaseYearRow({
         {amountEditable && projected && (
           <Pill tone="info" size="sm" className="gap-1 shrink-0">
             <TrendingUp size={12} />
-            {t('renter.rentChangeCpi')}
+            {t(indexLabelKey())}
           </Pill>
         )}
 

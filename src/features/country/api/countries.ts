@@ -39,6 +39,15 @@ export interface Country {
   hasPostalCodes: boolean;
   registryKey1: string | null;
   registryKey2: string | null;
+  /**
+   * i18n keys for the index-linked escalation mode — its label in the rent-change picker
+   * and the note under it. Keys rather than labels for the reason above: every market's
+   * clause is "the official index", but Israel's is the מדד and Spain's would be the IPC,
+   * and the language alone cannot say which. `null` where the country has no index, which
+   * is also where `capabilities.cpiLinkage` is off.
+   */
+  indexLabelKey: string | null;
+  indexNoteKey: string | null;
   capabilities: CountryCapabilities;
 }
 
@@ -61,6 +70,8 @@ interface CountryDto {
   has_postal_codes: boolean;
   registry_key_1: string | null;
   registry_key_2: string | null;
+  index_label_key: string | null;
+  index_note_key: string | null;
   capabilities: {
     cpi_linkage: boolean;
     tax_tracks: boolean;
@@ -90,6 +101,8 @@ function fromDto(d: CountryDto): Country {
     hasPostalCodes: d.has_postal_codes,
     registryKey1: d.registry_key_1,
     registryKey2: d.registry_key_2,
+    indexLabelKey: d.index_label_key,
+    indexNoteKey: d.index_note_key,
     capabilities: {
       cpiLinkage: d.capabilities.cpi_linkage,
       taxTracks: d.capabilities.tax_tracks,
@@ -124,6 +137,8 @@ const MOCK_COUNTRIES: Country[] = [
     hasPostalCodes: true,
     registryKey1: null,
     registryKey2: null,
+    indexLabelKey: 'renter.rentChangeCpi',
+    indexNoteKey: 'renter.rentChangeCpiNote',
     capabilities: {
       cpiLinkage: true,
       taxTracks: true,
@@ -151,6 +166,8 @@ const MOCK_COUNTRIES: Country[] = [
     hasPostalCodes: true,
     registryKey1: 'property.registry.apn',
     registryKey2: null,
+    indexLabelKey: null,
+    indexNoteKey: null,
     capabilities: {
       cpiLinkage: false,
       taxTracks: false,
@@ -178,6 +195,8 @@ const MOCK_COUNTRIES: Country[] = [
     hasPostalCodes: true,
     registryKey1: 'property.registry.title_number',
     registryKey2: null,
+    indexLabelKey: null,
+    indexNoteKey: null,
     capabilities: {
       cpiLinkage: false,
       taxTracks: false,

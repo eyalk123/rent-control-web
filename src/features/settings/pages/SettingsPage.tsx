@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as Sentry from '@sentry/react';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download, Sparkles } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download, Sparkles, MessageSquare } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
@@ -23,6 +23,7 @@ import {
 import { resolveEffectiveCurrency } from '@/features/country/effectiveCurrency';
 import { CountryFlag } from '@/shared/components/ui/CountryFlag';
 import { useProperties } from '@/features/properties/queries';
+import { useFeedbackPanel } from '@/features/feedback/FeedbackPanelContext';
 
 // ─── DeleteAccountModal ──────────────────────────────────────────────────────
 
@@ -153,6 +154,7 @@ export function SettingsPage() {
   const { signOut, user } = useAppAuth();
   const { showToast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { openPanel: openFeedback } = useFeedbackPanel();
   const [exporting, setExporting] = useState(false);
   const { state: tourState } = useTourState();
   const recordTourProgress = useRecordTourProgress();
@@ -220,6 +222,7 @@ export function SettingsPage() {
       ? [{ key: 'tours', label: t('onboarding.ui.sectionTitle'), icon: Sparkles }]
       : []),
     { key: 'data', label: t('settings.navData'), icon: Shield },
+    { key: 'feedback', label: t('feedback.navLabel'), icon: MessageSquare },
     { key: 'legal', label: t('legal.sectionTitle'), icon: FileText },
     { key: 'about', label: t('settings.navAbout'), icon: Info },
   ];
@@ -433,6 +436,25 @@ export function SettingsPage() {
           </SettingsSection>
 
           {/* Legal & Privacy */}
+          {/* Feedback. A drawer rather than a route, like Delete Account: a one-off
+              action nobody deep-links to. */}
+          <SettingsSection id="feedback" title={t('feedback.navLabel')} subtitle={t('feedback.sectionSubtitle')}>
+            <SettingRow
+              label={t('feedback.rowLabel')}
+              hint={t('feedback.rowHint')}
+              control={
+                <button
+                  onClick={openFeedback}
+                  className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
+                  style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+                >
+                  <MessageSquare size={14} /> {t('feedback.rowAction')}
+                </button>
+              }
+              last
+            />
+          </SettingsSection>
+
           <SettingsSection id="legal" title={t('legal.sectionTitle')}>
             <SettingRow
               label={t('legal.privacyPolicy')}

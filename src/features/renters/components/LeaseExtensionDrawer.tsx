@@ -404,12 +404,17 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
               </div>
             </div>
 
+            {/* Narrowed for an open-ended lease exactly as the renter form is. Without it
+                this offered Custom on a lease the API answers with a 422 — a control the
+                server has no path for, which is the inversion `RentChangeField` warns
+                about. The renter carries the switch, so the drawer can just read it. */}
             <RentChangeField
               label={t('renter.newYearIncrement')}
               mode={mode}
               onModeChange={setMode}
               value={value}
               onValueChange={setValue}
+              openEnded={renter.open_ended === true}
               className="mt-4"
             />
           </div>

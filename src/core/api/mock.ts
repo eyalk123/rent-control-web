@@ -1237,3 +1237,18 @@ export const mockExportApi = {
     URL.revokeObjectURL(url);
   },
 };
+
+// --- Support messages ("Report a bug") ------------------------------------------------------
+// The real endpoint emails the product owner and answers 502 if it could not. Offline there is
+// nothing to send, so acknowledge it: the form's success path is what the E2E run exercises.
+
+let nextFeedbackId = 1;
+
+export const mockFeedbackApi = {
+  // Generic so the caller's own union survives the round-trip: a plain `string`
+  // here would not satisfy the typed receipt the real endpoint returns.
+  submitFeedback: async <T extends string>(data: { type: T }) => {
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+    return { id: nextFeedbackId++, type: data.type, created_at: new Date().toISOString() };
+  },
+};

@@ -168,6 +168,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     amountsKey,
   ]);
 
+  const openEndedAnchorRef = useTourAnchor(ANCHORS.leaseOpenEnded);
   const termAnchorRef = useTourAnchor(ANCHORS.leaseTermBuilder);
   const baseRentAnchorRef = useTourAnchor(ANCHORS.leaseBaseRent);
   const yearRowsAnchorRef = useTourAnchor(ANCHORS.leaseYearRows);
@@ -220,7 +221,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           control={control}
           name="openEnded"
           render={({ field }) => (
-            <div className="flex flex-col gap-1">
+            <div ref={openEndedAnchorRef} className="flex flex-col gap-1">
               <div className="flex items-center gap-4">
                 <p className="flex-1 text-sm" style={{ color: 'var(--color-text-primary)' }}>
                   {t('renter.openEnded')}

@@ -12,6 +12,8 @@ import { AlertsPanel } from '@/features/alerts/AlertsPanel';
 import { ScanProvider } from '@/features/document-scan/ScanContext';
 import { ScanSurfaces } from '@/features/document-scan/ScanSurfaces';
 import { ChatPanelProvider } from '@/features/agent/PortfolioChatContext';
+import { FeedbackPanelProvider } from '@/features/feedback/FeedbackPanelContext';
+import { FeedbackSurface } from '@/features/feedback/FeedbackSurface';
 import { AnchorRegistryProvider } from '@/features/onboarding/AnchorRegistry';
 import { TourControllerProvider } from '@/features/onboarding/TourController';
 import { TourOverlay } from '@/features/onboarding/TourOverlay';
@@ -47,6 +49,7 @@ export function AppShell() {
     <TourControllerProvider>
     <AlertsPanelProvider>
       <ChatPanelProvider>
+      <FeedbackPanelProvider>
         <ScanProvider>
         <div className="flex h-screen overflow-hidden bg-[var(--color-background)]">
           <AuthTokenSync />
@@ -66,12 +69,14 @@ export function AppShell() {
           <TransactionFormDrawer open={txDrawerOpen} onClose={() => setTxDrawerOpen(false)} />
           <AlertsPanel />
           <PortfolioChatPanel />
+          <FeedbackSurface />
           {/* App-global scan drawers + floating "active scan" pill. */}
           <ScanSurfaces />
           {/* Onboarding. Last so its portal sits above the drawers it may point at. */}
           <TourOverlay />
         </div>
         </ScanProvider>
+      </FeedbackPanelProvider>
       </ChatPanelProvider>
     </AlertsPanelProvider>
     </TourControllerProvider>

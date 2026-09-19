@@ -3,6 +3,7 @@ import { allowedModes } from '@/shared/utils/capabilities';
 import { RENT_ESCALATION_MODES, RENT_MODE_REQUIREMENTS } from '@/shared/constants/rentModes';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EscalationValueField } from '@/shared/components/form/EscalationValueField';
+import { indexLabelKey, indexNoteKey } from '@/shared/utils/indexLabels';
 import type { RentEscalationMode } from '@/shared/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -19,10 +20,15 @@ interface Props {
   /**
    * Narrows the list to the modes an endless lease can be priced by.
    *
-   * `custom` gives every year its own rule and `cpi` needs an index reading per year —
-   * neither can be written for a year the generator has not appended yet, which is why the
-   * API refuses both alongside the switch. Offering them here would only produce a save the
-   * server rejects.
+   * Only `custom` drops out. It gives every year its own rule, and a rule cannot be written
+   * for a year the generator has not appended yet, which is why the API refuses it
+   * alongside the switch — offering it here would only produce a save the server rejects.
+   *
+   * Index linkage stays. It prices every period from the base index frozen at signing and
+   * never asks where the schedule ends, so a month-to-month holdover can be index-linked
+   * like any other tenancy. Where the country has no index the capability filter below has
+   * already removed it, so the two narrowings compose without either knowing about the
+   * other.
    */
   openEnded?: boolean;
   className?: string;
@@ -32,7 +38,7 @@ interface Props {
 export { RENT_ESCALATION_MODES, RENT_MODE_REQUIREMENTS };
 
 /** The modes an open-ended lease can use — see the `openEnded` prop. */
-const CHAINABLE_OPEN_ENDED_MODES = new Set<RentEscalationMode>(['none', 'percent', 'fixed']);
+const OPEN_ENDED_MODES = new Set<RentEscalationMode>(['none', 'percent', 'fixed', 'cpi']);
 
 /**
  * The "how does the rent change" control: mode toggle + the CPI explainer + the percent/₪
@@ -61,7 +67,7 @@ export function RentChangeField({
     RENT_ESCALATION_MODES,
     RENT_MODE_REQUIREMENTS,
   )
-    .filter((m) => !openEnded || CHAINABLE_OPEN_ENDED_MODES.has(m))
+    .filter((m) => !openEnded || OPEN_ENDED_MODES.has(m))
     .map((m) => ({
     value: m,
     label: t(
@@ -69,7 +75,9 @@ export function RentChangeField({
         none: 'renter.rentChangeSame',
         percent: 'renter.rentChangePercent',
         fixed: 'renter.rentChangeFixed',
-        cpi: 'renter.rentChangeCpi',
+        // The one label the country has a say in: which index this market's leases are
+        // linked to is a different concept, not a different wording. See `indexLabels.ts`.
+        cpi: indexLabelKey(),
         custom: 'renter.rentChangeCustom',
       }[m],
     ),
@@ -87,7 +95,7 @@ export function RentChangeField({
           ref={cpiAnchorRef}
           className="text-[13px] leading-snug mt-1.5 text-[var(--color-text-secondary)]"
         >
-          {t('renter.rentChangeCpiNote')}
+          {t(indexNoteKey())}
         </p>
       )}
 

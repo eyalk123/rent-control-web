@@ -569,8 +569,7 @@
     "openEndedShort": "Open-ended",
     "openEndedTenancy": "Tenancy",
     "openEndedGenerated": "Auto",
-    "openEndedGeneratedNote": "The later years are projections that extend automatically. Edit any amount to correct it.",
-    "openEndedTermNote": "Tenancies here are usually open-ended. Rent Control needs an end date on every lease — pick your best estimate and extend it whenever you like."
+    "openEndedGeneratedNote": "The later years are projections that extend automatically. Edit any amount to correct it."
   },
   "empty": {
     "noProperties": "No properties yet. Tap + to add one.",
@@ -1325,6 +1324,10 @@
           "title": "Ask anything",
           "body": "Ask about your own portfolio in plain language."
         },
+        "feedback": {
+          "title": "Talk to us",
+          "body": "A bug, a question, or an idea — send it from whatever screen you are on, screenshots and all. There is no inbox here; we reply by email to the address on your account."
+        },
         "start": {
           "title": "Start with one property",
           "body": "Add it by hand, or scan a lease and we'll create the property and the renter together."
@@ -1454,6 +1457,10 @@
         "extraContacts": {
           "title": "Anyone else on the lease",
           "body": "A guarantor, a partner, a parent paying the rent — add them here with their own phone number, and they are part of the tenancy rather than a note somewhere. Optional, and you can come back to it later."
+        },
+        "openEnded": {
+          "title": "Tenancies with no end",
+          "body": "Some tenancies just run — month to month once a contract lapses, or by law in much of Europe. Turn this on and we keep the schedule rolling instead of asking you to invent an end date."
         },
         "term": {
           "title": "The term",
@@ -1781,5 +1788,34 @@
       "replayDone": "Tours reset. They'll appear again as you go.",
       "disable": "Turn off tours"
     }
+  },
+  "feedback": {
+    "navLabel": "Feedback",
+    "sectionSubtitle": "Tell us about a bug, ask a question, or suggest something.",
+    "rowLabel": "Send us a message",
+    "rowHint": "We read every message and reply by email.",
+    "rowAction": "Write a message",
+    "title": "Send us a message",
+    "typeLabel": "What is this about?",
+    "type_bug": "Bug",
+    "type_question": "Question",
+    "type_suggestion": "Suggestion",
+    "messageLabel": "Your message",
+    "placeholder_bug": "What happened, and what did you expect instead?",
+    "placeholder_question": "What would you like to know?",
+    "placeholder_suggestion": "What would make Rent Control better for you?",
+    "messageTooLong": "That message is too long.",
+    "screenshotsLabel": "Screenshots (optional)",
+    "addScreenshot": "Add",
+    "removeScreenshot": "Remove screenshot",
+    "screenshotHint": "Up to {{max}} images. You can paste a screenshot straight from your clipboard.",
+    "screenshotPrivacy": "Screenshots may include your renters' details.",
+    "screenshotsFull": "You've added the maximum number of screenshots.",
+    "screenshotFailed": "That image couldn't be attached. Try another one.",
+    "submit": "Send",
+    "replyTo": "We'll reply to {{email}}.",
+    "replyToGeneric": "We'll reply to the email address on your account.",
+    "submitSuccess": "Thanks — your message is on its way.",
+    "submitFailed": "We couldn't send your message. Please try again."
   }
 }

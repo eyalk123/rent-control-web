@@ -1,8 +1,9 @@
-import { Sun, Moon, Bell, Sparkles } from 'lucide-react';
+import { Sun, Moon, Bell, Sparkles, MessageSquare } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useChatPanel } from '@/features/agent/PortfolioChatContext';
+import { useFeedbackPanel } from '@/features/feedback/FeedbackPanelContext';
 import { useAgentStatus } from '@/features/agent/queries';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -16,9 +17,11 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
   const { themeMode, setThemeMode } = useTheme();
   const { openPanel, hasAlerts } = useAlertsPanel();
   const { open: openChat } = useChatPanel();
+  const { openPanel: openFeedback } = useFeedbackPanel();
   const { data: agentStatus } = useAgentStatus();
   const bellAnchorRef = useTourAnchor(ANCHORS.homeNotificationsBell);
   const chatAnchorRef = useTourAnchor(ANCHORS.chatLauncher);
+  const feedbackAnchorRef = useTourAnchor(ANCHORS.feedbackButton);
 
   const isDark = themeMode === 'dark' ||
     (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -73,6 +76,20 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
         >
           <Bell size={16} aria-hidden="true" />
           {hasAlerts && <span className="absolute top-1.5 end-1.5 h-1.5 w-1.5 rounded-full bg-[var(--color-error)]" />}
+        </button>
+
+        {/* Report a bug from wherever the bug is, rather than having to navigate
+            away from it into Settings first. A speech bubble is free here — the
+            assistant's launcher is Sparkles, so there is no chat glyph to collide
+            with, and the bubble is the one icon nobody has to learn. */}
+        <button
+          ref={feedbackAnchorRef}
+          onClick={openFeedback}
+          title={t('feedback.title')}
+          aria-label={t('feedback.title')}
+          className="flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-text-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
+        >
+          <MessageSquare size={16} aria-hidden="true" />
         </button>
 
       </div>
