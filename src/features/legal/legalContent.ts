@@ -498,3 +498,135 @@ export const accessibilityContent: Localized<LegalDoc> = {
     ],
   },
 };
+
+// ─── Refund & Cancellation Policy ────────────────────────────────────────────
+
+/**
+ * Deliberately a separate document rather than a section inside the Terms.
+ *
+ * Folding it into the Terms would mean bumping TERMS_VERSION, which re-prompts every
+ * existing user for consent and needs a matching change in the backend's config — a lot of
+ * disruption for a document nobody has agreed to before. It is also a document people go
+ * looking for by name, so it earns its own findable URL.
+ *
+ * It has no version constant on purpose: it is not part of the consent gate.
+ *
+ * Where a subscription was bought decides who can refund it. Apple and Google are the
+ * merchants for in-app purchases and Paddle is the merchant of record on the web, so in
+ * none of those cases can the operator take the money back directly — saying so plainly
+ * here is what prevents the support ticket.
+ */
+export const refundContent: Localized<LegalDoc> = {
+  en: {
+    title: 'Refund & Cancellation Policy',
+    lastUpdated: UPDATED_EN,
+    intro: [
+      `This policy explains how Rent Control subscriptions renew, how to cancel one, and when a refund is available. It applies alongside our Terms of Service.`,
+    ],
+    sections: [
+      {
+        heading: '1. Free accounts',
+        paragraphs: [
+          'Rent Control is free while your account holds up to two properties. A free account is never charged, so there is nothing to cancel and nothing to refund.',
+        ],
+      },
+      {
+        heading: '2. How subscriptions renew',
+        paragraphs: [
+          'Paid plans are sold as monthly or yearly subscriptions and renew automatically at the end of each period until cancelled. The price and billing period are shown before you confirm the purchase, and the amount you pay is set by the store or payment provider that sells it to you, in your local currency and including any tax that applies where you live.',
+        ],
+      },
+      {
+        heading: '3. Cancelling',
+        paragraphs: [
+          'Cancelling stops the next renewal. Your plan stays active until the end of the period you have already paid for. Where you cancel depends on where you subscribed:',
+        ],
+        bullets: [
+          'Bought on the web: cancel from your account settings, or email us and we will cancel it for you.',
+          'Bought in the iPhone or iPad app: Apple manages the subscription. Open Settings, tap your name, then Subscriptions.',
+          'Bought in the Android app: Google Play manages the subscription. Open the Play Store, tap your profile, then Payments and subscriptions.',
+        ],
+      },
+      {
+        heading: '4. Refunds',
+        paragraphs: [
+          'If you are unhappy with a paid plan, contact us within 14 days of the charge and we will refund it in full. After 14 days we do not refund the remainder of a period that has already started, but you can cancel at any time to stop the next renewal.',
+          'Purchases made in the iPhone, iPad or Android apps are sold by Apple and Google, and only they can issue a refund for them. Apple handles refund requests at reportaproblem.apple.com; Google handles them through the Play Store. Contact us anyway if you need help — we will point you to the right place.',
+        ],
+      },
+      {
+        heading: '5. Who charges you',
+        paragraphs: [
+          'Subscriptions bought on the web are sold by Paddle, which acts as the merchant of record. Your receipt and the entry on your card statement will show Paddle rather than Rent Control. Subscriptions bought in the mobile apps are sold by Apple or Google and appear under their names.',
+        ],
+      },
+      {
+        heading: '6. If your plan no longer fits',
+        paragraphs: [
+          'Plans are priced by how many properties your account holds. If you remove properties and drop into a lower band, you can move to the smaller plan at your next renewal. If you exceed your current band, you will be asked to move up before adding another property. Your existing data is never deleted because of a plan change.',
+        ],
+      },
+      {
+        heading: '7. Contact',
+        paragraphs: ['For anything about billing, cancellation or a refund, email us:'],
+        bullets: [`${OPERATOR_EN} — ${CONTACT_EMAIL}`],
+      },
+    ],
+  },
+  he: {
+    title: 'מדיניות ביטול והחזרים',
+    lastUpdated: UPDATED_HE,
+    intro: [
+      'מדיניות זו מסבירה כיצד מתחדשים מנויי Rent Control, כיצד לבטל מנוי, ומתי ניתן לקבל החזר כספי. היא חלה לצד תנאי השימוש שלנו.',
+    ],
+    sections: [
+      {
+        heading: '1. חשבונות חינמיים',
+        paragraphs: [
+          'השימוש ב־Rent Control חינמי כל עוד בחשבון שלך עד שני נכסים. חשבון חינמי אינו מחויב כלל, ולכן אין מה לבטל ואין מה להחזיר.',
+        ],
+      },
+      {
+        heading: '2. כיצד מתחדש המנוי',
+        paragraphs: [
+          'התוכניות בתשלום נמכרות כמנוי חודשי או שנתי, ומתחדשות אוטומטית בתום כל תקופה עד לביטול. המחיר ותקופת החיוב מוצגים לפני אישור הרכישה, והסכום שתשלם נקבע על ידי החנות או ספק התשלומים שמוכר לך את המנוי — במטבע המקומי שלך, כולל מס שחל במקום מגוריך.',
+        ],
+      },
+      {
+        heading: '3. ביטול',
+        paragraphs: [
+          'ביטול עוצר את החידוש הבא. התוכנית שלך נשארת פעילה עד תום התקופה ששילמת עליה. מקום הביטול תלוי במקום שבו נרכש המנוי:',
+        ],
+        bullets: [
+          'נרכש באתר: ניתן לבטל מהגדרות החשבון, או לשלוח לנו דוא"ל ונבטל עבורך.',
+          'נרכש באפליקציית iPhone או iPad: Apple מנהלת את המנוי. פתח הגדרות, הקש על שמך ולאחר מכן על מנויים.',
+          'נרכש באפליקציית Android: Google Play מנהלת את המנוי. פתח את חנות Play, הקש על הפרופיל ולאחר מכן על תשלומים ומנויים.',
+        ],
+      },
+      {
+        heading: '4. החזרים כספיים',
+        paragraphs: [
+          'אם אינך מרוצה מתוכנית בתשלום, פנה אלינו בתוך 14 יום ממועד החיוב ונחזיר את מלוא הסכום. לאחר 14 יום איננו מחזירים את יתרת התקופה שכבר החלה, אך ניתן לבטל בכל עת כדי לעצור את החידוש הבא.',
+          'רכישות שבוצעו באפליקציות iPhone,‏ iPad או Android נמכרות על ידי Apple ו־Google, ורק הן יכולות להנפיק עבורן החזר. Apple מטפלת בבקשות בכתובת reportaproblem.apple.com, ו־Google מטפלת בהן דרך חנות Play. פנה אלינו בכל מקרה אם נדרשת עזרה — ננווט אותך למקום הנכון.',
+        ],
+      },
+      {
+        heading: '5. מי מחייב אותך',
+        paragraphs: [
+          'מנויים שנרכשו באתר נמכרים על ידי Paddle, המשמשת כסוחר הרשום (merchant of record). הקבלה שלך והשורה בדף חשבון האשראי יציגו את Paddle ולא את Rent Control. מנויים שנרכשו באפליקציות נמכרים על ידי Apple או Google ומופיעים בשמן.',
+        ],
+      },
+      {
+        heading: '6. כשהתוכנית כבר לא מתאימה',
+        paragraphs: [
+          'מחיר התוכנית נגזר ממספר הנכסים בחשבון. אם תסיר נכסים ותרד למדרגה נמוכה יותר, תוכל לעבור לתוכנית הקטנה יותר בחידוש הבא. אם תחרוג מהמדרגה הנוכחית, תתבקש לעלות מדרגה לפני הוספת נכס נוסף. הנתונים הקיימים שלך לעולם אינם נמחקים בעקבות שינוי תוכנית.',
+        ],
+      },
+      {
+        heading: '7. יצירת קשר',
+        paragraphs: ['בכל נושא של חיוב, ביטול או החזר, כתוב לנו:'],
+        bullets: [`${OPERATOR_HE} — ${CONTACT_EMAIL}`],
+      },
+    ],
+  },
+};

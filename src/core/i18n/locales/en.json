@@ -11,7 +11,8 @@
     "gateDescription": "We've updated what you need to agree to before using Rent Control. Please review the documents below and confirm to continue.",
     "gateAccept": "Accept and continue",
     "gateDecline": "Not now — sign out",
-    "gateError": "We couldn't record your acceptance. Please try again."
+    "gateError": "We couldn't record your acceptance. Please try again.",
+    "refundPolicy": "Refund Policy"
   },
   "a11y": {
     "openMenu": "Accessibility menu",
@@ -561,7 +562,6 @@
     "payDayShort": "Day {{day}}",
     "colRenter": "Renter",
     "colPhone": "Phone",
-
     "suppressExpiryAlerts": "Don't warn me when this lease expires",
     "openEnded": "Open-ended lease",
     "openEndedOnNote": "No agreed end date. We keep the next five years on the schedule and add another each year — correct any year's rent whenever it changes.",
@@ -755,8 +755,7 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "due": "Due now",
-      "future": "Not due yet"
-,
+      "future": "Not due yet",
       "notDue": "Not due"
     },
     "rentGrid": {
@@ -966,7 +965,6 @@
     "paymentDetails": "Payment details",
     "paymentDetailsPlaceholder": "Account or transfer details"
   },
-
   "country": {
     "gateTitle": "Where are your properties?",
     "gateSubtitle": "This sets your date and number formats. We ask once.",
@@ -1516,11 +1514,11 @@
         },
         "tabs": {
           "title": "Three tabs",
-          "body": "The lease itself, the unit they live in, and their money. The tour goes through the first and the last \u2014 the middle one is a shortcut to that property."
+          "body": "The lease itself, the unit they live in, and their money. The tour goes through the first and the last — the middle one is a shortcut to that property."
         },
         "timeline": {
           "title": "The lease, year by year",
-          "body": "Every period of the lease with the rent for it, in order, including the rises still ahead \u2014 so the year that is about to get more expensive is visible now rather than a surprise later. A year whose rent is not yet fixed is marked as a projection."
+          "body": "Every period of the lease with the rent for it, in order, including the rises still ahead — so the year that is about to get more expensive is visible now rather than a surprise later. A year whose rent is not yet fixed is marked as a projection."
         },
         "payments": {
           "title": "Over on Transactions: did the rent come in?",
@@ -1528,11 +1526,11 @@
         },
         "expenses": {
           "title": "And what this tenancy cost",
-          "body": "Expenses are the other half of the same tab \u2014 the toggle above the grid. They are grouped by category rather than by month, because what you spent on a tenant is a different question from whether their rent arrived."
+          "body": "Expenses are the other half of the same tab — the toggle above the grid. They are grouped by category rather than by month, because what you spent on a tenant is a different question from whether their rent arrived."
         },
         "extend": {
           "title": "Extending, not editing",
-          "body": "Adds years or months onto the end of the lease and leaves everything already agreed exactly as it is. A tenancy you ended by hand has to be reopened first \u2014 extending a terminated lease would quietly un-end it."
+          "body": "Adds years or months onto the end of the lease and leaves everything already agreed exactly as it is. A tenancy you ended by hand has to be reopened first — extending a terminated lease would quietly un-end it."
         },
         "end": {
           "title": "Ending a tenancy",
@@ -1550,7 +1548,7 @@
         },
         "tabs": {
           "title": "Four tabs",
-          "body": "What you entered about the place, who lives in it, the money it has made and cost, and the paperwork \u2014 one tab each. The tour walks the last three."
+          "body": "What you entered about the place, who lives in it, the money it has made and cost, and the paperwork — one tab each. The tour walks the last three."
         },
         "renters": {
           "title": "Who is here, and who was",
@@ -1558,7 +1556,7 @@
         },
         "payments": {
           "title": "The money this unit made",
-          "body": "Rent as a month-by-month grid, one box per month, so an unpaid month is a hole you can see. Expenses sit beside it grouped by category \u2014 what a place costs you is a different question from whether the rent came in."
+          "body": "Rent as a month-by-month grid, one box per month, so an unpaid month is a hole you can see. Expenses sit beside it grouped by category — what a place costs you is a different question from whether the rent came in."
         },
         "documents": {
           "title": "Two slots, not a folder",
@@ -1666,7 +1664,7 @@
       "supplier-form": {
         "overview": {
           "title": "Saving a supplier",
-          "body": "A name and at least one category is all it needs \u2014 the plumber, the electrician, the management company. Save one here and it is offered on every expense from then on, instead of being retyped each time."
+          "body": "A name and at least one category is all it needs — the plumber, the electrician, the management company. Save one here and it is offered on every expense from then on, instead of being retyped each time."
         },
         "categories": {
           "title": "What they get filed under",
@@ -1817,5 +1815,86 @@
     "replyToGeneric": "We'll reply to the email address on your account.",
     "submitSuccess": "Thanks — your message is on its way.",
     "submitFailed": "We couldn't send your message. Please try again."
+  },
+  "marketing": {
+    "productName": "Rent Control",
+    "nav": {
+      "pricing": "Pricing",
+      "signIn": "Sign in"
+    },
+    "hero": {
+      "headline": "Every apartment, every payment, one ledger.",
+      "subhead": "Rent Control tracks rent, expenses and leases for the properties you own, and tells you before a lease renews or a rent changes.",
+      "primaryCta": "Start free",
+      "secondaryCta": "See pricing",
+      "freeNote": "Free for up to {{max}} properties. No card needed."
+    },
+    "specimen": {
+      "address": "Dizengoff 42, Tel Aviv",
+      "renter": "Leased until August 2027",
+      "perMonth": "per month",
+      "rows": {
+        "rent": "Rent received",
+        "committee": "Building committee",
+        "repair": "Plumbing repair"
+      },
+      "escalation": "Rent rises to ₪5,562 in August, linked to the consumer price index."
+    },
+    "lead": {
+      "heading": "Rent that changes on a schedule, worked out for you",
+      "body": "Most leases do not hold one number for their whole term. Rent Control stores the terms — a fixed step each year, or linkage to the consumer price index — and works out what is owed on each date, so you are not rebuilding a lease in a spreadsheet every year. Israeli index linkage is built in."
+    },
+    "features": {
+      "reports": {
+        "heading": "Reports you can hand to an accountant",
+        "body": "Income and expenses per property and per period, exported when you need them."
+      },
+      "reminders": {
+        "heading": "Told before the date, not after",
+        "body": "Lease renewals, rent changes and payments due reach you while you can still act on them."
+      },
+      "bilingual": {
+        "heading": "English and Hebrew, both properly",
+        "body": "Full right-to-left support, local date and currency formats, on phone and web."
+      }
+    },
+    "pricingTeaser": {
+      "heading": "Priced by how many properties you hold",
+      "body": "Free up to {{max}}. Paid plans start where a spreadsheet stops being enough.",
+      "cta": "See pricing"
+    },
+    "pricing": {
+      "heading": "Plans priced by property count",
+      "subhead": "Pick the band your portfolio falls into. Move between bands whenever it changes.",
+      "billingPeriod": "Billing period",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "yearlySaving": "Yearly saves {{percent}}%",
+      "free": "Free",
+      "freeHeading": "Up to {{max}} properties",
+      "freeBody": "Everything in the product, at no cost, for as long as you stay at this size.",
+      "freeCta": "Create an account",
+      "propertiesBand": "{{band}} properties",
+      "per": {
+        "monthly": "per month",
+        "yearly": "per year"
+      },
+      "perMonthEquivalent": "Works out at ${{amount}} a month",
+      "choose": "Choose plan",
+      "includedHeading": "Every plan includes",
+      "included": {
+        "ledger": "Unlimited renters, transactions and expense categories",
+        "leases": "Lease terms with fixed or index-linked rent changes",
+        "reports": "Income and expense reports, exportable",
+        "reminders": "Reminders for renewals, rent changes and payments",
+        "documents": "Document storage and lease scanning",
+        "bilingual": "English and Hebrew, on web, iPhone and Android"
+      },
+      "termsHeading": "Subscription terms",
+      "termsBody": "Plans are monthly or yearly subscriptions that renew automatically until cancelled. Prices are shown in US dollars; you are charged in your local currency at the rate set by the store or payment provider that sells you the subscription, including any tax that applies where you live. Cancel any time to stop the next renewal — your plan stays active until the period you have paid for ends."
+    },
+    "footer": {
+      "operator": "Rent Control — Eyal Kook"
+    }
   }
 }

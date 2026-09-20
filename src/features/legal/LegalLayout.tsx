@@ -15,6 +15,8 @@ export function LegalLinks({ className, style }: { className?: string; style?: R
       <Link to="/terms" style={linkStyle} className="hover:underline">{t('legal.termsOfService')}</Link>
       <span aria-hidden="true"> · </span>
       <Link to="/accessibility" style={linkStyle} className="hover:underline">{t('legal.accessibility')}</Link>
+      <span aria-hidden="true"> · </span>
+      <Link to="/refunds" style={linkStyle} className="hover:underline">{t('legal.refundPolicy')}</Link>
     </nav>
   );
 }
@@ -31,7 +33,7 @@ export function LegalLayout({ doc }: { doc: LegalDoc }) {
         className="sticky top-0 z-10 flex items-center justify-between px-6 py-3.5"
         style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-outline)' }}
       >
-        <Link to="/sign-in" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
           <img src={logoImage} alt="" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'contain' }} />
           <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Rent Control</span>
         </Link>

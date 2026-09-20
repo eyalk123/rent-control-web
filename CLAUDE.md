@@ -90,8 +90,17 @@ Sentry (prod only). Backend: FastAPI.
 - Forms = Zod schema + React Hook Form + the shared form components in
   `src/shared/components/form/`.
 - Auth: a `401` response auto-signs-out the user via the Axios response interceptor in
-  `src/core/api/client.ts`. Public routes (`/sign-in`, `/privacy`, `/terms`,
-  `/accessibility`) render outside `ProtectedRoute`; everything else is inside `AppShell`.
+  `src/core/api/client.ts`. Public routes (`/`, `/pricing`, `/sign-in`, `/privacy`,
+  `/terms`, `/accessibility`, `/refunds`) render outside `ProtectedRoute`; everything else
+  is inside `AppShell`.
+  - `/` is `LandingGate`: the marketing page for visitors, a redirect to `/home` for a
+    signed-in user. The protected subtree is therefore a **pathless layout route** and its
+    children carry absolute paths — that is what frees `/`. Adding a protected page means
+    adding it there with a leading slash.
+  - `features/marketing/` holds the two public sales pages. `tiers.ts` is display-only
+    pricing: the amounts actually charged come from the store or payment provider that sold
+    the subscription, never from there. It exists so a logged-out visitor, a Paddle
+    underwriter and an App Review reviewer can all see what the product costs.
   **One exception:** `features/agent/api/agentStream.ts` uses raw `fetch`, so it misses that
   interceptor and throws a typed `AgentHttpError` instead — any other streaming call must
   handle its own `401`/`429`/`503` the same way.

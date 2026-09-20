@@ -3,7 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-rou
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import axios from 'axios';
 import * as Sentry from '@sentry/react';
-import { AuthProvider } from '@/core/auth/AuthContext';
+import { AuthProvider, useAppAuth } from '@/core/auth/AuthContext';
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute';
 import { AppShell } from '@/layout/AppShell';
 import { ToastProvider } from '@/shared/components/ui/Toast';
@@ -30,6 +30,9 @@ const NotificationsSettingsPage = lazy(() => import('@/features/notifications/pa
 const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
+const RefundPolicyPage = lazy(() => import('@/features/legal/pages/RefundPolicyPage').then((m) => ({ default: m.RefundPolicyPage })));
+const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })));
+const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
 
 // HTTP failures are owned by the axios response interceptor (src/core/api/client.ts) —
 // it sees every request, including the ones that never go through react-query. These
@@ -72,6 +75,25 @@ function RootLayout() {
   );
 }
 
+/**
+ * What `/` serves, which depends on who is asking.
+ *
+ * A signed-in landlord opening the site wants their properties, not a sales page, so they
+ * go straight to /home — the behaviour `/` had when it lived inside ProtectedRoute. A
+ * logged-out visitor gets the landing page instead of being bounced to /sign-in, which is
+ * the point of the change: Paddle's underwriters and Apple's reviewers both need to see
+ * what the product is and what it costs without an account.
+ *
+ * It waits for `isLoaded` rather than assuming signed-out, so a returning user does not see
+ * the marketing page flash before the redirect.
+ */
+function LandingGate() {
+  const { isLoaded, isSignedIn } = useAppAuth();
+  if (!isLoaded) return <PageLoader />;
+  if (isSignedIn) return <Navigate to="/home" replace />;
+  return <LandingPage />;
+}
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -82,8 +104,15 @@ const router = createBrowserRouter([
       { path: '/privacy', element: <PrivacyPolicyPage />, errorElement: <RouteErrorPage /> },
       { path: '/terms', element: <TermsOfServicePage />, errorElement: <RouteErrorPage /> },
       { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
+      { path: '/refunds', element: <RefundPolicyPage />, errorElement: <RouteErrorPage /> },
+      // Public marketing pages. `/` serves the landing page to visitors and redirects
+      // signed-in users to /home — see LandingGate.
+      { path: '/', element: <LandingGate />, errorElement: <RouteErrorPage /> },
+      { path: '/pricing', element: <PricingPage />, errorElement: <RouteErrorPage /> },
       {
-        path: '/',
+        // Pathless layout route: it contributes the auth guard and the app shell without
+        // owning a path segment, which is what frees `/` for the public landing page. The
+        // children therefore carry absolute paths rather than being relative to a parent.
         errorElement: <RouteErrorPage />,
         element: (
           <ProtectedRoute>
@@ -91,20 +120,19 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { index: true, element: <Navigate to="/home" replace /> },
-          { path: 'home', element: <HomePage /> },
-          { path: 'properties', element: <PropertiesListPage /> },
-          { path: 'properties/:id', element: <PropertyDetailPage /> },
-          { path: 'renters', element: <RentersListPage /> },
-          { path: 'renters/:id', element: <RenterDetailPage /> },
-          { path: 'transactions', element: <TransactionsListPage /> },
-          { path: 'transactions/:id', element: <TransactionDetailPage /> },
-          { path: 'suppliers', element: <SuppliersListPage /> },
-          { path: 'reports', element: <ReportsHubPage /> },
-          { path: 'reports/income-expense', element: <IncomeExpenseReportPage /> },
-          { path: 'reports/expense-log', element: <ExpenseLogReportPage /> },
-          { path: 'settings', element: <SettingsPage /> },
-          { path: 'settings/notifications', element: <NotificationsSettingsPage /> },
+          { path: '/home', element: <HomePage /> },
+          { path: '/properties', element: <PropertiesListPage /> },
+          { path: '/properties/:id', element: <PropertyDetailPage /> },
+          { path: '/renters', element: <RentersListPage /> },
+          { path: '/renters/:id', element: <RenterDetailPage /> },
+          { path: '/transactions', element: <TransactionsListPage /> },
+          { path: '/transactions/:id', element: <TransactionDetailPage /> },
+          { path: '/suppliers', element: <SuppliersListPage /> },
+          { path: '/reports', element: <ReportsHubPage /> },
+          { path: '/reports/income-expense', element: <IncomeExpenseReportPage /> },
+          { path: '/reports/expense-log', element: <ExpenseLogReportPage /> },
+          { path: '/settings', element: <SettingsPage /> },
+          { path: '/settings/notifications', element: <NotificationsSettingsPage /> },
         ],
       },
     ],
