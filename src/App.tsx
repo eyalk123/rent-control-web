@@ -33,6 +33,7 @@ const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/Acc
 const RefundPolicyPage = lazy(() => import('@/features/legal/pages/RefundPolicyPage').then((m) => ({ default: m.RefundPolicyPage })));
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })));
 const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
+const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage').then((m) => ({ default: m.ContactPage })));
 
 // HTTP failures are owned by the axios response interceptor (src/core/api/client.ts) —
 // it sees every request, including the ones that never go through react-query. These
@@ -109,6 +110,7 @@ const router = createBrowserRouter([
       // signed-in users to /home — see LandingGate.
       { path: '/', element: <LandingGate />, errorElement: <RouteErrorPage /> },
       { path: '/pricing', element: <PricingPage />, errorElement: <RouteErrorPage /> },
+      { path: '/contact', element: <ContactPage />, errorElement: <RouteErrorPage /> },
       {
         // Pathless layout route: it contributes the auth guard and the app shell without
         // owning a path segment, which is what frees `/` for the public landing page. The

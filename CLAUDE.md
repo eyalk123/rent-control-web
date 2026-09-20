@@ -90,17 +90,23 @@ Sentry (prod only). Backend: FastAPI.
 - Forms = Zod schema + React Hook Form + the shared form components in
   `src/shared/components/form/`.
 - Auth: a `401` response auto-signs-out the user via the Axios response interceptor in
-  `src/core/api/client.ts`. Public routes (`/`, `/pricing`, `/sign-in`, `/privacy`,
-  `/terms`, `/accessibility`, `/refunds`) render outside `ProtectedRoute`; everything else
+  `src/core/api/client.ts`. Public routes (`/`, `/pricing`, `/contact`, `/sign-in`,
+  `/privacy`, `/terms`, `/accessibility`, `/refunds`) render outside `ProtectedRoute`; everything else
   is inside `AppShell`.
   - `/` is `LandingGate`: the marketing page for visitors, a redirect to `/home` for a
     signed-in user. The protected subtree is therefore a **pathless layout route** and its
     children carry absolute paths — that is what frees `/`. Adding a protected page means
     adding it there with a leading slash.
-  - `features/marketing/` holds the two public sales pages. `tiers.ts` is display-only
+  - `features/marketing/` holds the public sales pages (landing, pricing, contact).
+    `tiers.ts` is display-only
     pricing: the amounts actually charged come from the store or payment provider that sold
     the subscription, never from there. It exists so a logged-out visitor, a Paddle
     underwriter and an App Review reviewer can all see what the product costs.
+    `/contact` serves the same audience: Paddle requires a contact route reachable from the
+    homepage, which an address buried in the policy documents does not satisfy. It reads
+    `CONTACT_EMAIL` from `features/legal/legalContent.ts` rather than restating it.
+    `public/robots.txt` allows these pages and lists only the authenticated routes — extend
+    that list when adding a protected page.
   **One exception:** `features/agent/api/agentStream.ts` uses raw `fetch`, so it misses that
   interceptor and throws a typed `AgentHttpError` instead — any other streaming call must
   handle its own `401`/`429`/`503` the same way.

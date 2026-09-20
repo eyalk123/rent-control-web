@@ -1,3 +1,19 @@
-# Rent Control is a private, login-gated application. Keep it out of search indexes.
+# The public marketing and policy pages are meant to be found: a payment provider
+# reviewing the account, and anyone comparing products, both arrive through search.
+# The authenticated application is not — every route below requires a session and
+# renders nothing useful to a crawler.
+#
+# Crawling is allowed by default, so only the app routes are listed. Keep this list in
+# step with the protected subtree in src/App.tsx when adding a page there.
+#
+# No Sitemap line yet: there is no sitemap.xml, and the final domain is not decided.
+
 User-agent: *
-Disallow: /
+Disallow: /sign-in
+Disallow: /home
+Disallow: /properties
+Disallow: /renters
+Disallow: /transactions
+Disallow: /suppliers
+Disallow: /reports
+Disallow: /settings

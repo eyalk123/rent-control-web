@@ -31,7 +31,7 @@ export type Localized<T> = Record<'en' | 'he', T>;
 
 const OPERATOR_EN = 'Eyal Kook';
 const OPERATOR_HE = 'אייל קוק';
-const CONTACT_EMAIL = 'eyalkook@gmail.com';
+export const CONTACT_EMAIL = 'eyalkook@gmail.com';
 const UPDATED_EN = 'June 9, 2026';
 const UPDATED_HE = '9 ביוני 2026';
 

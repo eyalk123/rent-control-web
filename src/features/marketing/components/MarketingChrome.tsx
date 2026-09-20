@@ -121,6 +121,17 @@ export function MarketingFooter() {
           {t('marketing.footer.operator')}
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[13px]">
+          {/* Contact sits ahead of the legal row, and in the footer rather than only inside
+              the policy documents, because a payment provider reviewing the site has to be
+              able to reach a human from the homepage. */}
+          <Link
+            to="/contact"
+            style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}
+            className="hover:underline"
+          >
+            {t('marketing.nav.contact')}
+          </Link>
+          <span aria-hidden="true" style={{ color: 'var(--color-text-secondary)' }}> · </span>
           <LegalLinks />
         </div>
       </div>

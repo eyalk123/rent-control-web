@@ -1820,7 +1820,8 @@
     "productName": "Rent Control",
     "nav": {
       "pricing": "Pricing",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "contact": "Contact"
     },
     "hero": {
       "headline": "Every apartment, every payment, one ledger.",
@@ -1892,6 +1893,15 @@
       },
       "termsHeading": "Subscription terms",
       "termsBody": "Plans are monthly or yearly subscriptions that renew automatically until cancelled. Prices are shown in US dollars; you are charged in your local currency at the rate set by the store or payment provider that sells you the subscription, including any tax that applies where you live. Cancel any time to stop the next renewal — your plan stays active until the period you have paid for ends."
+    },
+    "contact": {
+      "heading": "Contact us",
+      "subhead": "Questions about the product, your account, a payment or a refund — write to us and a person will answer.",
+      "emailLabel": "Email",
+      "responseHeading": "Response time",
+      "responseBody": "We aim to reply within two business days. Please include the email address your account uses, so we can find it.",
+      "operatorHeading": "Who operates Rent Control",
+      "operatorBody": "Rent Control is operated by Eyal Kook, based in Israel."
     },
     "footer": {
       "operator": "Rent Control — Eyal Kook"
