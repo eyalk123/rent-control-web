@@ -34,6 +34,7 @@ const RefundPolicyPage = lazy(() => import('@/features/legal/pages/RefundPolicyP
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })));
 const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage').then((m) => ({ default: m.ContactPage })));
+const SubscriptionSettingsPage = lazy(() => import('@/features/subscription/pages/SubscriptionSettingsPage').then((m) => ({ default: m.SubscriptionSettingsPage })));
 
 // HTTP failures are owned by the axios response interceptor (src/core/api/client.ts) —
 // it sees every request, including the ones that never go through react-query. These
@@ -135,6 +136,7 @@ const router = createBrowserRouter([
           { path: '/reports/expense-log', element: <ExpenseLogReportPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/settings/notifications', element: <NotificationsSettingsPage /> },
+          { path: '/settings/subscription', element: <SubscriptionSettingsPage /> },
         ],
       },
     ],

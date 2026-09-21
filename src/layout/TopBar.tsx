@@ -1,4 +1,4 @@
-import { Sun, Moon, Bell, Sparkles, MessageSquare } from 'lucide-react';
+import { Sun, Moon, Bell, Sparkles, MessageSquare, Lock } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
@@ -19,6 +19,8 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
   const { open: openChat } = useChatPanel();
   const { openPanel: openFeedback } = useFeedbackPanel();
   const { data: agentStatus } = useAgentStatus();
+  // `entitled` is absent on an older backend; treat that as allowed rather than locked.
+  const agentEntitled = agentStatus?.entitled !== false;
   const bellAnchorRef = useTourAnchor(ANCHORS.homeNotificationsBell);
   const chatAnchorRef = useTourAnchor(ANCHORS.chatLauncher);
   const feedbackAnchorRef = useTourAnchor(ANCHORS.feedbackButton);
@@ -46,15 +48,33 @@ export function TopBar({ onOpenPalette }: TopBarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
+        {/* The launcher shows on every plan, with a lock when the plan does not include
+            the assistant. Hiding it on the free plan would be simpler, but a feature
+            nobody can see is a feature nobody upgrades for — and someone who used it on
+            a paid plan and then downgraded would think it had been removed. */}
         {agentStatus?.enabled && (
           <button
             ref={chatAnchorRef}
             onClick={openChat}
-            title={t('agent.launcher')}
-            aria-label={t('agent.launcher')}
-            className="flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
+            title={agentEntitled ? t('agent.launcher') : t('subscription.agentLocked.heading')}
+            aria-label={agentEntitled ? t('agent.launcher') : t('subscription.agentLocked.heading')}
+            className="relative flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center rounded-[9px] border border-[var(--color-outline)] bg-[var(--color-surface)] text-[var(--color-primary)] hover:bg-[var(--color-input-filled-background)] transition-colors"
           >
-            <Sparkles size={16} aria-hidden="true" />
+            <Sparkles size={16} aria-hidden="true" style={{ opacity: agentEntitled ? 1 : 0.5 }} />
+            {!agentEntitled && (
+              <span
+                className="absolute -bottom-0.5 -end-0.5 flex items-center justify-center rounded-full"
+                style={{
+                  width: 14,
+                  height: 14,
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-outline)',
+                }}
+              >
+                <Lock size={8} strokeWidth={3} aria-hidden="true" />
+              </span>
+            )}
           </button>
         )}
 

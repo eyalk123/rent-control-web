@@ -1571,6 +1571,10 @@
         "scope": {
           "title": "What it can see",
           "body": "Your properties, renters and transactions — and nothing outside your account. It reads; it never changes anything."
+        },
+        "plan": {
+          "title": "Included on paid plans",
+          "body": "The assistant comes with every paid plan. On the free plan you can see it here, but asking is switched off until you move up."
         }
       },
       "cpi-mode": {
@@ -1730,7 +1734,7 @@
       "lease-scan": {
         "pick": {
           "title": "Start with the document",
-          "body": "Drop the lease here or click to pick a file — an image, a PDF or a Word document. A lease that runs to several pages can be added a page at a time; they are read as one document. Then Extract, and we do the reading."
+          "body": "Drop the lease here or click to pick a file — an image, a PDF or a Word document. A lease that runs to several pages can be added a page at a time; they are read as one document. Free accounts get three scans a month, and the count above shows what is left. Then Extract, and we do the reading."
         },
         "review": {
           "title": "Nothing saves unread",
@@ -1905,6 +1909,61 @@
     },
     "footer": {
       "operator": "Rent Control — Eyal Kook"
+    }
+  },
+  "subscription": {
+    "readOnly": "Read-only",
+    "lockedActionHint": "This property is above your plan's limit. It stays readable and exportable, but cannot be edited until you move up a plan or remove another property.",
+    "overLimit": {
+      "heading_one": "1 property is now read-only",
+      "heading_other": "{{count}} properties are now read-only",
+      "body_one": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully editable; the most recently added one is read-only for now.",
+      "body_other": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully editable; the {{count}} added after them are read-only for now.",
+      "safe": "Nothing has been deleted. Every property still opens, reports still run, and exports still include everything.",
+      "cta": "See plans"
+    },
+    "plan": {
+      "free": "Free",
+      "tier_3_8": "3–8 properties",
+      "tier_9_15": "9–15 properties",
+      "tier_16_plus": "16+ properties"
+    },
+    "settings": {
+      "title": "Plan & billing",
+      "currentPlan": "Current plan",
+      "properties": "Properties",
+      "propertiesUsage": "{{used}} of {{limit}}",
+      "propertiesUnlimited": "{{used}}, no limit",
+      "leaseScans": "AI lease scans",
+      "leaseScansUsage": "{{used}} of {{limit}} this month",
+      "leaseScansUnlimited": "Unlimited",
+      "assistant": "Ask Rent Control",
+      "assistantIncluded": "Included",
+      "assistantNotIncluded": "Not on this plan",
+      "renews": "Renews {{date}}",
+      "renewsNot": "Does not renew",
+      "managedBy": {
+        "apple": "Billed through the App Store. Manage or cancel in your Apple account settings.",
+        "google": "Billed through Google Play. Manage or cancel in your Play account settings.",
+        "paddle": "Billed on the web. Manage or cancel from here, or email us.",
+        "unknown": "Contact us to manage this subscription."
+      },
+      "notEnforced": "Plan limits are not being applied yet. Nothing is restricted.",
+      "upgrade": "See plans",
+      "lockedList": "Read-only properties"
+    },
+    "scanLimit": {
+      "remaining_one": "{{count}} AI lease scan left this month",
+      "remaining_other": "{{count}} AI lease scans left this month",
+      "used": "You have used all {{limit}} AI lease scans on your plan this month.",
+      "resets": "Your next scans are available on {{date}}.",
+      "upgrade": "Move up a plan for unlimited scans",
+      "onPaidPlan": "Unlimited on your plan"
+    },
+    "agentLocked": {
+      "heading": "Ask Rent Control is on paid plans",
+      "body": "Ask questions about your portfolio in plain language — which leases end soon, what a property earned last year, who is behind on rent.",
+      "cta": "See plans"
     }
   }
 }

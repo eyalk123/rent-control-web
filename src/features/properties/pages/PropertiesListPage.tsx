@@ -33,6 +33,8 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Property,} from '@/shared/types';
+import { LockedBadge } from '@/features/subscription/components/LockedBadge';
+import { OverLimitNotice } from '@/features/subscription/components/OverLimitNotice';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour, useTourStep } from '@/features/onboarding/TourController';
@@ -115,6 +117,11 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
               <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="rgba(255,255,255,0.55)" />
               <path d="M3 11l9-8 9 8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
             </svg>
+          </div>
+        )}
+        {property.locked && (
+          <div className="absolute top-2.5 end-2.5 z-10">
+            <LockedBadge size="small" />
           </div>
         )}
         {isSelectMode && (
@@ -470,6 +477,10 @@ export function PropertiesListPage() {
           />
         </div>
       </div>
+
+      {/* Explains, once per plan, why some cards below are read-only. Above the list
+          rather than beside a card: it is about the account, not about one property. */}
+      <OverLimitNotice />
 
       {/* Content. The tour anchor is on the first card / first row inside, not on this
           wrapper: the wrapper's height is the whole list, which with a real portfolio is

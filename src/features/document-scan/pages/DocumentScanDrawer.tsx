@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, FileText, Loader2, Upload, X } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useScanSession } from '../ScanContext';
+import { ScanQuotaStrip } from '@/features/subscription/components/ScanQuotaStrip';
 import { mergeImagesToPdf } from '../utils/mergeImagesToPdf';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -159,6 +160,10 @@ export function DocumentScanDrawer() {
           </div>
         ) : (
           <>
+            {/* Before the picker, not after a rejection: a quota someone discovers by
+                uploading a document and being refused has already cost them the upload. */}
+            <ScanQuotaStrip />
+
             {/* The prompt is inside the anchor, not above it. It is the sentence that says
                 what happens to the file, and spotlighting the dropzone alone left the
                 explanation outside the cutout, beside a card explaining it. */}

@@ -346,6 +346,11 @@ export const TOURS = {
     steps: [
       { id: 'ask', anchor: ANCHORS.chatInput, placement: 'top' },
       { id: 'scope', anchor: null, placement: 'center' },
+      // Last, not first: what the assistant *is* has to land before what it costs. On a
+      // free account the panel already shows its own locked state, so this step is for
+      // the paid case — saying plainly that the feature travels with the plan, before
+      // someone discovers it by downgrading.
+      { id: 'plan', anchor: null, placement: 'center' },
     ],
   },
 

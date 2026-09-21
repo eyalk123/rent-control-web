@@ -53,6 +53,12 @@ export interface Property {
   renters: Renter[] | null;
   /** Enriched on list when renters are fetched; used for occupancy display */
   hasRenters?: boolean;
+  /**
+   * Over the subscription plan's property ceiling: readable and exportable, never
+   * writable. Resolved by the server per request — it is a fact about the account's plan
+   * today, not about the property, so it is never persisted or sent back on a write.
+   */
+  locked?: boolean;
 }
 
 export interface ExtraContact {

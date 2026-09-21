@@ -31,7 +31,16 @@ export type AgentEvent =
   | { type: 'error'; detail: string };
 
 export interface AgentStatus {
+  /** Whether the assistant is configured on the backend at all. */
   enabled: boolean;
+  /**
+   * Whether this account's plan includes it. Separate from `enabled` on purpose: a free
+   * account sees the assistant, locked, rather than not seeing it — a feature nobody can
+   * see is a feature nobody upgrades for.
+   */
+  entitled?: boolean;
+  /** The cheapest plan that includes it, when this one does not. */
+  required_plan?: string | null;
 }
 
 export interface ConversationSummary {

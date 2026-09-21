@@ -24,6 +24,7 @@ import type {
   StoredMessage,
 } from '@/features/agent/types';
 import type { StreamChatArgs } from '@/features/agent/api/agentStream';
+import type { Subscription } from '@/features/subscription/types';
 
 // Set to true to use in-memory mock data when no backend is available.
 // Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
@@ -515,8 +516,13 @@ let nextTransactionId = 7;
 
 export const mockPropertiesApi = {
   getProperties: async (): Promise<Property[]> => {
+    // `locked` is decorated here for the same reason the real API sets it server-side:
+    // one resolution, applied to every row, so the list and the detail page cannot
+    // disagree about which properties the plan still covers.
+    const { locked_property_ids } = await mockSubscriptionApi.get();
     return mockProperties.map((p) => ({
       ...p,
+      locked: locked_property_ids.includes(p.id),
       renters: mockRenters.filter((r) => r.property_id === p.id).map((r) => ({
         ...r,
         property: toPropertyBrief(p),
@@ -530,7 +536,8 @@ export const mockPropertiesApi = {
       ...r,
       property: toPropertyBrief(p),
     }));
-    return { ...p, renters };
+    const { locked_property_ids } = await mockSubscriptionApi.get();
+    return { ...p, renters, locked: locked_property_ids.includes(id) };
   },
   createProperty: async (data: PropertyCreate | Partial<Property>): Promise<Property> => {
     const newProp: Property = {
@@ -1162,8 +1169,73 @@ const _agentMessages: Record<number, StoredMessage[]> = {};
 let _agentConvoId = 1;
 let _agentMsgId = 1;
 
+/**
+ * Subscription state for offline/UI work.
+ *
+ * Deliberately a *restricted* account: free plan, five properties, two scans spent and
+ * the assistant excluded. The unrestricted case is what every other fixture already
+ * shows, and the states worth being able to look at without a backend are the ones that
+ * are awkward to reach on purpose — locked badges, a spent quota, a paywalled feature.
+ *
+ * `rentControlMockPlan('tier_9_15')` in the console switches plan for a session.
+ */
+let _mockPlan: Subscription['plan'] = 'free';
+let _mockLockNoticeSeen = false;
+let _mockScansUsed = 2;
+
+const _MOCK_LIMITS: Record<Subscription['plan'], { limit: number | null; scans: number | null; agent: boolean }> = {
+  free: { limit: 2, scans: 3, agent: false },
+  tier_3_8: { limit: 8, scans: null, agent: true },
+  tier_9_15: { limit: 15, scans: null, agent: true },
+  tier_16_plus: { limit: null, scans: null, agent: true },
+};
+
+export const mockSubscriptionApi = {
+  get: async (): Promise<Subscription> => {
+    const limits = _MOCK_LIMITS[_mockPlan];
+    const ids = mockProperties.map((p) => p.id);
+    const locked = limits.limit === null ? [] : ids.slice(limits.limit);
+    return {
+      plan: _mockPlan,
+      limit: limits.limit,
+      property_count: ids.length,
+      locked_property_ids: locked,
+      show_lock_notice: locked.length > 0 && !_mockLockNoticeSeen,
+      enforced: true,
+      source: _mockPlan === 'free' ? null : 'paddle',
+      status: _mockPlan === 'free' ? null : 'active',
+      period: _mockPlan === 'free' ? null : 'monthly',
+      current_period_end: _mockPlan === 'free' ? null : '2026-10-21T00:00:00',
+      price_amount: _mockPlan === 'free' ? null : 20,
+      price_currency: _mockPlan === 'free' ? null : 'USD',
+      monthly_lease_scans: limits.scans,
+      lease_scans_used: _mockScansUsed,
+      agent: limits.agent,
+    };
+  },
+
+  acknowledgeLockNotice: async (): Promise<void> => {
+    _mockLockNoticeSeen = true;
+  },
+};
+
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).rentControlMockPlan = (
+    plan: Subscription['plan'],
+    scansUsed?: number,
+  ) => {
+    _mockPlan = plan;
+    if (scansUsed !== undefined) _mockScansUsed = scansUsed;
+    _mockLockNoticeSeen = false;
+    return `mock plan: ${plan}, scans used: ${_mockScansUsed} — reload to apply`;
+  };
+}
+
 export const mockAgentApi = {
-  getStatus: async (): Promise<AgentStatus> => ({ enabled: true }),
+  getStatus: async (): Promise<AgentStatus> => {
+    const { agent } = await mockSubscriptionApi.get();
+    return { enabled: true, entitled: agent, required_plan: agent ? null : 'tier_3_8' };
+  },
 
   listConversations: async (): Promise<ConversationSummary[]> =>
     [..._agentConversations].sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
