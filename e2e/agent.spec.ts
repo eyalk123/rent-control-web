@@ -10,8 +10,8 @@ test.describe('portfolio chat agent', () => {
     await page.goto('/');
 
     // Launcher shows only when the agent is enabled (mock /agent/status → enabled).
-    await page.getByRole('button', { name: 'Ask Rent Control' }).first().click();
-    await expect(page.getByRole('heading', { name: 'Ask Rent Control' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ask RentVance' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Ask RentVance' })).toBeVisible();
 
     await page.getByRole('textbox', { name: /Ask about your/ }).fill('When does the lease end?');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -24,10 +24,10 @@ test.describe('portfolio chat agent', () => {
     // Tapping the chip navigates to that renter and closes the panel — a deliberate jump.
     await chip.click();
     await expect(page).toHaveURL(/\/renters\/1$/);
-    await expect(page.getByRole('heading', { name: 'Ask Rent Control' })).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Ask RentVance' })).toBeHidden();
 
     // Reopen → history → the thread is listed and reopens with its messages.
-    await page.getByRole('button', { name: 'Ask Rent Control' }).first().click();
+    await page.getByRole('button', { name: 'Ask RentVance' }).first().click();
     await page.getByRole('button', { name: 'Conversations' }).click();
     await page.getByRole('button', { name: /When does the lease end/ }).click();
     await expect(page.getByText('When does the lease end?')).toBeVisible();
@@ -35,7 +35,7 @@ test.describe('portfolio chat agent', () => {
 
   test('deletes a conversation from history', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Ask Rent Control' }).first().click();
+    await page.getByRole('button', { name: 'Ask RentVance' }).first().click();
     await page.getByRole('textbox', { name: /Ask about your/ }).fill('When does the lease end?');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByText('Sources')).toBeVisible({ timeout: 20_000 });
@@ -59,7 +59,7 @@ test.describe('portfolio chat agent', () => {
   test('renders a Markdown table and bold, not raw pipes', async ({ page }) => {
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'Ask Rent Control' }).first().click();
+    await page.getByRole('button', { name: 'Ask RentVance' }).first().click();
     await page.getByRole('textbox', { name: /Ask about your/ }).fill('list all my properties in a table');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
 
@@ -87,8 +87,8 @@ test.describe('portfolio chat agent', () => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 
-    await page.getByRole('button', { name: 'שאלו את Rent Control' }).first().click();
-    await expect(page.getByRole('heading', { name: 'שאלו את Rent Control' })).toBeVisible();
+    await page.getByRole('button', { name: 'שאלו את RentVance' }).first().click();
+    await expect(page.getByRole('heading', { name: 'שאלו את RentVance' })).toBeVisible();
 
     await page.getByRole('textbox', { name: /שאלו על/ }).fill('מתי מסתיים החוזה?');
     await page.getByRole('button', { name: 'שליחה', exact: true }).click();

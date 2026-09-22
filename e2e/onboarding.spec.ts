@@ -41,7 +41,7 @@ test.describe('onboarding — first run', () => {
     await expect(card).toBeVisible();
     // The tour arrives before it points at anything: an unanchored first step, drawn as a
     // larger title card rather than the one built to sit beside a spotlight.
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
     await expect(card.locator('[data-tour-title-card]').or(page.locator('[data-tour-title-card]'))).toHaveCount(1);
     await card.getByRole('button', { name: 'Next' }).click();
     await expect(card.getByText('Your dashboard')).toBeVisible();
@@ -116,7 +116,7 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
 
     // No click of the user's in between: the home tour opens as soon as first-run closes,
@@ -159,7 +159,7 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
     await expect(card.getByText("What's on this screen")).toBeVisible();
 
@@ -299,14 +299,14 @@ test.describe('onboarding — first run', () => {
     const card = page.getByRole('dialog');
     await expect(card).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
-    await expect(page.getByText('Welcome to Rent Control')).toBeHidden();
+    await expect(page.getByText('Welcome to RentVance')).toBeHidden();
 
     await dismissTours(page);
     await page.getByRole('link', { name: 'Renters' }).click();
     await dismissTours(page);
     await page.getByRole('link', { name: 'Home', exact: true }).click();
     await waitForAppReady(page);
-    await expect(page.getByText('Welcome to Rent Control')).toBeHidden();
+    await expect(page.getByText('Welcome to RentVance')).toBeHidden();
   });
 
   test('the spotlight lands on the navigation the viewport is actually showing', async ({
@@ -355,14 +355,14 @@ test.describe('onboarding — first run', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
 
     // Well clear of the card, which on this step is the wide centred title card.
     await page.mouse.click(150, 650);
     await page.mouse.click(1100, 650);
 
     // Same step, still open: not advanced, not skipped.
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
     await expect(card.getByText('1 of 10')).toBeVisible();
   });
 

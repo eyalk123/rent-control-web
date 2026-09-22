@@ -1,4 +1,4 @@
-// Legal document content for Rent Control (bilingual en/he).
+// Legal document content for RentVance (bilingual en/he).
 //
 // DUPLICATED FILE — an identical copy lives at
 // `rent-control/src/features/legal/legalContent.ts` (the mobile app). The two are separate
@@ -57,7 +57,7 @@ export const privacyContent: Localized<LegalDoc> = {
     title: 'Privacy Policy',
     lastUpdated: UPDATED_EN,
     intro: [
-      `This Privacy Policy explains how ${OPERATOR_EN} (“we”, “us”, the “operator”) collects, uses, and protects personal information when you use Rent Control (the “Service”), a property-management application for landlords.`,
+      `This Privacy Policy explains how ${OPERATOR_EN} (“we”, “us”, the “operator”) collects, uses, and protects personal information when you use RentVance (the “Service”), a property-management application for landlords.`,
       'By using the Service you agree to the practices described here. If you do not agree, please do not use the Service.',
     ],
     sections: [
@@ -155,7 +155,7 @@ export const privacyContent: Localized<LegalDoc> = {
     title: 'מדיניות פרטיות',
     lastUpdated: UPDATED_HE,
     intro: [
-      `מדיניות פרטיות זו מסבירה כיצד ${OPERATOR_HE} (“אנחנו”, “המפעיל”) אוסף, משתמש ומגן על מידע אישי בעת השימוש ב-Rent Control (“השירות”), אפליקציה לניהול נכסים עבור בעלי דירות.`,
+      `מדיניות פרטיות זו מסבירה כיצד ${OPERATOR_HE} (“אנחנו”, “המפעיל”) אוסף, משתמש ומגן על מידע אישי בעת השימוש ב-RentVance (“השירות”), אפליקציה לניהול נכסים עבור בעלי דירות.`,
       'השימוש בשירות מהווה הסכמה לנהלים המתוארים כאן. אם אינך מסכים, אנא הימנע משימוש בשירות.',
     ],
     sections: [
@@ -258,13 +258,13 @@ export const termsContent: Localized<LegalDoc> = {
     title: 'Terms of Service',
     lastUpdated: UPDATED_EN,
     intro: [
-      `These Terms of Service (“Terms”) govern your use of Rent Control (the “Service”), operated by ${OPERATOR_EN} (“we”, “us”). By creating an account or using the Service you agree to these Terms.`,
+      `These Terms of Service (“Terms”) govern your use of RentVance (the “Service”), operated by ${OPERATOR_EN} (“we”, “us”). By creating an account or using the Service you agree to these Terms.`,
     ],
     sections: [
       {
         heading: '1. The Service',
         paragraphs: [
-          'Rent Control is a property-management application that helps landlords manage properties, tenants, leases, payments, suppliers, and related documents.',
+          'RentVance is a property-management application that helps landlords manage properties, tenants, leases, payments, suppliers, and related documents.',
         ],
       },
       {
@@ -336,13 +336,13 @@ export const termsContent: Localized<LegalDoc> = {
     title: 'תנאי שימוש',
     lastUpdated: UPDATED_HE,
     intro: [
-      `תנאי שימוש אלה (“התנאים”) חלים על השימוש שלך ב-Rent Control (“השירות”), המופעל על ידי ${OPERATOR_HE} (“אנחנו”, “המפעיל”). יצירת חשבון או שימוש בשירות מהווים הסכמה לתנאים אלה.`,
+      `תנאי שימוש אלה (“התנאים”) חלים על השימוש שלך ב-RentVance (“השירות”), המופעל על ידי ${OPERATOR_HE} (“אנחנו”, “המפעיל”). יצירת חשבון או שימוש בשירות מהווים הסכמה לתנאים אלה.`,
     ],
     sections: [
       {
         heading: '1. השירות',
         paragraphs: [
-          'Rent Control היא אפליקציה לניהול נכסים המסייעת לבעלי דירות לנהל נכסים, דיירים, חוזי שכירות, תשלומים, ספקים ומסמכים נלווים.',
+          'RentVance היא אפליקציה לניהול נכסים המסייעת לבעלי דירות לנהל נכסים, דיירים, חוזי שכירות, תשלומים, ספקים ומסמכים נלווים.',
         ],
       },
       {
@@ -419,7 +419,7 @@ export const accessibilityContent: Localized<LegalDoc> = {
     title: 'Accessibility Statement',
     lastUpdated: UPDATED_EN,
     intro: [
-      `${OPERATOR_EN} is committed to making Rent Control accessible to all users, including people with disabilities, in accordance with the Israeli Equal Rights for Persons with Disabilities (Service Accessibility) Regulations, 5773-2013, and Israeli Standard IS 5568, which is based on the international WCAG 2.0 guidelines at Level AA.`,
+      `${OPERATOR_EN} is committed to making RentVance accessible to all users, including people with disabilities, in accordance with the Israeli Equal Rights for Persons with Disabilities (Service Accessibility) Regulations, 5773-2013, and Israeli Standard IS 5568, which is based on the international WCAG 2.0 guidelines at Level AA.`,
     ],
     sections: [
       {
@@ -460,7 +460,7 @@ export const accessibilityContent: Localized<LegalDoc> = {
     title: 'הצהרת נגישות',
     lastUpdated: UPDATED_HE,
     intro: [
-      `${OPERATOR_HE} מחויב להנגיש את Rent Control לכלל המשתמשים, לרבות אנשים עם מוגבלות, בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568, המבוסס על הנחיות WCAG 2.0 הבינלאומיות ברמה AA.`,
+      `${OPERATOR_HE} מחויב להנגיש את RentVance לכלל המשתמשים, לרבות אנשים עם מוגבלות, בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568, המבוסס על הנחיות WCAG 2.0 הבינלאומיות ברמה AA.`,
     ],
     sections: [
       {
@@ -521,13 +521,13 @@ export const refundContent: Localized<LegalDoc> = {
     title: 'Refund & Cancellation Policy',
     lastUpdated: UPDATED_EN,
     intro: [
-      `This policy explains how Rent Control subscriptions renew, how to cancel one, and when a refund is available. It applies alongside our Terms of Service.`,
+      `This policy explains how RentVance subscriptions renew, how to cancel one, and when a refund is available. It applies alongside our Terms of Service.`,
     ],
     sections: [
       {
         heading: '1. Free accounts',
         paragraphs: [
-          'Rent Control is free while your account holds up to two properties. A free account is never charged, so there is nothing to cancel and nothing to refund.',
+          'RentVance is free while your account holds up to two properties. A free account is never charged, so there is nothing to cancel and nothing to refund.',
         ],
       },
       {
@@ -557,7 +557,7 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '5. Who charges you',
         paragraphs: [
-          'Subscriptions bought on the web are sold by Paddle, which acts as the merchant of record. Your receipt and the entry on your card statement will show Paddle rather than Rent Control. Subscriptions bought in the mobile apps are sold by Apple or Google and appear under their names.',
+          'Subscriptions bought on the web are sold by Paddle, which acts as the merchant of record. Your receipt and the entry on your card statement will show Paddle rather than RentVance. Subscriptions bought in the mobile apps are sold by Apple or Google and appear under their names.',
         ],
       },
       {
@@ -577,13 +577,13 @@ export const refundContent: Localized<LegalDoc> = {
     title: 'מדיניות ביטול והחזרים',
     lastUpdated: UPDATED_HE,
     intro: [
-      'מדיניות זו מסבירה כיצד מתחדשים מנויי Rent Control, כיצד לבטל מנוי, ומתי ניתן לקבל החזר כספי. היא חלה לצד תנאי השימוש שלנו.',
+      'מדיניות זו מסבירה כיצד מתחדשים מנויי RentVance, כיצד לבטל מנוי, ומתי ניתן לקבל החזר כספי. היא חלה לצד תנאי השימוש שלנו.',
     ],
     sections: [
       {
         heading: '1. חשבונות חינמיים',
         paragraphs: [
-          'השימוש ב־Rent Control חינמי כל עוד בחשבון שלך עד שני נכסים. חשבון חינמי אינו מחויב כלל, ולכן אין מה לבטל ואין מה להחזיר.',
+          'השימוש ב־RentVance חינמי כל עוד בחשבון שלך עד שני נכסים. חשבון חינמי אינו מחויב כלל, ולכן אין מה לבטל ואין מה להחזיר.',
         ],
       },
       {
@@ -613,7 +613,7 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '5. מי מחייב אותך',
         paragraphs: [
-          'מנויים שנרכשו באתר נמכרים על ידי Paddle, המשמשת כסוחר הרשום (merchant of record). הקבלה שלך והשורה בדף חשבון האשראי יציגו את Paddle ולא את Rent Control. מנויים שנרכשו באפליקציות נמכרים על ידי Apple או Google ומופיעים בשמן.',
+          'מנויים שנרכשו באתר נמכרים על ידי Paddle, המשמשת כסוחר הרשום (merchant of record). הקבלה שלך והשורה בדף חשבון האשראי יציגו את Paddle ולא את RentVance. מנויים שנרכשו באפליקציות נמכרים על ידי Apple או Google ומופיעים בשמן.',
         ],
       },
       {

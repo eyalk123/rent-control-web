@@ -89,7 +89,7 @@ export function Sidebar() {
         >
           <img src={logoImage} alt="" className="h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
           <div>
-            <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">Rent Control</div>
+            <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">RentVance</div>
             <div className="text-[10.5px] text-[var(--color-text-secondary)]">
               {user?.displayName ?? user?.email?.split('@')[0]} · {t('common.personal')}
             </div>

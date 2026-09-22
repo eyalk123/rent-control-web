@@ -1177,7 +1177,7 @@ let _agentMsgId = 1;
  * shows, and the states worth being able to look at without a backend are the ones that
  * are awkward to reach on purpose — locked badges, a spent quota, a paywalled feature.
  *
- * `rentControlMockPlan('tier_9_15')` in the console switches plan for a session.
+ * `rentvanceMockPlan('tier_9_15')` in the console switches plan for a session.
  */
 let _mockPlan: Subscription['plan'] = 'free';
 let _mockLockNoticeSeen = false;
@@ -1220,7 +1220,7 @@ export const mockSubscriptionApi = {
 };
 
 if (typeof window !== 'undefined') {
-  (window as unknown as Record<string, unknown>).rentControlMockPlan = (
+  (window as unknown as Record<string, unknown>).rentvanceMockPlan = (
     plan: Subscription['plan'],
     scansUsed?: number,
   ) => {

@@ -1,6 +1,6 @@
 {
-  "name": "Rent Control",
-  "short_name": "Rent Control",
+  "name": "RentVance",
+  "short_name": "RentVance",
   "description": "Property management for landlords",
   "start_url": "/",
   "display": "standalone",

@@ -55,7 +55,7 @@ test.describe('feedback', () => {
     await page.getByRole('button', { name: 'Suggestion' }).click();
 
     // The placeholder follows the type, which is how the form signals it heard you.
-    await expect(page.getByPlaceholder('What would make Rent Control better for you?')).toBeVisible();
+    await expect(page.getByPlaceholder('What would make RentVance better for you?')).toBeVisible();
 
     await page.getByLabel('Your message').fill('Let me export a single property.');
     await page.getByRole('button', { name: 'Send', exact: true }).click();

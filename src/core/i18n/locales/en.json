@@ -8,7 +8,7 @@
     "lastUpdated": "Last updated",
     "open": "Open",
     "gateTitle": "One more thing",
-    "gateDescription": "We've updated what you need to agree to before using Rent Control. Please review the documents below and confirm to continue.",
+    "gateDescription": "We've updated what you need to agree to before using RentVance. Please review the documents below and confirm to continue.",
     "gateAccept": "Accept and continue",
     "gateDecline": "Not now — sign out",
     "gateError": "We couldn't record your acceptance. Please try again.",
@@ -1249,8 +1249,8 @@
     "deleteRuleMessage": "This notification rule will be permanently removed."
   },
   "agent": {
-    "title": "Ask Rent Control",
-    "launcher": "Ask Rent Control",
+    "title": "Ask RentVance",
+    "launcher": "Ask RentVance",
     "placeholder": "Ask about your properties, renters, or transactions…",
     "send": "Send",
     "stop": "Stop",
@@ -1287,7 +1287,7 @@
     "tours": {
       "first-run": {
         "welcome": {
-          "title": "Welcome to Rent Control",
+          "title": "Welcome to RentVance",
           "body": "Your properties, the people renting them, and every payment between the two. Here is where everything lives — it takes a minute."
         },
         "home": {
@@ -1676,7 +1676,7 @@
         },
         "bank": {
           "title": "Their bank details, for your reference only",
-          "body": "Nothing here is ever paid, scheduled or sent. Rent Control does not move money at all. This is somewhere to keep the account number so it is in front of you when you make the transfer yourself, rather than in a message you have to go looking for."
+          "body": "Nothing here is ever paid, scheduled or sent. RentVance does not move money at all. This is somewhere to keep the account number so it is in front of you when you make the transfer yourself, rather than in a message you have to go looking for."
         }
       },
       "notifications": {
@@ -1805,7 +1805,7 @@
     "messageLabel": "Your message",
     "placeholder_bug": "What happened, and what did you expect instead?",
     "placeholder_question": "What would you like to know?",
-    "placeholder_suggestion": "What would make Rent Control better for you?",
+    "placeholder_suggestion": "What would make RentVance better for you?",
     "messageTooLong": "That message is too long.",
     "screenshotsLabel": "Screenshots (optional)",
     "addScreenshot": "Add",
@@ -1821,7 +1821,7 @@
     "submitFailed": "We couldn't send your message. Please try again."
   },
   "marketing": {
-    "productName": "Rent Control",
+    "productName": "RentVance",
     "nav": {
       "pricing": "Pricing",
       "signIn": "Sign in",
@@ -1829,7 +1829,7 @@
     },
     "hero": {
       "headline": "Every apartment, every payment, one ledger.",
-      "subhead": "Rent Control tracks rent, expenses and leases for the properties you own, and tells you before a lease renews or a rent changes.",
+      "subhead": "RentVance tracks rent, expenses and leases for the properties you own, and tells you before a lease renews or a rent changes.",
       "primaryCta": "Start free",
       "secondaryCta": "See pricing",
       "freeNote": "Free for up to {{max}} properties. No card needed."
@@ -1847,7 +1847,7 @@
     },
     "lead": {
       "heading": "Rent that changes on a schedule, worked out for you",
-      "body": "Most leases do not hold one number for their whole term. Rent Control stores the terms — a fixed step each year, or linkage to the consumer price index — and works out what is owed on each date, so you are not rebuilding a lease in a spreadsheet every year. Israeli index linkage is built in."
+      "body": "Most leases do not hold one number for their whole term. RentVance stores the terms — a fixed step each year, or linkage to the consumer price index — and works out what is owed on each date, so you are not rebuilding a lease in a spreadsheet every year. Israeli index linkage is built in."
     },
     "features": {
       "reports": {
@@ -1904,11 +1904,11 @@
       "emailLabel": "Email",
       "responseHeading": "Response time",
       "responseBody": "We aim to reply within two business days. Please include the email address your account uses, so we can find it.",
-      "operatorHeading": "Who operates Rent Control",
-      "operatorBody": "Rent Control is operated by Eyal Kook, based in Israel."
+      "operatorHeading": "Who operates RentVance",
+      "operatorBody": "RentVance is operated by Eyal Kook, based in Israel."
     },
     "footer": {
-      "operator": "Rent Control — Eyal Kook"
+      "operator": "RentVance — Eyal Kook"
     }
   },
   "subscription": {
@@ -1937,7 +1937,7 @@
       "leaseScans": "AI lease scans",
       "leaseScansUsage": "{{used}} of {{limit}} this month",
       "leaseScansUnlimited": "Unlimited",
-      "assistant": "Ask Rent Control",
+      "assistant": "Ask RentVance",
       "assistantIncluded": "Included",
       "assistantNotIncluded": "Not on this plan",
       "renews": "Renews {{date}}",
@@ -1961,7 +1961,7 @@
       "onPaidPlan": "Unlimited on your plan"
     },
     "agentLocked": {
-      "heading": "Ask Rent Control is on paid plans",
+      "heading": "Ask RentVance is on paid plans",
       "body": "Ask questions about your portfolio in plain language — which leases end soon, what a property earned last year, who is behind on rent.",
       "cta": "See plans"
     }

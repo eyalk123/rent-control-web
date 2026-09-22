@@ -8,7 +8,7 @@
     "lastUpdated": "עודכן לאחרונה",
     "open": "פתח",
     "gateTitle": "עוד דבר אחד",
-    "gateDescription": "עדכנו את המסמכים שיש לאשר לפני השימוש ב-Rent Control. יש לעיין במסמכים ולאשר כדי להמשיך.",
+    "gateDescription": "עדכנו את המסמכים שיש לאשר לפני השימוש ב-RentVance. יש לעיין במסמכים ולאשר כדי להמשיך.",
     "gateAccept": "אישור והמשך",
     "gateDecline": "לא כעת — התנתקות",
     "gateError": "לא הצלחנו לרשום את האישור. יש לנסות שוב.",
@@ -1251,8 +1251,8 @@
     "deleteRuleMessage": "כלל ההתראה יימחק לצמיתות."
   },
   "agent": {
-    "title": "שאלו את Rent Control",
-    "launcher": "שאלו את Rent Control",
+    "title": "שאלו את RentVance",
+    "launcher": "שאלו את RentVance",
     "placeholder": "שאלו על הנכסים, הדיירים או העסקאות שלכם…",
     "send": "שליחה",
     "stop": "עצירה",
@@ -1289,7 +1289,7 @@
     "tours": {
       "first-run": {
         "welcome": {
-          "title": "ברוכים הבאים ל-Rent Control",
+          "title": "ברוכים הבאים ל-RentVance",
           "body": "הנכסים שלך, האנשים ששוכרים אותם, וכל תשלום שעובר ביניהם. הנה איפה הכול נמצא — זה לוקח דקה."
         },
         "home": {
@@ -1807,7 +1807,7 @@
     "messageLabel": "ההודעה שלכם",
     "placeholder_bug": "מה קרה, ומה ציפיתם שיקרה במקום?",
     "placeholder_question": "מה תרצו לדעת?",
-    "placeholder_suggestion": "מה ישפר עבורכם את Rent Control?",
+    "placeholder_suggestion": "מה ישפר עבורכם את RentVance?",
     "messageTooLong": "ההודעה ארוכה מדי.",
     "screenshotsLabel": "צילומי מסך (לא חובה)",
     "addScreenshot": "הוספה",
@@ -1823,7 +1823,7 @@
     "submitFailed": "לא הצלחנו לשלוח את ההודעה. נסו שוב."
   },
   "marketing": {
-    "productName": "Rent Control",
+    "productName": "RentVance",
     "nav": {
       "pricing": "מחירים",
       "signIn": "כניסה",
@@ -1831,7 +1831,7 @@
     },
     "hero": {
       "headline": "כל דירה, כל תשלום, במקום אחד.",
-      "subhead": "Rent Control עוקב אחר שכר דירה, הוצאות וחוזים בנכסים שלך, ומעדכן אותך לפני שחוזה מתחדש או שכר דירה משתנה.",
+      "subhead": "RentVance עוקב אחר שכר דירה, הוצאות וחוזים בנכסים שלך, ומעדכן אותך לפני שחוזה מתחדש או שכר דירה משתנה.",
       "primaryCta": "התחלו בחינם",
       "secondaryCta": "למחירון",
       "freeNote": "חינם עד {{max}} נכסים. ללא כרטיס אשראי."
@@ -1849,7 +1849,7 @@
     },
     "lead": {
       "heading": "שכר דירה שמשתנה לפי לוח זמנים, מחושב עבורך",
-      "body": "רוב החוזים לא מחזיקים מספר אחד לאורך כל התקופה. Rent Control שומר את תנאי החוזה — עלייה קבועה מדי שנה, או הצמדה למדד המחירים לצרכן — ומחשב מה מגיע בכל תאריך, כך שאינך בונה חוזה מחדש בגיליון אלקטרוני מדי שנה. הצמדה למדד הישראלי מובנית במערכת."
+      "body": "רוב החוזים לא מחזיקים מספר אחד לאורך כל התקופה. RentVance שומר את תנאי החוזה — עלייה קבועה מדי שנה, או הצמדה למדד המחירים לצרכן — ומחשב מה מגיע בכל תאריך, כך שאינך בונה חוזה מחדש בגיליון אלקטרוני מדי שנה. הצמדה למדד הישראלי מובנית במערכת."
     },
     "features": {
       "reports": {
@@ -1906,11 +1906,11 @@
       "emailLabel": "אימייל",
       "responseHeading": "זמן תגובה",
       "responseBody": "אנחנו משתדלים להשיב תוך שני ימי עסקים. ציינו את כתובת האימייל של החשבון כדי שנוכל לאתר אותו.",
-      "operatorHeading": "מי מפעיל את Rent Control",
-      "operatorBody": "Rent Control מופעל על ידי אייל קוק, מישראל."
+      "operatorHeading": "מי מפעיל את RentVance",
+      "operatorBody": "RentVance מופעל על ידי אייל קוק, מישראל."
     },
     "footer": {
-      "operator": "Rent Control — אייל קוק"
+      "operator": "RentVance — אייל קוק"
     }
   },
   "subscription": {
@@ -1939,7 +1939,7 @@
       "leaseScans": "סריקות חוזה AI",
       "leaseScansUsage": "{{used}} מתוך {{limit}} החודש",
       "leaseScansUnlimited": "ללא הגבלה",
-      "assistant": "שאל את Rent Control",
+      "assistant": "שאל את RentVance",
       "assistantIncluded": "כלול",
       "assistantNotIncluded": "לא בתוכנית הזו",
       "renews": "מתחדש ב־{{date}}",
@@ -1963,7 +1963,7 @@
       "onPaidPlan": "ללא הגבלה בתוכנית שלך"
     },
     "agentLocked": {
-      "heading": "שאל את Rent Control זמין בתוכניות בתשלום",
+      "heading": "שאל את RentVance זמין בתוכניות בתשלום",
       "body": "אפשר לשאול שאלות על התיק בשפה חופשית — אילו חוזים מסתיימים בקרוב, כמה נכס הכניס בשנה שעברה, מי מפגר בתשלום.",
       "cta": "לתוכניות"
     }

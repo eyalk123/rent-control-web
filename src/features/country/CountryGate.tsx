@@ -101,7 +101,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }}
           />
           <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            Rent Control
+            RentVance
           </span>
         </div>
         {children}

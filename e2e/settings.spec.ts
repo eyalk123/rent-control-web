@@ -24,7 +24,7 @@ test.describe('settings', () => {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download' }).click();
     // Mock API stands in for the server-built ZIP, so only the stem is stable here.
-    expect((await download).suggestedFilename()).toContain('rent-control-export-');
+    expect((await download).suggestedFilename()).toContain('rentvance-export-');
   });
 
   test('account section shows the signed-in (bypass) user', async ({ page }) => {

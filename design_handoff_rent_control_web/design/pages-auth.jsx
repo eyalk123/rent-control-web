@@ -17,7 +17,7 @@ function AuthPage({ ctx }) {
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Icon name="building2" size={18} color="var(--rc-brand-navy)" />
           </div>
-          <span style={{ font: "700 16px " + RC_FONT, letterSpacing: -0.3 }}>Rent Control</span>
+          <span style={{ font: "700 16px " + RC_FONT, letterSpacing: -0.3 }}>RentVance</span>
         </div>
 
         <div style={{ position: "relative", zIndex: 2 }}>

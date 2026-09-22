@@ -35,7 +35,7 @@ export function LegalLayout({ doc }: { doc: LegalDoc }) {
       >
         <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
           <img src={logoImage} alt="" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'contain' }} />
-          <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Rent Control</span>
+          <span className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>RentVance</span>
         </Link>
         <div className="flex items-center gap-1" role="group" aria-label="Language">
           {(['en', 'he'] as SupportedLanguage[]).map((lng) => (

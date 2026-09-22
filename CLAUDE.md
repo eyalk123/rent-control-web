@@ -1,4 +1,4 @@
-# Rent-Control Web
+# RentVance Web
 
 React + Vite web client for the property-management product. English + Hebrew (RTL).
 Multi-tenant: all data is scoped to the authenticated owner.
@@ -65,11 +65,11 @@ Sentry (prod only). Backend: FastAPI.
     on the phone does not reappear here. **The content is unfinished, so `flags.ts` keeps
     the whole feature off by default: on under `npm run dev`, off in every build unless
     `VITE_ONBOARDING_TOURS=on` (forwarded by the Dockerfile, so production is switched on
-    with a Railway variable rather than a code change). `rentControlTours(true)` in the
+    with a Railway variable rather than a code change). `rentvanceTours(true)` in the
     browser console is a per-browser override that outranks both and works against a
     deployed build.** Playwright is off by default too; `enableTours` uses that same
     override — see `e2e/onboarding.spec.ts`.
-  - `agent/` is the "Ask Rent Control" assistant: a `Drawer` (`PortfolioChatPanel`) mounted
+  - `agent/` is the "Ask RentVance" assistant: a `Drawer` (`PortfolioChatPanel`) mounted
     once in `AppShell` and opened from `TopBar`, streaming SSE from `POST /agent/chat` via
     `api/agentStream.ts` (plain `fetch`, not Axios — Axios can't stream). Read-only: it
     answers and cites, it never mutates. The launcher only renders when

@@ -24,7 +24,7 @@ function useDocumentTitle() {
   useEffect(() => {
     const segment = pathname.split('/')[1] ?? 'home';
     const label = segment.charAt(0).toUpperCase() + segment.slice(1);
-    document.title = `${label} — Rent Control`;
+    document.title = `${label} — RentVance`;
   }, [pathname]);
 }
 

@@ -1,4 +1,4 @@
-// Types for the Portfolio Chat Agent ("Ask Rent Control").
+// Types for the Portfolio Chat Agent ("Ask RentVance").
 
 export type SourceRefType = 'renter' | 'property' | 'transaction';
 

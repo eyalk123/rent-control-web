@@ -463,7 +463,7 @@ export const TOURS = {
    * explain themselves.
    *
    * It exists for the bank-account card. That is the one control in the product that looks
-   * like it sets up a payment and does not: nothing in Rent Control ever moves money, and a
+   * like it sets up a payment and does not: nothing in RentVance ever moves money, and a
    * landlord who assumes otherwise finds out by a supplier not being paid. Everything else
    * here is the frame that step needs in order not to arrive cold.
    *

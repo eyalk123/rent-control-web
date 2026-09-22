@@ -1,4 +1,4 @@
-# Rent Control Web — E2E Test Harness & Findings Report
+# RentVance Web — E2E Test Harness & Findings Report
 
 This document accompanies a new Playwright E2E suite (`/e2e`). It records the bugs and
 improvement opportunities surfaced both by the running tests and by reviewing the code

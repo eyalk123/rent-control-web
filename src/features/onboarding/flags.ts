@@ -13,7 +13,7 @@
  * Precedence, highest first:
  *
  *   1. `localStorage['onboarding.tours']` — a per-browser override, and the only one that
- *      works against an already-deployed build. `rentControlTours(true)` in the console
+ *      works against an already-deployed build. `rentvanceTours(true)` in the console
  *      sets it. This is how the tours get demoed on the live site without a redeploy,
  *      and how `e2e/onboarding.spec.ts` arms itself.
  *   2. `VITE_ONBOARDING_TOURS` (`on` / `off`) — build-time. Set it as a Railway service
@@ -66,12 +66,12 @@ export const TOURS_ENABLED = resolve();
 declare global {
   interface Window {
     /** Flip the per-browser override and reload. Available in every build, deliberately. */
-    rentControlTours?: (on: boolean) => void;
+    rentvanceTours?: (on: boolean) => void;
   }
 }
 
 if (typeof window !== 'undefined') {
-  window.rentControlTours = (on: boolean) => {
+  window.rentvanceTours = (on: boolean) => {
     try {
       localStorage.setItem(TOURS_OVERRIDE_KEY, on ? 'on' : 'off');
     } catch {

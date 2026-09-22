@@ -1,4 +1,4 @@
-# Handoff: Rent Control — Web Redesign
+# Handoff: RentVance — Web Redesign
 
 > **TL;DR — Read this first.**
 > The user has an **existing web app** with a **working backend**. This handoff is for **refactoring the front-end** to match the new design in this package. Do **not** rewrite the backend. Do **not** assume the design's data model is correct — when the design and backend disagree, **stop and ask the user**. They have explicitly asked you to be liberal with questions.
@@ -78,7 +78,7 @@ The detail pages (`PropertyDetailPage`, `RenterDetailPage`, `TransactionDetailPa
 
 ## Overview
 
-Rent Control is a property-management app for small landlords. Users track properties, renters (with multi-year leases), revenue/expense transactions, suppliers, and generate annual reports. The original product is a React Native mobile app; this handoff is for the **web companion** which mirrors the mobile feature set on a wider canvas.
+RentVance is a property-management app for small landlords. Users track properties, renters (with multi-year leases), revenue/expense transactions, suppliers, and generate annual reports. The original product is a React Native mobile app; this handoff is for the **web companion** which mirrors the mobile feature set on a wider canvas.
 
 ## About the design files
 
@@ -236,7 +236,7 @@ A small modal: warning icon + heading + bulleted list of what gets deleted (with
 - **Form validation.** Required fields marked with red asterisk. The prototype doesn't actually validate — implement per backend rules.
 - **Empty states.** Each list page has an `Empty` component with icon + title + hint + optional CTA. Use them when filters return nothing or entities don't exist yet.
 - **Theme.** `[data-theme="dark"]` on `<html>` swaps the entire palette. Persist preference; consider also a `system` mode.
-- **Density.** `[data-density="compact|comfortable|cozy"]` on body multiplies row padding via CSS variables (see `Rent Control Web.html`).
+- **Density.** `[data-density="compact|comfortable|cozy"]` on body multiplies row padding via CSS variables (see `RentVance Web.html`).
 
 ## State management
 
@@ -284,7 +284,7 @@ See `design/tokens.css`. Key values:
 design_handoff_rent_control_web/
 ├── README.md                   ← this file
 ├── design/
-│   ├── Rent Control Web.html   ← entry HTML, body styles, density rules
+│   ├── RentVance Web.html   ← entry HTML, body styles, density rules
 │   ├── tokens.css              ← color, type, spacing, radii (light + dark)
 │   ├── tweaks-panel.jsx        ← in-design preference panel (skip in prod)
 │   ├── shared.jsx              ← icons, mock data, AppChrome, Sidebar, TopBar,

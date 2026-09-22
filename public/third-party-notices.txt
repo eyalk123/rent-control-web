@@ -1,7 +1,7 @@
-RENT CONTROL — THIRD-PARTY OPEN SOURCE NOTICES
+RENTVANCE — THIRD-PARTY OPEN SOURCE NOTICES
 Last generated: 2026-08-31
 
-Rent Control is built on open source software. The components listed below are the
+RentVance is built on open source software. The components listed below are the
 property of their respective authors and are used under the licenses named beside
 them; they are not owned by the operator of the service. Copyright and permission
 notices distributed with each component are retained in the deployed artifacts.

@@ -174,9 +174,9 @@ export function SignInPage() {
         {/* Logo */}
         <div className="flex items-center gap-2.5">
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={logoImage} alt="Rent Control" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <img src={logoImage} alt="RentVance" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
-          <span className="text-base font-bold tracking-tight">Rent Control</span>
+          <span className="text-base font-bold tracking-tight">RentVance</span>
         </div>
 
         {/* Hero copy */}
@@ -238,8 +238,8 @@ export function SignInPage() {
         <div className="w-full max-w-[340px]">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <img src={logoImage} alt="Rent Control" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
-            <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Rent Control</span>
+            <img src={logoImage} alt="RentVance" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
+            <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>RentVance</span>
           </div>
 
           {mode === 'forgot' ? (

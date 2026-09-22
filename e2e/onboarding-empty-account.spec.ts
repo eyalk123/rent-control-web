@@ -35,7 +35,7 @@ test.describe('onboarding — an account with no data', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
 
     // Walk to the end rather than counting: optional steps drop themselves, so the number
     // of cards is not fixed and asserting on it would be asserting on the fixtures.
@@ -53,7 +53,7 @@ test.describe('onboarding — an account with no data', () => {
     await waitForAppReady(page);
 
     const card = page.getByRole('dialog');
-    await expect(card.getByText('Welcome to Rent Control')).toBeVisible();
+    await expect(card.getByText('Welcome to RentVance')).toBeVisible();
     await card.getByRole('button', { name: 'Skip' }).click();
 
     // Home's own tour is gated on `hasProperties` for exactly this reason: first-run ends

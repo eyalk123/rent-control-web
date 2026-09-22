@@ -10,7 +10,7 @@ function todayStamp(): string {
  *  The server sets its own Content-Disposition filename; the one passed here is what the
  *  browser saves as, so keep the two in the same shape. */
 export async function downloadAllData(): Promise<void> {
-  const filename = `rent-control-export-${todayStamp()}.zip`;
+  const filename = `rentvance-export-${todayStamp()}.zip`;
   if (USE_MOCK_API) return mockExportApi.downloadAllData(filename);
   // Whole-portfolio export incl. file bytes — much heavier than a report, so allow longer.
   await downloadFile('/users/me/export', filename, { timeout: 300000 });

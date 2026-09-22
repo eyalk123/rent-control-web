@@ -623,7 +623,7 @@ function Sidebar({ ctx, variant = "wide" }) {
           <Icon name="building2" size={18} color="#fff" />
         </div>
         <div>
-          <div style={{ font: "700 14px " + RC_FONT, color: "var(--rc-fg1)", letterSpacing: -0.2 }}>Rent Control</div>
+          <div style={{ font: "700 14px " + RC_FONT, color: "var(--rc-fg1)", letterSpacing: -0.2 }}>RentVance</div>
           <div style={{ font: "400 10.5px " + RC_FONT, color: "var(--rc-fg2)" }}>Eyal Kook · personal</div>
         </div>
       </div>
