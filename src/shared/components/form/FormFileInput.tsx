@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useStoredFileSrc } from '@/shared/utils/storedFile';
 
 interface Props {
   label?: string;
@@ -14,6 +15,7 @@ interface Props {
 export function FormFileInput({ label, error, accept, value, onChange, preview }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLInputElement>(null);
+  const previewSrc = useStoredFileSrc(preview);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -21,7 +23,7 @@ export function FormFileInput({ label, error, accept, value, onChange, preview }
 
       {preview ? (
         <div className="relative inline-block">
-          <img src={preview} alt="preview" className="h-48 w-full rounded-xl object-contain border border-[var(--color-outline)] bg-white" />
+          <img src={previewSrc ?? undefined} alt="preview" className="h-48 w-full rounded-xl object-contain border border-[var(--color-outline)] bg-white" />
           <button
             type="button"
             onClick={() => onChange(null)}

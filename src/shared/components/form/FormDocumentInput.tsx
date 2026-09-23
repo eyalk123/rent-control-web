@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Upload, X } from 'lucide-react';
 import { fileNameFromUrl } from '@/shared/utils/fileName';
+import { useOpenStoredFile } from '@/shared/utils/storedFile';
 
 interface Props {
   label?: string;
@@ -26,6 +27,7 @@ export function FormDocumentInput({
 }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+  const openFile = useOpenStoredFile();
 
   const fileName = pendingFile?.name ?? (existingUrl ? fileNameFromUrl(existingUrl) : null);
   const hasFile = !!(pendingFile || existingUrl);
@@ -41,15 +43,14 @@ export function FormDocumentInput({
         >
           <FileText size={16} className="shrink-0 text-[var(--color-text-secondary)]" aria-hidden="true" />
           {existingUrl && !pendingFile ? (
-            <a
-              href={existingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 text-sm truncate hover:underline"
+            <button
+              type="button"
+              onClick={() => openFile(existingUrl)}
+              className="flex-1 text-start text-sm truncate hover:underline"
               style={{ color: 'var(--color-primary)' }}
             >
               {fileName || t('documents.upload')}
-            </a>
+            </button>
           ) : (
             <span className="flex-1 text-sm truncate text-[var(--color-text-primary)]">
               {fileName || t('documents.upload')}

@@ -24,7 +24,7 @@ import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useSelectMode } from '@/hooks/useSelectMode';
 import { useLongPress } from '@/hooks/useLongPress';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getPropertyImageSrc } from '../utils/propertyImageSrc';
+import { usePropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { formatArea, formatMoney } from '@/shared/utils/money';
 import { getLeaseEndDate } from '@/shared/types';
@@ -76,7 +76,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   const navigate = useNavigate();
   const color = getPropertyColor(property.id);
   const bg = getPropertyColorBg(property.id, 0.35);
-  const imageSrc = getPropertyImageSrc(property.image_url);
+  const imageSrc = usePropertyImageSrc(property.image_url);
   // `renters` is every renter the property ever had, in no particular order, so `[0]` was
   // as likely to be a tenant who moved out years ago — named on the card, with their lease
   // end, under an "Occupied" pill. The card speaks for the tenancy running now.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ImagePlus, Upload, X } from 'lucide-react';
 import { HOUSE_IMAGE_PRESETS, housePresetSrc, toImageUrlKey } from '../constants/houseImagePresets';
+import { useStoredFileSrc } from '@/shared/utils/storedFile';
 
 interface Props {
   label?: string;
@@ -26,6 +27,7 @@ export function PropertyImageField({
   const { t } = useTranslation();
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageSrc = useStoredFileSrc(previewSrc);
 
   useEffect(() => {
     if (!pickerOpen) return;
@@ -55,7 +57,7 @@ export function PropertyImageField({
         <div className="flex flex-col gap-2">
           <div className="relative inline-block">
             <img
-              src={previewSrc}
+              src={imageSrc ?? undefined}
               alt="preview"
               className="h-48 w-full rounded-xl object-contain border border-[var(--color-outline)] bg-white"
             />

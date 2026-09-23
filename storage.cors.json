@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://rentvance.app",
+      "https://www.rentvance.app",
+      "https://rent-control-web-production.up.railway.app",
+      "http://localhost:5173"
+    ],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]

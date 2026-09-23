@@ -62,8 +62,8 @@ test.describe('properties', () => {
     });
 
     // The slot now shows the uploaded file, and it has reached the documents list beside it.
-    await expect(page.getByRole('link', { name: 'lease-2026.pdf' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /download/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'lease-2026.pdf' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /download/i })).toBeVisible();
     await expect(page.getByText('No documents uploaded yet.')).toHaveCount(0);
 
     // Removing clears the slot (sends null, not undefined) and the list empties again.
@@ -85,7 +85,7 @@ test.describe('properties', () => {
     await page.locator('input[type="file"]').nth(1).locator('..').locator('..')
       .dispatchEvent('drop', { dataTransfer });
 
-    await expect(page.getByRole('link', { name: 'tabu.pdf' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'tabu.pdf' })).toBeVisible();
   });
 
   test('documents tab rejects a file over the size limit', async ({ page }) => {

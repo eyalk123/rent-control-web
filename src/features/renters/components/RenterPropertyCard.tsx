@@ -7,7 +7,7 @@ import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
-import { getPropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
+import { usePropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 import type { Property } from '@/shared/types';
 
@@ -22,7 +22,7 @@ export function RenterPropertyCard({ property, monthlyRent, backTo, backLabel }:
   const open = () => navigate(`/properties/${property.id}`, { state: { backTo, backLabel } });
   const color = getPropertyColor(property.id);
   const bg = getPropertyColorBg(property.id, 0.35);
-  const imageSrc = getPropertyImageSrc(property.image_url);
+  const imageSrc = usePropertyImageSrc(property.image_url);
 
   return (
     <div

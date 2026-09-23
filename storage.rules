@@ -11,9 +11,14 @@ rules_version = '2';
 // user reading or overwriting other users' files, so keep them tight.
 //
 // NOTE: The backend uses the Admin SDK (service account) for cleanup, which
-// bypasses these rules entirely. App image display uses tokenized download URLs
-// (getDownloadURL), which also bypass read rules — so owner-only reads here do
-// not break the UI.
+// bypasses these rules entirely. Both apps read files through the SDK
+// (src/shared/utils/storedFile.ts here and in the mobile repo), so the read rule
+// below is what protects them there. The stored values are still tokenized download URLs, which bypass read
+// rules for anyone holding one — retiring them is tracked in PLATFORM.md §18.
+//
+// SDK reads from a browser need the bucket's CORS config, kept in storage.cors.json
+// (the same origins as the backend's CORS_ORIGINS). Apply it with:
+//   gsutil cors set storage.cors.json gs://rent-control-5c5da.firebasestorage.app
 //
 // To deploy:  firebase deploy --only storage   (or paste into the console).
 

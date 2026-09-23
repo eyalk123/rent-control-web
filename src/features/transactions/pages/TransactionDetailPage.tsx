@@ -14,6 +14,7 @@ import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate, fmtMonthYear } from '@/shared/utils/dates';
 import { useToast } from '@/shared/components/ui/Toast';
+import { useOpenStoredFile, useStoredFileSrc } from '@/shared/utils/storedFile';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
 
 function DetailRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
@@ -137,9 +138,7 @@ export function TransactionDetailPage() {
           {/* Receipt */}
           <div className="p-4" style={{ borderTop: '1px solid var(--color-outline)' }}>
             {tx.receipt_image_url ? (
-              <a href={tx.receipt_image_url} target="_blank" rel="noopener noreferrer" className="block rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
-                <img src={tx.receipt_image_url} alt={t('transactions.receiptImage')} className="w-full max-h-[320px] object-contain" style={{ background: 'var(--color-input-filled-background)' }} />
-              </a>
+              <ReceiptImage value={tx.receipt_image_url} alt={t('transactions.receiptImage')} />
             ) : (
               <div className="rounded-[12px] p-8 flex flex-col items-center gap-2" style={{ border: '1.5px dashed var(--color-outline)' }}>
                 <Receipt size={24} style={{ color: 'var(--color-text-secondary)' }} />
@@ -159,5 +158,16 @@ export function TransactionDetailPage() {
         onClose={() => setConfirmDeleteOpen(false)}
       />
     </div>
+  );
+}
+
+/** The receipt, read as the signed-in user; clicking it opens the full image. */
+function ReceiptImage({ value, alt }: { value: string; alt: string }) {
+  const src = useStoredFileSrc(value);
+  const openFile = useOpenStoredFile();
+  return (
+    <button type="button" onClick={() => openFile(value)} className="block w-full rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
+      <img src={src ?? undefined} alt={alt} className="w-full max-h-[320px] object-contain" style={{ background: 'var(--color-input-filled-background)' }} />
+    </button>
   );
 }

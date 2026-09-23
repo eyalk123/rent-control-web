@@ -656,6 +656,7 @@
     "filter": "סינון",
     "all": "הכול",
     "download": "הורד",
+    "fileOpenFailed": "לא ניתן לפתוח את הקובץ. נסו שוב.",
     "cardsView": "כרטיסיות",
     "tableView": "טבלה",
     "perMonth": "/חודש",

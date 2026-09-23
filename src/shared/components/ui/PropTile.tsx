@@ -1,6 +1,6 @@
 import { Building2 } from 'lucide-react';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
-import { getPropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
+import { usePropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
 
 interface PropTileProps {
   propertyId: number;
@@ -18,7 +18,7 @@ export function PropTile({ propertyId, imageUrl, size = 56, width, height, fit =
   const w = width ?? size;
   const h = height ?? size;
   const iconSize = Math.round(Math.min(w, h) * 0.45);
-  const imageSrc = getPropertyImageSrc(imageUrl);
+  const imageSrc = usePropertyImageSrc(imageUrl);
 
   return (
     <div
