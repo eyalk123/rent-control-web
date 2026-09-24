@@ -4,11 +4,13 @@
 # renders nothing useful to a crawler.
 #
 # Crawling is allowed by default, so only the app routes are listed. Keep this list in
-# step with the protected subtree in src/App.tsx when adding a page there.
+# step with the protected subtree in src/App.tsx when adding a page there. The one Allow
+# line only makes /licenses explicit; it would be crawlable without it.
 #
 # No Sitemap line yet: there is no sitemap.xml, and the final domain is not decided.
 
 User-agent: *
+Allow: /licenses
 Disallow: /sign-in
 Disallow: /home
 Disallow: /properties

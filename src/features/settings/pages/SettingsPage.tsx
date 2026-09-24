@@ -467,6 +467,10 @@ export function SettingsPage() {
             <SettingRow
               label={t('legal.accessibility')}
               control={<Link to="/accessibility" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
+            />
+            <SettingRow
+              label={t('licenses.title')}
+              control={<Link to="/licenses" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
               last
             />
           </SettingsSection>

@@ -6,8 +6,9 @@ property of their respective authors and are used under the licenses named besid
 them; they are not owned by the operator of the service. Copyright and permission
 notices distributed with each component are retained in the deployed artifacts.
 
-The full text of every license listed here, and the copyright notice of any
-individual component, is available on request at eyalkook@gmail.com.
+The full text of every license listed here is published at
+https://rentvance.app/licenses. The copyright notice of each individual component
+is distributed with that component.
 
 This list is generated from the dependency manifests, not maintained by hand.
 To regenerate it:

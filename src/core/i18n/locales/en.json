@@ -14,6 +14,15 @@
     "gateError": "We couldn't record your acceptance. Please try again.",
     "refundPolicy": "Refund Policy"
   },
+  "licenses": {
+    "title": "Open source licenses",
+    "intro": "RentVance is built on open source software. The components below belong to their respective authors and are used under the licenses named beside them. Open a component to read its license.",
+    "textsNote": "License texts are shown as published, in English.",
+    "sectionClient": "Web and mobile apps",
+    "sectionBackend": "Server",
+    "componentCount_one": "{{count}} component",
+    "componentCount_other": "{{count}} components"
+  },
   "a11y": {
     "openMenu": "Accessibility menu",
     "title": "Accessibility",

@@ -35,6 +35,11 @@ export const CONTACT_EMAIL = 'eyalkook@gmail.com';
 const UPDATED_EN = 'June 9, 2026';
 const UPDATED_HE = '9 ביוני 2026';
 
+// The Refund & Cancellation Policy was revised after the other documents, so it carries its
+// own date rather than restating theirs.
+const REFUND_UPDATED_EN = 'September 23, 2026';
+const REFUND_UPDATED_HE = '23 בספטמבר 2026';
+
 /**
  * Machine-readable document versions — what gets stored against a user's acceptance.
  *
@@ -519,7 +524,7 @@ export const accessibilityContent: Localized<LegalDoc> = {
 export const refundContent: Localized<LegalDoc> = {
   en: {
     title: 'Refund & Cancellation Policy',
-    lastUpdated: UPDATED_EN,
+    lastUpdated: REFUND_UPDATED_EN,
     intro: [
       `This policy explains how RentVance subscriptions renew, how to cancel one, and when a refund is available. It applies alongside our Terms of Service.`,
     ],
@@ -550,8 +555,9 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '4. Refunds',
         paragraphs: [
-          'If you are unhappy with a paid plan, contact us within 14 days of the charge and we will refund it in full. After 14 days we do not refund the remainder of a period that has already started, but you can cancel at any time to stop the next renewal.',
-          'Purchases made in the iPhone, iPad or Android apps are sold by Apple and Google, and only they can issue a refund for them. Apple handles refund requests at reportaproblem.apple.com; Google handles them through the Play Store. Contact us anyway if you need help — we will point you to the right place.',
+          'Bought on the web: contact us within 14 days of a charge and we will refund it in full. After 14 days, a monthly subscription is not refunded for a period that has already started. After 14 days, a yearly subscription is refunded pro rata for the whole months not yet used, counted from the date you cancel. Refunds are issued through Paddle to the original payment method.',
+          'Bought in the iPhone, iPad or Android apps: only Apple and Google can issue a refund for those purchases, under their own policies, and the rules above do not apply to them. Apple handles refund requests at reportaproblem.apple.com; Google handles them through the Play Store. Contact us anyway if you need help — we will point you to the right place.',
+          'None of this limits any right to cancel or to a refund that the law gives you.',
         ],
       },
       {
@@ -575,7 +581,7 @@ export const refundContent: Localized<LegalDoc> = {
   },
   he: {
     title: 'מדיניות ביטול והחזרים',
-    lastUpdated: UPDATED_HE,
+    lastUpdated: REFUND_UPDATED_HE,
     intro: [
       'מדיניות זו מסבירה כיצד מתחדשים מנויי RentVance, כיצד לבטל מנוי, ומתי ניתן לקבל החזר כספי. היא חלה לצד תנאי השימוש שלנו.',
     ],
@@ -606,8 +612,9 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '4. החזרים כספיים',
         paragraphs: [
-          'אם אינך מרוצה מתוכנית בתשלום, פנה אלינו בתוך 14 יום ממועד החיוב ונחזיר את מלוא הסכום. לאחר 14 יום איננו מחזירים את יתרת התקופה שכבר החלה, אך ניתן לבטל בכל עת כדי לעצור את החידוש הבא.',
-          'רכישות שבוצעו באפליקציות iPhone,‏ iPad או Android נמכרות על ידי Apple ו־Google, ורק הן יכולות להנפיק עבורן החזר. Apple מטפלת בבקשות בכתובת reportaproblem.apple.com, ו־Google מטפלת בהן דרך חנות Play. פנה אלינו בכל מקרה אם נדרשת עזרה — ננווט אותך למקום הנכון.',
+          'רכישה באתר: פנה אלינו בתוך 14 יום ממועד החיוב ונחזיר את מלוא הסכום. לאחר 14 יום, במנוי חודשי — אין החזר על תקופה שכבר החלה. לאחר 14 יום, במנוי שנתי — יינתן החזר יחסי עבור החודשים המלאים שטרם נוצלו, ממועד הביטול. ההחזר מבוצע דרך Paddle לאמצעי התשלום המקורי.',
+          'רכישה באפליקציה (iPhone,‏ iPad או Android): רק Apple ו־Google יכולות להנפיק החזר עבור רכישות אלו, בהתאם למדיניות שלהן, והכללים שלמעלה אינם חלים עליהן. Apple מטפלת בבקשות בכתובת reportaproblem.apple.com, ו־Google מטפלת בהן דרך חנות Play. פנה אלינו בכל מקרה אם נדרשת עזרה — ננווט אותך למקום הנכון.',
+          'אין באמור כדי לגרוע מזכות ביטול או החזר הנתונה לך על פי דין.',
         ],
       },
       {

@@ -4,6 +4,18 @@ import { test, expect } from './fixtures';
 // cites renter 1, so the Sources chip and thread history are exercised without a backend.
 
 test.describe('portfolio chat agent', () => {
+  // The mock account is on the free plan, which locks the assistant. These specs are about
+  // the chat itself, so they run on a paid plan (read by the mock at load, see MOCK_PLAN_KEY).
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('mock.plan', 'tier_3_8');
+      } catch {
+        /* ignore */
+      }
+    });
+  });
+
   test('opens, streams an answer with a tappable source, and reopens from history', async ({
     page,
   }) => {

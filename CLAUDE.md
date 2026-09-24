@@ -91,7 +91,7 @@ Sentry (prod only). Backend: FastAPI.
   `src/shared/components/form/`.
 - Auth: a `401` response auto-signs-out the user via the Axios response interceptor in
   `src/core/api/client.ts`. Public routes (`/`, `/pricing`, `/contact`, `/sign-in`,
-  `/privacy`, `/terms`, `/accessibility`, `/refunds`) render outside `ProtectedRoute`; everything else
+  `/privacy`, `/terms`, `/accessibility`, `/refunds`, `/licenses`) render outside `ProtectedRoute`; everything else
   is inside `AppShell`.
   - `/` is `LandingGate`: the marketing page for visitors, a redirect to `/home` for a
     signed-in user. The protected subtree is therefore a **pathless layout route** and its
@@ -107,6 +107,10 @@ Sentry (prod only). Backend: FastAPI.
     `CONTACT_EMAIL` from `features/legal/legalContent.ts` rather than restating it.
     `public/robots.txt` allows these pages and lists only the authenticated routes — extend
     that list when adding a protected page.
+  - `/licenses` is built from `public/third-party-notices.txt` at build time by
+    `build-plugins/thirdPartyNotices.ts`; the license bodies are the SPDX texts in
+    `build-plugins/license-texts/`. The build fails if that file stops parsing or names a
+    license with no text there — add the SPDX file, do not relax the check.
   **One exception:** `features/agent/api/agentStream.ts` uses raw `fetch`, so it misses that
   interceptor and throws a typed `AgentHttpError` instead — any other streaming call must
   handle its own `401`/`429`/`503` the same way.

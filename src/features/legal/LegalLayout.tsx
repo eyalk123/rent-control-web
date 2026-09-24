@@ -23,6 +23,37 @@ export function LegalLinks({ className, style }: { className?: string; style?: R
 
 /** Full-page layout for a single legal document. */
 export function LegalLayout({ doc }: { doc: LegalDoc }) {
+  return (
+    <LegalPageShell title={doc.title} lastUpdated={doc.lastUpdated}>
+      <div className="mt-6 flex flex-col gap-3">
+        {doc.intro.map((p, i) => (
+          <p key={i} className="text-[14.5px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
+        ))}
+      </div>
+
+      <div className="mt-8 flex flex-col gap-7">
+        {doc.sections.map((section) => (
+          <section key={section.heading}>
+            <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>{section.heading}</h2>
+            {section.paragraphs?.map((p, i) => (
+              <p key={i} className="text-[14.5px] leading-relaxed mb-2" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
+            ))}
+            {section.bullets && (
+              <ul className="flex flex-col gap-1.5 mt-1 ps-5" style={{ listStyleType: 'disc' }}>
+                {section.bullets.map((b, i) => (
+                  <li key={i} className="text-[14.5px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{b}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
+      </div>
+    </LegalPageShell>
+  );
+}
+
+/** Header, title and footer shared by every public legal page; the body is the caller's. */
+export function LegalPageShell({ title, lastUpdated, children }: { title: string; lastUpdated: string; children: React.ReactNode }) {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
 
@@ -58,34 +89,12 @@ export function LegalLayout({ doc }: { doc: LegalDoc }) {
 
       {/* Document */}
       <main className="mx-auto max-w-[760px] px-6 py-10">
-        <h1 className="text-[28px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{doc.title}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{title}</h1>
         <p className="mt-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
-          {t('legal.lastUpdated')}: {doc.lastUpdated}
+          {t('legal.lastUpdated')}: {lastUpdated}
         </p>
 
-        <div className="mt-6 flex flex-col gap-3">
-          {doc.intro.map((p, i) => (
-            <p key={i} className="text-[14.5px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
-          ))}
-        </div>
-
-        <div className="mt-8 flex flex-col gap-7">
-          {doc.sections.map((section) => (
-            <section key={section.heading}>
-              <h2 className="text-[17px] font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>{section.heading}</h2>
-              {section.paragraphs?.map((p, i) => (
-                <p key={i} className="text-[14.5px] leading-relaxed mb-2" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
-              ))}
-              {section.bullets && (
-                <ul className="flex flex-col gap-1.5 mt-1 ps-5" style={{ listStyleType: 'disc' }}>
-                  {section.bullets.map((b, i) => (
-                    <li key={i} className="text-[14.5px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{b}</li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          ))}
-        </div>
+        {children}
 
         {/* Footer */}
         <footer className="mt-12 pt-6 flex flex-wrap items-center gap-x-2 gap-y-2 text-[13px]" style={{ borderTop: '1px solid var(--color-outline)' }}>

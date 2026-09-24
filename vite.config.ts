@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import path from 'path'
+import { thirdPartyNotices } from './build-plugins/thirdPartyNotices'
 
 // Source-map upload is opt-in on the credentials being present. CI injects no secrets,
 // so the plugin is absent there and the build stays byte-identical to a plain build.
@@ -29,6 +30,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    thirdPartyNotices(),
     ...(uploadSourcemaps
       ? [
           sentryVitePlugin({

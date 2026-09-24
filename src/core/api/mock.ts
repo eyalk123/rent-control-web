@@ -1177,11 +1177,11 @@ let _agentMsgId = 1;
  * shows, and the states worth being able to look at without a backend are the ones that
  * are awkward to reach on purpose — locked badges, a spent quota, a paywalled feature.
  *
- * `rentvanceMockPlan('tier_9_15')` in the console switches plan for a session.
+ * `rentvanceMockPlan('tier_9_15')` in the console switches plan for a session. The plan is
+ * read once at module load from `MOCK_PLAN_KEY`, which that helper writes and an e2e spec
+ * can set in `addInitScript` — otherwise the reload the helper asks for would reset it.
  */
-let _mockPlan: Subscription['plan'] = 'free';
-let _mockLockNoticeSeen = false;
-let _mockScansUsed = 2;
+export const MOCK_PLAN_KEY = 'mock.plan';
 
 const _MOCK_LIMITS: Record<Subscription['plan'], { limit: number | null; scans: number | null; agent: boolean }> = {
   free: { limit: 2, scans: 3, agent: false },
@@ -1189,6 +1189,17 @@ const _MOCK_LIMITS: Record<Subscription['plan'], { limit: number | null; scans: 
   tier_9_15: { limit: 15, scans: null, agent: true },
   tier_16_plus: { limit: null, scans: null, agent: true },
 };
+
+let _mockPlan: Subscription['plan'] = (() => {
+  try {
+    const stored = localStorage.getItem(MOCK_PLAN_KEY);
+    return stored && stored in _MOCK_LIMITS ? (stored as Subscription['plan']) : 'free';
+  } catch {
+    return 'free';
+  }
+})();
+let _mockLockNoticeSeen = false;
+let _mockScansUsed = 2;
 
 export const mockSubscriptionApi = {
   get: async (): Promise<Subscription> => {
@@ -1225,6 +1236,11 @@ if (typeof window !== 'undefined') {
     scansUsed?: number,
   ) => {
     _mockPlan = plan;
+    try {
+      localStorage.setItem(MOCK_PLAN_KEY, plan);
+    } catch {
+      /* ignore */
+    }
     if (scansUsed !== undefined) _mockScansUsed = scansUsed;
     _mockLockNoticeSeen = false;
     return `mock plan: ${plan}, scans used: ${_mockScansUsed} — reload to apply`;

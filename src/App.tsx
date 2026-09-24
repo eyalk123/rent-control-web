@@ -31,6 +31,7 @@ const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolic
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
 const RefundPolicyPage = lazy(() => import('@/features/legal/pages/RefundPolicyPage').then((m) => ({ default: m.RefundPolicyPage })));
+const OpenSourceLicensesPage = lazy(() => import('@/features/legal/pages/OpenSourceLicensesPage').then((m) => ({ default: m.OpenSourceLicensesPage })));
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })));
 const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage').then((m) => ({ default: m.ContactPage })));
@@ -107,6 +108,7 @@ const router = createBrowserRouter([
       { path: '/terms', element: <TermsOfServicePage />, errorElement: <RouteErrorPage /> },
       { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
       { path: '/refunds', element: <RefundPolicyPage />, errorElement: <RouteErrorPage /> },
+      { path: '/licenses', element: <OpenSourceLicensesPage />, errorElement: <RouteErrorPage /> },
       // Public marketing pages. `/` serves the landing page to visitors and redirects
       // signed-in users to /home — see LandingGate.
       { path: '/', element: <LandingGate />, errorElement: <RouteErrorPage /> },

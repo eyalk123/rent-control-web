@@ -129,7 +129,7 @@ test.describe('onboarding — first run', () => {
       'The month so far',
       'Quick actions',
       'Needs attention',
-      'Reminder settings',
+      'The same three, on your terms',
       'Occupancy',
       'Recent activity',
     ];
@@ -168,7 +168,7 @@ test.describe('onboarding — first run', () => {
     await expect(manage).toBeVisible();
 
     for (let i = 0; i < 4; i++) await card.getByRole('button', { name: 'Next' }).click();
-    await expect(card.getByText('Reminder settings')).toBeVisible();
+    await expect(card.getByText('The same three, on your terms')).toBeVisible();
 
     await expect
       .poll(() =>
