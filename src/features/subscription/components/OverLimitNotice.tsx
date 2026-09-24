@@ -85,7 +85,7 @@ export function OverLimitNotice() {
 
         <div className="mt-3.5 flex flex-wrap items-center gap-3">
           <Link
-            to="/settings/subscription"
+            to="/plans"
             className="h-9 px-4 flex items-center rounded-[9px] text-[13.5px] font-semibold"
             style={{
               background: 'var(--color-primary)',

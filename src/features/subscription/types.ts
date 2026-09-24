@@ -18,6 +18,8 @@ export interface Subscription {
   /** Inclusive property ceiling. `null` is unlimited, **never** zero. */
   limit: number | null;
   property_count: number;
+  /** The cheapest plan that covers `property_count` — what a plan picker highlights. */
+  required_plan: PlanId;
 
   /** Over the ceiling: readable, not writable. */
   locked_property_ids: number[];

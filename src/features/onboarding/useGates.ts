@@ -12,9 +12,9 @@
  * to point at drop themselves through `skipWhen: 'noProperties'` and its siblings.
  *
  * Where mobile reads two global contexts, web reads the React Query cache *passively*.
- * `skipToken` subscribes this hook to the properties and renters entries without ever
- * issuing a request, which matters because the controller is mounted in AppShell and so
- * runs on every route: calling `useProperties()` here would put two extra fetches on
+ * `useCachedQueryData` subscribes this hook to the properties and renters entries without
+ * ever issuing a request, which matters because the controller is mounted in AppShell and
+ * so runs on every route: calling `useProperties()` here would put two extra fetches on
  * every page load, forever, on behalf of a feature that is finished after the first week
  * of an account's life.
  *
@@ -24,8 +24,8 @@
  * once a page has populated the cache. It never fires against a list that merely looks
  * empty.
  */
-import { skipToken, useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { hashKey, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useCallback, useSyncExternalStore } from 'react';
 import { propertyKeys } from '@/features/properties/queries';
 import { renterKeys } from '@/features/renters/queries';
 import { transactionKeys } from '@/features/transactions/queries';
@@ -33,6 +33,29 @@ import type { Property, Renter } from '@/shared/types';
 import { useCountryConfig, useMyCountry } from '@/features/country/queries';
 import type { Capabilities } from '@/shared/utils/capabilities';
 import type { GateId } from './types';
+
+/**
+ * Read a cache entry without becoming one of its observers.
+ *
+ * This used to be `useQuery({ queryFn: skipToken })`, which is the documented way to do it
+ * and has a hole: every render of an observer writes its options onto the shared query,
+ * and a retry re-reads the query's `queryFn` when it runs. So when the renters list failed
+ * once, the tour re-rendering during the backoff swapped in `skipToken`, and the retry that
+ * should have recovered threw "Missing queryFn" instead (Sentry RENT-CONTROL-WEB-8). This
+ * subscribes to the cache itself, so there is no observer and nothing to overwrite.
+ */
+function useCachedQueryData<T>(queryKey: QueryKey): T | undefined {
+  const qc = useQueryClient();
+  const hash = hashKey(queryKey);
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      qc.getQueryCache().subscribe((event) => {
+        if (event.query.queryHash === hash) onChange();
+      }),
+    [qc, hash],
+  );
+  return useSyncExternalStore(subscribe, () => qc.getQueryCache().get<T>(hash)?.state.data);
+}
 
 /** How many items a list needs before the bulk-select hint is worth showing. */
 export const BULK_SELECT_MIN_ITEMS = 3;
@@ -52,9 +75,9 @@ export interface GateInputs {
  * instead, within the same anchor deadline.
  */
 export function useGateKnown() {
-  const { data: properties } = useQuery({ queryKey: propertyKeys.all, queryFn: skipToken });
-  const { data: renters } = useQuery({ queryKey: renterKeys.all, queryFn: skipToken });
-  const { data: ledger } = useQuery({ queryKey: transactionKeys.list({}), queryFn: skipToken });
+  const properties = useCachedQueryData(propertyKeys.all);
+  const renters = useCachedQueryData(renterKeys.all);
+  const ledger = useCachedQueryData(transactionKeys.list({}));
 
   return useCallback(
     (gate: GateId): boolean => {
@@ -80,9 +103,9 @@ export function useGateKnown() {
 }
 
 export function useGates() {
-  const { data: properties } = useQuery({ queryKey: propertyKeys.all, queryFn: skipToken });
-  const { data: renters } = useQuery({ queryKey: renterKeys.all, queryFn: skipToken });
-  const { data: ledger } = useQuery({ queryKey: transactionKeys.list({}), queryFn: skipToken });
+  const properties = useCachedQueryData(propertyKeys.all);
+  const renters = useCachedQueryData(renterKeys.all);
+  const ledger = useCachedQueryData(transactionKeys.list({}));
 
   const propertyCount = (properties as Property[] | undefined)?.length;
   const renterCount = (renters as Renter[] | undefined)?.length;

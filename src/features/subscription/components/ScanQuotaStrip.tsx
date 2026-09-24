@@ -59,7 +59,7 @@ export function ScanQuotaStrip() {
               {t('subscription.scanLimit.resets', { date: nextMonthLabel(i18n.language) })}
             </p>
             <Link
-              to="/settings/subscription"
+              to="/plans"
               className="mt-1.5 inline-block text-[13px] font-semibold hover:underline"
               style={{ color: 'var(--color-primary)', textDecoration: 'none' }}
             >

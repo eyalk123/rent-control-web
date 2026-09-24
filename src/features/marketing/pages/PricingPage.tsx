@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
+import { useAppAuth } from '@/core/auth/AuthContext';
 import { MarketingHeader, MarketingFooter } from '../components/MarketingChrome';
 import {
   PAID_TIERS,
@@ -17,6 +18,7 @@ const INCLUDED = ['ledger', 'leases', 'reports', 'reminders', 'documents', 'bili
 export function PricingPage() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
+  const { isSignedIn } = useAppAuth();
 
   const free = TIERS[0];
   // Every paid tier is discounted identically, so one figure describes the whole yearly
@@ -92,7 +94,7 @@ export function PricingPage() {
             </p>
           </div>
           <Link
-            to="/sign-in"
+            to={isSignedIn ? '/home' : '/sign-in'}
             className="h-10 px-5 flex items-center rounded-[9px] text-[14px] font-semibold shrink-0"
             style={{
               background: 'transparent',
@@ -144,12 +146,14 @@ export function PricingPage() {
 
                 <p className="mt-1.5 text-[13px] min-h-[18px]" style={{ color: 'var(--color-text-secondary)' }}>
                   {period === 'yearly' && perMonth !== null
-                    ? t('marketing.pricing.perMonthEquivalent', { amount: perMonth })
+                    ? t('marketing.pricing.perMonthEquivalent', { amount: perMonth.toFixed(2) })
                     : ''}
                 </p>
 
+                {/* Signed in, the choice goes to the in-app picker and survives the jump.
+                    Sending a signed-in landlord to /sign-in showed them a login form. */}
                 <Link
-                  to="/sign-in"
+                  to={isSignedIn ? `/plans?plan=${tier.plan}&period=${period}` : '/sign-in'}
                   className="mt-5 h-10 flex items-center justify-center rounded-[9px] text-[14px] font-semibold"
                   style={{
                     background: 'var(--color-primary)',

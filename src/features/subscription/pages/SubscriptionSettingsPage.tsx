@@ -55,7 +55,7 @@ export function SubscriptionSettingsPage() {
 
           {data.plan === 'free' && (
             <Link
-              to="/pricing"
+              to="/plans"
               className="h-10 px-5 flex items-center gap-2 rounded-[9px] text-[14px] font-semibold shrink-0"
               style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)', textDecoration: 'none' }}
             >

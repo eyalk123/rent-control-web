@@ -6,6 +6,15 @@ import { LegalPageShell } from '../LegalLayout';
 
 type NoticePackage = (typeof notices.sections)[number]['packages'][number];
 
+// The license bodies are a separate chunk (hundreds of kB), fetched the first time any
+// component is opened and shared by every row after that.
+let loadedTexts: string[] | undefined;
+let textsRequest: Promise<string[]> | undefined;
+function loadTexts(): Promise<string[]> {
+  textsRequest ??= import('virtual:third-party-notices/texts').then((m) => (loadedTexts = m.default));
+  return textsRequest;
+}
+
 // The notices file names its sections in English capitals; these are the ones it has today.
 // A section added later still renders, under the file's own heading.
 function sectionKey(title: string): string | undefined {
@@ -17,10 +26,26 @@ function sectionKey(title: string): string | undefined {
 function PackageRow({ pkg }: { pkg: NoticePackage }) {
   // License bodies render only once opened — 1,000+ packages each carrying a full text would
   // put megabytes of hidden text in the DOM.
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [texts, setTexts] = useState(loadedTexts);
+  const [failed, setFailed] = useState(false);
+
+  const onToggle = (e: React.SyntheticEvent<HTMLDetailsElement>) => {
+    const isOpen = e.currentTarget.open;
+    setOpen(isOpen);
+    if (isOpen && !texts) {
+      setFailed(false);
+      loadTexts().then(setTexts, () => {
+        textsRequest = undefined; // let the next open retry
+        setFailed(true);
+      });
+    }
+  };
+
   return (
     <details
-      onToggle={(e) => setOpen(e.currentTarget.open)}
+      onToggle={onToggle}
       style={{ borderBottom: '1px solid var(--color-outline)' }}
     >
       <summary
@@ -41,14 +66,28 @@ function PackageRow({ pkg }: { pkg: NoticePackage }) {
       </summary>
       {open && (
         <div dir="ltr" className="flex flex-col gap-3 pb-3">
-          {pkg.licenseIds.map((id) => (
-            <pre
-              key={id}
-              className="max-h-[360px] overflow-auto whitespace-pre-wrap rounded-[8px] p-3 font-mono text-[12px] leading-relaxed"
-              style={{ background: 'var(--color-surface)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-outline)' }}
-            >
-              {notices.texts[id]}
-            </pre>
+          {failed && (
+            <p dir="auto" className="text-[13px]" style={{ color: 'var(--color-error)' }}>{t('licenses.loadError')}</p>
+          )}
+          {!failed && !texts && (
+            <p dir="auto" className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('licenses.loading')}</p>
+          )}
+          {texts && pkg.texts.map((ref) => (
+            <div key={ref.label} className="flex flex-col gap-1">
+              <p dir="auto" className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                {ref.standard ? t('licenses.standardText', { license: ref.label }) : ref.label}
+              </p>
+              <pre
+                className="max-h-[360px] overflow-auto whitespace-pre-wrap rounded-[8px] p-3 font-mono text-[12px] leading-relaxed"
+                style={{
+                  background: 'var(--color-surface)',
+                  color: 'var(--color-text-secondary)',
+                  border: ref.standard ? '1px dashed var(--color-outline)' : '1px solid var(--color-outline)',
+                }}
+              >
+                {texts[ref.text]}
+              </pre>
+            </div>
           ))}
         </div>
       )}

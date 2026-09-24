@@ -21,7 +21,10 @@
     "sectionClient": "Web and mobile apps",
     "sectionBackend": "Server",
     "componentCount_one": "{{count}} component",
-    "componentCount_other": "{{count}} components"
+    "componentCount_other": "{{count}} components",
+    "standardText": "Standard {{license}} text — this package ships no license file of its own",
+    "loading": "Loading license…",
+    "loadError": "The license text could not be loaded. Close and reopen to try again."
   },
   "a11y": {
     "openMenu": "Accessibility menu",
@@ -1960,7 +1963,9 @@
       },
       "notEnforced": "Plan limits are not being applied yet. Nothing is restricted.",
       "upgrade": "See plans",
-      "lockedList": "Read-only properties"
+      "lockedList": "Read-only properties",
+      "rowLabel": "Plan & billing",
+      "rowHint": "What your plan includes and what you have used"
     },
     "scanLimit": {
       "remaining_one": "{{count}} AI lease scan left this month",
@@ -1974,6 +1979,37 @@
       "heading": "Ask RentVance is on paid plans",
       "body": "Ask questions about your portfolio in plain language — which leases end soon, what a property earned last year, who is behind on rent.",
       "cta": "See plans"
+    },
+    "plans": {
+      "title": "Choose your plan",
+      "subtitle": "Plans are priced by how many properties you hold. Everything else is the same on every paid plan.",
+      "portfolio_one": "You have {{count}} property.",
+      "portfolio_other": "You have {{count}} properties.",
+      "recommendedHint": "The {{plan}} plan covers all of them.",
+      "recommended": "Covers all your properties.",
+      "tooSmall_one": "Holds up to {{max}} properties, so 1 of yours would stay read-only.",
+      "tooSmall_other": "Holds up to {{max}} properties, so {{count}} of yours would stay read-only.",
+      "current": "Your plan",
+      "choose": "Choose this plan",
+      "checkoutSoon": "Online checkout opens soon",
+      "includes": "Every paid plan includes unlimited AI lease scans and {{assistant}}.",
+      "included": "Your account includes the {{plan}} plan at no cost.",
+      "webManaged": "You subscribed on the web. To change plans, email us at {{email}}. Changing plans online opens soon."
+    },
+    "pay": {
+      "loadingTitle": "Opening secure checkout",
+      "loadingBody": "Your payment opens in a moment. It is handled by Paddle, our payment provider.",
+      "openTitle": "Complete your payment",
+      "openBody": "Finish in the checkout window. It is run by Paddle, our payment provider.",
+      "doneTitle": "Payment received",
+      "doneBody": "Thank you. Your plan is up to date, and you will get a receipt from Paddle by email.",
+      "closedTitle": "Checkout closed",
+      "closedBody": "Nothing was charged. To try again, open the link from your email again, or write to us at {{email}}.",
+      "noTransactionTitle": "Nothing to pay here",
+      "noTransactionBody": "This page opens payment links from RentVance emails. To choose or change a plan, sign in to RentVance.",
+      "unavailableTitle": "Checkout is unavailable right now",
+      "unavailableBody": "Please try again in a few minutes. If it keeps happening, write to us at {{email}}.",
+      "goToApp": "Go to RentVance"
     }
   }
 }

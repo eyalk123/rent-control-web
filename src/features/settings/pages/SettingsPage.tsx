@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as Sentry from '@sentry/react';
-import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download, Sparkles, MessageSquare } from 'lucide-react';
+import { LogOut, Trash2, Sun, Globe, User, Shield, Info, FileText, Bell, Download, Sparkles, MessageSquare, CreditCard } from 'lucide-react';
 import { useTheme, type ThemeMode } from '@/hooks/useTheme';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { useAppAuth } from '@/core/auth/AuthContext';
@@ -222,6 +222,7 @@ export function SettingsPage() {
       ? [{ key: 'tours', label: t('onboarding.ui.sectionTitle'), icon: Sparkles }]
       : []),
     { key: 'data', label: t('settings.navData'), icon: Shield },
+    { key: 'billing', label: t('subscription.settings.title'), icon: CreditCard },
     { key: 'feedback', label: t('feedback.navLabel'), icon: MessageSquare },
     { key: 'legal', label: t('legal.sectionTitle'), icon: FileText },
     { key: 'about', label: t('settings.navAbout'), icon: Info },
@@ -433,6 +434,18 @@ export function SettingsPage() {
               last
             />
             {/* "Export data" row hidden until the export feature is implemented (S3). */}
+          </SettingsSection>
+
+          {/* Plan & billing. Links out rather than rendering the plan here: the status page
+              and the picker are each reached from several places, and a second copy of
+              either in Settings would drift from them. */}
+          <SettingsSection id="billing" title={t('subscription.settings.title')}>
+            <SettingRow
+              label={t('subscription.settings.rowLabel')}
+              hint={t('subscription.settings.rowHint')}
+              control={<Link to="/settings/subscription" className={legalLinkClass} style={legalLinkStyle}>{t('legal.open')}</Link>}
+              last
+            />
           </SettingsSection>
 
           {/* Legal & Privacy */}

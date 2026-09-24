@@ -95,7 +95,7 @@ function AgentLockedState() {
         {t('subscription.agentLocked.body')}
       </p>
       <Link
-        to="/settings/subscription"
+        to="/plans"
         className="mt-6 h-10 px-5 flex items-center rounded-[9px] text-[14px] font-semibold"
         style={{
           background: 'var(--color-primary)',

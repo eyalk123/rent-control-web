@@ -11,12 +11,22 @@ declare module 'virtual:third-party-notices' {
         version: string;
         /** The license as the file declares it, e.g. "(MIT AND Zlib)". */
         license: string;
-        /** Keys into `texts`, one per license the declaration names. */
-        licenseIds: string[];
+        texts: {
+          /** The shipped file's name, e.g. "LICENSE", or the SPDX identifier of a standard text. */
+          label: string;
+          /** True when the package ships no license file and this is the canonical SPDX text. */
+          standard: boolean;
+          /** Index into `virtual:third-party-notices/texts`. */
+          text: number;
+        }[];
       }[];
     }[];
-    /** Canonical SPDX license text, by identifier. */
-    texts: Record<string, string>;
   };
   export default notices;
+}
+
+declare module 'virtual:third-party-notices/texts' {
+  /** Every distinct license text, referenced by index from `virtual:third-party-notices`. */
+  const texts: string[];
+  export default texts;
 }

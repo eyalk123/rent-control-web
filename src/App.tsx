@@ -36,6 +36,8 @@ const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').
 const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
 const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage').then((m) => ({ default: m.ContactPage })));
 const SubscriptionSettingsPage = lazy(() => import('@/features/subscription/pages/SubscriptionSettingsPage').then((m) => ({ default: m.SubscriptionSettingsPage })));
+const PlansPage = lazy(() => import('@/features/subscription/pages/PlansPage').then((m) => ({ default: m.PlansPage })));
+const PayPage = lazy(() => import('@/features/subscription/pages/PayPage').then((m) => ({ default: m.PayPage })));
 
 // HTTP failures are owned by the axios response interceptor (src/core/api/client.ts) —
 // it sees every request, including the ones that never go through react-query. These
@@ -113,6 +115,9 @@ const router = createBrowserRouter([
       // signed-in users to /home — see LandingGate.
       { path: '/', element: <LandingGate />, errorElement: <RouteErrorPage /> },
       { path: '/pricing', element: <PricingPage />, errorElement: <RouteErrorPage /> },
+      // Paddle's default payment link. Public because dunning and "update payment method"
+      // emails land here signed out, and a sign-in redirect would drop `?_ptxn`.
+      { path: '/pay', element: <PayPage />, errorElement: <RouteErrorPage /> },
       { path: '/contact', element: <ContactPage />, errorElement: <RouteErrorPage /> },
       {
         // Pathless layout route: it contributes the auth guard and the app shell without
@@ -139,6 +144,7 @@ const router = createBrowserRouter([
           { path: '/settings', element: <SettingsPage /> },
           { path: '/settings/notifications', element: <NotificationsSettingsPage /> },
           { path: '/settings/subscription', element: <SubscriptionSettingsPage /> },
+          { path: '/plans', element: <PlansPage /> },
         ],
       },
     ],

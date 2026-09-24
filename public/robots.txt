@@ -19,3 +19,5 @@ Disallow: /transactions
 Disallow: /suppliers
 Disallow: /reports
 Disallow: /settings
+Disallow: /plans
+Disallow: /pay
