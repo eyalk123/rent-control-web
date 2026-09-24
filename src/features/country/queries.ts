@@ -159,8 +159,8 @@ export function useCountryConfig(countryCode: string | null): Country | undefine
  * before any of this existed — so there is no wrong-currency flash, only the old behaviour
  * for a moment.
  */
-export function useApplyCountryFormat(): void {
-  const { country } = useMyCountry();
+export function useApplyCountryFormat(enabled = true): void {
+  const { country } = useMyCountry(enabled);
   const config = useCountryConfig(country);
   const { data: currencies } = useCurrencies(Boolean(country));
   const { data: preferences } = useMyPreferences(Boolean(country));

@@ -1,5 +1,5 @@
 import { Fragment, useState, type CSSProperties } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, type Location } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -91,6 +91,10 @@ export function SignInPage() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === 'rtl';
   const navigate = useNavigate();
+  // Set by ProtectedRoute when it bounced a signed-out visitor here; router state, so it
+  // is always an in-app location and cannot be pointed at another site.
+  const from = (useLocation().state as { from?: Location } | null)?.from;
+  const returnTo = from ? `${from.pathname}${from.search}${from.hash}` : '/home';
   const [mode, setMode] = useState<Mode>('login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -128,7 +132,7 @@ export function SignInPage() {
         setLoading(false);
         return;
       }
-      navigate('/home', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (err) {
       setError(firebaseErrorMessage(err, t));
     } finally {
@@ -156,7 +160,7 @@ export function SignInPage() {
     setGoogleLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      navigate('/home', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (err) {
       setError(firebaseErrorMessage(err, t));
     } finally {

@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAppAuth } from './AuthContext';
 import { ConsentGate } from '@/features/legal/ConsentGate';
 import { useLegalStatus } from '@/features/legal/queries';
@@ -15,6 +15,7 @@ function Spinner() {
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAppAuth();
+  const location = useLocation();
   // Every protected route is a child of this component, so checking here covers all of
   // them by construction — no page has to remember to opt in. Gated on a signed-in user:
   // an unauthenticated call would 401, and the api client reads a 401 as an expired
@@ -27,11 +28,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const country = useMyCountry(isLoaded && isSignedIn && !legal.blocked);
   // Publishes the account's currency, date and number formats to the shared
   // formatters. Here rather than in each page: every protected route is a child of
-  // this component, so it is covered by construction.
-  useApplyCountryFormat();
+  // this component, so it is covered by construction. Gated like the queries above: on a
+  // page load it would otherwise fire /users/me before Firebase restores the session, get
+  // a 401 for the missing token, and the api client would sign the user out.
+  useApplyCountryFormat(isLoaded && isSignedIn);
 
   if (!isLoaded) return <Spinner />;
-  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+  // Carries the page they asked for, so sign-in can return them to it instead of /home.
+  if (!isSignedIn) return <Navigate to="/sign-in" replace state={{ from: location }} />;
   if (legal.pending) return <Spinner />;
   if (legal.blocked) return <ConsentGate outstanding={legal.outstanding} />;
   if (country.pending) return <Spinner />;
