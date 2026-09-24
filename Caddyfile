@@ -35,9 +35,15 @@
 		# - Paddle (script, style, frame buy./sandbox-buy., connect *.paddle.com) is for
 		#   /pay, Paddle's default payment link. Paddle publishes no CSP list; these are
 		#   the domains Paddle.js v2 loads from. A block shows in the browser console.
+		# - RevenueCat (script sdk.revenuecat-static.com, connect api.revenuecat.com and
+		#   e.revenue.cat, fonts from its CloudFront host) is the in-app checkout on
+		#   /plans; these are the domains @revenuecat/purchases-js has hardcoded.
+		# - RevenueCat (script sdk.revenuecat-static.com, connect api.revenuecat.com and
+		#   e.revenue.cat, fonts from its CloudFront host) is the in-app checkout on
+		#   /plans; the domains are the ones @revenuecat/purchases-js has hardcoded.
 		# If something breaks on first deploy, temporarily rename this header to
 		# "Content-Security-Policy-Report-Only" to diagnose without blocking.
-		Content-Security-Policy "default-src 'self'; script-src 'self' https://apis.google.com https://*.gstatic.com https://cdn.paddle.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.paddle.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' {$BACKEND_ORIGIN} https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.sentry.io https://*.paddle.com; frame-src 'self' https://*.firebaseapp.com https://*.web.app https://apis.google.com https://accounts.google.com https://buy.paddle.com https://sandbox-buy.paddle.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://apis.google.com https://*.gstatic.com https://cdn.paddle.com https://sdk.revenuecat-static.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.paddle.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com https://da08ctfrofx1b.cloudfront.net; connect-src 'self' {$BACKEND_ORIGIN} https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.sentry.io https://*.paddle.com https://api.revenuecat.com https://e.revenue.cat; frame-src 'self' https://*.firebaseapp.com https://*.web.app https://apis.google.com https://accounts.google.com https://buy.paddle.com https://sandbox-buy.paddle.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 		# Hide the server banner.
 		-Server

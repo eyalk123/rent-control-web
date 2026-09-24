@@ -113,6 +113,14 @@ Sentry (prod only). Backend: FastAPI.
     nothing. It loads Paddle.js on that page only, reads `VITE_PADDLE_CLIENT_TOKEN` (a public
     client-side token, declared as a Dockerfile build arg), and needs Paddle's domains in the
     `Caddyfile` CSP.
+  - `/plans` (protected) is the plan picker, and the only place a purchase starts. Checkout
+    is RevenueCat's Web SDK (`@revenuecat/purchases-js`, imported on demand in
+    `features/subscription/checkout.ts`) with Paddle underneath, configured with
+    `VITE_REVENUECAT_PUBLIC_KEY` (the Paddle app's public key; Dockerfile build arg) and the
+    **Firebase UID as the app user id**, which is what the webhook reads as the account.
+    Packages come from the `default` offering as `<plan>_<period>`. A finished checkout sets
+    `?checkout=pending` and polls `/subscription` until the webhook has changed the plan.
+    Without the key the buy buttons render disabled. RevenueCat's domains are in the CSP.
   - `/licenses` is built from `public/third-party-notices.txt` at build time by
     `build-plugins/thirdPartyNotices.ts`. That file is regenerated with
     `node scripts/generate-third-party-notices.mjs` (after `npm ci` here and in

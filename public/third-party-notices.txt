@@ -29,9 +29,9 @@ resolved by reading the package's own LICENSE file.
 ================================================================================
 1. CLIENT APPLICATIONS (web and mobile)
 ================================================================================
-1116 components. License breakdown:
+1117 components. License breakdown:
 
-   859  MIT
+   860  MIT
    115  Apache-2.0
     57  ISC
     36  BSD-3-Clause
@@ -374,6 +374,7 @@ resolved by reading the package's own LICENSE file.
   @react-navigation/native-stack@7.14.7                        MIT
   @react-navigation/routers@7.5.3                              MIT
   @reduxjs/toolkit@2.11.2                                      MIT
+  @revenuecat/purchases-js@1.64.0                              MIT
   @rozhkov/react-useful-hooks@1.0.10                           MIT
   @sentry-internal/browser-utils@10.12.0                       MIT
   @sentry-internal/browser-utils@10.57.0                       MIT
@@ -7359,6 +7360,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ----- END @reduxjs/toolkit@2.11.2 -----
+
+----- BEGIN @revenuecat/purchases-js@1.64.0 LICENSE -----
+License: MIT
+
+MIT License
+
+Copyright (c) 2023 RevenueCat
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+----- END @revenuecat/purchases-js@1.64.0 -----
 
 ----- BEGIN @rozhkov/react-useful-hooks@1.0.10 LICENSE -----
 License: MIT

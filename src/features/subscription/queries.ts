@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { acknowledgeLockNotice, getSubscription } from './api/subscriptionApi';
+import { CHECKOUT_AVAILABLE, loadOffering } from './checkout';
 import type { Subscription } from './types';
 
 export const subscriptionKeys = {
@@ -12,12 +13,30 @@ export const subscriptionKeys = {
  * Cached for a minute rather than indefinitely: a purchase completes out of band — the
  * webhook lands on the server, not in this tab — so a long cache would leave someone who
  * has just paid still looking at a paywall.
+ *
+ * `pollMs` refetches on an interval — used only while the plan picker waits for a purchase's
+ * webhook to land. Every other caller leaves it off.
  */
-export function useSubscription() {
+export function useSubscription(options: { pollMs?: number | false } = {}) {
   return useQuery({
     queryKey: subscriptionKeys.current,
     queryFn: getSubscription,
     staleTime: 60_000,
+    refetchInterval: options.pollMs ?? false,
+  });
+}
+
+/**
+ * The RevenueCat offering the plan picker sells — the real prices Paddle will charge, as
+ * opposed to the display prices in `tiers.ts`. Fetched once per account per visit.
+ */
+export function useCheckoutOffering(appUserId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ['subscription', 'offering', appUserId] as const,
+    queryFn: () => loadOffering(appUserId as string),
+    enabled: enabled && CHECKOUT_AVAILABLE && Boolean(appUserId),
+    staleTime: Infinity,
+    retry: 1,
   });
 }
 

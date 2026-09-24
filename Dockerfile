@@ -28,6 +28,9 @@ ARG VITE_ONBOARDING_TOURS
 # Paddle client-side token (live_… / test_…) for /pay, Paddle's default payment link.
 # Public by design — it ships in the bundle. Never the Paddle API key.
 ARG VITE_PADDLE_CLIENT_TOKEN
+# RevenueCat public key for the Paddle app (in-app checkout on /plans). Public by design;
+# never a RevenueCat secret key (`sk_…`).
+ARG VITE_REVENUECAT_PUBLIC_KEY
 
 # Source-map upload to Sentry. Build-time only and deliberately NOT VITE_-prefixed, so
 # none of these is ever inlined into the bundle. Omit the token and the upload is
@@ -45,7 +48,8 @@ ENV VITE_API_URL=$VITE_API_URL \
     VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_ONBOARDING_TOURS=$VITE_ONBOARDING_TOURS \
-    VITE_PADDLE_CLIENT_TOKEN=$VITE_PADDLE_CLIENT_TOKEN
+    VITE_PADDLE_CLIENT_TOKEN=$VITE_PADDLE_CLIENT_TOKEN \
+    VITE_REVENUECAT_PUBLIC_KEY=$VITE_REVENUECAT_PUBLIC_KEY
 ENV VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT:-$RAILWAY_ENVIRONMENT_NAME}
 
 COPY package.json package-lock.json ./

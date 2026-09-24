@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, Info, Lock } from 'lucide-react';
+import { Check, CheckCircle2, Info, Loader2, Lock } from 'lucide-react';
+import type { Package } from '@revenuecat/purchases-js';
+import { useAppAuth } from '@/core/auth/AuthContext';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
 import {
@@ -12,9 +14,14 @@ import {
   type BillingPeriod,
   type Tier,
 } from '@/features/marketing/tiers';
-import { useSubscription } from '../queries';
-import { CHECKOUT_AVAILABLE } from '../checkout';
-import type { Subscription } from '../types';
+import { useCheckoutOffering, useSubscription } from '../queries';
+import { CHECKOUT_AVAILABLE, packageFor, purchase } from '../checkout';
+import type { PlanId, Subscription } from '../types';
+
+/** How often the page asks the server whether the purchase's webhook has landed. */
+const POLL_MS = 3_000;
+/** After this long, say that activation is slow rather than spinning forever. */
+const SLOW_AFTER_MS = 90_000;
 
 /**
  * The plan picker: where a signed-in landlord chooses a band and a billing period.
@@ -38,14 +45,24 @@ import type { Subscription } from '../types';
  * An expired subscription resolves to the free plan on the server, so a lapsed App Store
  * subscriber *is* offered web checkout. The exclusion is about active subscriptions only.
  *
- * Prices are the display prices from `tiers.ts` until checkout is wired. After that they
- * must come from the RevenueCat offering, which carries the localized amount Paddle will
- * actually charge — never a hardcoded dollar figure.
+ * Prices come from the RevenueCat offering once it has loaded: that is the amount Paddle will
+ * actually charge. The display prices in `tiers.ts` stand in only while it loads, or when
+ * checkout is not configured.
+ *
+ * **Paying does not change the plan here.** Paddle takes the money, RevenueCat sends a webhook,
+ * and the server updates the plan. The page marks itself `?checkout=pending` and polls
+ * `/subscription` until the new plan shows up.
  */
 export function PlansPage() {
-  const { t } = useTranslation();
-  const [params] = useSearchParams();
-  const { data, isLoading } = useSubscription();
+  const { t, i18n } = useTranslation();
+  const { user } = useAppAuth();
+  const [params, setParams] = useSearchParams();
+
+  // After checkout the URL carries `?checkout=pending`, so a reload mid-wait keeps waiting
+  // instead of offering the purchase again.
+  const pending = params.get('checkout') === 'pending';
+  const { data, isLoading } = useSubscription({ pollMs: pending ? POLL_MS : false });
+  const activated = pending && !!data && data.plan !== 'free';
 
   // `/pricing` hands over the visitor's choice, so signing in does not lose it.
   const [period, setPeriod] = useState<BillingPeriod>(
@@ -53,9 +70,36 @@ export function PlansPage() {
   );
   const picked = params.get('plan');
 
+  const canBuy = data?.plan === 'free' && !pending;
+  const offering = useCheckoutOffering(user?.uid, canBuy);
+  const [buying, setBuying] = useState<PlanId | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  async function buy(pkg: Package, plan: PlanId) {
+    if (!user) return;
+    setBuying(plan);
+    setFailed(false);
+    try {
+      const outcome = await purchase(user.uid, pkg, { email: user.email, locale: i18n.language });
+      if (outcome === 'purchased') {
+        setParams(
+          (prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('checkout', 'pending');
+            return next;
+          },
+          { replace: true },
+        );
+      }
+    } catch {
+      setFailed(true);
+    } finally {
+      setBuying(null);
+    }
+  }
+
   if (isLoading || !data) return <PageLoader />;
 
-  const canBuy = data.plan === 'free';
   const saving = yearlySavingPercent(PAID_TIERS[0]);
 
   return (
@@ -67,7 +111,17 @@ export function PlansPage() {
         {t('subscription.plans.subtitle')}
       </p>
 
-      <AccountBanner data={data} />
+      {pending ? <PendingBanner data={data} activated={activated} /> : <AccountBanner data={data} />}
+
+      {failed && (
+        <p
+          className="mt-3 rounded-[12px] px-4 py-3 text-[14px]"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-error)', color: 'var(--color-error)' }}
+          role="alert"
+        >
+          {t('subscription.plans.purchaseFailed', { email: CONTACT_EMAIL })}
+        </p>
+      )}
 
       {/* Billing period */}
       <div className="mt-6 flex items-center gap-3 flex-wrap">
@@ -111,6 +165,10 @@ export function PlansPage() {
             data={data}
             canBuy={canBuy}
             highlighted={tier.plan === picked || (canBuy && !picked && tier.plan === data.required_plan)}
+            pkg={packageFor(offering.data, tier.plan, period)}
+            offeringState={offering.isError ? 'error' : offering.isPending ? 'loading' : 'ready'}
+            buying={buying}
+            onBuy={buy}
           />
         ))}
       </div>
@@ -186,23 +244,94 @@ function AccountBanner({ data }: { data: Subscription }) {
   );
 }
 
+/**
+ * Shown between a completed checkout and the webhook that activates the plan — usually a few
+ * seconds. The payment has gone through either way, so the slow case says so plainly rather
+ * than implying something failed.
+ */
+function PendingBanner({ data, activated }: { data: Subscription; activated: boolean }) {
+  const { t } = useTranslation();
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (activated) return;
+    const timer = window.setTimeout(() => setSlow(true), SLOW_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, [activated]);
+
+  let icon = <Loader2 size={16} strokeWidth={2.3} className="animate-spin" />;
+  let text = t('subscription.plans.pending');
+  if (activated) {
+    icon = <CheckCircle2 size={16} strokeWidth={2.3} />;
+    text = t('subscription.plans.activated', { plan: t(`subscription.plan.${data.plan}`) });
+  } else if (slow) {
+    text = t('subscription.plans.pendingSlow', { email: CONTACT_EMAIL });
+  }
+
+  return (
+    <div
+      className="mt-5 rounded-[12px] px-4 py-3 flex items-start gap-3"
+      style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="shrink-0" style={{ marginTop: 2 }}>{icon}</span>
+      <div className="text-[14px] leading-relaxed">
+        <p>{text}</p>
+        {activated && (
+          <Link to="/home" className="mt-1 inline-block font-semibold hover:underline" style={{ color: 'inherit' }}>
+            {t('subscription.plans.goHome')}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PlanCard({
   tier,
   period,
   data,
   canBuy,
   highlighted,
+  pkg,
+  offeringState,
+  buying,
+  onBuy,
 }: {
   tier: Tier;
   period: BillingPeriod;
   data: Subscription;
   canBuy: boolean;
   highlighted: boolean;
+  pkg: Package | null;
+  offeringState: 'loading' | 'ready' | 'error';
+  buying: PlanId | null;
+  onBuy: (pkg: Package, plan: PlanId) => void;
 }) {
-  const { t } = useTranslation();
-  const price = period === 'monthly' ? tier.monthly : tier.yearly;
-  const perMonth = monthlyEquivalent(tier);
+  const { t, i18n } = useTranslation();
   const isCurrent = tier.plan === data.plan;
+
+  // The offering's price is what Paddle charges; tiers.ts is the stand-in until it loads.
+  const charged = pkg?.webBillingProduct.price;
+  const price = charged ? charged.formattedPrice : `$${period === 'monthly' ? tier.monthly : tier.yearly}`;
+  const perMonthValue = charged ? charged.amountMicros / 12 / 1_000_000 : monthlyEquivalent(tier);
+  const perMonth =
+    perMonthValue === null
+      ? null
+      : new Intl.NumberFormat(i18n.language, {
+          style: 'currency',
+          currency: charged?.currency ?? 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(perMonthValue);
+
+  const purchasable = CHECKOUT_AVAILABLE && pkg !== null && buying === null;
+  let buttonLabel = t('subscription.plans.checkoutSoon');
+  if (buying === tier.plan) buttonLabel = t('subscription.plans.opening');
+  else if (CHECKOUT_AVAILABLE && pkg) buttonLabel = t('subscription.plans.choose');
+  else if (CHECKOUT_AVAILABLE && offeringState === 'loading') buttonLabel = t('subscription.plans.loadingPrices');
+  else if (CHECKOUT_AVAILABLE) buttonLabel = t('subscription.plans.checkoutUnavailable');
 
   // A plan too small for the portfolio is still offered, with the consequence stated. The
   // landlord may intend to remove properties, and refusing the choice would decide that for
@@ -240,7 +369,7 @@ function PlanCard({
           className="text-[30px] font-semibold"
           style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}
         >
-          ${price}
+          {price}
         </span>
         <span className="text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
           {t(`marketing.pricing.per.${period}`)}
@@ -248,7 +377,7 @@ function PlanCard({
       </div>
       <p className="mt-1 text-[13px] min-h-[18px]" style={{ color: 'var(--color-text-secondary)' }}>
         {period === 'yearly' && perMonth !== null
-          ? t('marketing.pricing.perMonthEquivalent', { amount: perMonth.toFixed(2) })
+          ? t('subscription.plans.perMonth', { amount: perMonth })
           : ''}
       </p>
 
@@ -263,16 +392,18 @@ function PlanCard({
       {canBuy && (
         <button
           type="button"
-          disabled={!CHECKOUT_AVAILABLE}
-          className="mt-4 h-10 rounded-[9px] text-[14px] font-semibold"
+          disabled={!purchasable}
+          onClick={() => pkg && onBuy(pkg, tier.plan)}
+          className="mt-4 h-10 rounded-[9px] text-[14px] font-semibold inline-flex items-center justify-center gap-2"
           style={{
-            background: CHECKOUT_AVAILABLE ? 'var(--color-primary)' : 'var(--color-surface)',
-            color: CHECKOUT_AVAILABLE ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
-            border: CHECKOUT_AVAILABLE ? 'none' : '1px dashed var(--color-outline)',
-            cursor: CHECKOUT_AVAILABLE ? 'pointer' : 'not-allowed',
+            background: purchasable || buying === tier.plan ? 'var(--color-primary)' : 'var(--color-surface)',
+            color: purchasable || buying === tier.plan ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
+            border: purchasable || buying === tier.plan ? 'none' : '1px dashed var(--color-outline)',
+            cursor: purchasable ? 'pointer' : 'not-allowed',
           }}
         >
-          {CHECKOUT_AVAILABLE ? t('subscription.plans.choose') : t('subscription.plans.checkoutSoon')}
+          {buying === tier.plan && <Loader2 size={15} className="animate-spin" />}
+          {buttonLabel}
         </button>
       )}
     </div>

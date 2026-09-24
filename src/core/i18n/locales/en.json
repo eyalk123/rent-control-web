@@ -1994,7 +1994,16 @@
       "checkoutSoon": "Online checkout opens soon",
       "includes": "Every paid plan includes unlimited AI lease scans and {{assistant}}.",
       "included": "Your account includes the {{plan}} plan at no cost.",
-      "webManaged": "You subscribed on the web. To change plans, email us at {{email}}. Changing plans online opens soon."
+      "webManaged": "You subscribed on the web. To change plans, email us at {{email}}. Changing plans online opens soon.",
+      "perMonth": "Works out at {{amount}} a month",
+      "opening": "Opening checkout…",
+      "loadingPrices": "Loading prices…",
+      "checkoutUnavailable": "Checkout is unavailable right now",
+      "purchaseFailed": "The checkout couldn't be completed. Please try again, or write to us at {{email}}.",
+      "pending": "Payment received. Activating your plan. This usually takes a few seconds…",
+      "pendingSlow": "Your payment went through, but activating your plan is taking longer than usual. It will switch on by itself within a few minutes. If it hasn't, write to us at {{email}}.",
+      "activated": "Your {{plan}} plan is active. Thank you!",
+      "goHome": "Go to your properties"
     },
     "pay": {
       "loadingTitle": "Opening secure checkout",
