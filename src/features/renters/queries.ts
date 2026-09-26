@@ -10,6 +10,7 @@ import {
 } from './api/renters';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { notificationKeys } from '@/features/notifications/queries';
+import { propertyKeys } from '@/features/properties/queries';
 import type { RenterCreate, RenterUpdate } from '@/shared/types';
 
 export const renterKeys = {
@@ -36,6 +37,9 @@ export function useCreateRenter() {
     mutationFn: (data: RenterCreate) => createRenter(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: renterKeys.all });
+      // The property detail page reads its renters off the embedded `property.renters`,
+      // so the property (list + detail) has to refetch for the new renter to appear.
+      qc.invalidateQueries({ queryKey: propertyKeys.all });
       // Overdue / expiring status pills come from the home lists, not the
       // renter row itself — refresh them or the pill stays stale.
       qc.invalidateQueries({ queryKey: ['home'] });

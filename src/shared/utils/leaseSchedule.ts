@@ -128,14 +128,27 @@ export function applyYearRule(
  * Walks a `custom` schedule forward, resolving each ruled year's amount from the one
  * before it. Year one is always the base rent; `manual` (and rule-less, i.e. legacy) years
  * keep the amount they already hold. `type` and `rule` pass through untouched.
+ *
+ * `hasStarted` marks the CPI years that are already settled: those keep the amount they
+ * hold too, since projecting them flat would overwrite the real rent with an estimate.
  */
-export function materializeRuledYears(rows: LeaseYear[], baseRent: number): LeaseYear[] {
+export function materializeRuledYears(
+  rows: LeaseYear[],
+  baseRent: number,
+  hasStarted?: (index: number) => boolean,
+): LeaseYear[] {
   if (rows.length === 0) return [];
   const base = Number.isFinite(baseRent) && baseRent > 0 ? baseRent : rows[0]?.amount ?? 0;
   const result: LeaseYear[] = [];
   let prev = base;
   rows.forEach((row, i) => {
-    const amount = i === 0 ? Math.round(base) : applyYearRule(prev, row.amount, row.rule);
+    const settledCpi = row.rule?.mode === 'cpi' && row.amount > 0 && hasStarted?.(i);
+    const amount =
+      i === 0
+        ? Math.round(base)
+        : settledCpi
+          ? row.amount
+          : applyYearRule(prev, row.amount, row.rule);
     result.push({ ...row, amount });
     prev = amount;
   });
@@ -149,6 +162,20 @@ export function materializeRuledYears(rows: LeaseYear[], baseRent: number): Leas
  */
 export function firstCpiIndex(rows: LeaseYear[]): number {
   return rows.findIndex((r) => r.rule?.mode === 'cpi');
+}
+
+/**
+ * True once period `index` has begun. A CPI year past that point is settled server-side
+ * (`is_frozen` in `cpi_indexing_service.py`): the form must not re-project it or mark it ≈.
+ */
+export function hasYearStarted(
+  leaseStart: string | null | undefined,
+  rows: LeaseYear[],
+  index: number,
+  today: Date = new Date(),
+): boolean {
+  const start = leaseYearStart(leaseStart, rows, index);
+  return start !== null && start <= today;
 }
 
 /** True when row `index` should render as a projection. */
@@ -254,7 +281,7 @@ function walkWithPins(
 export function buildLeaseYears(
   input: LeaseScheduleInput,
   existingRows?: LeaseYear[],
-  opts?: { resetCpiAmounts?: boolean },
+  opts?: { resetCpiAmounts?: boolean; leaseStart?: string | null },
 ): LeaseYear[] {
   const contractSizes = blockSizes(input.contractYears, input.contractMonths);
   const optionSizes = blockSizes(input.optionYears, input.optionMonths);
@@ -302,7 +329,9 @@ export function buildLeaseYears(
     result.push(row);
   }
   // Re-price the ruled years off the (possibly new) base rent and each other.
-  return isCustom ? materializeRuledYears(result, base) : result;
+  return isCustom
+    ? materializeRuledYears(result, base, (i) => hasYearStarted(opts?.leaseStart, result, i))
+    : result;
 }
 
 /**

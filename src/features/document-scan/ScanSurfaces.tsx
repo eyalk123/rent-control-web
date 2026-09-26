@@ -1,4 +1,4 @@
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
 import { useScanSession } from './ScanContext';
 import { DocumentScanDrawer } from './pages/DocumentScanDrawer';
@@ -13,7 +13,7 @@ import { ScanPill } from './ScanPill';
  */
 export function ScanSurfaces() {
   const { session, view, dismissSummary, continueToForm } = useScanSession();
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
   const { data: renters = [] } = useRenters();
 
   return (

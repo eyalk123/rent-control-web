@@ -5,7 +5,7 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { RenterPropertyCard } from './RenterPropertyCard';
 import { useUpdateRenter } from '../queries';
-import { useProperty, useProperties } from '@/features/properties/queries';
+import { useProperty, useAccessibleProperties } from '@/features/properties/queries';
 import { PropertyFormDrawer } from '@/features/properties/pages/PropertyFormDrawer';
 import { getCurrentMonthlyRent } from '@/shared/types';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
@@ -22,7 +22,7 @@ export function RenterPropertyTab({ renter }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
   const p = renter.property;
   const { data: fullProp } = useProperty(p?.id ?? 0, { enabled: !!p?.id });
-  const { data: allProperties } = useProperties();
+  const { data: allProperties } = useAccessibleProperties();
   const updateRenter = useUpdateRenter(renter.id);
 
   const closeLinking = () => {

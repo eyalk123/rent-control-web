@@ -327,6 +327,8 @@
     "colOwner": "Owner",
     "colStatus": "Status",
     "headerMeta": "{{total}} properties · {{occupied}} occupied",
+    "groupUnits": "{{count}} units",
+    "groupOccupied": "{{occupied}}/{{total}} occupied",
     "electricMeter": "Electric meter",
     "electricAccount": "Electric account",
     "waterMeter": "Water meter",
@@ -670,6 +672,8 @@
     "cardsView": "Cards",
     "tableView": "Table",
     "perMonth": "/mo",
+    "expandGroup": "Show units",
+    "collapseGroup": "Hide units",
     "clickToUpload": "Click to upload",
     "addProperty": "Add property",
     "addRenter": "Add renter",
@@ -873,8 +877,7 @@
       "contractYear": "Contract Year",
       "deselectAll": "Deselect all",
       "perContract": "Per contract",
-      "override": "Override",
-      "auto": "Auto",
+      "customAmount": "Custom",
       "paymentDetails": "Payment details",
       "monthsSelected": "{{count}} months selected",
       "noMonthsError": "Please select at least one month.",
@@ -1629,7 +1632,7 @@
         },
         "perContract": {
           "title": "Overriding a row",
-          "body": "Every amount is filled in from the contract. Type over any of them for a one-off — a partial payment, a discounted month — and Auto snaps it back."
+          "body": "Every amount is filled in from the contract. Switch a row to Custom for a one-off — a partial payment, a discounted month — and Per contract snaps it back."
         },
         "saving": {
           "title": "One row at a time",
@@ -1925,14 +1928,23 @@
     }
   },
   "subscription": {
-    "readOnly": "Read-only",
-    "lockedActionHint": "This property is above your plan's limit. It stays readable and exportable, but cannot be edited until you move up a plan or remove another property.",
+    "locked": "Locked",
+    "lockedCard": {
+      "upgrade": "Upgrade",
+      "delete": "Delete"
+    },
+    "lockedDetail": {
+      "title": "This property is locked",
+      "body": "It's above your plan's limit, so it can't be opened. Move up a plan to unlock it, or delete it from the properties list to get back under your limit.",
+      "cta": "See plans",
+      "back": "Back to properties"
+    },
     "overLimit": {
-      "heading_one": "1 property is now read-only",
-      "heading_other": "{{count}} properties are now read-only",
-      "body_one": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully editable; the most recently added one is read-only for now.",
-      "body_other": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully editable; the {{count}} added after them are read-only for now.",
-      "safe": "Nothing has been deleted. Every property still opens, reports still run, and exports still include everything.",
+      "heading_one": "1 property is now locked",
+      "heading_other": "{{count}} properties are now locked",
+      "body_one": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully available; the most recently added one is locked for now.",
+      "body_other": "Your plan covers {{limit}} properties. Your oldest {{limit}} stay fully available; the {{count}} added after them are locked for now.",
+      "safe": "Nothing has been deleted. A locked property can't be opened and is left out of reports and reminders, but the account export still includes everything. Move up a plan to unlock it, or delete a property to get back under your limit.",
       "cta": "See plans"
     },
     "plan": {
@@ -1963,7 +1975,7 @@
       },
       "notEnforced": "Plan limits are not being applied yet. Nothing is restricted.",
       "upgrade": "See plans",
-      "lockedList": "Read-only properties",
+      "lockedList": "Locked properties",
       "rowLabel": "Plan & billing",
       "rowHint": "What your plan includes and what you have used"
     },
@@ -1987,8 +1999,8 @@
       "portfolio_other": "You have {{count}} properties.",
       "recommendedHint": "The {{plan}} plan covers all of them.",
       "recommended": "Covers all your properties.",
-      "tooSmall_one": "Holds up to {{max}} properties, so 1 of yours would stay read-only.",
-      "tooSmall_other": "Holds up to {{max}} properties, so {{count}} of yours would stay read-only.",
+      "tooSmall_one": "Holds up to {{max}} properties, so 1 of yours would stay locked.",
+      "tooSmall_other": "Holds up to {{max}} properties, so {{count}} of yours would stay locked.",
       "current": "Your plan",
       "choose": "Choose this plan",
       "checkoutSoon": "Online checkout opens soon",

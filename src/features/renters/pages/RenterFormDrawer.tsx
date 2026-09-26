@@ -13,7 +13,7 @@ import {
 } from '@/shared/utils/leaseSchedule';
 import { LeaseTermBuilder } from '../components/LeaseTermBuilder';
 import { useCreateRenter, useUpdateRenter, useRenter } from '../queries';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { getPaymentMethodOptions } from '@/shared/constants/paymentMethods';
@@ -136,7 +136,7 @@ export function RenterFormDrawer({
   const [contractChoice, setContractChoice] = useState<'keep' | 'update'>('keep');
 
   const { data: existing } = useRenter(effRenterId ?? 0);
-  const { data: properties } = useProperties();
+  const { data: properties } = useAccessibleProperties();
   const { user } = useAppAuth();
   const createMutation = useCreateRenter();
   const updateMutation = useUpdateRenter(effRenterId ?? 0);

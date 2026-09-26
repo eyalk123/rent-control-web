@@ -14,7 +14,7 @@ import { AddMenu } from '@/shared/components/ui/AddMenu';
 import { type PropertyMatchStatus } from '@/features/document-scan/utils/matchProperty';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useRenters, renterKeys } from '../queries';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { deleteRenter } from '../api/renters';
 import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
@@ -422,7 +422,7 @@ export function RentersListPage() {
 
   // Owner lives on the full Property (not the nested PropertyBrief), so join against
   // the properties list by id. Memoized to keep the table columns referentially stable.
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
   const ownerByProperty = useMemo(
     () => new Map<number, string>(properties.map((p) => [p.id, p.property_owner ?? ''])),
     [properties],

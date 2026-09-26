@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { availablePropertyTypes } from '../validation/propertyValidation';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, MapPin, AlertCircle, CheckSquare } from 'lucide-react';
+import { Plus, MapPin, AlertCircle, CheckSquare, Trash2 } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable, useDataTable } from '@/shared/components/ui/DataTable';
 import { useViewMode, type ViewMode } from '@/hooks/useViewMode';
@@ -35,6 +35,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Property,} from '@/shared/types';
 import { LockedBadge } from '@/features/subscription/components/LockedBadge';
 import { OverLimitNotice } from '@/features/subscription/components/OverLimitNotice';
+import { subscriptionKeys, useSubscription } from '@/features/subscription/queries';
+import { useToast } from '@/shared/components/ui/Toast';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour, useTourStep } from '@/features/onboarding/TourController';
@@ -119,11 +121,6 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
             </svg>
           </div>
         )}
-        {property.locked && (
-          <div className="absolute top-2.5 end-2.5 z-10">
-            <LockedBadge size="small" />
-          </div>
-        )}
         {isSelectMode && (
           <div className="absolute top-2.5 end-3 rounded-[6px] p-0.5" style={{ background: 'var(--color-surface)' }}>
             <TriStateCheckbox checked={isSelected} />
@@ -150,7 +147,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
         <div className="grid grid-cols-3 gap-2 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--color-outline)' }}>
           {[
             { label: t('property.rent'), value: monthlyRent ? formatMoney(monthlyRent) : '—' },
-            { label: t('property.renters'), value: property.renters?.length ?? 0 },
+            { label: t('property.renters'), value: currentRenters.length },
             { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
@@ -189,7 +186,143 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   );
 }
 
-function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown>[] {
+interface LockedPropertyCardProps {
+  property: Property;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onToggle: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+/**
+ * A property over the plan's limit. The API sends only enough to recognise it — address,
+ * city, type — and refuses everything else, so this card has no stats, no renter and no
+ * way into the detail page. It offers the two ways out instead: a bigger plan, or deleting
+ * a property to get back under the limit.
+ *
+ * Still selectable in select mode, so a bulk delete can include it.
+ */
+function LockedPropertyCard({ property, isSelectMode, isSelected, onToggle, onDelete }: LockedPropertyCardProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return (
+    <div
+      role={isSelectMode ? 'button' : undefined}
+      tabIndex={isSelectMode ? 0 : undefined}
+      onClick={isSelectMode ? () => onToggle(property.id) : undefined}
+      onKeyDown={isSelectMode ? (e) => { if (e.key === 'Enter') onToggle(property.id); } : undefined}
+      className="relative rounded-[var(--radius-card)] p-3 flex flex-col gap-3 text-start"
+      style={{
+        background: 'var(--color-surface)',
+        border: `1px ${isSelected ? 'solid' : 'dashed'} ${isSelected ? 'var(--color-primary)' : 'var(--color-outline)'}`,
+        boxShadow: isSelected ? '0 0 0 1px var(--color-primary)' : undefined,
+        cursor: isSelectMode ? 'pointer' : 'default',
+      }}
+      data-testid="locked-property-card"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[14px] font-bold tracking-tight truncate" style={{ color: 'var(--color-text-secondary)' }}>
+            {property.address}
+            <span className="font-normal">{formatFloorApartment(property, t)}</span>
+          </p>
+          <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            <MapPin size={10} />
+            {property.city}
+            <span> · {t(`property.type_${property.type}` as never, property.type)}</span>
+          </div>
+        </div>
+        {isSelectMode ? <TriStateCheckbox checked={isSelected} /> : <LockedBadge size="small" />}
+      </div>
+      {!isSelectMode && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/plans')}
+            className="h-8 px-3 rounded-[8px] text-[12.5px] font-semibold hover:opacity-90"
+            style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          >
+            {t('subscription.lockedCard.upgrade')}
+          </button>
+          <button
+            onClick={() => onDelete(property.id)}
+            className="h-8 px-3 rounded-[8px] text-[12.5px] font-medium flex items-center gap-1.5"
+            style={{ border: '1px solid var(--color-error)', color: 'var(--color-error)', background: 'transparent' }}
+          >
+            <Trash2 size={13} /> {t('subscription.lockedCard.delete')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Units in one building share a street address and city; floor and apartment are separate
+ * fields, so they never take part. Matching is exact apart from case, spacing and trailing
+ * punctuation — "Herzl 12" and "Herzl St. 12" stay apart rather than being guessed together.
+ */
+function buildingKey(p: Property): string | null {
+  const norm = (v: string | null | undefined) =>
+    (v ?? '').toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.,;:\s]+$/, '');
+  const address = norm(p.address);
+  return address ? `${address}|${norm(p.city)}` : null;
+}
+
+/** The value every unit shares, or undefined when they differ. */
+function shared<V>(rows: Property[], get: (p: Property) => V): V | undefined {
+  const first = get(rows[0]);
+  return rows.every((p) => get(p) === first) ? first : undefined;
+}
+
+function useBuildingCell() {
+  const { t } = useTranslation();
+  return (columnId: string, rows: Property[]): ReactNode => {
+    const muted = { color: 'var(--color-text-secondary)' };
+    switch (columnId) {
+      case 'property':
+        return (
+          <div>
+            <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{rows[0].address}</p>
+            <p className="text-xs mt-0.5" style={muted}>
+              {rows[0].city} · {t('property.groupUnits', { count: rows.length })}
+            </p>
+          </div>
+        );
+      case 'type': {
+        const type = shared(rows, (p) => p.type);
+        return type ? <span className="text-sm" style={muted}>{t(`property.type_${type}` as never, type)}</span> : null;
+      }
+      case 'owner': {
+        const owner = shared(rows, (p) => p.property_owner ?? '');
+        return owner === undefined ? null : <span className="text-sm" style={muted}>{owner || '—'}</span>;
+      }
+      case 'renters':
+        return (
+          <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
+            {rows.reduce((n, p) => n + (p.renters?.length ?? 0), 0)}
+          </span>
+        );
+      case 'rent': {
+        const rent = rows.reduce((sum, p) => sum + getTotalCurrentMonthlyRent(p.renters), 0);
+        return (
+          <span className="text-sm font-medium">
+            <LtrSpan style={{ color: 'var(--color-text-primary)' }}>{rent > 0 ? formatMoney(rent) : '—'}</LtrSpan>
+          </span>
+        );
+      }
+      case 'status': {
+        const occupied = rows.filter((p) => p.hasRenters).length;
+        const tone = occupied === rows.length ? 'success' : occupied === 0 ? 'warning' : 'neutral';
+        return <Pill tone={tone}>{t('property.groupOccupied', { occupied, total: rows.length })}</Pill>;
+      }
+      default:
+        return null;
+    }
+  };
+}
+
+function usePropertyColumns(ownerOptions: string[], lockedIds: Set<number>): ColumnDef<Property, unknown>[] {
   const { t } = useTranslation();
   return useMemo<ColumnDef<Property, unknown>[]>(() => [
     {
@@ -244,10 +377,12 @@ function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown
     {
       id: 'renters',
       header: t('property.renters'),
-      accessorFn: (p) => p.renters?.length ?? 0,
+      // Current renters only, like the rent and occupancy beside it — past tenants stay
+      // on `p.renters` as history and are listed on the property's renters tab.
+      accessorFn: (p) => getCurrentRenters(p.renters).length,
       enableColumnFilter: false,
       cell: ({ row }) => (
-        <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{row.original.renters?.length ?? 0}</span>
+        <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{getCurrentRenters(row.original.renters).length}</span>
       ),
     },
     {
@@ -277,9 +412,12 @@ function usePropertyColumns(ownerOptions: string[]): ColumnDef<Property, unknown
           { value: 'vacant', label: t('property.occupancy.vacant') },
         ],
       },
-      cell: ({ row }) => <StatusPill hasRenters={!!row.original.hasRenters} />,
+      cell: ({ row }) =>
+        lockedIds.has(row.original.id)
+          ? <LockedBadge size="small" />
+          : <StatusPill hasRenters={!!row.original.hasRenters} />,
     },
-  ], [t, ownerOptions]);
+  ], [t, ownerOptions, lockedIds]);
 }
 
 export function PropertiesListPage() {
@@ -373,7 +511,19 @@ export function PropertiesListPage() {
     [properties],
   );
 
-  const columns = usePropertyColumns(ownerOptions);
+  // Locked only while enforcement is on: the API reports the would-be locked set either
+  // way, but only refuses access — and only sends stubs — once it is enforced.
+  const { data: subscription } = useSubscription();
+  const lockedIds = useMemo(
+    () => new Set(subscription?.enforced ? subscription.locked_property_ids : []),
+    [subscription],
+  );
+  const [lockedDeleteId, setLockedDeleteId] = useState<number | null>(null);
+  const [lockedDeleting, setLockedDeleting] = useState(false);
+  const { showToast } = useToast();
+
+  const columns = usePropertyColumns(ownerOptions, lockedIds);
+  const renderBuildingCell = useBuildingCell();
   const { table } = useDataTable(columns, filtered, [], 'properties');
   // Rows currently visible after column filters + sort — selection acts on these.
   const visibleRows = table.getRowModel().rows.map((r) => r.original);
@@ -384,6 +534,23 @@ export function PropertiesListPage() {
     deleteItem: deleteProperty,
     onDeleted: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
   });
+
+  const deleteLocked = async () => {
+    if (lockedDeleteId == null) return;
+    setLockedDeleting(true);
+    try {
+      await deleteProperty(lockedDeleteId);
+      showToast(t('property.deleteSuccess'), 'success');
+      // The plan's locked set moves with the count, so both are stale now.
+      qc.invalidateQueries({ queryKey: propertyKeys.all });
+      qc.invalidateQueries({ queryKey: subscriptionKeys.current });
+    } catch {
+      showToast(t('error.deleteFailed'), 'error');
+    } finally {
+      setLockedDeleting(false);
+      setLockedDeleteId(null);
+    }
+  };
 
   const occupied = filtered.filter((p) => p.hasRenters).length;
   const totalMonthly = filtered.reduce((sum, p) => sum + getTotalCurrentMonthlyRent(p.renters), 0);
@@ -478,7 +645,7 @@ export function PropertiesListPage() {
         </div>
       </div>
 
-      {/* Explains, once per plan, why some cards below are read-only. Above the list
+      {/* Explains, once per plan, why some cards below are locked. Above the list
           rather than beside a card: it is about the account, not about one property. */}
       <OverLimitNotice />
 
@@ -507,7 +674,16 @@ export function PropertiesListPage() {
         />
       ) : shownView === 'card' || isMobile ? (
         <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-          {filtered.map((p, i) => (
+          {filtered.map((p, i) => lockedIds.has(p.id) ? (
+            <LockedPropertyCard
+              key={p.id}
+              property={p}
+              isSelectMode={sel.isSelectMode}
+              isSelected={sel.selectedIds.has(p.id)}
+              onToggle={sel.toggle}
+              onDelete={setLockedDeleteId}
+            />
+          ) : (
             <PropertyCard
               key={p.id}
               property={p}
@@ -526,7 +702,7 @@ export function PropertiesListPage() {
         <DataTable
           table={table}
           rowId={(p) => p.id}
-          onRowClick={(p) => navigate(`/properties/${p.id}`)}
+          onRowClick={(p) => navigate(lockedIds.has(p.id) ? '/plans' : `/properties/${p.id}`)}
           isSelectMode={sel.isSelectMode}
           selectedIds={sel.selectedIds}
           allSelected={sel.allSelected}
@@ -534,6 +710,9 @@ export function PropertiesListPage() {
           onToggle={sel.toggle}
           onToggleAll={sel.toggleAll}
           firstRowRef={listAnchorRef}
+          groupBy={buildingKey}
+          renderGroupCell={renderBuildingCell}
+          groupPersistKey="properties"
         />
       )}
       </div>
@@ -549,6 +728,14 @@ export function PropertiesListPage() {
         addressEvidence={scan?.mapped.addressEvidence}
         renterQueue={scan?.renters}
         renterContractFile={scan?.file ?? null}
+      />
+      <ConfirmDialog
+        open={lockedDeleteId != null}
+        title={t('property.deleteConfirmTitle')}
+        message={t('property.deleteConfirm')}
+        loading={lockedDeleting}
+        onConfirm={deleteLocked}
+        onClose={() => setLockedDeleteId(null)}
       />
       <ConfirmDialog
         open={sel.confirmOpen}

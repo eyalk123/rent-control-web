@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTransactionSummary, useTransactions } from '@/features/transactions/queries';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { HomeGreeting } from '../components/HomeGreeting';
 import { NetProfitCard } from '../components/NetProfitCard';
 import { CashFlowCard } from '../components/CashFlowCard';
@@ -27,7 +27,7 @@ export function HomePage() {
   useTour('home');
 
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary();
-  const { data: properties = [], isLoading: propsLoading } = useProperties();
+  const { data: properties = [], isLoading: propsLoading } = useAccessibleProperties();
   const { data: recentTxPages, isLoading: recentLoading } = useTransactions({});
   const recentTransactions = recentTxPages?.pages[0]?.slice(0, 5) ?? [];
 

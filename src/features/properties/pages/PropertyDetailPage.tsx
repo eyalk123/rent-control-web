@@ -11,6 +11,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { useAllTransactions } from '@/features/transactions/queries';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
+import { LockedPropertyState, isPropertyLockedError } from '@/features/subscription/components/LockedPropertyState';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
@@ -87,7 +88,7 @@ export function PropertyDetailPage() {
     }
   }, [scanView, scanSession, location.pathname, consumeScan]);
 
-  const { data: property, isLoading, isError } = useProperty(propertyId);
+  const { data: property, isLoading, isError, error } = useProperty(propertyId);
   // The payment matrix needs the whole history, not the first page — see RenterDetailPage.
   const { data: transactions = [], isLoading: txLoading } = useAllTransactions({ propertyId });
 
@@ -103,6 +104,7 @@ export function PropertyDetailPage() {
   };
 
   if (isLoading) return <FullPageLoader />;
+  if (isPropertyLockedError(error)) return <LockedPropertyState />;
   if (isError || !property)
     return <DetailNotFound title={t('error.propertyNotFound')} detail={t('error.notFoundDetail')} />;
 

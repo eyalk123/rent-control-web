@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
 import { useLanguage } from '@/hooks/useLanguage';
 import { formatPropertyAddress, formatFloorApartment } from '@/shared/utils/propertyAddress';
@@ -30,7 +30,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isRtl } = useLanguage();
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
   const { data: renters = [] } = useRenters();
 
   const pagesGroup = t('common.palette.pagesGroup');

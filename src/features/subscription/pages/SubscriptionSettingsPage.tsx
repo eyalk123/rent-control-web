@@ -123,8 +123,8 @@ export function SubscriptionSettingsPage() {
         />
       </div>
 
-      {/* Which properties are read-only, named. "Some of your properties" is not
-          actionable; a list someone can click into is. */}
+      {/* Which properties are locked, named — "some of your properties" leaves someone
+          guessing. Plain text rather than links: a locked property cannot be opened. */}
       {lockedProperties.length > 0 && (
         <section
           className="mt-5 rounded-[16px] p-6"
@@ -135,14 +135,8 @@ export function SubscriptionSettingsPage() {
           </h2>
           <ul className="mt-3 flex flex-col gap-2">
             {lockedProperties.map((property) => (
-              <li key={property.id}>
-                <Link
-                  to={`/properties/${property.id}`}
-                  className="text-[14px] hover:underline"
-                  style={{ color: 'var(--color-primary)', textDecoration: 'none' }}
-                >
-                  {property.address}, {property.city}
-                </Link>
+              <li key={property.id} className="text-[14px]" style={{ color: 'var(--color-text-primary)' }}>
+                {property.address}, {property.city}
               </li>
             ))}
           </ul>

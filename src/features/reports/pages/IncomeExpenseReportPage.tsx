@@ -11,7 +11,7 @@ import {
   type RevenueBasis,
 } from '../api/reports';
 import { getAllTransactions } from '@/features/transactions/api/transactions';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -91,7 +91,7 @@ export function IncomeExpenseReportPage() {
   // likely wants, and the user overrides it per report.
   const [basis, setBasis] = useState<RevenueBasis>(defaultRevenueBasis);
 
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
   const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear, basis);
 
   const monthsLocale = Array.from({ length: 12 }, (_, idx) =>

@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pencil, Plus, MapPin, Trash2, Lock } from 'lucide-react';
-import { LockedAction, LockedBadge } from '@/features/subscription/components/LockedBadge';
+import { Pencil, Plus, MapPin, Trash2 } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
@@ -29,9 +28,6 @@ interface Props {
 }
 
 export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
-  // Read straight off the property the API returned, so the badge here and the badge in
-  // the list come from one server-side resolution and cannot disagree.
-  const locked = Boolean(property.locked);
   const { t } = useTranslation();
   const statsAnchorRef = useTourAnchor(ANCHORS.propertyDetailStats);
 
@@ -47,7 +43,6 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
                 {property.hasRenters ? t('property.occupancy.occupied') : t('property.occupancy.vacant')}
               </Pill>
               <Pill tone="neutral" size="md">{t(`property.type_${property.type}` as never, property.type)}</Pill>
-              {locked && <LockedBadge />}
             </div>
             <h1 className="text-2xl sm:text-[32px] font-bold tracking-tight" style={{ color: 'var(--color-text-primary)', letterSpacing: '-0.7px', margin: 0 }}>
               {property.address}
@@ -61,26 +56,17 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
           </div>
         </div>
 
-        {/* Action buttons.
-
-            On a locked property these are disabled with a lock and a reason on hover,
-            never removed. A button that vanishes leaves someone hunting for a feature
-            they used last week; a disabled one that explains itself is the difference
-            between a limit and a bug.
-
-            Delete stays live deliberately: removing a property is how an over-limit
-            account gets back under its ceiling, so blocking it would trap them. */}
+        {/* Action buttons. A property over the plan's limit never reaches this screen —
+            the API refuses its detail and the page shows LockedPropertyState instead — so
+            there is no locked variant of these. */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <LockedAction locked={locked}>
-            <button
-              onClick={onEdit}
-              disabled={locked}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
-              style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
-            >
-              {locked ? <Lock size={14} /> : <Pencil size={14} />} {t('common.edit')}
-            </button>
-          </LockedAction>
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
+            style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+          >
+            <Pencil size={14} /> {t('common.edit')}
+          </button>
           <button
             onClick={onDelete}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
@@ -88,16 +74,13 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
           >
             <Trash2 size={14} /> {t('common.delete')}
           </button>
-          <LockedAction locked={locked}>
-            <button
-              onClick={onAddTransaction}
-              disabled={locked}
-              className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              {locked ? <Lock size={14} /> : <Plus size={14} />} {t('property.addTransaction')}
-            </button>
-          </LockedAction>
+          <button
+            onClick={onAddTransaction}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            <Plus size={14} /> {t('property.addTransaction')}
+          </button>
         </div>
       </div>
 

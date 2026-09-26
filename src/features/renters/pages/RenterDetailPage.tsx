@@ -11,6 +11,7 @@ import { useOverdueRenters, useExpiringRenters } from '@/features/home/queries';
 import type { OverdueRenter, ExpiringRenter } from '@/features/home/api/homeApi';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { DetailNotFound } from '@/shared/components/ui/DetailNotFound';
+import { LockedPropertyState, isPropertyLockedError } from '@/features/subscription/components/LockedPropertyState';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { DetailBackLink } from '@/shared/components/detail/DetailBackLink';
 import { DetailTabBar } from '@/shared/components/detail/DetailTabBar';
@@ -114,7 +115,7 @@ export function RenterDetailPage() {
     }
   }, [searchParams, setSearchParams, location.state]);
 
-  const { data: renter, isLoading, isError } = useRenter(renterId);
+  const { data: renter, isLoading, isError, error } = useRenter(renterId);
   // The payment grid needs the whole history, not the first page — it cannot tell paid
   // from unpaid on months it never sees, and the hero totals were being capped too.
   const { data: transactions = [], isLoading: txLoading } = useAllTransactions({ renterId });
@@ -152,6 +153,7 @@ export function RenterDetailPage() {
   };
 
   if (isLoading) return <FullPageLoader />;
+  if (isPropertyLockedError(error)) return <LockedPropertyState />;
   if (isError || !renter)
     return <DetailNotFound title={t('error.renterNotFound')} detail={t('error.notFoundDetail')} />;
 

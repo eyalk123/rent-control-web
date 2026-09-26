@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getProperties,
@@ -7,6 +8,7 @@ import {
   deleteProperty,
 } from './api/properties';
 import { retryNon4xx } from '@/core/api/queryRetry';
+import { useSubscription } from '@/features/subscription/queries';
 import type { PropertyUpdate } from '@/shared/types';
 
 export const propertyKeys = {
@@ -16,6 +18,25 @@ export const propertyKeys = {
 
 export function useProperties() {
   return useQuery({ queryKey: propertyKeys.all, queryFn: getProperties });
+}
+
+/**
+ * The properties the account can actually open — every one but those over the plan's limit.
+ *
+ * For pickers, filters, search and anything that links into a property. A locked property
+ * arrives from the API as a stub and every read of it is refused, so offering it anywhere
+ * but the properties list (which shows it as a stub, with Upgrade and Delete) would lead to
+ * a 402. Locked only while enforcement is on, matching the server.
+ */
+export function useAccessibleProperties() {
+  const query = useProperties();
+  const { data: subscription } = useSubscription();
+  const data = useMemo(() => {
+    if (!query.data || !subscription?.enforced) return query.data;
+    const locked = new Set(subscription.locked_property_ids);
+    return query.data.filter((p) => !locked.has(p.id));
+  }, [query.data, subscription]);
+  return { ...query, data };
 }
 
 export function useProperty(id: number, options?: { enabled?: boolean }) {

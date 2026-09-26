@@ -235,6 +235,27 @@ test.describe('renters', () => {
     await expect(timeline.getByText('CPI', { exact: true })).toHaveCount(2);
   });
 
+  // Regression: picking Manual on a year saved as CPI cleared the rule to `undefined`,
+  // which react-hook-form reads back as the field's default — the saved CPI rule — so the
+  // dropdown snapped back and no amount input appeared.
+  test('a saved CPI year can be switched to Manual in the edit form', async ({ page }) => {
+    await page.goto('/renters/8');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    // Rule dropdowns start at year two, so the second one is year three (CPI).
+    const rule = page.getByLabel("How this year's rent is set").nth(1);
+    const amounts = page.getByRole('spinbutton', { name: 'Monthly rent', exact: true });
+    await expect(rule).toHaveText('CPI');
+    const before = await amounts.count();
+    await rule.click();
+    await page.getByRole('option', { name: 'Manual', exact: true }).click();
+
+    await expect(rule).toHaveText('Manual');
+    // A CPI year's amount is read-only; a Manual one is typed, so its input appears.
+    await expect(amounts).toHaveCount(before + 1);
+  });
+
   // Regression: the marker must come from the year's own rule, not from
   // `rent_escalation_mode` — which is nullable, and absent on renters saved before the
   // structured fields existed. Renter #9 (Yael Bar) has a CPI rule on its last option year

@@ -8,7 +8,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useQuery } from '@tanstack/react-query';
 import { downloadExpenseLogReport, type ReportFormat } from '../api/reports';
 import { getAllTransactions } from '@/features/transactions/api/transactions';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -49,7 +49,7 @@ export function ExpenseLogReportPage() {
   const [isDownloading, setIsDownloading] = useState<ReportFormat | null>(null);
 
   const { data: expenses = [], isLoading, isError, refetch } = useExpensesForYear(selectedYear);
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
 
   /** Built-in categories are stored by key and translated for display; the rest are free text. */
   const categoryLabel = (tx: Transaction) =>

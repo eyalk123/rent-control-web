@@ -514,30 +514,58 @@ let nextCategoryId = 6;
 let nextSupplierId = 4;
 let nextTransactionId = 7;
 
+/**
+ * The rejection the real API gives for any read of a locked property: a 402 whose body
+ * says `property_locked`. Shaped like an Axios error, because that is what
+ * `isPropertyLockedError` reads.
+ */
+function propertyLockedError(propertyId: number) {
+  return Object.assign(new Error('Property locked'), {
+    response: { status: 402, data: { detail: { error: 'property_locked', property_id: propertyId } } },
+  });
+}
+
+async function lockedPropertyIds(): Promise<number[]> {
+  const { locked_property_ids, enforced } = await mockSubscriptionApi.get();
+  return enforced ? locked_property_ids : [];
+}
+
 export const mockPropertiesApi = {
   getProperties: async (): Promise<Property[]> => {
-    // `locked` is decorated here for the same reason the real API sets it server-side:
-    // one resolution, applied to every row, so the list and the detail page cannot
-    // disagree about which properties the plan still covers.
-    const { locked_property_ids } = await mockSubscriptionApi.get();
-    return mockProperties.map((p) => ({
-      ...p,
-      locked: locked_property_ids.includes(p.id),
-      renters: mockRenters.filter((r) => r.property_id === p.id).map((r) => ({
-        ...r,
-        property: toPropertyBrief(p),
-      })),
-    }));
+    // Mirrors the API: a locked property comes back as a stub — enough to recognise it,
+    // nothing more — and every other property in full.
+    const locked = await lockedPropertyIds();
+    return mockProperties.map((p) =>
+      locked.includes(p.id)
+        ? ({
+            id: p.id,
+            owner_id: p.owner_id,
+            address: p.address,
+            city: p.city,
+            type: p.type,
+            floor: p.floor,
+            apartment: p.apartment,
+            locked: true,
+          } as Property)
+        : {
+            ...p,
+            locked: false,
+            renters: mockRenters.filter((r) => r.property_id === p.id).map((r) => ({
+              ...r,
+              property: toPropertyBrief(p),
+            })),
+          },
+    );
   },
   getPropertyById: async (id: number): Promise<Property> => {
     const p = mockProperties.find((x) => x.id === id);
     if (!p) throw new Error('Property not found');
+    if ((await lockedPropertyIds()).includes(id)) throw propertyLockedError(id);
     const renters = mockRenters.filter((r) => r.property_id === id).map((r) => ({
       ...r,
       property: toPropertyBrief(p),
     }));
-    const { locked_property_ids } = await mockSubscriptionApi.get();
-    return { ...p, renters, locked: locked_property_ids.includes(id) };
+    return { ...p, renters, locked: false };
   },
   createProperty: async (data: PropertyCreate | Partial<Property>): Promise<Property> => {
     const newProp: Property = {
@@ -580,7 +608,8 @@ export const mockPropertiesApi = {
 
 export const mockRentersApi = {
   getRenters: async (): Promise<Renter[]> => {
-    return mockRenters.map((r) => {
+    const locked = await lockedPropertyIds();
+    return mockRenters.filter((r) => !r.property_id || !locked.includes(r.property_id)).map((r) => {
       const prop = r.property_id
         ? mockProperties.find((p) => p.id === r.property_id)
         : null;
@@ -593,6 +622,9 @@ export const mockRentersApi = {
   getRenterById: async (id: number): Promise<Renter> => {
     const r = mockRenters.find((x) => x.id === id);
     if (!r) throw new Error('Renter not found');
+    if (r.property_id && (await lockedPropertyIds()).includes(r.property_id)) {
+      throw propertyLockedError(r.property_id);
+    }
     const prop = r.property_id ? mockProperties.find((p) => p.id === r.property_id) : null;
     return {
       ...r,

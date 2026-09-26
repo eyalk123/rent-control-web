@@ -14,7 +14,7 @@ import {
 import { createRevenueTransaction, createExpenseTransaction, updateExpenseTransaction } from '../api/transactions';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { useSuppliers } from '@/features/suppliers/queries';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
@@ -119,7 +119,7 @@ interface RevenueFormProps {
 
 function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId, initialMonth, onDirtyChange }: RevenueFormProps) {
   const { t } = useTranslation();
-  const { data: properties } = useProperties();
+  const { data: properties } = useAccessibleProperties();
   const qc = useQueryClient();
   const updateRevenue = useUpdateRevenueTransaction(transaction?.id ?? 0);
   const { showToast } = useToast();
@@ -524,10 +524,19 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                   ? paymentFrequencyLabel(renter.number_of_payments)
                   : null;
                 const cadenceLabel = cadence ? t(cadence.key, { count: cadence.count }) : null;
-                const dueMonths = cadenceLabel ? dueMonthsWithin(renter, periodMonthsFor(renter)) : [];
-                const instalment = dueMonths.length
-                  ? getRentForMonth(renter, dueMonths[0]) * paymentIntervalMonths(renter.number_of_payments)
-                  : 0;
+                const dueMonths = dueMonthsWithin(renter, periodMonthsFor(renter));
+                const interval = paymentIntervalMonths(renter.number_of_payments);
+                const instalment = dueMonths.length ? getRentForMonth(renter, dueMonths[0]) * interval : 0;
+                // What "Per contract" will actually write, computed the same way as the submit
+                // path. Escalation inside the period shows as a range rather than one number.
+                const contractAmounts = dueMonths.map((m) => getRentForMonth(renter, m) * interval);
+                const contractMin = Math.min(...contractAmounts);
+                const contractMax = Math.max(...contractAmounts);
+                const contractAmountLabel = contractAmounts.length === 0
+                  ? '—'
+                  : contractMin === contractMax
+                    ? formatMoney(contractMin)
+                    : `${formatMoney(contractMin)}–${formatMoney(contractMax)}`;
                 const cadenceNote = !cadenceLabel
                   ? null
                   : dueMonths.length === 0
@@ -546,7 +555,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                     className="rounded-[10px] border px-4 py-2.5"
                     style={{ borderColor: 'var(--color-outline)', background: checked ? 'var(--color-input-filled-background)' : 'var(--color-surface)' }}
                   >
-                    {/* Top row: checkbox + name + "Per contract" when unchecked */}
+                    {/* Top row: checkbox + name */}
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
@@ -571,50 +580,40 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                           </p>
                         )}
                       </div>
-                      {!checked && (
-                        <span className="text-[12px] text-[var(--color-text-secondary)] shrink-0">
-                          {t('transactions.bulkRevenue.perContract')}
-                        </span>
-                      )}
                     </div>
 
-                    {/* Amount row when checked */}
+                    {/* Amount row when checked: the mode toggle sits right beside the amount it controls */}
                     {checked && (
-                      <div className="flex items-center gap-2 mt-2 ps-7">
+                      <div className="flex items-center gap-3 mt-2 ps-7">
+                        <SegToggle
+                          size="sm"
+                          className="shrink-0 border border-[var(--color-outline)]"
+                          value={overridden ? 'custom' : 'contract'}
+                          onChange={(v) => { if ((v === 'custom') !== overridden) toggleOverride(renter.id); }}
+                          options={[
+                            { value: 'contract', label: t('transactions.bulkRevenue.perContract') },
+                            { value: 'custom', label: t('transactions.bulkRevenue.customAmount') },
+                          ]}
+                        />
                         {overridden ? (
-                          <>
-                            <input
-                              type="number"
-                              value={overrideAmount}
-                              onChange={(e) => setOverrideAmounts((prev) => ({ ...prev, [renter.id]: e.target.value }))}
-                              className="flex-1 h-8 rounded-[8px] bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-2.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)] text-end"
-                              style={{ fontVariantNumeric: 'tabular-nums' }}
-                              placeholder="0"
-                              step="0.01"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => toggleOverride(renter.id)}
-                              className="shrink-0 px-3 py-1 rounded-full text-[12px] font-medium border"
-                              style={{ borderColor: 'var(--color-outline)', color: 'var(--color-text-secondary)' }}
-                            >
-                              {t('transactions.bulkRevenue.auto')}
-                            </button>
-                          </>
+                          <input
+                            type="number"
+                            value={overrideAmount}
+                            onChange={(e) => setOverrideAmounts((prev) => ({ ...prev, [renter.id]: e.target.value }))}
+                            aria-label={t('transactions.bulkRevenue.customAmount')}
+                            className="w-32 min-w-0 h-8 rounded-[8px] bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-2.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)] text-end"
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
+                            placeholder="0"
+                            step="0.01"
+                            autoFocus
+                          />
                         ) : (
-                          <>
-                            <p className="flex-1 text-[12px] italic" style={{ color: 'var(--color-text-secondary)' }}>
-                              {t('transactions.bulkRevenue.perContract')}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => toggleOverride(renter.id)}
-                              className="shrink-0 px-3 py-1 rounded-full text-[12px] font-medium border"
-                              style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
-                            >
-                              {t('transactions.bulkRevenue.override')}
-                            </button>
-                          </>
+                          <span
+                            className="text-sm text-[var(--color-text-secondary)] truncate"
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
+                          >
+                            {contractAmountLabel}
+                          </span>
                         )}
                       </div>
                     )}
@@ -749,7 +748,7 @@ interface ExpenseFormProps {
 
 function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange }: ExpenseFormProps) {
   const { t } = useTranslation();
-  const { data: properties } = useProperties();
+  const { data: properties } = useAccessibleProperties();
   const { data: categories } = useExpenseCategories();
   const qc = useQueryClient();
   const updateExpense = useUpdateExpenseTransaction(transaction?.id ?? 0);

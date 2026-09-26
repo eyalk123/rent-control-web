@@ -22,6 +22,12 @@ export const test = base.extend<{ pageErrors: string[] }>({
     await page.addInitScript(() => {
       try {
         localStorage.setItem('app_language', 'en');
+        // The mock account defaults to the free plan, which locks three of its five
+        // properties — and a locked property cannot be opened at all. Feature specs need
+        // the whole fixture portfolio, so they run on a plan that covers it. A spec about
+        // the restricted state sets `mock.plan` back to `free` in its own init script,
+        // which runs after this one.
+        if (localStorage.getItem('mock.plan') === null) localStorage.setItem('mock.plan', 'tier_3_8');
       } catch {
         /* ignore */
       }

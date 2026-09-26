@@ -18,7 +18,7 @@ import type {
 } from '@/shared/types';
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
-import { buildLeaseYears, isProjectedYear } from '@/shared/utils/leaseSchedule';
+import { buildLeaseYears, hasYearStarted, isProjectedYear } from '@/shared/utils/leaseSchedule';
 import { fmtDate, toISODate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { FormInput } from '@/shared/components/form/FormInput';
@@ -121,7 +121,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
         escalationValue: Number(escValStr) || 0,
       },
       rows,
-      { resetCpiAmounts },
+      { resetCpiAmounts, leaseStart },
     );
 
     // Rebuilding the whole array remounts every row, so reserve it for changes that really
@@ -166,6 +166,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
     escValStr,
     rulesKey,
     amountsKey,
+    leaseStart,
   ]);
 
   const openEndedAnchorRef = useTourAnchor(ANCHORS.leaseOpenEnded);
@@ -384,14 +385,17 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
                             amount={amountField.value ?? ''}
                             type={yearType}
                             isCurrent={isCurrentLeaseYear(leaseStart, modelRows, index)}
-                            projected={isProjectedYear(modelRows, index)}
+                            projected={
+                              isProjectedYear(modelRows, index) &&
+                              !hasYearStarted(leaseStart, modelRows, index)
+                            }
                             amountName={amountField.name}
                             onAmountBlur={amountField.onBlur}
                             onAmountChange={(v) => {
                               amountField.onChange(v);
                               // Typing an amount means the stated rule no longer describes it —
                               // fall back to manual so the number and the rule can't disagree.
-                              if (rule) ruleField.onChange(undefined);
+                              if (rule) ruleField.onChange({ mode: 'manual', value: '' });
                               // Year one *is* the first-year rent; keep the two in step, or the
                               // server (which prices year one off base_rent) would overwrite it.
                               if (index === 0) setValue('baseRent', v);
@@ -402,11 +406,13 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
                               index === 0
                                 ? undefined
                                 : (mode) =>
-                                    ruleField.onChange(
-                                      mode === 'manual'
-                                        ? undefined
-                                        : { mode, value: rule?.value ?? '' },
-                                    )
+                                    // `manual` is written out, never cleared: react-hook-form
+                                    // reads an `undefined` field back as its *default*, which
+                                    // on an edit is the saved rule — so the pick snapped back.
+                                    ruleField.onChange({
+                                      mode,
+                                      value: mode === 'manual' ? '' : rule?.value ?? '',
+                                    })
                             }
                             ruleValue={rule?.value ?? ''}
                             onRuleValueChange={(v) =>

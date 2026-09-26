@@ -40,6 +40,12 @@ export interface MonthCell {
    * deliberate act and not something to be second-guessed here.
    */
   expected: number;
+  /**
+   * This month's own rent, whatever the cadence: the monthly rate for every month inside the
+   * lease, 0 outside it. What the year summary adds up, so a quarterly instalment due in
+   * December counts only its December share toward that year rather than all three months.
+   */
+  monthRent: number;
   /** Sum of revenue recorded against this month. */
   paidSum: number;
   transactions: Transaction[];
@@ -248,20 +254,22 @@ export function buildRentGrid(
 
     if (beforeStart || afterEnd) {
       return paidSum > 0
-        ? { ...base, status: 'paid', expected: 0 }
-        : { ...base, status: 'outside-lease', expected: 0 };
+        ? { ...base, status: 'paid', expected: 0, monthRent: 0 }
+        : { ...base, status: 'outside-lease', expected: 0, monthRent: 0 };
     }
+
+    const monthRent = getRentForMonth(renter, monthKey);
 
     // Off-months of a quarterly/yearly cycle owe nothing. Routed through the shared
     // predicate so the grid and the bulk revenue form can never disagree about which
     // months a cycle lands on.
     if (!isPaymentDueMonth(renter, monthKey)) {
       return paidSum > 0
-        ? { ...base, status: 'paid', expected: 0 }
-        : { ...base, status: 'not-due', expected: 0 };
+        ? { ...base, status: 'paid', expected: 0, monthRent }
+        : { ...base, status: 'not-due', expected: 0, monthRent };
     }
 
-    const expected = getRentForMonth(renter, monthKey) * interval;
+    const expected = monthRent * interval;
     // What the lease was quoting when these payments were recorded. Used only to explain a
     // disagreement, never to replace `expected`. It is what separates "the tenant paid the
     // wrong amount" from "you have since changed the lease" — identical arithmetic, and
@@ -288,6 +296,7 @@ export function buildRentGrid(
         ...base,
         status: 'paid',
         expected,
+        monthRent,
         quotedAtPayment,
         dueDate,
         isLate: earliestPayment != null && earliestPayment > dueDate,
@@ -300,12 +309,13 @@ export function buildRentGrid(
     }
 
     const isFuture = year > currentYear || (year === currentYear && monthIndex > currentMonth);
-    if (isFuture) return { ...base, status: 'future', expected, dueDate };
+    if (isFuture) return { ...base, status: 'future', expected, monthRent, dueDate };
 
     return {
       ...base,
       status: now > dueDate ? 'overdue' : 'due',
       expected,
+      monthRent,
       dueDate,
       isPayable: true,
     };
@@ -313,6 +323,11 @@ export function buildRentGrid(
 }
 
 export interface RentYearTotals {
+  /**
+   * Rent for the calendar year: each month's own rent, not the instalments that fall due in
+   * it. The two differ when a quarterly or yearly instalment straddles New Year and the rent
+   * changes mid-year — an instalment due in December covers January and February too.
+   */
   expected: number;
   collected: number;
   outstandingMonths: number;
@@ -321,7 +336,7 @@ export interface RentYearTotals {
 export function summariseRentYear(cells: MonthCell[]): RentYearTotals {
   return cells.reduce<RentYearTotals>(
     (acc, cell) => ({
-      expected: acc.expected + cell.expected,
+      expected: acc.expected + cell.monthRent,
       collected: acc.collected + cell.paidSum,
       outstandingMonths:
         acc.outstandingMonths + (cell.status === 'overdue' || cell.status === 'due' ? 1 : 0),

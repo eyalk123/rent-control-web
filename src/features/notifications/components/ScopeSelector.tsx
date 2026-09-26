@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useProperties } from '@/features/properties/queries';
+import { useAccessibleProperties } from '@/features/properties/queries';
 import { useRenters } from '@/features/renters/queries';
 import { compareLabels, sortLabels } from '@/shared/utils/sortOptions';
 
@@ -37,7 +37,7 @@ export function ScopeSelector({ value, onChange }: Props) {
   const { t, i18n } = useTranslation();
   const [kind, setKind] = useState<ScopeKind>(() => initialKind(value));
   const [query, setQuery] = useState('');
-  const { data: properties = [] } = useProperties();
+  const { data: properties = [] } = useAccessibleProperties();
   const { data: renters = [] } = useRenters();
   const lang = i18n.language;
 

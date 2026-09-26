@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 /**
  * The marker on a property the plan no longer covers.
  *
- * Says "read-only", not "locked out". Nothing has been hidden or deleted — the whole
- * record still opens and still exports — and a badge that implied otherwise would
- * contradict the published refund policy as well as frightening people about their data.
+ * A locked property cannot be opened: the list shows it as a stub and every other read
+ * is refused. Nothing is deleted, though, and the account export still includes it — the
+ * over-limit notice says so, so the badge itself can stay one word.
  */
 export function LockedBadge({ size = 'default' }: { size?: 'default' | 'small' }) {
   const { t } = useTranslation();
@@ -25,44 +25,7 @@ export function LockedBadge({ size = 'default' }: { size?: 'default' | 'small' }
 data-testid="locked-badge"
     >
       <Lock size={small ? 11 : 12} strokeWidth={2.6} />
-      {t('subscription.readOnly')}
-    </span>
-  );
-}
-
-/**
- * Wraps an action that a locked property does not allow.
- *
- * Renders the control disabled with a lock and an explanation on hover, rather than
- * removing it. A button that vanishes leaves someone hunting for a feature they used
- * yesterday; a disabled one that says why is the difference between a limit and a bug.
- */
-export function LockedAction({
-  locked,
-  children,
-  className,
-}: {
-  locked: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const { t } = useTranslation();
-  if (!locked) return <>{children}</>;
-
-  return (
-    <span
-      className={className}
-      title={t('subscription.lockedActionHint')}
-      style={{ display: 'inline-flex', cursor: 'not-allowed' }}
-      // The disabled control inside cannot receive focus, so the wrapper carries the
-      // explanation for anyone not using a mouse.
-      tabIndex={0}
-      role="note"
-      aria-label={t('subscription.lockedActionHint')}
-    >
-      <span style={{ pointerEvents: 'none', opacity: 0.45, display: 'inline-flex' }}>
-        {children}
-      </span>
+      {t('subscription.locked')}
     </span>
   );
 }
