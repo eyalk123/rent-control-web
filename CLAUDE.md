@@ -5,7 +5,7 @@ Multi-tenant: all data is scoped to the authenticated owner.
 
 **Tech Stack:** React 19, TypeScript, Vite, React Router 7 (`createBrowserRouter`, lazy
 routes), TanStack React Query (server state), React Hook Form + Zod, Radix UI + Tailwind v4
-(CVA for variants), Axios, Firebase Auth (email/password + Google), i18next, Recharts,
+(CVA for variants), Axios, Firebase Auth (email/password + Google + Apple), i18next, Recharts,
 Sentry (prod only). Backend: FastAPI.
 
 **Commands:**
@@ -91,7 +91,7 @@ Sentry (prod only). Backend: FastAPI.
   `src/shared/components/form/`.
 - Auth: a `401` response auto-signs-out the user via the Axios response interceptor in
   `src/core/api/client.ts`. Public routes (`/`, `/pricing`, `/contact`, `/sign-in`,
-  `/privacy`, `/terms`, `/accessibility`, `/refunds`, `/licenses`, `/pay`) render outside `ProtectedRoute`; everything else
+  `/privacy`, `/terms`, `/accessibility`, `/refunds`, `/licenses`, `/pay`, `/delete-account`) render outside `ProtectedRoute`; everything else
   is inside `AppShell`.
   - `/` is `LandingGate`: the marketing page for visitors, a redirect to `/home` for a
     signed-in user. The protected subtree is therefore a **pathless layout route** and its
@@ -110,9 +110,9 @@ Sentry (prod only). Backend: FastAPI.
   - `/pay` is Paddle's **default payment link**. Paddle's dunning and "update payment method"
     emails land there with `?_ptxn=…`, and Paddle.js opens the checkout by itself. It has to
     stay public: a sign-in redirect would drop `_ptxn` and failed-renewal recovery would do
-    nothing. It loads Paddle.js on that page only, reads `VITE_PADDLE_CLIENT_TOKEN` (a public
-    client-side token, declared as a Dockerfile build arg), and needs Paddle's domains in the
-    `Caddyfile` CSP.
+    nothing. It loads Paddle.js through `features/subscription/paddle.ts` (shared with
+    `/plans`), reads `VITE_PADDLE_CLIENT_TOKEN` (a public client-side token, declared as a
+    Dockerfile build arg), and needs Paddle's domains in the `Caddyfile` CSP.
   - `/plans` (protected) is the plan picker, and the only place a purchase starts. Checkout
     is RevenueCat's Web SDK (`@revenuecat/purchases-js`, imported on demand in
     `features/subscription/checkout.ts`) with Paddle underneath, configured with
@@ -120,7 +120,9 @@ Sentry (prod only). Backend: FastAPI.
     **Firebase UID as the app user id**, which is what the webhook reads as the account.
     Packages come from the `default` offering as `<plan>_<period>`. A finished checkout sets
     `?checkout=pending` and polls `/subscription` until the webhook has changed the plan.
-    Without the key the buy buttons render disabled. RevenueCat's domains are in the CSP.
+    Without the key the buy buttons render disabled. Card prices come from Paddle's price
+    preview in the visitor's currency (the same per-country prices checkout charges), falling
+    back to the USD amounts in `tiers.ts` if it fails. RevenueCat's domains are in the CSP.
   - `/licenses` is built from `public/third-party-notices.txt` at build time by
     `build-plugins/thirdPartyNotices.ts`. That file is regenerated with
     `node scripts/generate-third-party-notices.mjs` (after `npm ci` here and in

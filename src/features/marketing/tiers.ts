@@ -34,9 +34,9 @@ export interface Tier {
 
 export const TIERS: Tier[] = [
   { id: 'free', plan: 'free', min: 1, max: 2, monthly: null, yearly: null },
-  { id: 'tier1', plan: 'tier_3_8', min: 3, max: 8, monthly: 15, yearly: 150 },
-  { id: 'tier2', plan: 'tier_9_15', min: 9, max: 15, monthly: 20, yearly: 200 },
-  { id: 'tier3', plan: 'tier_16_plus', min: 16, max: null, monthly: 25, yearly: 250 },
+  { id: 'tier1', plan: 'tier_3_8', min: 3, max: 8, monthly: 15, yearly: 135 },
+  { id: 'tier2', plan: 'tier_9_15', min: 9, max: 15, monthly: 20, yearly: 180 },
+  { id: 'tier3', plan: 'tier_16_plus', min: 16, max: null, monthly: 25, yearly: 225 },
 ];
 
 export const PAID_TIERS = TIERS.filter((t) => t.monthly !== null);

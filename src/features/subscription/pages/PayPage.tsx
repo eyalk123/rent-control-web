@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckCircle2, CreditCard, Loader2 } from 'lucide-react';
 import { MarketingHeader, MarketingFooter } from '@/features/marketing/components/MarketingChrome';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
+import { PADDLE_AVAILABLE, initPaddle } from '../paddle';
 
 /**
  * Paddle's "default payment link" — `https://rentvance.app/pay`.
@@ -18,43 +19,13 @@ import { CONTACT_EMAIL } from '@/features/legal/legalContent';
  * drop `_ptxn` and the payment would never open — failed-renewal recovery would quietly do
  * nothing. Nothing here needs an account: the transaction id is what identifies the payment.
  *
- * Paddle.js is loaded by this page alone rather than in `index.html`, so no other page pays
- * for a third-party script it never uses. The CSP in `Caddyfile` has to allow Paddle's
- * domains for it to load at all.
- *
- * `VITE_PADDLE_CLIENT_TOKEN` is a Paddle *client-side* token (`live_…` / `test_…`), which is
- * designed to ship in browser code. It is never the API key.
+ * Paddle.js is loaded by this page (and the plan picker's price preview) rather than in
+ * `index.html`, so no other page pays for a third-party script it never uses. `../paddle.ts`
+ * loads and initialises it. The CSP in `Caddyfile` has to allow Paddle's domains for it to
+ * load at all.
  */
 
-const PADDLE_JS = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-const TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
-
-interface PaddleEvent {
-  name?: string;
-}
-interface PaddleGlobal {
-  Environment: { set: (env: 'sandbox') => void };
-  Initialize: (options: { token: string; eventCallback?: (event: PaddleEvent) => void }) => void;
-}
-declare global {
-  interface Window {
-    Paddle?: PaddleGlobal;
-  }
-}
-
 type State = 'loading' | 'open' | 'completed' | 'closed' | 'failed';
-
-function loadPaddle(): Promise<PaddleGlobal> {
-  if (window.Paddle) return Promise.resolve(window.Paddle);
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = PADDLE_JS;
-    script.async = true;
-    script.onload = () => (window.Paddle ? resolve(window.Paddle) : reject(new Error('Paddle.js missing')));
-    script.onerror = () => reject(new Error('Paddle.js failed to load'));
-    document.head.appendChild(script);
-  });
-}
 
 export function PayPage() {
   const { t } = useTranslation();
@@ -63,23 +34,14 @@ export function PayPage() {
   const [state, setState] = useState<State>('loading');
 
   useEffect(() => {
-    if (!transaction || !TOKEN) return;
+    if (!transaction || !PADDLE_AVAILABLE) return;
     let cancelled = false;
-    loadPaddle()
-      .then((paddle) => {
-        if (cancelled) return;
-        // Sandbox tokens only work against Paddle's sandbox; the prefix says which this is.
-        if (TOKEN.startsWith('test_')) paddle.Environment.set('sandbox');
-        paddle.Initialize({
-          token: TOKEN,
-          eventCallback: (event) => {
-            if (event.name === 'checkout.loaded') setState('open');
-            else if (event.name === 'checkout.completed') setState('completed');
-            else if (event.name === 'checkout.closed') setState((s) => (s === 'completed' ? s : 'closed'));
-          },
-        });
-      })
-      .catch(() => !cancelled && setState('failed'));
+    initPaddle((event) => {
+      if (cancelled) return;
+      if (event.name === 'checkout.loaded') setState('open');
+      else if (event.name === 'checkout.completed') setState('completed');
+      else if (event.name === 'checkout.closed') setState((s) => (s === 'completed' ? s : 'closed'));
+    }).catch(() => !cancelled && setState('failed'));
     return () => {
       cancelled = true;
     };
@@ -95,7 +57,7 @@ export function PayPage() {
     heading = t('subscription.pay.noTransactionTitle');
     body = t('subscription.pay.noTransactionBody');
     showHome = true;
-  } else if (!TOKEN || state === 'failed') {
+  } else if (!PADDLE_AVAILABLE || state === 'failed') {
     icon = <CreditCard size={22} />;
     heading = t('subscription.pay.unavailableTitle');
     body = t('subscription.pay.unavailableBody', { email: CONTACT_EMAIL });

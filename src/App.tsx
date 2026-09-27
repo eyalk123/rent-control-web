@@ -32,6 +32,7 @@ const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolic
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
 const RefundPolicyPage = lazy(() => import('@/features/legal/pages/RefundPolicyPage').then((m) => ({ default: m.RefundPolicyPage })));
+const AccountDeletionPage = lazy(() => import('@/features/legal/pages/AccountDeletionPage').then((m) => ({ default: m.AccountDeletionPage })));
 const OpenSourceLicensesPage = lazy(() => import('@/features/legal/pages/OpenSourceLicensesPage').then((m) => ({ default: m.OpenSourceLicensesPage })));
 const LandingPage = lazy(() => import('@/features/marketing/pages/LandingPage').then((m) => ({ default: m.LandingPage })));
 const PricingPage = lazy(() => import('@/features/marketing/pages/PricingPage').then((m) => ({ default: m.PricingPage })));
@@ -112,6 +113,8 @@ const router = createBrowserRouter([
       { path: '/accessibility', element: <AccessibilityStatementPage />, errorElement: <RouteErrorPage /> },
       { path: '/refunds', element: <RefundPolicyPage />, errorElement: <RouteErrorPage /> },
       { path: '/licenses', element: <OpenSourceLicensesPage />, errorElement: <RouteErrorPage /> },
+      // Google Play's Data safety form links here, so it must work without the app or an account.
+      { path: '/delete-account', element: <AccountDeletionPage />, errorElement: <RouteErrorPage /> },
       // Public marketing pages. `/` serves the landing page to visitors and redirects
       // signed-in users to /home — see LandingGate.
       { path: '/', element: <LandingGate />, errorElement: <RouteErrorPage /> },

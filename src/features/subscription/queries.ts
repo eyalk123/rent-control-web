@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { acknowledgeLockNotice, getSubscription } from './api/subscriptionApi';
 import { CHECKOUT_AVAILABLE, loadOffering } from './checkout';
+import { PADDLE_AVAILABLE, previewPrices } from './paddle';
 import type { Subscription } from './types';
 
 export const subscriptionKeys = {
@@ -35,6 +36,21 @@ export function useCheckoutOffering(appUserId: string | undefined, enabled: bool
     queryKey: ['subscription', 'offering', appUserId] as const,
     queryFn: () => loadOffering(appUserId as string),
     enabled: enabled && CHECKOUT_AVAILABLE && Boolean(appUserId),
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+/**
+ * This visitor's prices in their own currency, from Paddle's price preview — the same
+ * per-country prices checkout charges. When it fails the picker shows the USD prices from
+ * `tiers.ts` instead.
+ */
+export function useLocalPrices() {
+  return useQuery({
+    queryKey: ['subscription', 'local-prices'] as const,
+    queryFn: previewPrices,
+    enabled: PADDLE_AVAILABLE,
     staleTime: Infinity,
     retry: 1,
   });

@@ -637,3 +637,131 @@ export const refundContent: Localized<LegalDoc> = {
     ],
   },
 };
+
+// ─── Account Deletion ────────────────────────────────────────────────────────
+//
+// Public (no sign-in) because Google Play's Data safety form requires a deletion URL a person
+// can use without the app installed. Only the web app routes to it (/delete-account); it lives
+// here so both copies of this file stay identical.
+
+const DELETION_UPDATED_EN = 'September 27, 2026';
+const DELETION_UPDATED_HE = '27 בספטמבר 2026';
+
+export const accountDeletionContent: Localized<LegalDoc> = {
+  en: {
+    title: 'Delete your RentVance account',
+    lastUpdated: DELETION_UPDATED_EN,
+    intro: [
+      'You can delete your RentVance account, and everything in it, at any time. Deleting is permanent and cannot be undone. If you want a copy of your data first, use Export all data in Settings on the web app before you delete.',
+    ],
+    sections: [
+      {
+        heading: '1. In the iPhone or Android app',
+        bullets: [
+          'Open RentVance and sign in.',
+          'Tap the gear icon at the top of any tab to open Settings.',
+          'Tap Delete Account, type DELETE, and tap Delete Account Permanently.',
+        ],
+      },
+      {
+        heading: '2. On the web',
+        bullets: [
+          'Sign in at rentvance.app.',
+          'Open Settings from the sidebar (on a narrow screen, from the More menu).',
+          'Choose Delete Account, type DELETE, and click Delete Account Permanently.',
+          'If you are asked to sign in again first, sign out, sign back in, and repeat these steps. This is a security check.',
+        ],
+      },
+      {
+        heading: '3. If you can no longer sign in',
+        paragraphs: [
+          `Email ${CONTACT_EMAIL} from the email address on your account and ask us to delete it. We will confirm that the request came from you and delete the account within 30 days.`,
+        ],
+      },
+      {
+        heading: '4. What is deleted',
+        paragraphs: ['Deleting your account permanently removes:'],
+        bullets: [
+          'Your profile and sign-in account.',
+          'Your properties, renters, leases, transactions, suppliers and expense categories.',
+          'Every file you uploaded: leases, documents, photos and receipts.',
+          'Your conversations with the Ask RentVance assistant and your lease-scanning history.',
+          'Your reminders, notification settings, registered devices and report history.',
+          'Messages you sent us through the app, and your activity log.',
+        ],
+      },
+      {
+        heading: '5. What is kept, and for how long',
+        bullets: [
+          'One anonymous record with a few counts (for example, how many properties the account had), so we can measure how many accounts close. It contains nothing that identifies you or your tenants.',
+          'Encrypted database backups. Deleted data can remain in them until they expire: up to 35 days for daily backups and up to 400 days for monthly backups. Backups are used only to recover from a failure and are never used to restore a deleted account.',
+          'Anything we are required to keep by law.',
+        ],
+      },
+      {
+        heading: '6. Subscriptions',
+        paragraphs: [
+          'Deleting your account does not cancel a subscription bought through Apple or Google. Cancel it in the App Store or Google Play first, as described in our Refund & Cancellation Policy.',
+        ],
+      },
+    ],
+  },
+  he: {
+    title: 'מחיקת חשבון RentVance',
+    lastUpdated: DELETION_UPDATED_HE,
+    intro: [
+      'ניתן למחוק את חשבון RentVance שלך, ואת כל המידע שבו, בכל עת. המחיקה סופית ואינה ניתנת לביטול. אם ברצונך לשמור עותק של המידע, השתמש באפשרות "ייצוא כל הנתונים" בהגדרות באפליקציית הרשת לפני המחיקה.',
+    ],
+    sections: [
+      {
+        heading: '1. באפליקציית iPhone או Android',
+        bullets: [
+          'פתח את RentVance והתחבר.',
+          'הקש על סמל גלגל השיניים בראש כל לשונית כדי לפתוח את ההגדרות.',
+          'הקש על "מחק חשבון", הקלד DELETE והקש על "מחק חשבון לצמיתות".',
+        ],
+      },
+      {
+        heading: '2. באתר',
+        bullets: [
+          'התחבר בכתובת rentvance.app.',
+          'פתח את ההגדרות מהתפריט הצדדי (במסך צר — מתפריט "עוד").',
+          'בחר "מחק חשבון", הקלד DELETE ולחץ על "מחק חשבון לצמיתות".',
+          'אם תתבקש להתחבר מחדש קודם, התנתק, התחבר שוב וחזור על השלבים. זוהי בדיקת אבטחה.',
+        ],
+      },
+      {
+        heading: '3. אם אינך יכול להתחבר',
+        paragraphs: [
+          `שלח דוא"ל אל ${CONTACT_EMAIL} מכתובת הדוא"ל הרשומה בחשבון ובקש את מחיקתו. נוודא שהבקשה הגיעה ממך ונמחק את החשבון בתוך 30 יום.`,
+        ],
+      },
+      {
+        heading: '4. מה נמחק',
+        paragraphs: ['מחיקת החשבון מסירה לצמיתות את:'],
+        bullets: [
+          'הפרופיל וחשבון ההתחברות שלך.',
+          'הנכסים, השוכרים, החוזים, התנועות, הספקים וקטגוריות ההוצאה שלך.',
+          'כל הקבצים שהעלית: חוזים, מסמכים, תמונות וקבלות.',
+          'השיחות שלך עם העוזר "שאלו את RentVance" והיסטוריית סריקת החוזים.',
+          'התזכורות, הגדרות ההתראות, המכשירים הרשומים והיסטוריית הדוחות.',
+          'הודעות ששלחת אלינו דרך האפליקציה, ויומן הפעילות שלך.',
+        ],
+      },
+      {
+        heading: '5. מה נשמר, ולכמה זמן',
+        bullets: [
+          'רשומה אנונימית אחת עם מספר ספירות (למשל, כמה נכסים היו בחשבון), כדי שנוכל למדוד כמה חשבונות נסגרים. אין בה דבר שמזהה אותך או את השוכרים שלך.',
+          'גיבויים מוצפנים של מסד הנתונים. מידע שנמחק עשוי להישאר בהם עד שתוקפם פג: עד 35 יום בגיבויים היומיים ועד 400 יום בגיבויים החודשיים. הגיבויים משמשים רק לשחזור לאחר תקלה, ולעולם אינם משמשים לשחזור חשבון שנמחק.',
+          'כל מידע שאנו נדרשים לשמור על פי דין.',
+        ],
+      },
+      {
+        heading: '6. מנויים',
+        paragraphs: [
+          'מחיקת החשבון אינה מבטלת מנוי שנרכש דרך Apple או Google. בטל אותו קודם ב־App Store או ב־Google Play, כמתואר במדיניות הביטול וההחזרים שלנו.',
+        ],
+      },
+    ],
+  },
+};

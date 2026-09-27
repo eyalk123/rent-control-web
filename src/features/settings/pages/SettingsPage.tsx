@@ -10,6 +10,8 @@ import { SegToggle } from '@/shared/components/ui/SegToggle';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { useToast } from '@/shared/components/ui/Toast';
 import { downloadAllData } from '../api/export';
+import { deleteMyAccount } from '../api/account';
+import { isPopupCancel, reauthenticateAppleForDeletion, revokeAppleToken } from '@/core/auth/appleAuth';
 import { Toggle } from '@/shared/components/ui/Toggle';
 import { TOURS_ENABLED } from '@/features/onboarding/flags';
 import { useRecordTourProgress, useTourState } from '@/features/onboarding/queries';
@@ -30,7 +32,8 @@ import { useFeedbackPanel } from '@/features/feedback/FeedbackPanelContext';
 function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { deleteFirebaseAccount } = useAppAuth();
+  const { user, deleteFirebaseAccount } = useAppAuth();
+  const { language } = useLanguage();
   const { showToast } = useToast();
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,14 +58,29 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     if (!canDelete) return;
     setLoading(true);
     try {
+      // 0. Apple accounts only: the Apple popup, before anything is deleted, so closing it
+      //    leaves the account whole. Yields the token Apple needs us to revoke.
+      const appleAccessToken = user ? await reauthenticateAppleForDeletion(user, language) : null;
+
+      // 1. The account's data on the server. Without this only the sign-in was deleted and
+      //    every property, renter and file stayed behind (the mobile app always did this).
+      await deleteMyAccount();
+
+      // 2. Revoke Apple's tokens (Apple accounts only), then delete the Firebase sign-in.
+      await revokeAppleToken(appleAccessToken);
       await deleteFirebaseAccount();
       navigate('/sign-in', { replace: true });
     } catch (err) {
+      setLoading(false);
+      if (isPopupCancel(err)) return;
+      if ((err as { code?: string })?.code === 'auth/requires-recent-login') {
+        showToast(t('settings.deleteAccountRequiresReauth'), 'error');
+        return;
+      }
       // A Firebase SDK failure, not an HTTP one — no central handler sees it, and a
       // user stuck unable to delete their account is exactly what we want to hear about.
       Sentry.captureException(err, { tags: { feature: 'account_delete' } });
       showToast(t('error.saveFailed'), 'error');
-      setLoading(false);
     }
   };
 

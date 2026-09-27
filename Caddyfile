@@ -33,8 +33,9 @@
 		#   before upload, e.g. the property image and expense receipt thumbnails.
 		# - frame-src allows the Firebase auth domain for popup/redirect sign-in.
 		# - Paddle (script, style, frame buy./sandbox-buy., connect *.paddle.com) is for
-		#   /pay, Paddle's default payment link. Paddle publishes no CSP list; these are
-		#   the domains Paddle.js v2 loads from. A block shows in the browser console.
+		#   /pay, Paddle's default payment link, and the price preview on /plans. Paddle
+		#   publishes no CSP list; these are the domains Paddle.js v2 loads from. A block
+		#   shows in the browser console.
 		# - RevenueCat (script sdk.revenuecat-static.com, connect api.revenuecat.com and
 		#   e.revenue.cat, fonts from its CloudFront host) is the in-app checkout on
 		#   /plans; these are the domains @revenuecat/purchases-js has hardcoded.

@@ -6,22 +6,46 @@ import type { Package } from '@revenuecat/purchases-js';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
-import {
-  PAID_TIERS,
-  bandLabel,
-  monthlyEquivalent,
-  yearlySavingPercent,
-  type BillingPeriod,
-  type Tier,
-} from '@/features/marketing/tiers';
-import { useCheckoutOffering, useSubscription } from '../queries';
+import { PAID_TIERS, bandLabel, type BillingPeriod, type Tier } from '@/features/marketing/tiers';
+import { useCheckoutOffering, useLocalPrices, useSubscription } from '../queries';
 import { CHECKOUT_AVAILABLE, packageFor, purchase } from '../checkout';
+import type { LocalPrices } from '../paddle';
 import type { PlanId, Subscription } from '../types';
 
 /** How often the page asks the server whether the purchase's webhook has landed. */
 const POLL_MS = 3_000;
 /** After this long, say that activation is slow rather than spinning forever. */
 const SLOW_AFTER_MS = 90_000;
+
+/** One card's price: what is charged per period, in which currency. */
+interface ShownPrice {
+  amount: number;
+  currency: string;
+  /** Tax is added at checkout (US), so the price reads "+ tax". */
+  taxExclusive: boolean;
+}
+
+/**
+ * The visitor's own price when Paddle's preview has it; the USD display price from
+ * `tiers.ts` when it has failed or isn't configured.
+ */
+function shownPrice(tier: Tier, period: BillingPeriod, local: LocalPrices | undefined): ShownPrice | null {
+  if (local) {
+    return {
+      amount: local.amounts[`${tier.plan}_${period}`],
+      currency: local.currency,
+      taxExclusive: local.taxExclusive,
+    };
+  }
+  const usd = period === 'monthly' ? tier.monthly : tier.yearly;
+  return usd === null ? null : { amount: usd, currency: 'USD', taxExclusive: false };
+}
+
+/** Whole-percent saving of yearly over twelve monthly payments, from the prices shown. */
+function yearlySaving(monthly: ShownPrice | null, yearly: ShownPrice | null): number | null {
+  if (!monthly || !yearly || monthly.amount <= 0) return null;
+  return Math.round((1 - yearly.amount / (monthly.amount * 12)) * 100);
+}
 
 /**
  * The plan picker: where a signed-in landlord chooses a band and a billing period.
@@ -45,9 +69,11 @@ const SLOW_AFTER_MS = 90_000;
  * An expired subscription resolves to the free plan on the server, so a lapsed App Store
  * subscriber *is* offered web checkout. The exclusion is about active subscriptions only.
  *
- * Prices come from the RevenueCat offering once it has loaded: that is the amount Paddle will
- * actually charge. The display prices in `tiers.ts` stand in only while it loads, or when
- * checkout is not configured.
+ * Prices come from Paddle's price preview, in the visitor's own currency: Paddle picks the
+ * country from their IP and applies the same per-country prices its checkout charges (ILS in
+ * Israel, EUR in the eurozone, USD elsewhere). If the preview fails — Paddle.js blocked, the
+ * domain not yet approved, the network — the USD display prices in `tiers.ts` stand in, and
+ * the footnote says checkout shows the local price.
  *
  * **Paying does not change the plan here.** Paddle takes the money, RevenueCat sends a webhook,
  * and the server updates the plan. The page marks itself `?checkout=pending` and polls
@@ -74,6 +100,9 @@ export function PlansPage() {
   const offering = useCheckoutOffering(user?.uid, canBuy);
   const [buying, setBuying] = useState<PlanId | null>(null);
   const [failed, setFailed] = useState(false);
+  const localPrices = useLocalPrices();
+  // `isPending` stays true for a query that is switched off, so only a running preview counts.
+  const pricesLoading = localPrices.isLoading;
 
   async function buy(pkg: Package, plan: PlanId) {
     if (!user) return;
@@ -100,7 +129,12 @@ export function PlansPage() {
 
   if (isLoading || !data) return <PageLoader />;
 
-  const saving = yearlySavingPercent(PAID_TIERS[0]);
+  const saving = pricesLoading
+    ? null
+    : yearlySaving(
+        shownPrice(PAID_TIERS[0], 'monthly', localPrices.data),
+        shownPrice(PAID_TIERS[0], 'yearly', localPrices.data),
+      );
 
   return (
     <div className="mx-auto w-full max-w-[980px] px-1 py-2">
@@ -162,6 +196,7 @@ export function PlansPage() {
             key={tier.id}
             tier={tier}
             period={period}
+            price={pricesLoading ? undefined : shownPrice(tier, period, localPrices.data)}
             data={data}
             canBuy={canBuy}
             highlighted={tier.plan === picked || (canBuy && !picked && tier.plan === data.required_plan)}
@@ -185,7 +220,7 @@ export function PlansPage() {
         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
       >
         <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text-secondary)', maxWidth: '82ch' }}>
-          {t('marketing.pricing.termsBody')}
+          {t(localPrices.data ? 'subscription.plans.termsLocal' : 'subscription.plans.termsUsd')}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
           <Link to="/terms" className="hover:underline" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
@@ -291,6 +326,7 @@ function PendingBanner({ data, activated }: { data: Subscription; activated: boo
 function PlanCard({
   tier,
   period,
+  price,
   data,
   canBuy,
   highlighted,
@@ -301,6 +337,8 @@ function PlanCard({
 }: {
   tier: Tier;
   period: BillingPeriod;
+  /** Undefined while the preview is loading. */
+  price: ShownPrice | null | undefined;
   data: Subscription;
   canBuy: boolean;
   highlighted: boolean;
@@ -312,19 +350,15 @@ function PlanCard({
   const { t, i18n } = useTranslation();
   const isCurrent = tier.plan === data.plan;
 
-  // The offering's price is what Paddle charges; tiers.ts is the stand-in until it loads.
-  const charged = pkg?.webBillingProduct.price;
-  const price = charged ? charged.formattedPrice : `$${period === 'monthly' ? tier.monthly : tier.yearly}`;
-  const perMonthValue = charged ? charged.amountMicros / 12 / 1_000_000 : monthlyEquivalent(tier);
-  const perMonth =
-    perMonthValue === null
-      ? null
-      : new Intl.NumberFormat(i18n.language, {
-          style: 'currency',
-          currency: charged?.currency ?? 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(perMonthValue);
+  const format = (amount: number, digits: number) =>
+    new Intl.NumberFormat(i18n.language, {
+      style: 'currency',
+      currency: price!.currency,
+      minimumFractionDigits: digits,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  const priceText = price ? format(price.amount, Number.isInteger(price.amount) ? 0 : 2) : '…';
+  const perMonth = price ? format(price.amount / 12, 2) : null;
 
   const purchasable = CHECKOUT_AVAILABLE && pkg !== null && buying === null;
   let buttonLabel = t('subscription.plans.checkoutSoon');
@@ -369,10 +403,11 @@ function PlanCard({
           className="text-[30px] font-semibold"
           style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}
         >
-          {price}
+          {priceText}
         </span>
         <span className="text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
           {t(`marketing.pricing.per.${period}`)}
+          {price?.taxExclusive ? ` ${t('subscription.plans.plusTax')}` : ''}
         </span>
       </div>
       <p className="mt-1 text-[13px] min-h-[18px]" style={{ color: 'var(--color-text-secondary)' }}>
