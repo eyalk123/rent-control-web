@@ -27,6 +27,7 @@ const IncomeExpenseReportPage = lazy(() => import('@/features/reports/pages/Inco
 const ExpenseLogReportPage = lazy(() => import('@/features/reports/pages/ExpenseLogReportPage').then((m) => ({ default: m.ExpenseLogReportPage })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const NotificationsSettingsPage = lazy(() => import('@/features/notifications/pages/NotificationsSettingsPage').then((m) => ({ default: m.NotificationsSettingsPage })));
+const NotificationEventPage = lazy(() => import('@/features/notifications/pages/NotificationEventPage').then((m) => ({ default: m.NotificationEventPage })));
 const PrivacyPolicyPage = lazy(() => import('@/features/legal/pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
 const TermsOfServicePage = lazy(() => import('@/features/legal/pages/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage })));
 const AccessibilityStatementPage = lazy(() => import('@/features/legal/pages/AccessibilityStatementPage').then((m) => ({ default: m.AccessibilityStatementPage })));
@@ -143,6 +144,7 @@ const router = createBrowserRouter([
           { path: '/reports/expense-log', element: <ExpenseLogReportPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/settings/notifications', element: <NotificationsSettingsPage /> },
+          { path: '/settings/notifications/:event', element: <NotificationEventPage /> },
           { path: '/settings/subscription', element: <SubscriptionSettingsPage /> },
           { path: '/plans', element: <PlansPage /> },
         ],

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { FormChipInput } from '@/shared/components/form/FormChipInput';
-import { useCreateRule, useUpdateRule, previewRule } from '../queries';
+import { useCreateRule, useDeleteRule, useUpdateRule, previewRule } from '../queries';
 import type { NotificationEvent, NotificationRule, NotificationRuleDraft, RulePreview } from '../types';
 import { ScopeSelector, type ScopeValue } from './ScopeSelector';
 import { ANCHORS } from '@/features/onboarding/anchors';
@@ -31,6 +32,8 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
   const { showToast } = useToast();
   const createRule = useCreateRule();
   const updateRule = useUpdateRule();
+  const deleteRule = useDeleteRule();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const [label, setLabel] = useState('');
   const [offsets, setOffsets] = useState<number[]>([]);
@@ -92,6 +95,20 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
     }
   };
 
+  // Delete lives here rather than on the list row, so the list keeps one control per row.
+  const handleDelete = async () => {
+    if (!rule) return;
+    try {
+      await deleteRule.mutateAsync(rule.id);
+      showToast(t('notifications.deletedToast'), 'success');
+      setConfirmingDelete(false);
+      onClose();
+    } catch {
+      showToast(t('error.saveFailed'), 'error');
+      setConfirmingDelete(false);
+    }
+  };
+
   const offsetLabel = event === 'lease_expiring'
     ? t('notifications.remindBefore')
     : t('notifications.remindAfter');
@@ -104,6 +121,16 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
       width={460}
       footer={
         <div className="flex justify-end gap-2">
+          {rule && (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              disabled={saving}
+              className="h-9 px-3 me-auto rounded-[9px] text-[13px] font-medium disabled:opacity-40"
+              style={{ color: 'var(--color-error)' }}
+            >
+              {t('notifications.deleteRule')}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="h-9 px-4 rounded-[9px] text-[13px] font-medium"
@@ -175,6 +202,16 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
               : t('notifications.previewLoading')}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={t('notifications.deleteRuleTitle')}
+        message={t('notifications.deleteRuleMessage')}
+        tone="danger"
+        loading={deleteRule.isPending}
+        onConfirm={handleDelete}
+        onClose={() => setConfirmingDelete(false)}
+      />
     </Drawer>
   );
 }

@@ -13,7 +13,7 @@ import {
   updateRule,
   updateSettings,
 } from './api/preferencesApi';
-import type { NotificationRuleDraft, NotificationSettings } from './types';
+import type { NotificationPreferences, NotificationRuleDraft, NotificationSettings } from './types';
 
 export const notificationKeys = {
   feed: ['notifications', 'feed'] as const,
@@ -64,12 +64,32 @@ function usePreferencesInvalidation() {
   };
 }
 
-export function useUpdateSettings() {
+/**
+ * Writes the change into the cached preferences before the request goes out, so a switch
+ * moves when it is clicked rather than when the refetch lands. The refetch afterwards
+ * (success or failure) replaces the guess with what the server actually holds.
+ */
+function useOptimisticPreferences<V>(
+  mutationFn: (vars: V) => Promise<unknown>,
+  apply: (prefs: NotificationPreferences, vars: V) => NotificationPreferences,
+) {
+  const qc = useQueryClient();
   const invalidate = usePreferencesInvalidation();
   return useMutation({
-    mutationFn: (patch: Partial<NotificationSettings>) => updateSettings(patch),
-    onSuccess: invalidate,
+    mutationFn,
+    onMutate: async (vars: V) => {
+      await qc.cancelQueries({ queryKey: notificationKeys.preferences });
+      qc.setQueryData<NotificationPreferences>(notificationKeys.preferences, (prev) => (prev ? apply(prev, vars) : prev));
+    },
+    onSettled: invalidate,
   });
+}
+
+export function useUpdateSettings() {
+  return useOptimisticPreferences(
+    (patch: Partial<NotificationSettings>) => updateSettings(patch),
+    (prefs, patch) => ({ ...prefs, settings: { ...prefs.settings, ...patch } }),
+  );
 }
 
 export function useCreateRule() {
@@ -81,12 +101,10 @@ export function useCreateRule() {
 }
 
 export function useUpdateRule() {
-  const invalidate = usePreferencesInvalidation();
-  return useMutation({
-    mutationFn: ({ id, patch }: { id: number; patch: Partial<NotificationRuleDraft> }) =>
-      updateRule(id, patch),
-    onSuccess: invalidate,
-  });
+  return useOptimisticPreferences(
+    ({ id, patch }: { id: number; patch: Partial<NotificationRuleDraft> }) => updateRule(id, patch),
+    (prefs, { id, patch }) => ({ ...prefs, rules: prefs.rules.map((r) => (r.id === id ? { ...r, ...patch } : r)) }),
+  );
 }
 
 export function useDeleteRule() {
