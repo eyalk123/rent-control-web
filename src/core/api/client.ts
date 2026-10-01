@@ -99,11 +99,22 @@ apiClient.interceptors.response.use(
     // message the form already displays, 401 signs the user out just above, 403/404 are
     // ordinary outcomes. Reporting them would bury the real failures.
     const isCancel = axios.isCancel(error) || error.code === 'ERR_CANCELED';
-    if (!isCancel && (status === undefined || status >= 500)) {
+    // ERR_NETWORK means no response at all — the request never reached the backend.
+    // While the browser itself reports being offline that is the user's connection, not
+    // ours; the breadcrumb above is enough.
+    const isNetwork = error.code === 'ERR_NETWORK';
+    const isOffline = isNetwork && typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (!isCancel && !isOffline && (status === undefined || status >= 500)) {
       Sentry.captureException(error, {
         // Axios stringifies every 500 to "Request failed with status code 500", which
         // would collapse every backend failure into a single issue. Group per endpoint.
-        fingerprint: ['api', method, route, String(status ?? error.code ?? 'network')],
+        // Network errors are the opposite: a dropped connection or a laptop waking from
+        // sleep fails every in-flight request at once, so per-route grouping turned one
+        // blip into an issue per endpoint. They share one issue; api_route still tells
+        // them apart.
+        fingerprint: isNetwork
+          ? ['api', 'network']
+          : ['api', method, route, String(status ?? error.code ?? 'network')],
         tags: {
           api_route: route,
           api_status: String(status ?? ''),
