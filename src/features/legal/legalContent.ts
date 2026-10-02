@@ -70,11 +70,11 @@ export const privacyContent: Localized<LegalDoc> = {
         heading: '1. Information we collect',
         paragraphs: ['We collect the following categories of information:'],
         bullets: [
-          'Account information — your email address and display name, provided through Firebase Authentication (including Google sign-in).',
-          'Data you enter — details about your properties, tenants, and suppliers, including names, phone numbers, email addresses, lease terms, payment and balance records, and bank or other financial details.',
-          'Documents you upload — such as lease contracts, identity documents, and payment receipts.',
-          'Locally stored preferences — your sign-in token, language, and theme, stored in your browser.',
-          'Technical and error data — limited diagnostic information used to detect and fix errors. It is not used for tracking or advertising.',
+          'Account information: your email address and display name, provided through Firebase Authentication (including Google sign-in).',
+          'Data you enter: details about your properties, tenants, and suppliers, including names, phone numbers, email addresses, lease terms, payment and balance records, and bank or other financial details.',
+          'Documents you upload, such as lease contracts, identity documents, and payment receipts.',
+          'Locally stored preferences: your sign-in token, language, and theme, stored in your browser.',
+          'Technical and error data: limited diagnostic information used to detect and fix errors. It is not used for tracking or advertising.',
         ],
       },
       {
@@ -104,9 +104,9 @@ export const privacyContent: Localized<LegalDoc> = {
         heading: '5. How we share information',
         paragraphs: ['We do not sell your personal information. We share information only with service providers that help us operate the Service:'],
         bullets: [
-          'Google Firebase — authentication, file storage, and database services.',
-          'Railway — application and database hosting.',
-          'Sentry — error monitoring (configured to avoid collecting personal information).',
+          'Google Firebase: authentication, file storage, and database services.',
+          'Railway: application and database hosting.',
+          'Sentry: error monitoring (configured to avoid collecting personal information).',
         ],
       },
       {
@@ -137,7 +137,7 @@ export const privacyContent: Localized<LegalDoc> = {
       {
         heading: '10. Cookies and local storage',
         paragraphs: [
-          'The Service uses only strictly necessary first-party browser storage — your sign-in token, language, and theme preference. We do not use advertising or tracking cookies, and therefore do not display a cookie-consent banner. If we add analytics or tracking in the future, we will request your consent as required by law.',
+          'The Service uses only strictly necessary first-party browser storage: your sign-in token, language, and theme preference. We do not use advertising or tracking cookies, and therefore do not display a cookie-consent banner. If we add analytics or tracking in the future, we will request your consent as required by law.',
         ],
       },
       {
@@ -168,11 +168,11 @@ export const privacyContent: Localized<LegalDoc> = {
         heading: '1. מידע שאנו אוספים',
         paragraphs: ['אנו אוספים את סוגי המידע הבאים:'],
         bullets: [
-          'פרטי חשבון — כתובת הדוא"ל ושם התצוגה שלך, המתקבלים באמצעות Firebase Authentication (כולל התחברות עם Google).',
-          'מידע שאתה מזין — פרטים על הנכסים, הדיירים והספקים שלך, לרבות שמות, מספרי טלפון, כתובות דוא"ל, תנאי שכירות, רישומי תשלומים ויתרות, ופרטי בנק או פרטים פיננסיים אחרים.',
-          'מסמכים שאתה מעלה — כגון חוזי שכירות, מסמכי זיהוי וקבלות תשלום.',
-          'העדפות הנשמרות מקומית — אסימון ההתחברות, השפה וערכת הנושא, הנשמרים בדפדפן שלך.',
-          'נתונים טכניים ונתוני שגיאות — מידע אבחוני מוגבל המשמש לזיהוי ותיקון תקלות. הוא אינו משמש למעקב או לפרסום.',
+          'פרטי חשבון: כתובת הדוא"ל ושם התצוגה שלך, המתקבלים באמצעות Firebase Authentication (כולל התחברות עם Google).',
+          'מידע שאתה מזין: פרטים על הנכסים, הדיירים והספקים שלך, לרבות שמות, מספרי טלפון, כתובות דוא"ל, תנאי שכירות, רישומי תשלומים ויתרות, ופרטי בנק או פרטים פיננסיים אחרים.',
+          'מסמכים שאתה מעלה, כגון חוזי שכירות, מסמכי זיהוי וקבלות תשלום.',
+          'העדפות הנשמרות מקומית: אסימון ההתחברות, השפה וערכת הנושא, הנשמרים בדפדפן שלך.',
+          'נתונים טכניים ונתוני שגיאות: מידע אבחוני מוגבל המשמש לזיהוי ותיקון תקלות. הוא אינו משמש למעקב או לפרסום.',
         ],
       },
       {
@@ -202,9 +202,9 @@ export const privacyContent: Localized<LegalDoc> = {
         heading: '5. כיצד אנו משתפים מידע',
         paragraphs: ['איננו מוכרים את המידע האישי שלך. אנו משתפים מידע רק עם ספקי שירות המסייעים לנו בהפעלת השירות:'],
         bullets: [
-          'Google Firebase — שירותי אימות, אחסון קבצים ומסד נתונים.',
-          'Railway — אירוח האפליקציה ומסד הנתונים.',
-          'Sentry — ניטור שגיאות (מוגדר כך שלא יאסוף מידע אישי).',
+          'Google Firebase: שירותי אימות, אחסון קבצים ומסד נתונים.',
+          'Railway: אירוח האפליקציה ומסד הנתונים.',
+          'Sentry: ניטור שגיאות (מוגדר כך שלא יאסוף מידע אישי).',
         ],
       },
       {
@@ -235,7 +235,7 @@ export const privacyContent: Localized<LegalDoc> = {
       {
         heading: '10. עוגיות ואחסון מקומי',
         paragraphs: [
-          'השירות משתמש באחסון דפדפן מהותי בלבד מטעמנו — אסימון ההתחברות, העדפת השפה וערכת הנושא. איננו משתמשים בעוגיות פרסום או מעקב, ולכן איננו מציגים באנר הסכמה לעוגיות. אם נוסיף ניתוח נתונים או מעקב בעתיד, נבקש את הסכמתך כנדרש בחוק.',
+          'השירות משתמש באחסון דפדפן מהותי בלבד מטעמנו: אסימון ההתחברות, העדפת השפה וערכת הנושא. איננו משתמשים בעוגיות פרסום או מעקב, ולכן איננו מציגים באנר הסכמה לעוגיות. אם נוסיף ניתוח נתונים או מעקב בעתיד, נבקש את הסכמתך כנדרש בחוק.',
         ],
       },
       {
@@ -556,7 +556,7 @@ export const refundContent: Localized<LegalDoc> = {
         heading: '4. Refunds',
         paragraphs: [
           'Bought on the web: contact us within 14 days of a charge and we will refund it in full. After 14 days, a monthly subscription is not refunded for a period that has already started. After 14 days, a yearly subscription is refunded pro rata for the whole months not yet used, counted from the date you cancel. Refunds are issued through Paddle to the original payment method.',
-          'Bought in the iPhone, iPad or Android apps: only Apple and Google can issue a refund for those purchases, under their own policies, and the rules above do not apply to them. Apple handles refund requests at reportaproblem.apple.com; Google handles them through the Play Store. Contact us anyway if you need help — we will point you to the right place.',
+          'Bought in the iPhone, iPad or Android apps: only Apple and Google can issue a refund for those purchases, under their own policies, and the rules above do not apply to them. Apple handles refund requests at reportaproblem.apple.com; Google handles them through the Play Store. Contact us anyway if you need help, and we will point you to the right place.',
           'None of this limits any right to cancel or to a refund that the law gives you.',
         ],
       },
@@ -575,7 +575,7 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '7. Contact',
         paragraphs: ['For anything about billing, cancellation or a refund, email us:'],
-        bullets: [`${OPERATOR_EN} — ${CONTACT_EMAIL}`],
+        bullets: [`${OPERATOR_EN}: ${CONTACT_EMAIL}`],
       },
     ],
   },
@@ -595,7 +595,7 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '2. כיצד מתחדש המנוי',
         paragraphs: [
-          'התוכניות בתשלום נמכרות כמנוי חודשי או שנתי, ומתחדשות אוטומטית בתום כל תקופה עד לביטול. המחיר ותקופת החיוב מוצגים לפני אישור הרכישה, והסכום שתשלם נקבע על ידי החנות או ספק התשלומים שמוכר לך את המנוי — במטבע המקומי שלך, כולל מס שחל במקום מגוריך.',
+          'התוכניות בתשלום נמכרות כמנוי חודשי או שנתי, ומתחדשות אוטומטית בתום כל תקופה עד לביטול. המחיר ותקופת החיוב מוצגים לפני אישור הרכישה, והסכום שתשלם נקבע על ידי החנות או ספק התשלומים שמוכר לך את המנוי, במטבע המקומי שלך, כולל מס שחל במקום מגוריך.',
         ],
       },
       {
@@ -612,8 +612,8 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '4. החזרים כספיים',
         paragraphs: [
-          'רכישה באתר: פנה אלינו בתוך 14 יום ממועד החיוב ונחזיר את מלוא הסכום. לאחר 14 יום, במנוי חודשי — אין החזר על תקופה שכבר החלה. לאחר 14 יום, במנוי שנתי — יינתן החזר יחסי עבור החודשים המלאים שטרם נוצלו, ממועד הביטול. ההחזר מבוצע דרך Paddle לאמצעי התשלום המקורי.',
-          'רכישה באפליקציה (iPhone,‏ iPad או Android): רק Apple ו־Google יכולות להנפיק החזר עבור רכישות אלו, בהתאם למדיניות שלהן, והכללים שלמעלה אינם חלים עליהן. Apple מטפלת בבקשות בכתובת reportaproblem.apple.com, ו־Google מטפלת בהן דרך חנות Play. פנה אלינו בכל מקרה אם נדרשת עזרה — ננווט אותך למקום הנכון.',
+          'רכישה באתר: פנה אלינו בתוך 14 יום ממועד החיוב ונחזיר את מלוא הסכום. לאחר 14 יום, במנוי חודשי: אין החזר על תקופה שכבר החלה. לאחר 14 יום, במנוי שנתי: יינתן החזר יחסי עבור החודשים המלאים שטרם נוצלו, ממועד הביטול. ההחזר מבוצע דרך Paddle לאמצעי התשלום המקורי.',
+          'רכישה באפליקציה (iPhone,‏ iPad או Android): רק Apple ו־Google יכולות להנפיק החזר עבור רכישות אלו, בהתאם למדיניות שלהן, והכללים שלמעלה אינם חלים עליהן. Apple מטפלת בבקשות בכתובת reportaproblem.apple.com, ו־Google מטפלת בהן דרך חנות Play. פנה אלינו בכל מקרה אם נדרשת עזרה, וננווט אותך למקום הנכון.',
           'אין באמור כדי לגרוע מזכות ביטול או החזר הנתונה לך על פי דין.',
         ],
       },
@@ -632,7 +632,7 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '7. יצירת קשר',
         paragraphs: ['בכל נושא של חיוב, ביטול או החזר, כתוב לנו:'],
-        bullets: [`${OPERATOR_HE} — ${CONTACT_EMAIL}`],
+        bullets: [`${OPERATOR_HE}: ${CONTACT_EMAIL}`],
       },
     ],
   },
@@ -725,7 +725,7 @@ export const accountDeletionContent: Localized<LegalDoc> = {
         heading: '2. באתר',
         bullets: [
           'התחבר בכתובת rentvance.app.',
-          'פתח את ההגדרות מהתפריט הצדדי (במסך צר — מתפריט "עוד").',
+          'פתח את ההגדרות מהתפריט הצדדי (במסך צר, מתפריט "עוד").',
           'בחר "מחק חשבון", הקלד DELETE ולחץ על "מחק חשבון לצמיתות".',
           'אם תתבקש להתחבר מחדש קודם, התנתק, התחבר שוב וחזור על השלבים. זוהי בדיקת אבטחה.',
         ],
