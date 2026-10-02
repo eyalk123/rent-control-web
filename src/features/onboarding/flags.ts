@@ -1,10 +1,8 @@
 /**
  * Onboarding — the master switch.
  *
- * The tour content is roughly half written, and `main` deploys straight to production,
- * so the default has to be "off unless someone deliberately asked for it". A partly
- * finished tour is worse than no tour: it points at controls it never explains and then
- * burns its own "seen" mark on the account, so the finished version never gets shown.
+ * The tours are finished and on by default in every build, for every account. A user who
+ * does not want them turns them off in Settings (the account-level `toursDisabled` flag).
  *
  * Resolved once, at module load, rather than per call — `enabled` flipping mid-session
  * would leave a tour half open with no state to close it. Playwright sets its override in
@@ -14,15 +12,15 @@
  *
  *   1. `localStorage['onboarding.tours']` — a per-browser override, and the only one that
  *      works against an already-deployed build. `rentvanceTours(true)` in the console
- *      sets it. This is how the tours get demoed on the live site without a redeploy,
- *      and how `e2e/onboarding.spec.ts` arms itself.
- *   2. `VITE_ONBOARDING_TOURS` (`on` / `off`) — build-time. Set it as a Railway service
- *      variable to turn tours on in production when the content is finished; that is a
- *      deploy, not a code change. The Dockerfile forwards it.
+ *      sets it, `rentvanceTours(false)` clears it to off for this browser, and
+ *      `e2e/onboarding.spec.ts` arms itself this way.
+ *   2. `VITE_ONBOARDING_TOURS` (`on` / `off`) — build-time. Setting it to `off` as a
+ *      Railway service variable switches the tours off in production; that is a deploy,
+ *      not a code change. The Dockerfile forwards it.
  *   3. Playwright (`VITE_E2E_AUTH_BYPASS`) — off. The first-run tour is a click-blocking
  *      scrim on `/home`, so leaving it armed would put an overlay in front of every
  *      unrelated spec in the suite.
- *   4. Otherwise: on under `vite dev`, off in every build.
+ *   4. Otherwise: on.
  *
  * Note (1) beats (2) on purpose, so a personal override survives a deploy. If the tours
  * ever need a genuine remote kill switch, that is the account-level `toursDisabled` flag
@@ -52,7 +50,7 @@ function resolve(): boolean {
   const fromEnv = readFlag(import.meta.env.VITE_ONBOARDING_TOURS as string | undefined);
   if (fromEnv !== null) return fromEnv;
 
-  return import.meta.env.DEV;
+  return true;
 }
 
 /**

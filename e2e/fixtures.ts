@@ -53,8 +53,8 @@ export async function expectNoRouteError(page: Page) {
 /**
  * Arm the onboarding tours for one spec.
  *
- * Tours are off by default everywhere except `vite dev` (see `features/onboarding/flags`),
- * and off under Playwright even there, because the first-run tour is a click-blocking
+ * Tours are on by default (see `features/onboarding/flags`), but off under Playwright,
+ * because the first-run tour is a click-blocking
  * overlay on `/home`. This sets the per-browser override that outranks both. Must be
  * called before the first `goto`, since it runs as an init script.
  */
