@@ -11,6 +11,7 @@ import { useMarkRentPaid } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useNotifications, useDismissNotification } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
+import { NotificationsOffNotice, useNotificationsOff } from '@/features/notifications/components/NotificationsOffNotice';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
@@ -24,6 +25,7 @@ export function NeedsAttentionSection() {
   const { showToast } = useToast();
   const { openPanel } = useAlertsPanel();
   const { data: items = [], isLoading: loading } = useNotifications('all');
+  const notificationsOff = useNotificationsOff();
   const { markPaid } = useMarkRentPaid();
   const dismissNotification = useDismissNotification();
   const [savingId, setSavingId] = useState<number | null>(null);
@@ -260,7 +262,9 @@ export function NeedsAttentionSection() {
           </div>
         )}
 
-        {!loading && overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
+        {!loading && notificationsOff ? (
+          <NotificationsOffNotice />
+        ) : !loading && overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

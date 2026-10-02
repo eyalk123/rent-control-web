@@ -14,6 +14,7 @@ import {
   useDismissNotification,
 } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
+import { NotificationsOffNotice, useNotificationsOff } from '@/features/notifications/components/NotificationsOffNotice';
 import { useAlertsPanel } from './AlertsPanelContext';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -29,6 +30,7 @@ export function AlertsPanel() {
   const settingsAnchorRef = useTourAnchor(ANCHORS.alertsSettingsButton);
 
   const { data: items = [] } = useNotifications('all');
+  const notificationsOff = useNotificationsOff();
   const { markPaid } = useMarkRentPaid();
   const dismissNotification = useDismissNotification();
   const markAllRead = useMarkAllNotificationsRead();
@@ -246,7 +248,9 @@ export function AlertsPanel() {
           </div>
         )}
 
-        {overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
+        {notificationsOff ? (
+          <NotificationsOffNotice onNavigate={closePanel} />
+        ) : overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

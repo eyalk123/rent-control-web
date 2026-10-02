@@ -1263,6 +1263,7 @@
     "deleteRuleTitle": "Delete this reminder?",
     "deleteRuleMessage": "It will be removed. If it was your last one, the default schedule applies again.",
     "masterOff": "Notifications are off. You won't get any reminders until you turn them back on.",
+    "turnOn": "Turn on notifications",
     "sectionAlerts": "Alerts",
     "eventOff": "Off",
     "schedule": {
