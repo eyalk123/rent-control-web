@@ -1156,7 +1156,20 @@
     "basisAccrual": "Accrual",
     "basisCash": "Cash",
     "basisHint": "Accrual counts rent toward the month it was for; cash counts it when it arrived.",
-    "basisLabel": "Revenue recognition"
+    "basisLabel": "Revenue recognition",
+    "basisInfoLabel": "What do accrual and cash mean?",
+    "basisAccrualHint": "Rent counts in the month it is for, whenever it was paid.",
+    "basisCashHint": "Rent counts in the month the payment was received.",
+    "basisExample": "Example: January rent paid on December 28 is January income under accrual, and December income under cash.",
+    "basisExpensesNote": "Expenses always count on the date they were paid.",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "propertyCount_one": "{{count}} property",
+    "propertyCount_other": "{{count}} properties",
+    "portfolioTotal": "Portfolio total",
+    "fullYear": "Full year",
+    "txCount_one": "{{count}} transaction",
+    "txCount_other": "{{count}} transactions"
   },
   "auth": {
     "signInSubtitle": "Sign in to your account",

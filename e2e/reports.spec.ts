@@ -30,6 +30,9 @@ test.describe('reports', () => {
     await page.goto('/reports/income-expense');
 
     await expect(page.getByText(/^Owner:/).first()).toBeVisible({ timeout: 10_000 });
+    // Owners start folded when there is more than one; unfold them to see the blocks.
+    const expandAll = page.getByRole('button', { name: 'Expand all' });
+    if (await expandAll.isVisible()) await expandAll.click();
     // Each property is a Revenue / Expenses / Net trio, not two separate bands.
     const block = page.locator('div').filter({ hasText: /^123 Main St$/ }).first();
     await expect(block).toBeVisible();
@@ -37,6 +40,27 @@ test.describe('reports', () => {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
     await expect(page.getByText('Owner total (net)').first()).toBeVisible();
+  });
+
+  test('income preview ends with a portfolio total across owners', async ({ page }) => {
+    await page.goto('/reports/income-expense');
+    await expect(page.getByText('Portfolio total', { exact: true })).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('a figure opens the transactions behind it, and Back keeps the view', async ({ page }) => {
+    await page.goto('/reports/income-expense?basis=cash');
+    await page.getByRole('button', { name: 'Expand all' }).click();
+    // 123 Main St's yearly expenses (Total column of its Expenses row).
+    const block = page.locator('div.flex').filter({ has: page.getByText(/^123 Main St$/) }).first();
+    await block.getByRole('button', { name: /350/ }).last().click();
+    const popover = page.getByRole('dialog');
+    await expect(popover.getByText(/Expenses · Full year · \d+ transactions?/)).toBeVisible();
+
+    await popover.getByRole('button').first().click();
+    await expect(page).toHaveURL(/\/transactions\/\d+$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/basis=cash/);
+    await expect(page.getByText(/^123 Main St$/)).toBeVisible();
   });
 
   test('expense log preview shows the property-by-category pivot', async ({ page }) => {
@@ -82,6 +106,12 @@ test.describe('revenue recognition basis', () => {
     await page.getByRole('button', { name: /^PDF/ }).click();
     const url = (await request).url();
     expect(url).toContain('basis=cash');
+  });
+
+  test('the basis is explained by an info tip', async ({ page }) => {
+    await page.goto('/reports/income-expense');
+    await page.getByRole('button', { name: 'What do accrual and cash mean?' }).click();
+    await expect(page.getByText(/January rent paid on December 28/)).toBeVisible();
   });
 
   test('the expense log has no basis control', async ({ page }) => {

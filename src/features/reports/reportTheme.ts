@@ -18,6 +18,8 @@ export const reportTheme = {
   netRowBg: 'var(--color-input-filled-background)',
   totalColBg: 'color-mix(in srgb, var(--color-text-secondary) 7%, transparent)',
   totalColBgNet: 'color-mix(in srgb, var(--color-text-secondary) 13%, transparent)',
+  /** Months of the current year still to come — screen only; the PDF has no "now". */
+  futureColBg: 'color-mix(in srgb, var(--color-text-secondary) 4%, transparent)',
 } as const;
 
 /**
