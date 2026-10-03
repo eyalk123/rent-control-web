@@ -10,6 +10,7 @@ export type PropertyType =
   | 'garden_apartment'
   | 'housing_unit'
   | 'condo_townhouse'
+  | 'penthouse'
   | 'room'
   | 'other';
 

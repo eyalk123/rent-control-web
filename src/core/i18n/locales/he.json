@@ -336,10 +336,12 @@
     "waterAccount": "חשבון מים",
     "annualPropertyTax": "ארנונה שנתית",
     "noInventoryNotes": "אין הערות מלאי עדיין.",
-    "typeCondoTownhouse": "דירת גן / בתי עיר",
+    "typeCondoTownhouse": "קונדו / בית טורי",
+    "typePenthouse": "פנטהאוז",
     "typeRoom": "חדר",
     "typeOther": "אחר",
-    "type_condo_townhouse": "דירת גן / בתי עיר",
+    "type_condo_townhouse": "קונדו / בית טורי",
+    "type_penthouse": "פנטהאוז",
     "type_room": "חדר",
     "type_other": "אחר",
     "registry": {
@@ -839,6 +841,7 @@
     "selectCategory": "בחר קטגוריה",
     "selectProperty": "בחר נכס",
     "selectSupplier": "בחר ספק",
+    "newSupplier": "ספק חדש",
     "supplierSelectCategoryHint": "בחר קטגוריה כדי לבחור ספק",
     "supplierNoMatchHint": "אין ספקים התואמים לקטגוריה שנבחרה",
     "selectPaymentMethod": "בחר אמצעי תשלום",
@@ -967,6 +970,7 @@
     "branchCode": "סניף",
     "accountNumber": "חשבון",
     "unknownBank": "בנק לא ידוע",
+    "invalidBankAccount": "מספר חשבון בנק לא תקין",
     "headerMeta": "{{count}} ספקים · {{active}} פעילים",
     "showInactive": "הצג לא פעילים",
     "hideInactive": "מסתיר לא פעילים",
@@ -1715,7 +1719,7 @@
         },
         "bank": {
           "title": "פרטי הבנק שלהם, לידיעתך בלבד",
-          "body": "שום דבר כאן לא משולם, לא נקבע לתשלום ולא נשלח. רנט קונטרול לא מעבירה כסף בכלל. זה פשוט מקום לשמור בו את מספר החשבון כדי שיהיה מולך כשאתה מבצע את ההעברה בעצמך, במקום לחפש אותו בהודעה ישנה."
+          "body": "שום דבר כאן לא משולם, לא נקבע לתשלום ולא נשלח. המערכת לא מעבירה כסף בכלל. זה פשוט מקום לשמור בו את מספר החשבון כדי שיהיה מולך כשאתה מבצע את ההעברה בעצמך, במקום לחפש אותו בהודעה ישנה."
         }
       },
       "notifications": {

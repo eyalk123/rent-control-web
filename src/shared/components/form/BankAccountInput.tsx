@@ -59,7 +59,7 @@ export type BankAccountInputProps = {
 export function isValidBankAccount(v: BankAccountValue): boolean {
   return (
     /^\d{1,2}$/.test(v.bank) &&
-    /^\d{3}$/.test(v.branch) &&
+    /^\d{1,3}$/.test(v.branch) &&
     /^\d{4,9}$/.test(v.account)
   );
 }

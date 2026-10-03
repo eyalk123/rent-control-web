@@ -26,6 +26,11 @@ interface DrawerProps {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Open drawers, oldest first. A drawer can open over another (new supplier over the
+// expense form), so Escape must reach only the top one — otherwise one key press closes
+// the form underneath too — and the page stays locked until the last one closes.
+const openStack: string[] = [];
+
 export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560, animateScrim = true }: DrawerProps) {
   const { t } = useTranslation();
   const requestClose = onRequestClose ?? onClose;
@@ -38,23 +43,28 @@ export function Drawer({ open, onClose, onRequestClose, title, children, footer,
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') requestClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && openStack[openStack.length - 1] === titleId) requestClose();
+    };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [open, requestClose]);
+  }, [open, requestClose, titleId]);
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
+    if (!open) return;
+    openStack.push(titleId);
+    document.body.style.overflow = 'hidden';
     // Flag the open drawer on <html> so app-global floating affordances (the
     // accessibility FAB) can get out of the way on mobile, where the drawer is
     // full-width and its pinned footer sits exactly where they float.
-    if (open) document.documentElement.setAttribute('data-overlay-open', '');
-    else document.documentElement.removeAttribute('data-overlay-open');
+    document.documentElement.setAttribute('data-overlay-open', '');
     return () => {
+      openStack.splice(openStack.indexOf(titleId), 1);
+      if (openStack.length > 0) return;
       document.body.style.overflow = '';
       document.documentElement.removeAttribute('data-overlay-open');
     };
-  }, [open]);
+  }, [open, titleId]);
 
   useEffect(() => {
     if (!open) return;

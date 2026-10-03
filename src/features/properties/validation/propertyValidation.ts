@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { allowedModes } from '@/shared/utils/capabilities';
+import { allowedModes, capabilities } from '@/shared/utils/capabilities';
 import type { PropertyType } from '@/shared/types';
 
 export const PROPERTY_TYPES: PropertyType[] = [
@@ -9,6 +9,7 @@ export const PROPERTY_TYPES: PropertyType[] = [
   'garden_apartment',
   'housing_unit',
   'condo_townhouse',
+  'penthouse',
   'room',
   'other',
 ];
@@ -29,9 +30,19 @@ export const PROPERTY_TYPE_REQUIREMENTS: Partial<Record<PropertyType, 'israeliPr
   housing_unit: 'israeliPropertyTypes',
 };
 
+/**
+ * The reverse of the above: Condo / Townhouse stands in for the two Israeli types elsewhere,
+ * and in Israel it only duplicates Apartment and House. Picker only, like the gating above.
+ */
+const NON_ISRAELI_PROPERTY_TYPES: readonly PropertyType[] = ['condo_townhouse'];
+
 /** The types this country may actually pick. */
-export const availablePropertyTypes = (): PropertyType[] =>
-  allowedModes(PROPERTY_TYPES, PROPERTY_TYPE_REQUIREMENTS);
+export const availablePropertyTypes = (): PropertyType[] => {
+  const types = allowedModes(PROPERTY_TYPES, PROPERTY_TYPE_REQUIREMENTS);
+  return capabilities().israeliPropertyTypes
+    ? types.filter((ty) => !NON_ISRAELI_PROPERTY_TYPES.includes(ty))
+    : types;
+};
 
 const nonEmptyTrimmed = z
   .string()

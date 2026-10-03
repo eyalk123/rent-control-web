@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useUpdateRevenueTransaction,
@@ -16,6 +16,7 @@ import { useAppAuth } from '@/core/auth/AuthContext';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { useAccessibleProperties } from '@/features/properties/queries';
 import { useSuppliers } from '@/features/suppliers/queries';
+import { SupplierFormDrawer } from '@/features/suppliers/pages/SupplierFormDrawer';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
@@ -738,15 +739,59 @@ interface ExpenseEditFields {
   notes: string;
 }
 
+interface SupplierFieldProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  hasCategories: boolean;
+  onAddSupplier: () => void;
+}
+
+/**
+ * The supplier select plus a "New supplier" shortcut. The shortcut only opens the supplier
+ * form: the new supplier is not preselected here, because the categories it gets saved
+ * with decide whether it belongs in this list at all.
+ */
+function SupplierField({ value, onChange, options, hasCategories, onAddSupplier }: SupplierFieldProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1">
+      <FormSelect
+        label={t('transactions.supplier')}
+        value={value}
+        onValueChange={onChange}
+        options={options}
+        placeholder={t('transactions.selectSupplier')}
+        disabled={options.length === 0}
+      />
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+          {options.length === 0 && (hasCategories ? t('transactions.supplierNoMatchHint') : t('transactions.supplierSelectCategoryHint'))}
+        </p>
+        <button
+          type="button"
+          onClick={onAddSupplier}
+          className="flex shrink-0 items-center gap-1 text-xs font-medium hover:underline"
+          style={{ color: 'var(--color-primary)' }}
+        >
+          <Plus size={13} aria-hidden="true" />
+          {t('transactions.newSupplier')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface ExpenseFormProps {
   onClose: () => void;
   transaction?: Transaction;
   initialPropertyId?: number;
   initialRenterId?: number;
   onDirtyChange: (dirty: boolean) => void;
+  onAddSupplier: () => void;
 }
 
-function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange }: ExpenseFormProps) {
+function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange, onAddSupplier }: ExpenseFormProps) {
   const { t } = useTranslation();
   const { data: properties } = useAccessibleProperties();
   const { data: categories } = useExpenseCategories();
@@ -926,25 +971,9 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           onChange={handleCategoryChange}
           error={categoryError}
         />
-        <div className="flex flex-col gap-1">
-          <Controller control={control} name="supplierId" render={({ field }) => (
-            <FormSelect
-              label={t('transactions.supplier')}
-              value={field.value}
-              onValueChange={field.onChange}
-              options={supplierOptions}
-              placeholder={t('transactions.selectSupplier')}
-              disabled={supplierOptions.length === 0}
-            />
-          )} />
-          {supplierOptions.length === 0 && (
-            <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
-              {selectedCategoryIds.length === 0
-                ? t('transactions.supplierSelectCategoryHint')
-                : t('transactions.supplierNoMatchHint')}
-            </p>
-          )}
-        </div>
+        <Controller control={control} name="supplierId" render={({ field }) => (
+          <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} hasCategories={selectedCategoryIds.length > 0} onAddSupplier={onAddSupplier} />
+        )} />
         <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
           <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
         )} />
@@ -1026,25 +1055,9 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           error={categoryError}
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <Controller control={control} name="supplierId" render={({ field }) => (
-          <FormSelect
-            label={t('transactions.supplier')}
-            value={field.value}
-            onValueChange={field.onChange}
-            options={supplierOptions}
-            placeholder={t('transactions.selectSupplier')}
-            disabled={supplierOptions.length === 0}
-          />
-        )} />
-        {supplierOptions.length === 0 && (
-          <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
-            {selectedCategoryIds.length === 0
-              ? t('transactions.supplierSelectCategoryHint')
-              : t('transactions.supplierNoMatchHint')}
-          </p>
-        )}
-      </div>
+      <Controller control={control} name="supplierId" render={({ field }) => (
+        <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} hasCategories={selectedCategoryIds.length > 0} onAddSupplier={onAddSupplier} />
+      )} />
       <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
         <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
       )} />
@@ -1083,6 +1096,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, initialPrope
   // Drawer boundary regardless of revenue/expense mode.
   const [dirty, setDirty] = useState(false);
   const [showDiscard, setShowDiscard] = useState(false);
+  const [addSupplierOpen, setAddSupplierOpen] = useState(false);
 
   useEffect(() => {
     if (!open) setTxType(editType ?? initialType ?? null);
@@ -1091,7 +1105,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, initialPrope
 
   // Reset the dirty signal whenever the drawer opens/closes or the type changes —
   // the freshly mounted child re-reports its own state.
-  useEffect(() => { setDirty(false); setShowDiscard(false); }, [open, txType]);
+  useEffect(() => { setDirty(false); setShowDiscard(false); setAddSupplierOpen(false); }, [open, txType]);
 
   const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
@@ -1169,9 +1183,13 @@ export function TransactionFormDrawer({ open, onClose, initialType, initialPrope
       ) : txType === 'revenue' ? (
         <RevenueForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} initialMonth={initialMonth} onDirtyChange={setDirty} />
       ) : (
-        <ExpenseForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} />
+        <ExpenseForm onClose={onClose} transaction={transaction} initialPropertyId={initialPropertyId} initialRenterId={initialRenterId} onDirtyChange={setDirty} onAddSupplier={() => setAddSupplierOpen(true)} />
       )}
     </Drawer>
+    {/* A sibling of the expense drawer rather than a child: it keeps the supplier <form> out
+        of the expense <form>, and the expense form stays mounted underneath, so nothing the
+        user typed there is lost. */}
+    <SupplierFormDrawer open={open && addSupplierOpen} onClose={() => setAddSupplierOpen(false)} />
     <ConfirmDialog
       open={showDiscard}
       tone="primary"

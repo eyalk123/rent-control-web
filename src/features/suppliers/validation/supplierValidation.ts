@@ -15,7 +15,7 @@ const bankAccountSchema = z
       const bav = v as BankAccountValue;
       return (bav.bank === '' && bav.branch === '' && bav.account === '') || isValidBankAccount(bav);
     },
-    { message: 'Invalid bank account' },
+    { message: 'suppliers.invalidBankAccount' },
   );
 
 export const supplierFormSchema = z.object({
