@@ -53,9 +53,14 @@ function toModel(rows: LeaseYearRowValue[]): LeaseYear[] {
       amount: Number(r?.amount) || 0,
       type: r?.type ?? 'contract',
     };
-    // "manual" is the absence of a rule — don't carry it into the model or the payload.
-    if (r?.rule && r.rule.mode !== 'manual') {
-      year.rule = { mode: r.rule.mode, value: Number(r.rule.value) || 0 };
+    // `manual` is carried too: it is the pin that tells `buildLeaseYears` an amount was typed.
+    // Dropping it here made the whole-lease formula overwrite every keystroke under
+    // Same / Percent / Fixed, while the input kept showing what was typed.
+    if (r?.rule) {
+      year.rule =
+        r.rule.mode === 'manual'
+          ? { mode: 'manual' }
+          : { mode: r.rule.mode, value: Number(r.rule.value) || 0 };
     }
     // Absent means twelve, so a full-year period never carries the field — which keeps
     // an ordinary lease's payload identical to what it has always been.
@@ -84,7 +89,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
   const leaseYears =
     (useWatch({ control, name: 'leaseYears' }) as LeaseYearRowValue[] | undefined) ?? [];
 
-  const { replace } = useFieldArray({ control, name: 'leaseYears' });
+  const { fields, replace } = useFieldArray({ control, name: 'leaseYears' });
 
   const isCustom = escMode === 'custom';
 
@@ -133,7 +138,8 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
       next.some(
         (y, i) => y.type !== leaseYears[i]?.type || (y.months ?? 12) !== (leaseYears[i]?.months ?? 12),
       );
-    const staleRules = !isCustom && leaseYears.some((r) => r?.rule);
+    // A `manual` pin is valid in every mode, so it is never stale.
+    const staleRules = !isCustom && leaseYears.some((r) => r?.rule && r.rule.mode !== 'manual');
 
     if (structureChanged || staleRules) {
       replace(
@@ -141,7 +147,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
           amount: String(y.amount),
           type: y.type,
           ...(y.months ? { months: y.months } : {}),
-          // buildLeaseYears only returns a rule in custom mode, so this drops them on exit.
+          // Outside custom, buildLeaseYears returns only `manual` pins, so derived rules drop on exit.
           ...(y.rule && leaseYears[i]?.rule ? { rule: leaseYears[i].rule! } : {}),
         })),
       );
@@ -359,13 +365,17 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
               const yearType: LeaseYearType = row?.type ?? 'contract';
               // Year 1 is the known base; later CPI years are index-linked projections.
               const isCpiProjected = escMode === 'cpi' && index > 0;
+              // Keyed by the field array's id, not the index: `replace()` mints new ids, which
+              // is what remounts the rows. Keyed by index they survived it and kept showing the
+              // amounts from before the rebuild while the form held the new ones.
+              const rowKey = fields[index]?.id ?? index;
 
               return isCustom ? (
                 // Two leaf Controllers rather than one on `leaseYears.${index}`: a Controller
                 // bound to the item *object* doesn't re-render when the field array's value is
                 // rewritten, so the recomputed amount never reaches the input.
                 <Controller
-                  key={index}
+                  key={rowKey}
                   control={control}
                   name={`leaseYears.${index}.amount`}
                   render={({ field: amountField }) => (
@@ -431,7 +441,7 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
                 // a single number made them rebuild the lease to describe what the landlord
                 // actually did. `cpi` stays read-only — the server owns those amounts.
                 <Controller
-                  key={index}
+                  key={rowKey}
                   control={control}
                   name={`leaseYears.${index}.amount`}
                   render={({ field: amountField }) => (
