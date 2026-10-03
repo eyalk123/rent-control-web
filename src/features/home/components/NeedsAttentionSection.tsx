@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AlertCircle, Clock, Settings2, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
 import { fmtDate } from '@/shared/utils/dates';
@@ -21,6 +22,7 @@ const MAX_ROWS_PER_SECTION = 2;
 
 export function NeedsAttentionSection() {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { openPanel } = useAlertsPanel();
@@ -227,7 +229,7 @@ export function NeedsAttentionSection() {
                     <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{item.first_name} {item.last_name}</p>
                     <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
                       <LtrSpan>{formatMoney(item.data.old_amount ?? 0)}</LtrSpan>
-                      {' → '}
+                      {isRtl ? ' ← ' : ' → '}
                       <LtrSpan className="font-semibold">{formatMoney(item.data.new_amount ?? 0)}</LtrSpan>
                       {' · '}
                       <bdi>

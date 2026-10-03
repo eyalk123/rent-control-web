@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 import { TrendingUp } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
@@ -17,6 +18,7 @@ interface Props {
 
 export function LeaseTimeline({ renter }: Props) {
   const { t, i18n } = useTranslation();
+  const { isRtl } = useLanguage();
   const years = renter.lease_years ?? [];
   const leaseEnd = getLeaseEndDate(renter);
   const leaseStart = renter.lease_start;
@@ -47,7 +49,7 @@ export function LeaseTimeline({ renter }: Props) {
       <div className="p-5">
         {/* Date range header */}
         <div className="flex items-center justify-between mb-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
-          <span>{leaseStart ? fmtDate(leaseStart) : '—'} → {leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : '—'}</span>
+          <span>{leaseStart ? fmtDate(leaseStart) : '—'} {isRtl ? '←' : '→'} {leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : '—'}</span>
           <span>{yearsLabel}</span>
         </div>
 

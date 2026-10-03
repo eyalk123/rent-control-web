@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
+import { CalendarClock, ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { periodMonths } from '@/shared/types';
@@ -95,6 +96,7 @@ function ExtendLeaseTourRequest() {
 
 export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
   const { t, i18n } = useTranslation();
+  const { isRtl } = useLanguage();
   const { showToast } = useToast();
   const updateMutation = useUpdateRenter(renter.id);
   const stepperAnchorRef = useTourAnchor(ANCHORS.extendYearsStepper);
@@ -505,7 +507,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
             <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
               <CalendarClock size={15} />
               <LtrSpan>{originalEnd ? fmtDate(originalEnd.toISOString().split('T')[0]) : '—'}</LtrSpan>
-              <ArrowRight size={13} />
+              {isRtl ? <ArrowLeft size={13} /> : <ArrowRight size={13} />}
               <LtrSpan className="font-semibold text-[var(--color-text-primary)]">
                 {newEnd ? fmtDate(newEnd.toISOString().split('T')[0]) : '—'}
               </LtrSpan>

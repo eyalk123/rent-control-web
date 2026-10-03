@@ -468,8 +468,11 @@ export function reconstructIntentFromLeaseYears(
  * that are long settled. Naming them at the point of saving is what turns that from a
  * surprise into a choice.
  *
- * Only periods present in **both** schedules are compared: appended years are an
- * extension, and a shortened schedule's dropped tail is a different decision entirely.
+ * Periods are matched by the calendar month they start in, not by position: adding a year
+ * in front of the lease (moving its start earlier) shifts every index, and comparing by
+ * index would then set the old first year against the new first year, a different year.
+ * Only periods present in **both** schedules are compared: added years are an extension,
+ * and a shortened schedule's dropped tail is a different decision entirely.
  * Sub-shekel drift is rounding, not a repricing.
  */
 export interface RepricedPeriod {
@@ -483,22 +486,33 @@ export interface RepricedPeriod {
 
 export function repricedElapsedPeriods(
   savedYears: LeaseYear[] | undefined,
+  savedStart: string | null | undefined,
   nextYears: LeaseYear[] | undefined,
-  leaseStart: string | null | undefined,
+  nextStart: string | null | undefined,
   today: Date = new Date(),
 ): RepricedPeriod[] {
   const saved = savedYears ?? [];
   const next = nextYears ?? [];
+  // A start date cleared in the form leaves nothing to place the new schedule by, so it is
+  // read as unchanged.
+  const nextAnchor = nextStart || savedStart;
+  const monthKey = (d: Date) => d.getFullYear() * 12 + d.getMonth();
+  const nextAmountByMonth = new Map<number, number>();
+  next.forEach((y, j) => {
+    const start = leaseYearStart(nextAnchor, next, j);
+    if (start) nextAmountByMonth.set(monthKey(start), y.amount ?? 0);
+  });
   const out: RepricedPeriod[] = [];
-  for (let i = 0; i < Math.min(saved.length, next.length); i += 1) {
-    const before = saved[i]?.amount ?? 0;
-    const after = next[i]?.amount ?? 0;
-    if (Math.abs(before - after) < 1) continue;
+  saved.forEach((y, i) => {
     // Measured against the *saved* schedule: the periods being re-priced are where they
     // were before this edit, not where the new one would put them.
-    const start = leaseYearStart(leaseStart, saved, i);
-    if (start === null || start > today) continue;
+    const start = leaseYearStart(savedStart, saved, i);
+    if (start === null || start > today) return;
+    const after = nextAmountByMonth.get(monthKey(start));
+    if (after === undefined) return;
+    const before = y.amount ?? 0;
+    if (Math.abs(before - after) < 1) return;
     out.push({ index: i, startYear: start.getFullYear(), before, after });
-  }
+  });
   return out;
 }

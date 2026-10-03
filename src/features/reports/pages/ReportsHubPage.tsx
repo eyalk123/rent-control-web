@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 import { BarChart2, List, FileText, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReportHistory, deleteReportExport } from '../api/reports';
@@ -8,7 +9,7 @@ import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour } from '@/features/onboarding/TourController';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { useToast } from '@/shared/components/ui/Toast';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 function useReportHistory() {
   return useQuery({ queryKey: ['reports', 'history'], queryFn: getReportHistory });
@@ -29,6 +30,7 @@ export function ReportsHubPage() {
   const cardsAnchorRef = useTourAnchor(ANCHORS.reportsCards);
   const exportAnchorRef = useTourAnchor(ANCHORS.reportsExport);
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { data: history = [], isLoading } = useReportHistory();
   const { mutateAsync: deleteReport } = useDeleteReport();
@@ -93,7 +95,7 @@ export function ReportsHubPage() {
                 className="flex items-center justify-center gap-1.5 h-9 w-full rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
                 style={{ background: 'var(--color-primary)' }}
               >
-                {t('reports.openReport')} <ArrowRight size={14} />
+                {t('reports.openReport')} {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
               </button>
             </div>
           ))}

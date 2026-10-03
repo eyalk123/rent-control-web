@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { isOpenEndedCountry } from '@/shared/utils/capabilities';
 import { Toggle } from '@/shared/components/ui/Toggle';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, Info, Plus, X } from 'lucide-react';
@@ -111,6 +112,7 @@ export function RenterFormDrawer({
   onCreatePropertyFromScan,
 }: Props) {
   const { t } = useTranslation();
+  const { isRtl } = useLanguage();
 
   // Multi-renter scan queue: which co-tenant we're currently verifying. Saving one advances
   // the cursor to the next; the drawer closes only after the last renter is saved.
@@ -450,6 +452,7 @@ export function RenterFormDrawer({
         };
         const repriced = repricedElapsedPeriods(
           existing?.lease_years,
+          existing?.lease_start,
           payload.lease_years,
           payload.lease_start,
         );
@@ -796,7 +799,7 @@ export function RenterFormDrawer({
       message={t('renter.repricePast.message', {
         count: reprice?.periods.length ?? 0,
         detail: (reprice?.periods ?? [])
-          .map((p) => `${p.startYear}: ${formatMoney(p.before)} → ${formatMoney(p.after)}`)
+          .map((p) => `${p.startYear}: ${formatMoney(p.before)} ${isRtl ? '←' : '→'} ${formatMoney(p.after)}`)
           .join(', '),
       })}
       confirmLabel={t('renter.repricePast.confirm')}
