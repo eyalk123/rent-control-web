@@ -23,6 +23,7 @@ const ENUM_LABELS: Record<string, Record<string, string>> = {
     bank_transfer: 'transactions.paymentMethodBankTransfer',
     wire_transfer: 'transactions.paymentMethodBankTransfer',
     bit: 'transactions.paymentMethodBit',
+    paybox: 'transactions.paymentMethodPaybox',
     check: 'transactions.paymentMethodCheck',
   },
   paymentFrequency: {

@@ -6,6 +6,7 @@ export const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
   'cash',
   'bank_transfer',
   'bit',
+  'paybox',
   'check',
   'card',
   'mobile_payment',
@@ -13,12 +14,13 @@ export const PAYMENT_METHOD_VALUES: PaymentMethod[] = [
 ];
 
 /**
- * Bit is an Israeli payment app. The array above keeps it — a transaction already recorded
- * as `bit` must keep rendering, and `fromApi` must keep accepting it — but it is not
+ * Bit and PayBox are Israeli payment apps. The array above keeps them — a transaction already
+ * recorded as `bit` must keep rendering, and `fromApi` must keep accepting it — but it is not
  * offered where it does not exist.
  */
 export const PAYMENT_METHOD_REQUIREMENTS: Partial<Record<PaymentMethod, 'bitPayments'>> = {
   bit: 'bitPayments',
+  paybox: 'bitPayments',
 };
 
 /** The methods this country may actually pick. */
@@ -26,10 +28,10 @@ export const availablePaymentMethods = (): PaymentMethod[] =>
   allowedModes(PAYMENT_METHOD_VALUES, PAYMENT_METHOD_REQUIREMENTS);
 
 /**
- * The four methods a picker offers, out of the seven a stored transaction may hold. The other
+ * The five methods a picker offers, out of the eight a stored transaction may hold. The other
  * three exist so an imported or legacy value still renders; they were never on the menu.
  */
-const PAYMENT_METHOD_PICKER: PaymentMethod[] = ['cash', 'bank_transfer', 'bit', 'check'];
+const PAYMENT_METHOD_PICKER: PaymentMethod[] = ['cash', 'bank_transfer', 'bit', 'paybox', 'check'];
 
 /** The picker's options, narrowed to what this country can use — mobile already did this. */
 export function getPaymentMethodOptions(t: TFunction) {
@@ -63,6 +65,7 @@ const PAYMENT_METHOD_LABEL_KEYS: Record<PaymentMethod, string> = {
   cash: 'transactions.paymentMethodCash',
   bank_transfer: 'transactions.paymentMethodBankTransfer',
   bit: 'transactions.paymentMethodBit',
+  paybox: 'transactions.paymentMethodPaybox',
   check: 'transactions.paymentMethodCheck',
   card: 'transactions.paymentMethodCard',
   mobile_payment: 'transactions.paymentMethodMobilePayment',
