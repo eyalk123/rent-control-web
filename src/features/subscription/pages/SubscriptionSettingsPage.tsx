@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, Check, FileScan, Lock, MessageSquare, Sparkles } from 'lucide-react';
+import { Building2, Check, FileScan, Lock, MessageSquare, Receipt, Sparkles } from 'lucide-react';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { useProperties } from '@/features/properties/queries';
 import { useSubscription } from '../queries';
@@ -84,7 +84,7 @@ export function SubscriptionSettingsPage() {
       </section>
 
       {/* What the plan includes, and what is left of it */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <UsageCard
           icon={Building2}
           label={t('subscription.settings.properties')}
@@ -108,6 +108,22 @@ export function SubscriptionSettingsPage() {
           }
           exceeded={
             data.monthly_lease_scans !== null && data.lease_scans_used >= data.monthly_lease_scans
+          }
+        />
+        <UsageCard
+          icon={Receipt}
+          label={t('subscription.settings.receiptScans')}
+          value={
+            data.monthly_receipt_scans === null
+              ? t('subscription.settings.leaseScansUnlimited')
+              : t('subscription.settings.leaseScansUsage', {
+                  used: data.receipt_scans_used,
+                  limit: data.monthly_receipt_scans,
+                })
+          }
+          exceeded={
+            data.monthly_receipt_scans !== null &&
+            data.receipt_scans_used >= data.monthly_receipt_scans
           }
         />
         <UsageCard

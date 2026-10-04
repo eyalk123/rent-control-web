@@ -18,6 +18,17 @@ import { useTranslation } from 'react-i18next';
 import { sortOptions } from '@/shared/utils/sortOptions';
 import { TriStateCheckbox } from './TriStateCheckbox';
 
+/**
+ * A group row (a building) is structure, not an action, so it is marked in the table's own
+ * neutrals rather than the accent colour: the header's grey wash, and — once
+ * open — a hairline running down from its chevron through the member rows, ending halfway
+ * into the last one, so it is clear which rows belong to it. What the group *is* (several
+ * units) is said by the caller's group cell, not by colour here.
+ */
+const GROUP_BG = 'var(--color-input-filled-background)';
+/** Horizontal centre of the chevron: the cell's 16px padding plus half its 24px box. */
+const GUIDE_OFFSET = 27.5;
+
 // Per-column UI hints, read by the DataTable filter row.
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -159,7 +170,7 @@ export function DataTable<T>({
   // Running index over every rendered <tr>, so borders and the tour anchor follow what is
   // actually on screen rather than the row model.
   let rendered = 0;
-  const renderRow = (row: Row<T>, nested: boolean) => {
+  const renderRow = (row: Row<T>, nested: boolean, lastInGroup = false) => {
     const i = rendered++;
     const id = rowId(row.original);
     const selected = selectedIds?.has(id) ?? false;
@@ -179,7 +190,14 @@ export function DataTable<T>({
         )}
         {row.getVisibleCells().map((cell, c) => (
           // Nested rows indent past the group's chevron so they read as its children.
-          <td key={cell.id} className={nested && c === 0 ? 'ps-11 pe-4 py-3' : 'px-4 py-3'}>
+          <td key={cell.id} className={nested && c === 0 ? 'relative ps-12 pe-4 py-3' : 'px-4 py-3'}>
+            {nested && c === 0 && (
+              <span
+                aria-hidden
+                className="absolute top-0 w-px"
+                style={{ insetInlineStart: GUIDE_OFFSET, bottom: lastInGroup ? '50%' : 0, background: 'var(--color-outline)' }}
+              />
+            )}
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         ))}
@@ -198,14 +216,13 @@ export function DataTable<T>({
       if (allIn || !selectedIds?.has(id)) onToggle?.(id);
     });
     const originals = groupRows.map((r) => r.original);
-    const Chevron = open ? ChevronDown : ChevronRight;
     return (
       <tr
         key={`group:${key}`}
         ref={i === 0 ? firstRowRef : undefined}
         onClick={() => toggleGroup(key)}
         className="cursor-pointer hover:bg-[var(--color-input-filled-background)] transition-colors"
-        style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none' }}
+        style={{ borderTop: i > 0 ? '1px solid var(--color-subtle-outline)' : 'none', background: GROUP_BG }}
       >
         {isSelectMode && (
           <td className="px-4 py-3">
@@ -219,18 +236,29 @@ export function DataTable<T>({
           </td>
         )}
         {table.getVisibleLeafColumns().map((column, c) => (
-          <td key={column.id} className="px-4 py-3">
+          <td key={column.id} className={c === 0 && open ? 'relative px-4 py-3' : 'px-4 py-3'}>
+            {c === 0 && open && (
+              <span
+                aria-hidden
+                className="absolute bottom-0 w-px"
+                style={{ insetInlineStart: GUIDE_OFFSET, top: 'calc(50% + 12px)', background: 'var(--color-outline)' }}
+              />
+            )}
             {c === 0 ? (
-              <div className="flex items-start gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   aria-expanded={open}
                   aria-label={open ? t('common.collapseGroup') : t('common.expandGroup')}
                   onClick={(e) => { e.stopPropagation(); toggleGroup(key); }}
-                  className="mt-0.5 shrink-0 rounded-[5px]"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--color-text-secondary)' }}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px]"
+                  style={{ background: 'none', color: 'var(--color-text-secondary)', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
-                  <Chevron size={16} className={open ? undefined : 'rtl:-scale-x-100'} />
+                  <ChevronRight
+                    size={16}
+                    className="transition-transform rtl:-scale-x-100"
+                    style={{ transform: open ? 'rotate(90deg)' : undefined }}
+                  />
                 </button>
                 <div className="min-w-0">{renderGroupCell?.(column.id, originals)}</div>
               </div>
@@ -345,7 +373,9 @@ export function DataTable<T>({
               ? renderRow(item.row, false)
               : [
                   renderGroup(item.key, item.rows),
-                  ...(openGroups.includes(item.key) ? item.rows.map((r) => renderRow(r, true)) : []),
+                  ...(openGroups.includes(item.key)
+                    ? item.rows.map((r, k) => renderRow(r, true, k === item.rows.length - 1))
+                    : []),
                 ],
           )}
         </tbody>

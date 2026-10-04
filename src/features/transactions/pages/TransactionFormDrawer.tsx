@@ -18,7 +18,7 @@ import { useAccessibleProperties } from '@/features/properties/queries';
 import { useSuppliers } from '@/features/suppliers/queries';
 import { SupplierFormDrawer } from '@/features/suppliers/pages/SupplierFormDrawer';
 import { FormInput } from '@/shared/components/form/FormInput';
-import { FormSelect } from '@/shared/components/form/FormSelect';
+import { FormSelect, type SelectOption } from '@/shared/components/form/FormSelect';
 import { FormFileInput } from '@/shared/components/form/FormFileInput';
 import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { PropertyMultiSelect } from '@/shared/components/form/PropertyMultiSelect';
@@ -32,7 +32,17 @@ import { availablePaymentMethods, toPaymentMethodOrNull } from '@/shared/constan
 import { todayISO, fmtMonthYear } from '@/shared/utils/dates';
 import { formatMoney } from '@/shared/utils/money';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
+import { sortOptions } from '@/shared/utils/sortOptions';
+import { translateCategory } from '@/shared/utils/categories';
 import { CategoryMultiSelect } from '../components/CategoryMultiSelect';
+import { ReceiptCard, type ScannedReceipt } from '../components/ReceiptCard';
+import {
+  FieldReviewNotice,
+  FieldReviewProvider,
+  type FieldReviewEntry,
+} from '@/shared/components/form/FieldReviewContext';
+import { diffProvenance, updateExtractionLog } from '@/features/document-scan/api/updateExtractionLog';
+import type { ProvenanceItem, ReceiptFieldNote } from '@/features/document-scan/types';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour } from '@/features/onboarding/TourController';
@@ -90,6 +100,11 @@ interface BulkPayload {
   month_for: string;
   payment_method?: PaymentMethod;
   notes?: string;
+}
+
+/** An id set as one comparable string, so a scanned selection can be diffed against the saved one. */
+function idKey(ids: number[]): string {
+  return [...ids].sort((a, b) => a - b).join(',');
 }
 
 /** Order-insensitive equality for the id collections behind the multi-selects. */
@@ -742,17 +757,22 @@ interface ExpenseEditFields {
 interface SupplierFieldProps {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  hasCategories: boolean;
+  options: SelectOption[];
   onAddSupplier: () => void;
+  /** The supplier's name as a scanned receipt wrote it, shown while none is picked — the
+   *  scanner only fills the select with an existing supplier, so this is what it read. */
+  readOnReceipt?: string | null;
 }
 
 /**
  * The supplier select plus a "New supplier" shortcut. The shortcut only opens the supplier
- * form: the new supplier is not preselected here, because the categories it gets saved
- * with decide whether it belongs in this list at all.
+ * form; the new supplier is not preselected here.
+ *
+ * Every active supplier is offered whatever the category — the two fields are independent,
+ * and a supplier outside the chosen categories is a warning on save, not a filter. The ones
+ * who work in a chosen category are listed first (see `supplierOptions`).
  */
-function SupplierField({ value, onChange, options, hasCategories, onAddSupplier }: SupplierFieldProps) {
+function SupplierField({ value, onChange, options, onAddSupplier, readOnReceipt }: SupplierFieldProps) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1">
@@ -761,12 +781,14 @@ function SupplierField({ value, onChange, options, hasCategories, onAddSupplier 
         value={value}
         onValueChange={onChange}
         options={options}
+        sorted={false}
         placeholder={t('transactions.selectSupplier')}
         disabled={options.length === 0}
+        reviewName="supplierId"
       />
       <div className="flex items-start justify-between gap-3">
         <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
-          {options.length === 0 && (hasCategories ? t('transactions.supplierNoMatchHint') : t('transactions.supplierSelectCategoryHint'))}
+          {!value && readOnReceipt && t('transactions.receiptScan.readAs', { name: readOnReceipt })}
         </p>
         <button
           type="button"
@@ -792,7 +814,7 @@ interface ExpenseFormProps {
 }
 
 function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId, onDirtyChange, onAddSupplier }: ExpenseFormProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: properties } = useAccessibleProperties();
   const { data: categories } = useExpenseCategories();
   const qc = useQueryClient();
@@ -810,6 +832,18 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
     : [];
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>(initialCategoryIds);
   const [categoryError, setCategoryError] = useState('');
+
+  // ── Receipt scan (create mode only) ────────────────────────────────────────
+  const [scan, setScan] = useState<{
+    logId: number;
+    /** What the scan filled, to report on save which of it the user changed. */
+    provenance: ProvenanceItem[];
+    /** Fields the scanner was unsure of, flagged on the form until edited. */
+    review: FieldReviewEntry[];
+    supplierReadAs: string | null;
+    categoryNote: ReceiptFieldNote | null;
+    propertyNote: ReceiptFieldNote | null;
+  } | null>(null);
 
   useEffect(() => {
     const ids = transaction?.category_ids?.length
@@ -859,14 +893,41 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const expenseDirty = isEdit ? baseDirty : baseDirty || selectedCategoryIds.length > 0;
   useEffect(() => { onDirtyChange(expenseDirty); }, [expenseDirty, onDirtyChange]);
 
-  // Fetch all suppliers, filter client-side by selected categories (intersection)
+  // Every active supplier, the ones who work in a chosen category first. Nothing is hidden:
+  // a supplier outside those categories is allowed, and only warned about on save.
   const { data: allSuppliers } = useSuppliers({});
-  const suppliers = selectedCategoryIds.length > 0
-    ? (allSuppliers ?? []).filter((s) => s.category_ids.some((id) => selectedCategoryIds.includes(id)))
-    : [];
+  const worksInChosen = (sup: { category_ids: number[] }) =>
+    sup.category_ids.some((id) => selectedCategoryIds.includes(id));
+  const toOption = (sup: { id: number; name: string }): SelectOption => ({ value: sup.id.toString(), label: sup.name });
+  const matching = sortOptions((allSuppliers ?? []).filter(worksInChosen).map(toOption), i18n.language);
+  const others = sortOptions((allSuppliers ?? []).filter((sup) => !worksInChosen(sup)).map(toOption), i18n.language);
+  const supplierOptions: SelectOption[] = [
+    ...matching,
+    // The heading only means something when there is a first group to set it apart from.
+    ...others.map((o, i) => (i === 0 && matching.length > 0 ? { ...o, groupLabel: t('transactions.otherSuppliers') } : o)),
+  ];
+
+  /** The chosen supplier, when none of their categories is among the chosen ones. */
+  const mismatchedSupplier = (supplierId: string) => {
+    const sup = supplierId ? allSuppliers?.find((x) => x.id === Number(supplierId)) : undefined;
+    return sup && !worksInChosen(sup) ? sup : null;
+  };
+  // Held between the save that found a mismatch and the user's answer to the warning.
+  const [pendingSave, setPendingSave] = useState<{ supplier: string; run: () => Promise<void> } | null>(null);
+  const [confirmingSave, setConfirmingSave] = useState(false);
+  /** Warn instead of saving when the supplier is outside the chosen categories. */
+  const holdForMismatch = (supplierId: string, run: () => Promise<void>): boolean => {
+    const sup = mismatchedSupplier(supplierId);
+    if (!sup) return false;
+    setPendingSave({ supplier: sup.name, run });
+    return true;
+  };
+  const chosenCategoryNames = (categories ?? [])
+    .filter((c) => selectedCategoryIds.includes(c.id))
+    .map((c) => c.name ?? translateCategory(c.key, t))
+    .join(', ');
 
   const propertyOptions = (properties ?? []).map((p) => ({ value: p.id, label: `${p.address}${formatFloorApartment(p, t)}, ${p.city}` }));
-  const supplierOptions = suppliers.map((s) => ({ value: s.id.toString(), label: s.name }));
   const paymentOptions = availablePaymentMethods().map((v) => ({ value: v, label: t(`transactions.paymentMethod_${v}` as never, v) }));
 
   const createRenterOptions = (createRenters ?? []).map((r) => ({ value: r.id.toString(), label: `${r.first_name} ${r.last_name}` }));
@@ -880,11 +941,61 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const handleCategoryChange = (ids: number[]) => {
     setSelectedCategoryIds(ids);
     setCategoryError('');
-    setValue('supplierId', '');
+    setScan((prev) => (prev ? { ...prev, categoryNote: null } : prev));
+  };
+
+  /**
+   * Pre-fill from a scanned receipt. Only what the scan found is written — a field it left
+   * empty keeps whatever the user had — and the property is never replaced once one is
+   * chosen, which is also why the scan is only asked to look for one when none is.
+   */
+  const applyScan = ({ logId, extraction: x }: ScannedReceipt) => {
+    const notes = new Map(x.notes.map((n) => [n.field, n]));
+    const provenance: ProvenanceItem[] = [];
+    const review: FieldReviewEntry[] = [];
+    const fill = (formKey: keyof ExpenseEditFields, labelKey: string, field: string, value: string) => {
+      setValue(formKey, value, { shouldDirty: true });
+      const note = notes.get(field);
+      provenance.push({ formKey, labelKey, prefilledValue: value, source: note?.source_text ?? null });
+      if (note) review.push({ formKey, source: note.source_text, confidence: note.confidence });
+    };
+
+    const property = x.property_id != null && selectedPropertyIds.length === 0 ? x.property_id : null;
+    if (property != null) {
+      setSelectedPropertyIds([property]);
+      setPropertyError('');
+      provenance.push({ formKey: 'propertyIds', labelKey: 'transactions.property', prefilledValue: String(property), source: notes.get('property_id')?.source_text ?? null });
+    }
+    if (x.category_ids.length > 0) {
+      setSelectedCategoryIds(x.category_ids);
+      setCategoryError('');
+      provenance.push({ formKey: 'categoryIds', labelKey: 'transactions.category', prefilledValue: idKey(x.category_ids), source: notes.get('category_ids')?.source_text ?? null });
+    }
+    if (x.amount != null) fill('amount', 'transactions.amount', 'amount', String(x.amount));
+    if (x.date) fill('dateOfPayment', 'transactions.date', 'date', x.date);
+    if (x.payment_method && availablePaymentMethods().includes(x.payment_method as PaymentMethod)) {
+      fill('paymentMethod', 'transactions.paymentMethod', 'payment_method', x.payment_method);
+    }
+    if (x.supplier_id != null) fill('supplierId', 'transactions.supplier', 'supplier_id', String(x.supplier_id));
+
+    // The card attaches a scanned image itself (a PDF is read but not kept).
+    setScan({
+      logId,
+      provenance,
+      review,
+      supplierReadAs: x.supplier_id == null ? x.supplier_name : null,
+      categoryNote: x.category_ids.length > 0 ? notes.get('category_ids') ?? null : null,
+      propertyNote: property != null ? notes.get('property_id') ?? null : null,
+    });
   };
 
   const onEditSubmit = handleSubmit(async (data) => {
     if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
+    if (holdForMismatch(data.supplierId, () => saveEdit(data))) return;
+    await saveEdit(data);
+  });
+
+  async function saveEdit(data: ExpenseEditFields) {
     try {
       let receiptUrl = transaction?.receipt_image_url ?? undefined;
       if (receiptFile && user) {
@@ -903,13 +1014,18 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       showToast(t('transactions.updateSuccess'), 'success');
       onClose();
     } catch { showToast(t('error.saveFailed'), 'error'); }
-  });
+  }
 
   // ── Create mode submit ─────────────────────────────────────────────────────
   const handleBulkCreate = handleSubmit(async (data) => {
     setPropertyError('');
     if (selectedPropertyIds.length === 0) { setPropertyError(t('transactions.selectProperties')); return; }
     if (selectedCategoryIds.length === 0) { setCategoryError(t('transactions.selectCategory')); return; }
+    if (holdForMismatch(data.supplierId, () => saveNew(data))) return;
+    await saveNew(data);
+  });
+
+  async function saveNew(data: ExpenseEditFields) {
 
     const perAmount = Number(data.amount) / selectedPropertyIds.length;
     const renterId = selectedPropertyIds.length === 1 && data.renterId && data.renterId !== '__none__' ? Number(data.renterId) : null;
@@ -928,6 +1044,18 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
     try {
       const results = await Promise.allSettled(payloads.map((p) => createExpenseTransaction(p)));
+      const firstCreated = results.find((r): r is PromiseFulfilledResult<Transaction> => r.status === 'fulfilled');
+      if (scan && firstCreated) {
+        updateExtractionLog(scan.logId, {
+          entity_type: 'transaction',
+          created_id: firstCreated.value.id,
+          ...diffProvenance(scan.provenance, {
+            ...data,
+            categoryIds: idKey(selectedCategoryIds),
+            propertyIds: idKey(selectedPropertyIds),
+          }),
+        });
+      }
       if (receiptFile && user) {
         const receiptUrl = await uploadToFirebase(receiptFile, 'transactions', user.uid);
         const created = results.filter((r): r is PromiseFulfilledResult<Transaction> => r.status === 'fulfilled');
@@ -943,12 +1071,38 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       }
       onClose();
     } catch { showToast(t('error.saveFailed'), 'error'); }
-  });
+  }
+
+  // Outside the <form> in both modes: its buttons are plain buttons, and inside a form they
+  // would submit it.
+  const mismatchDialog = (
+    <ConfirmDialog
+      open={pendingSave != null}
+      tone="primary"
+      title={t('transactions.supplierMismatch.title')}
+      message={t('transactions.supplierMismatch.message', {
+        supplier: pendingSave?.supplier ?? '',
+        categories: chosenCategoryNames,
+      })}
+      confirmLabel={t('transactions.supplierMismatch.saveAnyway')}
+      loading={confirmingSave}
+      onConfirm={async () => {
+        if (!pendingSave) return;
+        setConfirmingSave(true);
+        try { await pendingSave.run(); } finally {
+          setConfirmingSave(false);
+          setPendingSave(null);
+        }
+      }}
+      onClose={() => setPendingSave(null)}
+    />
+  );
 
   // ── Edit mode render ───────────────────────────────────────────────────────
   if (transaction) {
     const propertyLabel = transaction.property_name || `#${transaction.property_id}`;
     return (
+      <>
       <form id="transaction-form" onSubmit={onEditSubmit} autoComplete="off" className="space-y-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.property')}</label>
@@ -972,7 +1126,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           error={categoryError}
         />
         <Controller control={control} name="supplierId" render={({ field }) => (
-          <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} hasCategories={selectedCategoryIds.length > 0} onAddSupplier={onAddSupplier} />
+          <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} onAddSupplier={onAddSupplier} />
         )} />
         <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
           <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
@@ -986,6 +1140,8 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           preview={receiptPreview}
         />
       </form>
+      {mismatchDialog}
+      </>
     );
   }
 
@@ -996,18 +1152,31 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const renterDisabled = selectedPropertyIds.length !== 1;
 
   return (
+    <FieldReviewProvider items={scan?.review}>
     <form id="transaction-form" onSubmit={handleBulkCreate} autoComplete="off" className="space-y-4">
       <ExpenseFormTourRequest />
-      <div ref={expensePropertyAnchorRef}>
+      <ReceiptCard
+        matchProperty={selectedPropertyIds.length === 0}
+        attached={receiptFile}
+        previewUrl={receiptPreview}
+        onScanned={applyScan}
+        onAttach={(f) => { setReceiptFile(f); setReceiptPreview(f ? URL.createObjectURL(f) : null); }}
+      />
+      <div ref={expensePropertyAnchorRef} className="flex flex-col gap-1.5">
       <PropertyMultiSelect
         label={t('transactions.property')}
         required
         options={propertyOptions}
         selectedIds={selectedPropertyIds}
-        onChange={(ids) => { setSelectedPropertyIds(ids); setPropertyError(''); }}
+        onChange={(ids) => {
+          setSelectedPropertyIds(ids);
+          setPropertyError('');
+          setScan((prev) => (prev ? { ...prev, propertyNote: null } : prev));
+        }}
         error={propertyError}
         placeholder={t('transactions.selectProperties')}
       />
+      {scan?.propertyNote && <FieldReviewNotice source={scan.propertyNote.source_text} />}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -1043,9 +1212,9 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       </div>
 
       <Controller control={control} name="dateOfPayment" rules={{ required: t('common.required') }} render={({ field }) => (
-        <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} />
+        <WheelDatePicker mode="date" label={t('transactions.date')} required value={field.value} onChange={field.onChange} error={errors.dateOfPayment?.message} reviewName="dateOfPayment" />
       )} />
-      <div ref={expenseCategoryAnchorRef}>
+      <div ref={expenseCategoryAnchorRef} className="flex flex-col gap-1.5">
         <CategoryMultiSelect
           label={t('transactions.category')}
           required
@@ -1054,22 +1223,18 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           onChange={handleCategoryChange}
           error={categoryError}
         />
+        {scan?.categoryNote && <FieldReviewNotice source={scan.categoryNote.source_text} />}
       </div>
       <Controller control={control} name="supplierId" render={({ field }) => (
-        <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} hasCategories={selectedCategoryIds.length > 0} onAddSupplier={onAddSupplier} />
+        <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} onAddSupplier={onAddSupplier} readOnReceipt={scan?.supplierReadAs} />
       )} />
       <Controller control={control} name="paymentMethod" rules={{ required: t('common.required') }} render={({ field }) => (
-        <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} />
+        <FormSelect label={t('transactions.paymentMethod')} required value={field.value} onValueChange={field.onChange} options={paymentOptions} sorted={false} placeholder={t('transactions.selectPaymentMethod')} error={errors.paymentMethod?.message} reviewName="paymentMethod" />
       )} />
       <FormInput label={t('transactions.notes')} {...register('notes')} />
-      <FormFileInput
-        label={t('transactions.receiptImage')}
-        accept="image/*"
-        value={receiptFile}
-        onChange={(f) => { setReceiptFile(f); setReceiptPreview(f ? URL.createObjectURL(f) : null); }}
-        preview={receiptPreview}
-      />
     </form>
+    {mismatchDialog}
+    </FieldReviewProvider>
   );
 }
 

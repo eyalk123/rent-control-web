@@ -9,7 +9,7 @@ export interface FieldEditPayload {
 }
 
 export interface UpdateLogPayload {
-  entity_type: 'property' | 'renter';
+  entity_type: 'property' | 'renter' | 'transaction';
   created_id?: number | null;
   contract_url?: string | null;
   fields_given_count: number;

@@ -1,10 +1,15 @@
 /**
  * The shape of `GET /subscription`.
  *
- * Mirrors `app/schemas/subscription.py`. **Nothing here is recomputed client-side** — the
- * band boundaries, which properties are locked, and whether a feature is included are all
- * resolved by the server. Deriving them here would put the boundaries in three codebases,
- * two of which ship on store review cycles and cannot be hotfixed when a price moves.
+ * Mirrors `app/schemas/subscription.py`, and is byte-identical to the web app's copy at
+ * `rent-control-web/src/features/subscription/types.ts` — **edit both together**, the same
+ * rule `legalContent.ts` carries, and for the same reason: two clients disagreeing about
+ * the shape of one endpoint is a bug nobody sees until a release.
+ *
+ * **Nothing here is recomputed client-side.** The band boundaries, which properties are
+ * locked, and whether a feature is included are all resolved by the server. Deriving them
+ * here would put the boundaries in three codebases — and this is one of the two that ships
+ * on a store review cycle and cannot be hotfixed when a price moves.
  */
 
 /** Plan identifiers, as the backend's `entitlement_service` defines them. */
@@ -43,6 +48,9 @@ export interface Subscription {
   /** Lease scans allowed per calendar month. `null` is unlimited. */
   monthly_lease_scans: number | null;
   lease_scans_used: number;
+  /** Receipt scans allowed per calendar month — a separate allowance. `null` is unlimited. */
+  monthly_receipt_scans: number | null;
+  receipt_scans_used: number;
   /** Whether the plan includes the chat assistant. */
   agent: boolean;
 }
@@ -53,6 +61,7 @@ export interface PlanLimitError {
     | 'plan_limit_reached'
     | 'property_locked'
     | 'scan_limit_reached'
+    | 'receipt_scan_limit_reached'
     | 'agent_not_included';
   current_plan: PlanId;
   required_plan: PlanId;

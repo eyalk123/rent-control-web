@@ -16,7 +16,7 @@ import type {
   PropertyRenterSummary,
 } from '@/shared/types';
 import { getLeaseEndDate, getRentForMonth } from '@/shared/types';
-import type { LeaseExtraction } from '@/features/document-scan/types';
+import type { LeaseExtraction, ReceiptExtraction } from '@/features/document-scan/types';
 import type {
   AgentStatus,
   ConversationDetail,
@@ -1133,6 +1133,30 @@ export const mockSuppliersApi = {
 // without the real vision backend. The delay makes the "scanning…" state (and the pill)
 // observable, and honours the abort signal so cancelling the pill rejects promptly.
 export const mockDocumentScanApi = {
+  /** A canned handwritten-receipt read: amount and date found, the supplier matched by
+   *  name, one value flagged for a second look. The supplier and category are the mock
+   *  fixtures' own, so the prefilled form shows real options. */
+  extractReceipt: async (
+    _file: File,
+    matchProperty: boolean,
+  ): Promise<{ logId: number; extraction: ReceiptExtraction }> => {
+    await new Promise((r) => setTimeout(r, 1500));
+    _mockReceiptScansUsed += 1;
+    const supplier = mockSuppliers.find((s) => s.is_active && s.category_ids.length === 1);
+    return {
+      logId: 1,
+      extraction: {
+        amount: 480,
+        date: new Date().toISOString().slice(0, 10),
+        payment_method: 'cash',
+        category_ids: supplier ? [...supplier.category_ids] : [],
+        supplier_id: supplier?.id ?? null,
+        supplier_name: supplier?.name ?? 'יוסי אינסטלציה',
+        property_id: matchProperty ? (mockProperties[0]?.id ?? null) : null,
+        notes: [{ field: 'amount', confidence: 'low', source_text: '48O' }],
+      },
+    };
+  },
   extractLease: async (
     _file: File,
     signal?: AbortSignal,
@@ -1232,6 +1256,7 @@ let _mockPlan: Subscription['plan'] = (() => {
 })();
 let _mockLockNoticeSeen = false;
 let _mockScansUsed = 2;
+let _mockReceiptScansUsed = 0;
 
 export const mockSubscriptionApi = {
   get: async (): Promise<Subscription> => {
@@ -1257,6 +1282,8 @@ export const mockSubscriptionApi = {
       price_currency: _mockPlan === 'free' ? null : 'USD',
       monthly_lease_scans: limits.scans,
       lease_scans_used: _mockScansUsed,
+      monthly_receipt_scans: limits.scans,
+      receipt_scans_used: _mockReceiptScansUsed,
       agent: limits.agent,
     };
   },

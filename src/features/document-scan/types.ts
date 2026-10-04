@@ -106,3 +106,29 @@ export interface ProvenanceItem {
   prefilledValue: string;
   source: string | null;
 }
+
+/** Uncertainty note for one receipt field (`amount`, `date`, `payment_method`,
+ *  `category_ids`, `supplier_id`, `property_id`). */
+export interface ReceiptFieldNote {
+  field: string;
+  confidence: Confidence;
+  source_text: string | null;
+}
+
+/**
+ * An expense draft read from a receipt (`POST /extract/receipt`). Category, supplier and
+ * property are ids of the owner's **existing** records or empty — the scanner never proposes
+ * a new one. `supplier_name` is the name as written on the receipt, shown when no supplier
+ * matched.
+ */
+export interface ReceiptExtraction {
+  amount: number | null;
+  /** ISO `YYYY-MM-DD`. */
+  date: string | null;
+  payment_method: string | null;
+  category_ids: number[];
+  supplier_id: number | null;
+  supplier_name: string | null;
+  property_id: number | null;
+  notes: ReceiptFieldNote[];
+}

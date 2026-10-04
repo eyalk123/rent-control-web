@@ -283,10 +283,11 @@ function useBuildingCell() {
       case 'property':
         return (
           <div>
-            <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{rows[0].address}</p>
-            <p className="text-xs mt-0.5" style={muted}>
-              {rows[0].city} · {t('property.groupUnits', { count: rows.length })}
+            <p className="flex items-center gap-2 font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              {rows[0].address}
+              <Pill tone="neutral">{t('property.groupUnits', { count: rows.length })}</Pill>
             </p>
+            <p className="text-xs mt-0.5" style={muted}>{rows[0].city}</p>
           </div>
         );
       case 'type': {

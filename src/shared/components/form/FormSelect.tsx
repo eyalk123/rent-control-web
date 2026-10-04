@@ -1,6 +1,6 @@
 import * as Select from '@radix-ui/react-select';
 import { ChevronDown, ChevronUp, Check, X } from 'lucide-react';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RequiredMark } from './RequiredMark';
 import { FieldReviewNotice, useDismissFieldReview, useFieldReview } from './FieldReviewContext';
@@ -11,6 +11,9 @@ export interface SelectOption<T extends string = string> {
   value: T;
   /** Sentinel rows ("All owners", "None", "+ Create new") stay above the sorted options. */
   pinned?: boolean;
+  /** Starts a new section: a divider and this heading are drawn above the option. Only
+   *  meaningful with `sorted={false}`, where the caller has already ordered each section. */
+  groupLabel?: string;
 }
 
 interface Props<T extends string> {
@@ -49,6 +52,17 @@ export function FormSelect<T extends string>({
     () => (sorted ? sortOptions(options, i18n.language) : options),
     [options, sorted, i18n.language],
   );
+  // Consecutive runs of options, split wherever an option opens a new labelled section.
+  // Radix only allows a section heading inside a `Select.Group`, so the list is rendered as
+  // groups even when there is just the one, unlabelled.
+  const groups = useMemo(() => {
+    const out: { label?: string; options: SelectOption<T>[] }[] = [];
+    for (const opt of items) {
+      if (out.length === 0 || opt.groupLabel) out.push({ label: opt.groupLabel, options: [] });
+      out[out.length - 1].options.push(opt);
+    }
+    return out;
+  }, [items]);
   const review = useFieldReview(reviewName);
   const dismissReview = useDismissFieldReview();
   const flagged = !!review && !error;
@@ -112,17 +126,29 @@ export function FormSelect<T extends string>({
               <ChevronUp size={14} aria-hidden="true" />
             </Select.ScrollUpButton>
             <Select.Viewport className="p-1">
-              {items.map((opt) => (
-                <Select.Item
-                  key={opt.value}
-                  value={opt.value}
-                  className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-[var(--color-text-primary)] cursor-pointer outline-none hover:bg-[var(--color-outline)] data-[highlighted]:bg-[var(--color-outline)]"
-                >
-                  <Select.ItemText>{opt.label}</Select.ItemText>
-                  <Select.ItemIndicator>
-                    <Check size={14} className="text-[var(--color-primary)]" />
-                  </Select.ItemIndicator>
-                </Select.Item>
+              {groups.map((group, index) => (
+                <Fragment key={group.options[0].value}>
+                  {index > 0 && <Select.Separator className="my-1 h-px bg-[var(--color-outline)]" />}
+                  <Select.Group>
+                    {group.label && (
+                      <Select.Label className="px-3 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
+                        {group.label}
+                      </Select.Label>
+                    )}
+                    {group.options.map((opt) => (
+                      <Select.Item
+                        key={opt.value}
+                        value={opt.value}
+                        className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-[var(--color-text-primary)] cursor-pointer outline-none hover:bg-[var(--color-outline)] data-[highlighted]:bg-[var(--color-outline)]"
+                      >
+                        <Select.ItemText>{opt.label}</Select.ItemText>
+                        <Select.ItemIndicator>
+                          <Check size={14} className="text-[var(--color-primary)]" />
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    ))}
+                  </Select.Group>
+                </Fragment>
               ))}
             </Select.Viewport>
             <Select.ScrollDownButton className="flex items-center justify-center py-1 text-[var(--color-text-secondary)]">

@@ -115,14 +115,17 @@ test.describe('transactions', () => {
  */
 test.describe('bulk revenue — payment cadence', () => {
   test('a contract year writes one row per quarter, not one per month', async ({ page }) => {
+    // Pin "today" to mid-February so the form opens on an off-month. Left to the real clock,
+    // the test went red every Jan/Apr/Jul/Oct with no code change behind it.
+    await page.clock.setFixedTime(new Date(new Date().getFullYear(), 1, 15));
     await page.goto('/renters/4');
     await page.getByRole('button', { name: 'Add transaction' }).first().click();
     await page.getByRole('button', { name: 'Revenue', exact: true }).click();
 
     await expect(page.getByRole('checkbox', { name: 'James Wilson' })).toBeChecked();
 
-    // The form opens on the current month, which for a lease billed Jan/Apr/Jul/Oct is very
-    // often an off-month. Saying so is the point: a checked renter that is about to be
+    // The form opens on the current month, which for a lease billed Jan/Apr/Jul/Oct is (with
+    // the clock pinned above) an off-month. Saying so is the point: a checked renter that is about to be
     // skipped has to account for itself, or the save just appears to lose them.
     await expect(page.getByText(/Quarterly: nothing due in this period/)).toBeVisible();
 
