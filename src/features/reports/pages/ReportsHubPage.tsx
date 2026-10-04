@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -9,6 +10,7 @@ import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { useTour } from '@/features/onboarding/TourController';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { useToast } from '@/shared/components/ui/Toast';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 function useReportHistory() {
@@ -36,8 +38,10 @@ export function ReportsHubPage() {
   const { mutateAsync: deleteReport } = useDeleteReport();
   const { showToast } = useToast();
 
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
   const handleDelete = async (id: number) => {
-    if (!confirm(t('reports.deleteConfirm'))) return;
+    setPendingDeleteId(null);
     try {
       await deleteReport(id);
       showToast(t('reports.deleteSuccess'), 'success');
@@ -141,7 +145,7 @@ export function ReportsHubPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => setPendingDeleteId(item.id)}
                   className="flex h-8 w-8 items-center justify-center rounded-[8px] transition-colors hover:bg-[var(--color-error)]/10"
                   style={{ color: 'var(--color-error)' }}
                 >
@@ -152,6 +156,13 @@ export function ReportsHubPage() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title={t('reports.deleteConfirm')}
+        onConfirm={() => pendingDeleteId !== null && handleDelete(pendingDeleteId)}
+        onClose={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

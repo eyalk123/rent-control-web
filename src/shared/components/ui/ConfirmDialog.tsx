@@ -5,7 +5,8 @@ import { AlertTriangle } from 'lucide-react';
 interface Props {
   open: boolean;
   title: string;
-  message: string;
+  /** Omit when the title is already the whole question. */
+  message?: string;
   /** Confirm button label. Defaults to common.delete. */
   confirmLabel?: string;
   /** Visual tone of the confirm button. Defaults to 'danger'. */
@@ -51,9 +52,11 @@ export function ConfirmDialog({ open, title, message, confirmLabel, tone = 'dang
             <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
               {title}
             </h3>
-            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              {message}
-            </p>
+            {message && (
+              <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                {message}
+              </p>
+            )}
           </div>
         </div>
         <div className="mt-6 flex gap-3">

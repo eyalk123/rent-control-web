@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useChatPanel } from '../PortfolioChatContext';
 import { useConversations, useDeleteConversation } from '../queries';
 
@@ -8,9 +10,10 @@ export function ThreadList() {
   const { openThread, activeConversationId, newChat } = useChatPanel();
   const { data: conversations, isLoading } = useConversations();
   const del = useDeleteConversation();
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const handleDelete = (id: number) => {
-    if (!window.confirm(t('agent.deleteConfirm'))) return;
+    setPendingDeleteId(null);
     del.mutate(id, {
       onSuccess: () => {
         // If we deleted the thread that's currently open, clear it back to a new chat.
@@ -52,7 +55,7 @@ export function ThreadList() {
           </button>
           <button
             type="button"
-            onClick={() => handleDelete(c.id)}
+            onClick={() => setPendingDeleteId(c.id)}
             aria-label={t('agent.delete')}
             className="me-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-exp-bg)] hover:text-[var(--color-exp-fg)]"
           >
@@ -60,6 +63,12 @@ export function ThreadList() {
           </button>
         </div>
       ))}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title={t('agent.deleteConfirm')}
+        onConfirm={() => pendingDeleteId !== null && handleDelete(pendingDeleteId)}
+        onClose={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

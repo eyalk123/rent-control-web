@@ -57,10 +57,10 @@ test.describe('portfolio chat agent', () => {
     const thread = page.getByRole('button', { name: /When does the lease end/ });
     await expect(thread).toBeVisible();
 
-    // Accept the confirm() and delete it. Deleting the open thread returns to a new chat
+    // Confirm the delete. Deleting the open thread returns to a new chat
     // (the panel switches back to the conversation view), so the thread disappears...
-    page.on('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Delete conversation' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(thread).toBeHidden();
 
     // ...and reopening history now shows it's empty.

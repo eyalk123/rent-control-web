@@ -13,6 +13,7 @@ import { downloadAllData } from '../api/export';
 import { deleteMyAccount } from '../api/account';
 import { isPopupCancel, reauthenticateAppleForDeletion, revokeAppleToken } from '@/core/auth/appleAuth';
 import { Toggle } from '@/shared/components/ui/Toggle';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { TOURS_ENABLED } from '@/features/onboarding/flags';
 import { useRecordTourProgress, useTourState } from '@/features/onboarding/queries';
 import {
@@ -172,6 +173,7 @@ export function SettingsPage() {
   const { signOut, user } = useAppAuth();
   const { showToast } = useToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const { openPanel: openFeedback } = useFeedbackPanel();
   const [exporting, setExporting] = useState(false);
   const { state: tourState } = useTourState();
@@ -218,8 +220,10 @@ export function SettingsPage() {
     showToast(t('onboarding.ui.replayDone'), 'success');
   };
 
+  // The app's own dialog, not window.confirm(): the browser draws that one in its own UI
+  // direction, so in Hebrew it came out left-to-right.
   const handleSignOut = async () => {
-    if (!confirm(t('settings.signOutConfirm'))) return;
+    setSignOutOpen(false);
     try {
       await signOut();
       navigate('/sign-in', { replace: true });
@@ -519,7 +523,7 @@ export function SettingsPage() {
               hint={t('settings.signOutHint')}
               control={
                 <button
-                  onClick={handleSignOut}
+                  onClick={() => setSignOutOpen(true)}
                   className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors"
                   style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
                 >
@@ -545,6 +549,14 @@ export function SettingsPage() {
         </div>
       </div>
 
+      <ConfirmDialog
+        open={signOutOpen}
+        title={t('settings.signOutConfirm')}
+        message={t('settings.signOutHint')}
+        confirmLabel={t('settings.signOut')}
+        onConfirm={handleSignOut}
+        onClose={() => setSignOutOpen(false)}
+      />
       {deleteOpen && <DeleteAccountModal onClose={() => setDeleteOpen(false)} />}
     </div>
   );
