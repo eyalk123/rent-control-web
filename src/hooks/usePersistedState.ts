@@ -47,3 +47,19 @@ export function usePersistedState<T>(
 
   return [value, set];
 }
+
+/**
+ * Forget every list filter, search, sort and open group saved in this tab. Called when the
+ * signed-in account changes: they hold the previous owner's values (a property in a
+ * filter, a renter's name in a search) and would silently narrow the next account's lists.
+ * Every caller's key starts with `app_`; keep it that way so this keeps finding them.
+ */
+export function clearPersistedState(storage: Storage = sessionStorage) {
+  try {
+    for (const key of Object.keys(storage)) {
+      if (key.startsWith('app_')) storage.removeItem(key);
+    }
+  } catch {
+    /* ignore (e.g. storage blocked) */
+  }
+}

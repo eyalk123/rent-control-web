@@ -9,7 +9,7 @@ import apiClient from '@/core/api/client';
 export async function downloadFile(
   endpoint: string,
   filename: string,
-  options: { params?: Record<string, unknown>; timeout?: number } = {},
+  options: { params?: Record<string, unknown> | URLSearchParams; timeout?: number } = {},
 ): Promise<void> {
   const response = await apiClient.get<Blob>(endpoint, {
     params: options.params,

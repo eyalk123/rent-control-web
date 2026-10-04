@@ -142,6 +142,13 @@ export function ReportsHubPage() {
                     {item.revenue_basis ? (
                       <> · {t(item.revenue_basis === 'cash' ? 'reports.basisCash' : 'reports.basisAccrual')}</>
                     ) : null}
+                    {/* Which owners it covered, when not all of them, and whether it was a
+                        file per owner — otherwise one owner's report and the whole
+                        portfolio's look identical here. */}
+                    {item.owners ? (
+                      <> · {item.owners.map((o) => o || t('reports.noOwner')).join(', ')}</>
+                    ) : null}
+                    {item.split_by_owner ? <> · {t('reports.splitMeta')}</> : null}
                   </p>
                 </div>
                 <button

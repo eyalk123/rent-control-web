@@ -104,6 +104,9 @@ test.describe('revenue recognition basis', () => {
 
     const request = page.waitForRequest((r) => r.url().includes('/reports/income-expense?'));
     await page.getByRole('button', { name: /^PDF/ }).click();
+    // With more than one owner the button opens a one-file / file-per-owner menu first.
+    const oneFile = page.getByRole('button', { name: 'One file' });
+    if (await oneFile.isVisible()) await oneFile.click();
     const url = (await request).url();
     expect(url).toContain('basis=cash');
   });

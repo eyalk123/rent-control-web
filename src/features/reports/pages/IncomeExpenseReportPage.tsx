@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -22,6 +22,7 @@ import { TransactionRow } from '@/shared/components/detail/TransactionRow';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { formatMoney, formatNumber } from '@/shared/utils/money';
 import { monthDivider, reportCols, reportTheme } from '../reportTheme';
+import { DownloadButton, OwnerExportPicker, useOwnerSelection, useReportOwners } from '../components/OwnerExportPicker';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { Transaction } from '@/shared/types';
@@ -254,6 +255,13 @@ export function IncomeExpenseReportPage() {
 
   const { data: properties = [] } = useAccessibleProperties();
   const { data: transactions = [], isLoading, isError, refetch } = useAllTransactionsForYear(selectedYear, basis);
+  // The preview follows the owner selection, so it stays the report you are about to export.
+  const allOwners = useReportOwners();
+  const ownerSelection = useOwnerSelection(allOwners);
+  const includedOwners = new Set(ownerSelection.selected);
+  const reportProperties = ownerSelection.isAll
+    ? properties
+    : properties.filter((p) => includedOwners.has(p.property_owner || ''));
 
   const monthsLocale = Array.from({ length: 12 }, (_, idx) =>
     new Intl.DateTimeFormat(i18n.language, { month: 'short' }).format(new Date(selectedYear, idx, 1))
@@ -265,7 +273,7 @@ export function IncomeExpenseReportPage() {
   const drillFor = (title: string, txs: Transaction[]): Drill => ({ txs, monthOf, title, monthLabels: monthsLocale });
 
   // Build matrix: property × month → {rev, exp}
-  const rows = properties.map((p) => {
+  const rows = reportProperties.map((p) => {
     const monthly = monthsLocale.map((_, idx) => {
       const prefix = `${selectedYear}-${String(idx + 1).padStart(2, '0')}`;
       const ptxs = transactions.filter((tx) => tx.property_id === p.id && reportingDate(tx, basis).startsWith(prefix));
@@ -330,11 +338,18 @@ export function IncomeExpenseReportPage() {
   const toggleAllOwners = () =>
     setExpandedOwners(allOpen ? new Set() : new Set(ownerGroups.map((g) => g.owner)));
 
-  const handleDownload = async (fmt: ReportFormat) => {
+  const handleDownload = async (fmt: ReportFormat, split: boolean) => {
     setIsDownloading(fmt);
     try {
-      await downloadIncomeExpenseReport(selectedYear, fmt, basis);
-      showToast(t('reports.downloadSuccess'), 'success');
+      await downloadIncomeExpenseReport(selectedYear, fmt, basis, { owners: ownerSelection.exportOwners, split });
+      // Names the owners when the report covered only some of them, so a download made
+      // while looking at one owner's figures says so.
+      showToast(
+        ownerSelection.isAll
+          ? t('reports.downloadSuccess')
+          : t('reports.downloadSuccessFor', { owners: ownerSelection.names }),
+        'success',
+      );
     } catch {
       showToast(t('error.saveFailed'), 'error');
     } finally {
@@ -355,7 +370,12 @@ export function IncomeExpenseReportPage() {
             {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />} {t('screens.reports')}
           </button>
           <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--color-text-primary)' }}>{t('reports.incomeExpense')}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.calendarYear', { year: selectedYear })}</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+            {t('reports.calendarYear', { year: selectedYear })}
+            {/* The owners belong to the report's description, next to its year: they are
+                what gets exported, not just what is on screen. */}
+            {!ownerSelection.isAll && <> · {ownerSelection.names}</>}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/*
@@ -382,22 +402,24 @@ export function IncomeExpenseReportPage() {
               <p className="mt-1" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.basisExpensesNote')}</p>
             </InfoTip>
           </div>
-          <button
-            onClick={() => handleDownload('pdf')}
+          <DownloadButton
+            format="pdf"
+            selection={ownerSelection}
+            busy={isDownloading === 'pdf'}
             disabled={!!isDownloading}
+            onDownload={handleDownload}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-60"
             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
-          >
-            <Download size={14} /> {isDownloading === 'pdf' ? '…' : 'PDF'}
-          </button>
-          <button
-            onClick={() => handleDownload('csv')}
+          />
+          <DownloadButton
+            format="csv"
+            selection={ownerSelection}
+            busy={isDownloading === 'csv'}
             disabled={!!isDownloading}
+            onDownload={handleDownload}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
             style={{ background: 'var(--color-primary)' }}
-          >
-            <Download size={14} /> {isDownloading === 'csv' ? '…' : 'CSV'}
-          </button>
+          />
         </div>
       </div>
 
@@ -410,6 +432,7 @@ export function IncomeExpenseReportPage() {
           options={years.map((y) => ({ value: String(y), label: String(y) }))}
           size="sm"
         />
+        <OwnerExportPicker selection={ownerSelection} />
         <div className="ms-auto flex gap-6">
           {[
             { label: t('reports.revenue'), value: grand.rev, color: 'var(--color-rev-fg)' },
@@ -597,7 +620,10 @@ export function IncomeExpenseReportPage() {
                     totalRev={grand.rev}
                     totalExp={grand.exp}
                     futureFrom={futureFrom}
-                    drill={drillFor(t('reports.portfolioTotal'), transactions)}
+                    drill={drillFor(
+                      t('reports.portfolioTotal'),
+                      ownerSelection.isAll ? transactions : rows.flatMap((r) => r.txs),
+                    )}
                   />
                 </div>
               )}

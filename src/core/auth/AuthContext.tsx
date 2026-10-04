@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
@@ -9,6 +10,7 @@ import {
 import * as Sentry from '@sentry/react';
 import { auth } from './firebase';
 import { setAuthTokenGetter } from '@/core/api/client';
+import { clearPersistedState } from '@/hooks/usePersistedState';
 
 interface AuthContextValue {
   user: User | null;
@@ -44,6 +46,9 @@ const E2E_USER = {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(E2E_AUTH_BYPASS ? E2E_USER : null);
   const [isLoaded, setIsLoaded] = useState(E2E_AUTH_BYPASS);
+  const queryClient = useQueryClient();
+  // undefined until Firebase first reports, so the initial restore never clears anything.
+  const lastUid = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     if (E2E_AUTH_BYPASS) {
@@ -51,6 +56,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     return onAuthStateChanged(auth, (u) => {
+      // The query cache is keyed by resource, not by account. Without this, signing out
+      // and into another account within staleTime served the previous owner's data.
+      // Covers every path to a new uid: explicit sign-out, the 401 auto sign-out, and a
+      // switch between accounts.
+      const uid = u?.uid ?? null;
+      if (lastUid.current !== undefined && lastUid.current !== uid) {
+        queryClient.clear();
+        clearPersistedState();
+      }
+      lastUid.current = uid;
       setUser(u);
       setIsLoaded(true);
       setAuthTokenGetter(() => (u ? getIdToken(u) : Promise.resolve(null)));
@@ -58,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // error is traceable to one account without sending an email or a name.
       Sentry.setUser(u ? { id: u.uid } : null);
     });
-  }, []);
+  }, [queryClient]);
 
   const getToken = useCallback(
     () =>

@@ -18,10 +18,26 @@ export interface ReportExport {
    * apart.
    */
   revenue_basis: RevenueBasis | null;
+  /**
+   * The property owners it was limited to, as typed on the properties (`''` is the
+   * no-owner group). `null` means every owner.
+   */
+  owners: string[] | null;
+  /** Downloaded as a ZIP holding one file per owner. */
+  split_by_owner: boolean;
   created_at: string;
 }
 
 export type ReportFormat = 'pdf' | 'csv';
+
+/**
+ * Which owners a report covers and how it is packaged. `owners` omitted or `null` means
+ * every owner; `split` downloads a ZIP with one file per owner instead of one grouped file.
+ */
+export interface OwnerExportOptions {
+  owners?: string[] | null;
+  split?: boolean;
+}
 
 /**
  * Accrual counts December's rent as December income even if it arrived in January; cash
@@ -49,21 +65,27 @@ function triggerDownload(
   endpoint: string,
   year: number,
   format: ReportFormat,
-  filename: string,
+  stem: string,
+  { owners, split }: OwnerExportOptions,
   basis?: RevenueBasis,
 ): Promise<void> {
-  return downloadFile(endpoint, filename, {
-    params: { year, format, lang: reportLang(), ...(basis ? { basis } : {}) },
-  });
+  // URLSearchParams rather than a plain object: the owner parameter repeats
+  // (`owner=Dana&owner=Avi`), which axios would otherwise send as `owner[]=`.
+  const params = new URLSearchParams({ year: String(year), format, lang: reportLang() });
+  if (basis) params.set('basis', basis);
+  owners?.forEach((o) => params.append('owner', o));
+  if (split) params.set('split', 'true');
+  return downloadFile(endpoint, `${stem}.${split ? 'zip' : format}`, { params });
 }
 
 export async function downloadIncomeExpenseReport(
   year: number,
   format: ReportFormat,
   basis: RevenueBasis = 'accrual',
+  options: OwnerExportOptions = {},
 ): Promise<void> {
   await triggerDownload(
-    '/reports/income-expense', year, format, `income-expense-${year}.${format}`, basis,
+    '/reports/income-expense', year, format, `income-expense-${year}`, options, basis,
   );
 }
 
@@ -71,8 +93,12 @@ export async function downloadIncomeExpenseReport(
  * No basis parameter: an expense log has no revenue to recognise, and expenses already
  * count on the date they were paid under both bases.
  */
-export async function downloadExpenseLogReport(year: number, format: ReportFormat): Promise<void> {
-  await triggerDownload('/reports/expense-log', year, format, `expense-log-${year}.${format}`);
+export async function downloadExpenseLogReport(
+  year: number,
+  format: ReportFormat,
+  options: OwnerExportOptions = {},
+): Promise<void> {
+  await triggerDownload('/reports/expense-log', year, format, `expense-log-${year}`, options);
 }
 
 /** The option a country's landlords most likely want — pre-selected, never forced. */
