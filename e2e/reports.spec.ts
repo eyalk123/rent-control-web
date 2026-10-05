@@ -39,7 +39,7 @@ test.describe('reports', () => {
     for (const label of ['Revenue', 'Expenses', 'Net']) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
-    await expect(page.getByText('Owner total (net)').first()).toBeVisible();
+    await expect(page.getByText('Owner total', { exact: true }).first()).toBeVisible();
   });
 
   test('income preview ends with a portfolio total across owners', async ({ page }) => {

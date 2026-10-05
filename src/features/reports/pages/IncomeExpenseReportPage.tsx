@@ -88,6 +88,17 @@ function cellText(v: number, future: boolean): string {
   return v === 0 && future ? '' : formatCell(v);
 }
 
+/**
+ * The year's expenses as a whole percent of its revenue, or null when there is nothing to
+ * say: no revenue (a ratio over zero is meaningless) or no expenses (0% is just noise).
+ * Yearly only, by design: a monthly ratio swings wildly whenever a bill and the rent land in
+ * different months.
+ */
+function expenseShare(rev: number, exp: number): number | null {
+  if (rev <= 0 || exp <= 0) return null;
+  return Math.round((exp / rev) * 100);
+}
+
 type MetricKey = 'rev' | 'exp' | 'net';
 
 interface Drill {
@@ -126,9 +137,11 @@ function DrillCell({ metric, monthIdx, drill, className, style, children }: {
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
+        {/* A flex column so the figure sits at the top like a plain cell's: a button centres
+            its content, which dropped it below the row label whenever the row grew taller. */}
         <button
           type="button"
-          className={`${className} text-end hover:underline underline-offset-2 data-[state=open]:underline outline-none focus-visible:ring-2`}
+          className={`${className} flex flex-col items-end justify-start text-end hover:underline underline-offset-2 data-[state=open]:underline outline-none focus-visible:ring-2`}
           style={{ ...style, borderTop: 'none', borderBottom: 'none', borderInlineEnd: 'none', cursor: 'pointer' }}
         >
           {children}
@@ -171,6 +184,7 @@ function MetricRows({ monthly, totalRev, totalExp, futureFrom, drill }: {
   drill: Drill;
 }) {
   const { t } = useTranslation();
+  const share = expenseShare(totalRev, totalExp);
   const metrics: { key: MetricKey; label: string; values: number[]; total: number; color: string | null; isNet: boolean }[] = [
     { key: 'rev', label: t('reports.revenue'), values: monthly.map((m) => m.rev), total: totalRev, color: 'var(--color-rev-fg)', isNet: false },
     { key: 'exp', label: t('reports.expenses'), values: monthly.map((m) => m.exp), total: totalExp, color: 'var(--color-exp-fg)', isNet: false },
@@ -220,6 +234,13 @@ function MetricRows({ monthly, totalRev, totalExp, futureFrom, drill }: {
             }}
           >
             {formatMoney(metric.total)}
+            {/* Under Net, as the year's summary, not under Expenses where it read as part of
+                that figure. Neutral grey on purpose: context, not a warning. */}
+            {metric.isNet && share !== null && (
+              <span className="block text-[10.5px] font-medium" title={t('reports.expenseRatioHint')} style={{ color: 'var(--color-text-secondary)' }}>
+                {t('reports.expenseRatio', { percent: share })}
+              </span>
+            )}
           </DrillCell>
         </div>
       ))}
@@ -288,6 +309,7 @@ export function IncomeExpenseReportPage() {
   });
 
   const grand = rows.reduce((acc, r) => ({ rev: acc.rev + r.totalRev, exp: acc.exp + r.totalExp }), { rev: 0, exp: 0 });
+  const grandShare = expenseShare(grand.rev, grand.exp);
   const grandMonthly = monthsLocale.map((_, idx) => ({
     rev: rows.reduce((s, r) => s + r.monthly[idx].rev, 0),
     exp: rows.reduce((s, r) => s + r.monthly[idx].exp, 0),
@@ -311,9 +333,6 @@ export function IncomeExpenseReportPage() {
       totalRev: ownerRows.reduce((s, r) => s + r.totalRev, 0),
       totalExp: ownerRows.reduce((s, r) => s + r.totalExp, 0),
       txs: ownerRows.flatMap((r) => r.txs),
-      monthlyNet: monthsLocale.map((_, idx) =>
-        ownerRows.reduce((s, r) => s + r.monthly[idx].rev - r.monthly[idx].exp, 0)),
-      totalNet: ownerRows.reduce((s, r) => s + r.totalRev - r.totalExp, 0),
     }));
   })();
 
@@ -444,6 +463,12 @@ export function IncomeExpenseReportPage() {
               <LtrSpan className="text-[14px] font-bold mt-0.5" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(value)}</LtrSpan>
             </div>
           ))}
+          {grandShare !== null && (
+            <div className="flex flex-col items-end" title={t('reports.expenseRatioHint')}>
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.expenseRatioLabel')}</span>
+              <LtrSpan className="text-[14px] font-bold mt-0.5" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{grandShare}%</LtrSpan>
+            </div>
+          )}
         </div>
       </div>
 
@@ -502,8 +527,8 @@ export function IncomeExpenseReportPage() {
                 <div key={group.owner}>
                   {/* The owner is the top of the hierarchy, so it is the largest row. Collapsed,
                       it carries the owner's own Revenue / Expenses / Net, the same trio as a
-                      property, so a folded report still reads as a summary. Open, the owner's
-                      net moves to the Owner total row below, as in the PDF. */}
+                      property, so a folded report still reads as a summary. Open, the trio
+                      moves to the Owner total row below (when there is one). */}
                   <div
                     className="flex items-stretch"
                     style={{ background: 'var(--color-rev-bg)', color: 'var(--color-text-primary)', borderTop: `2px solid ${reportTheme.gridStrong}` }}
@@ -561,44 +586,22 @@ export function IncomeExpenseReportPage() {
                     </div>
                   ))}
 
-                  {/* Owner total, net per month — matches the PDF's OWNER TOTAL (net) row. */}
-                  {open && (
+                  {/* Owner total: the same Revenue / Expenses / Net trio as a property, so the
+                      expense ratio under its Net reads the same way at every level. (The PDF's
+                      OWNER TOTAL is still net only — screen-only for now.) With a single property
+                      it would repeat that property line for line, so it needs two or more. */}
+                  {open && group.rows.length > 1 && (
                   <div className="flex items-stretch" style={{ borderTop: `2px solid ${reportTheme.gridStrong}`, background: 'var(--color-input-filled-background)' }}>
-                    <div className={`${reportCols.property} px-4 py-2.5 text-[12px] font-bold`} style={{ color: 'var(--color-text-primary)' }}>
-                      {t('reports.ownerTotalNet')}
+                    <div className={`${reportCols.property} flex items-center px-4 py-2.5 text-[12.5px] font-bold`} style={{ color: 'var(--color-text-primary)' }}>
+                      {t('reports.ownerTotal')}
                     </div>
-                    <div className={reportCols.metric} />
-                    {group.monthlyNet.map((net, idx) => (
-                      <DrillCell
-                        key={idx}
-                        metric="net"
-                        monthIdx={idx}
-                        drill={drillFor(group.owner, group.txs)}
-                        className={`${reportCols.month} pe-2 py-2.5 text-[11.5px] font-bold`}
-                        style={{
-                          color: net === 0 ? 'var(--color-text-secondary)' : net > 0 ? 'var(--color-success)' : 'var(--color-error)',
-                          background: idx >= futureFrom ? reportTheme.futureColBg : 'transparent',
-                          fontVariantNumeric: 'tabular-nums',
-                          ...monthDivider('body'),
-                        }}
-                      >
-                        {cellText(net, idx >= futureFrom)}
-                      </DrillCell>
-                    ))}
-                    <DrillCell
-                      metric="net"
-                      monthIdx={null}
+                    <MetricRows
+                      monthly={group.monthly}
+                      totalRev={group.totalRev}
+                      totalExp={group.totalExp}
+                      futureFrom={futureFrom}
                       drill={drillFor(group.owner, group.txs)}
-                      className={`${reportCols.total} pe-3 py-2.5 text-[13px] font-bold`}
-                      style={{
-                        background: reportTheme.totalColBgNet,
-                        borderInlineStart: `2px solid ${reportTheme.gridStrong}`,
-                        color: group.totalNet >= 0 ? 'var(--color-success)' : 'var(--color-error)',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {formatMoney(group.totalNet)}
-                    </DrillCell>
+                    />
                   </div>
                   )}
                 </div>
