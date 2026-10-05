@@ -77,6 +77,8 @@ export async function purchase(
       customerEmail: options.email ?? undefined,
       selectedLocale: options.locale,
       defaultLocale: 'en',
+      // Off by default in the SDK. Marked experimental there, so recheck after upgrades.
+      showDiscountCodeField: true,
     });
     return 'purchased';
   } catch (error) {

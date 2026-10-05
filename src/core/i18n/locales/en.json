@@ -1275,7 +1275,7 @@
     "alreadyHaveAccountPrompt": "Already have an account?",
     "brandTagline": "One ledger. Every property.",
     "brandHeadline": "Track rent, expenses & leases without spreadsheets.",
-    "brandDescription": "Built for small landlords. Multi-year leases with automatic escalation, supplier-linked expenses, and annual reports in one click.",
+    "brandDescription": "Built for small landlords and property managers. Multi-year leases with automatic escalation, supplier-linked expenses, and annual reports in one click.",
     "brandPlatforms": "iOS · Android · Web"
   },
   "notifications": {
@@ -1938,7 +1938,7 @@
     },
     "hero": {
       "headline": "Every apartment, every payment, one ledger.",
-      "subhead": "RentVance tracks rent, expenses and leases for the properties you own, and tells you before a lease renews or a rent changes.",
+      "subhead": "RentVance tracks rent, expenses and leases for the properties you own or manage for others, and tells you before a lease renews or a rent changes.",
       "primaryCta": "Start free",
       "secondaryCta": "See pricing",
       "freeNote": "Free for up to {{max}} properties. No card needed."
@@ -1961,7 +1961,7 @@
     "features": {
       "reports": {
         "heading": "Reports you can hand to an accountant",
-        "body": "Income and expenses per property and per period, exported when you need them."
+        "body": "Income and expenses per property and per period, exported when you need them. Manage for several owners? Get one report, or a separate one for each owner."
       },
       "reminders": {
         "heading": "Told before the date, not after",
