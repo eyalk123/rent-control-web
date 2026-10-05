@@ -52,7 +52,8 @@ Sentry (prod only). Backend: FastAPI.
   - Mobile's palette rationale, its accepted deviations, and the log of proposals considered
     and declined live in **`rent-control/MOBILE-DESIGN.md`** §2 (Color) and §13 (Decisions
     log). Read it for reasoning worth borrowing, not for values to copy.
-- `src/features/`: feature slices (home, properties, renters, transactions, suppliers,
+- `src/features/`: feature slices (home, properties, property-owners — its own page under
+  Manage, above Suppliers — renters, transactions, suppliers,
   reports, notifications, settings, auth, legal, alerts, document-scan, agent,
   onboarding). Each
   typically has `api/`, `components/`, `pages/`, `queries.ts` (React Query hooks), and

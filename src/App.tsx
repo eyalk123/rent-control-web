@@ -21,6 +21,7 @@ const RentersListPage = lazy(() => import('@/features/renters/pages/RentersListP
 const RenterDetailPage = lazy(() => import('@/features/renters/pages/RenterDetailPage').then((m) => ({ default: m.RenterDetailPage })));
 const TransactionsListPage = lazy(() => import('@/features/transactions/pages/TransactionsListPage').then((m) => ({ default: m.TransactionsListPage })));
 const TransactionDetailPage = lazy(() => import('@/features/transactions/pages/TransactionDetailPage').then((m) => ({ default: m.TransactionDetailPage })));
+const PropertyOwnersPage = lazy(() => import('@/features/property-owners/pages/PropertyOwnersPage').then((m) => ({ default: m.PropertyOwnersPage })));
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage').then((m) => ({ default: m.SuppliersListPage })));
 const ReportsHubPage = lazy(() => import('@/features/reports/pages/ReportsHubPage').then((m) => ({ default: m.ReportsHubPage })));
 const IncomeExpenseReportPage = lazy(() => import('@/features/reports/pages/IncomeExpenseReportPage').then((m) => ({ default: m.IncomeExpenseReportPage })));
@@ -141,6 +142,7 @@ const router = createBrowserRouter([
           { path: '/renters/:id', element: <RenterDetailPage /> },
           { path: '/transactions', element: <TransactionsListPage /> },
           { path: '/transactions/:id', element: <TransactionDetailPage /> },
+          { path: '/property-owners', element: <PropertyOwnersPage /> },
           { path: '/suppliers', element: <SuppliersListPage /> },
           { path: '/reports', element: <ReportsHubPage /> },
           { path: '/reports/income-expense', element: <IncomeExpenseReportPage /> },

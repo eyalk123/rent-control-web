@@ -16,6 +16,10 @@ export const propertyKeys = {
   detail: (id: number) => ['properties', id] as const,
 };
 
+// Each owner carries a count of their properties, so a property write invalidates the owner
+// lists too. Spelled out rather than imported: property-owners/queries imports this file.
+const PROPERTY_OWNERS_KEY = ['property-owners'] as const;
+
 export function useProperties() {
   return useQuery({ queryKey: propertyKeys.all, queryFn: getProperties });
 }
@@ -52,7 +56,10 @@ export function useCreateProperty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createProperty,
-    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: propertyKeys.all });
+      qc.invalidateQueries({ queryKey: PROPERTY_OWNERS_KEY });
+    },
   });
 }
 
@@ -63,6 +70,7 @@ export function useUpdateProperty(id: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: propertyKeys.all });
       qc.invalidateQueries({ queryKey: propertyKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: PROPERTY_OWNERS_KEY });
     },
   });
 }
@@ -71,6 +79,9 @@ export function useDeleteProperty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: deleteProperty,
-    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: propertyKeys.all });
+      qc.invalidateQueries({ queryKey: PROPERTY_OWNERS_KEY });
+    },
   });
 }

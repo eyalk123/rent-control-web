@@ -2,16 +2,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
 import { areaUnitLabel } from '@/shared/utils/money';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller, type DefaultValues } from 'react-hook-form';
+import { useForm, useWatch, Controller, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { propertyFormSchema, availablePropertyTypes } from '../validation/propertyValidation';
-import { useCreateProperty, useUpdateProperty, useProperty, useProperties } from '../queries';
+import { useCreateProperty, useUpdateProperty, useProperty } from '../queries';
+import { usePropertyOwners } from '@/features/property-owners/queries';
+import { PropertyOwnerFormDrawer } from '@/features/property-owners/pages/PropertyOwnerFormDrawer';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { FormChipInput } from '@/shared/components/form/FormChipInput';
-import { FormCreatableSelect } from '@/shared/components/form/FormCreatableSelect';
+import { Plus } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
@@ -100,19 +102,13 @@ export function PropertyFormDrawer({
   const isEditing = !!propertyId;
 
   const { data: existing } = useProperty(propertyId ?? 0);
-  const { data: allProperties = [] } = useProperties();
+  // Inactive owners too: a property may still point at one, and its name must stay shown.
+  const { data: owners = [], isSuccess: ownersLoaded } = usePropertyOwners({ includeInactive: true });
+  const [ownerDrawerOpen, setOwnerDrawerOpen] = useState(false);
   const { user } = useAppAuth();
   const createMutation = useCreateProperty();
   const updateMutation = useUpdateProperty(propertyId ?? 0);
 
-  // FormCreatableSelect applies the locale-aware ordering.
-  const ownerOptions = useMemo(() =>
-    Array.from(new Set(
-      allProperties
-        .map((p) => p.property_owner?.trim())
-        .filter((o): o is string => !!o)
-    )),
-  [allProperties]);
   const { showToast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -153,6 +149,20 @@ export function PropertyFormDrawer({
     resolver: zodResolver(propertyFormSchema) as never,
     defaultValues: EMPTY_FORM,
   });
+
+  // The field holds the owner's *name* — unique per account, and what the lease scanner
+  // fills — and is matched to an owner record here. A scanned name that is not one of the
+  // account's owners is shown as what the lease said, never saved as a new owner: "New
+  // owner" opens the owner form with it filled in.
+  const ownerName = useWatch({ control, name: 'propertyOwner' }) ?? '';
+  const ownerRecord = owners.find((o) => o.name === ownerName);
+  const ownerOptions = useMemo(
+    () => owners
+      .filter((o) => o.is_active || o.name === ownerName)
+      .map((o) => ({ value: o.name, label: o.name })),
+    [owners, ownerName],
+  );
+  const ownerReadOnLease = ownersLoaded && ownerName && !ownerRecord ? ownerName : null;
 
   useEffect(() => {
     if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); }
@@ -260,7 +270,11 @@ export function PropertyFormDrawer({
         zip_code: data.zipCode || '',
         type: data.type,
         sq_ft: data.sqFt ? Number(data.sqFt) : null,
-        property_owner: data.propertyOwner || null,
+        // Omitted until the owner list has loaded: a stored owner would otherwise read as
+        // unknown and be cleared. An unmatched (scanned) name saves as no owner.
+        ...(ownersLoaded
+          ? { property_owner_id: owners.find((o) => o.name === data.propertyOwner)?.id ?? null }
+          : {}),
         inventory_notes: data.inventoryNotes || null,
         floor: data.floor ? Number(data.floor) : null,
         apartment: data.apartment || null,
@@ -513,17 +527,31 @@ export function PropertyFormDrawer({
         ) : (
           <div key="step-2" className="flex flex-col gap-4">
             <div ref={ownerAnchorRef}>
-              <FormCreatableSelect
-                control={control}
-                name="propertyOwner"
-                label={t('property.owner')}
-                options={ownerOptions}
-                placeholder={t('property.ownerPlaceholder')}
-                createLabel={t('property.ownerCreate')}
-                createModalTitle={t('property.createOwnerTitle')}
-                createModalPlaceholder={t('property.ownerNamePlaceholder')}
-                error={errors.propertyOwner?.message}
-              />
+              <div className="flex flex-col gap-1">
+                <FormSelect
+                  label={t('property.owner')}
+                  value={ownerRecord ? ownerName : ''}
+                  onValueChange={(v) => setValue('propertyOwner', v, { shouldDirty: true })}
+                  options={ownerOptions}
+                  placeholder={t('property.ownerPlaceholder')}
+                  error={errors.propertyOwner?.message}
+                  reviewName="propertyOwner"
+                />
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+                    {ownerReadOnLease && t('propertyOwners.readOnLease', { name: ownerReadOnLease })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setOwnerDrawerOpen(true)}
+                    className="flex shrink-0 items-center gap-1 text-xs font-medium hover:underline"
+                    style={{ color: 'var(--color-primary)' }}
+                  >
+                    <Plus size={13} aria-hidden="true" />
+                    {t('propertyOwners.new')}
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.inventoryNotes')}</label>
@@ -586,6 +614,12 @@ export function PropertyFormDrawer({
       confirmLabel={t('common.discard')}
       onConfirm={() => { setShowDiscard(false); onClose(); }}
       onClose={() => setShowDiscard(false)}
+    />
+    <PropertyOwnerFormDrawer
+      open={ownerDrawerOpen}
+      initialName={ownerReadOnLease ?? undefined}
+      onClose={() => setOwnerDrawerOpen(false)}
+      onCreated={(owner) => setValue('propertyOwner', owner.name, { shouldDirty: true })}
     />
     <PropertyCreatedPrompt
       open={showRenterPrompt}

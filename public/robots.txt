@@ -16,6 +16,7 @@ Disallow: /home
 Disallow: /properties
 Disallow: /renters
 Disallow: /transactions
+Disallow: /property-owners
 Disallow: /suppliers
 Disallow: /reports
 Disallow: /settings

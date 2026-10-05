@@ -32,6 +32,7 @@ function sanitizePropertyCreate(data: PropertyCreate): PropertyCreate {
     water_account_number,
     property_tax,
     house_committee,
+    property_owner_id,
     property_owner,
     inventory_notes,
     basic_contract_url,
@@ -53,6 +54,7 @@ function sanitizePropertyCreate(data: PropertyCreate): PropertyCreate {
   if (water_account_number !== undefined) out.water_account_number = water_account_number;
   if (property_tax !== undefined) out.property_tax = property_tax;
   if (house_committee !== undefined) out.house_committee = house_committee;
+  if (property_owner_id !== undefined) out.property_owner_id = property_owner_id;
   if (property_owner !== undefined) out.property_owner = property_owner;
   if (inventory_notes !== undefined) out.inventory_notes = inventory_notes;
   if (basic_contract_url !== undefined) out.basic_contract_url = basic_contract_url;
@@ -80,6 +82,7 @@ function sanitizePropertyUpdate(data: PropertyUpdate): Record<string, unknown> {
     'water_account_number',
     'property_tax',
     'house_committee',
+    'property_owner_id',
     'property_owner',
     'inventory_notes',
     'basic_contract_url',

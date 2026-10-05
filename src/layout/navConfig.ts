@@ -4,6 +4,7 @@ import {
   Users,
   Wallet,
   Store,
+  UserRound,
   BarChart2,
   Settings,
 } from 'lucide-react';
@@ -27,17 +28,19 @@ export const mainNavItems: NavItem[] = [
 ];
 
 export const bottomNavItems: NavItem[] = [
+  { icon: UserRound, labelKey: 'tabs.propertyOwners', path: '/property-owners' },
   { icon: Store,    labelKey: 'tabs.suppliers', path: '/suppliers', anchor: ANCHORS.navSuppliers },
   { icon: Settings, labelKey: 'tabs.settings',  path: '/settings',  anchor: ANCHORS.navSettings },
 ];
 
-// The bottom bar fits ~5 targets at 390px, but the app has 7 destinations. The first
+// The bottom bar fits ~5 targets at 390px, but the app has 8 destinations. The first
 // four are the primary tabs; everything else lives behind a "More" sheet so that
 // Reports and Suppliers stay reachable on mobile (they previously were not).
 export const mobileNavItems: NavItem[] = mainNavItems.slice(0, 4);
 
 export const mobileMoreItems: NavItem[] = [
   { icon: BarChart2, labelKey: 'tabs.reports',   path: '/reports' },
+  { icon: UserRound, labelKey: 'tabs.propertyOwners', path: '/property-owners' },
   { icon: Store,     labelKey: 'tabs.suppliers', path: '/suppliers' },
   { icon: Settings,  labelKey: 'tabs.settings',  path: '/settings' },
 ];

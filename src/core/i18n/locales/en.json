@@ -45,6 +45,7 @@
     "settings": "Settings",
     "transactions": "Transactions",
     "reports": "Reports",
+    "propertyOwners": "Property owners",
     "suppliers": "Suppliers",
     "more": "More"
   },
@@ -204,9 +205,6 @@
     "plot": "Plot",
     "propertyOwner": "Property owner",
     "ownerPlaceholder": "Select an owner",
-    "ownerCreate": "Add new owner...",
-    "createOwnerTitle": "Add property owner",
-    "ownerNamePlaceholder": "Owner name",
     "zipCode": "Postal code",
     "type": "Property Type",
     "typePlaceholder": "e.g. Apartment, House",
@@ -2137,5 +2135,27 @@
       "unavailableBody": "Please try again in a few minutes. If it keeps happening, write to us at {{email}}.",
       "goToApp": "Go to RentVance"
     }
+  },
+  "propertyOwners": {
+    "add": "Add owner",
+    "new": "New owner",
+    "addTitle": "Add property owner",
+    "editTitle": "Edit property owner",
+    "details": "Owner details",
+    "name": "Name",
+    "properties": "Properties",
+    "propertyCount_one": "{{count}} property",
+    "propertyCount_other": "{{count}} properties",
+    "headerMeta_one": "{{count}} owner",
+    "headerMeta_other": "{{count}} owners",
+    "empty": "No property owners yet",
+    "createSuccess": "Owner created",
+    "updateSuccess": "Owner updated",
+    "deleteSuccess": "Owner deleted",
+    "nameTaken": "An owner with this name already exists",
+    "deleteConfirm": "Delete this owner?",
+    "deleteMessage": "Their contact and bank details will be removed.",
+    "deleteBlocked": "An owner with properties can’t be deleted. Move their properties to another owner first.",
+    "readOnLease": "On the lease: “{{name}}” — not one of your owners"
   }
 }

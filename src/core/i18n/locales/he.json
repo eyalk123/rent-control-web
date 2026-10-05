@@ -45,6 +45,7 @@
     "settings": "הגדרות",
     "transactions": "תנועות",
     "reports": "דוחות",
+    "propertyOwners": "בעלי נכסים",
     "suppliers": "ספקים",
     "more": "עוד"
   },
@@ -205,9 +206,6 @@
     "plot": "חלקה",
     "propertyOwner": "בעל הנכס",
     "ownerPlaceholder": "בחר בעלים",
-    "ownerCreate": "הוסף בעלים חדש...",
-    "createOwnerTitle": "הוסף בעל נכס",
-    "ownerNamePlaceholder": "שם הבעלים",
     "zipCode": "מיקוד",
     "type": "סוג נכס",
     "typePlaceholder": "למשל דירה, בית",
@@ -2149,5 +2147,27 @@
       "unavailableBody": "נסו שוב בעוד כמה דקות. אם זה חוזר, כתבו לנו ל־{{email}}.",
       "goToApp": "ל־RentVance"
     }
+  },
+  "propertyOwners": {
+    "add": "הוספת בעל נכס",
+    "new": "בעל נכס חדש",
+    "addTitle": "הוספת בעל נכס",
+    "editTitle": "עריכת בעל נכס",
+    "details": "פרטי בעל הנכס",
+    "name": "שם",
+    "properties": "נכסים",
+    "propertyCount_one": "נכס אחד",
+    "propertyCount_other": "{{count}} נכסים",
+    "headerMeta_one": "בעל נכס אחד",
+    "headerMeta_other": "{{count}} בעלי נכסים",
+    "empty": "עדיין אין בעלי נכסים",
+    "createSuccess": "בעל הנכס נוסף",
+    "updateSuccess": "בעל הנכס עודכן",
+    "deleteSuccess": "בעל הנכס נמחק",
+    "nameTaken": "כבר קיים בעל נכס בשם הזה",
+    "deleteConfirm": "למחוק את בעל הנכס?",
+    "deleteMessage": "פרטי הקשר וחשבון הבנק שלו יימחקו.",
+    "deleteBlocked": "אי אפשר למחוק בעל נכס שיש לו נכסים. קודם יש להעביר את הנכסים לבעל נכס אחר.",
+    "readOnLease": "בחוזה: “{{name}}” — לא אחד מבעלי הנכסים שלך"
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, Users, Wallet, BarChart2, Store, Settings,
+  LayoutDashboard, Building2, Users, Wallet, BarChart2, Store, Settings, UserRound,
   Plus, TrendingUp, TrendingDown, Search, ArrowRight, ArrowLeft, FileText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -63,6 +63,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { group: pagesGroup, label: t('tabs.properties'),   icon: Building2,       action: () => go('/properties') },
     { group: pagesGroup, label: t('tabs.renters'),      icon: Users,           action: () => go('/renters') },
     { group: pagesGroup, label: t('tabs.transactions'), icon: Wallet,          action: () => go('/transactions') },
+    { group: pagesGroup, label: t('tabs.propertyOwners'), icon: UserRound,     action: () => go('/property-owners') },
     { group: pagesGroup, label: t('tabs.suppliers'),    icon: Store,           action: () => go('/suppliers') },
     { group: pagesGroup, label: t('tabs.reports'),      icon: BarChart2,       action: () => go('/reports') },
     { group: pagesGroup, label: t('tabs.settings'),     icon: Settings,        action: () => go('/settings') },

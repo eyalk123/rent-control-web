@@ -43,6 +43,8 @@ export interface Property {
   water_account_number?: string | null;
   property_tax?: number | null;
   house_committee?: number | null;
+  /** The owner record (`/property-owners`). `property_owner` is that owner's name. */
+  property_owner_id?: number | null;
   property_owner?: string | null;
   inventory_notes?: string | null;
   basic_contract_url?: string | null;
@@ -415,6 +417,30 @@ export interface SupplierUpdate {
   is_active?: boolean;
 }
 
+/** The human who owns a property — a parent, a partner — as distinct from the account
+ *  holder. A contact record shaped like a supplier; the name is unique per account. */
+export interface PropertyOwner {
+  id: number;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  notes?: string | null;
+  bank_account?: string | null;
+  is_active: boolean;
+  /** Properties pointing at this owner. One with any left cannot be deleted. */
+  property_count: number;
+}
+
+export interface PropertyOwnerCreate {
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  notes?: string | null;
+  bank_account?: string | null;
+}
+
+export type PropertyOwnerUpdate = Partial<PropertyOwnerCreate> & { is_active?: boolean };
+
 export interface PropertyRenterSummary {
   /** True when this tenancy has finished. Only populated when the list was fetched
    * with `includeEnded` — the picker uses it to mark the option. */
@@ -445,6 +471,8 @@ export interface PropertyCreate {
   water_account_number?: string | null;
   property_tax?: number | null;
   house_committee?: number | null;
+  /** The owner record (`/property-owners`). `property_owner` is that owner's name. */
+  property_owner_id?: number | null;
   property_owner?: string | null;
   inventory_notes?: string | null;
   basic_contract_url?: string | null;
@@ -471,6 +499,8 @@ export interface PropertyUpdate {
   water_account_number?: string | null;
   property_tax?: number | null;
   house_committee?: number | null;
+  /** The owner record (`/property-owners`). `property_owner` is that owner's name. */
+  property_owner_id?: number | null;
   property_owner?: string | null;
   inventory_notes?: string | null;
   basic_contract_url?: string | null;
