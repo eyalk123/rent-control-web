@@ -5,6 +5,7 @@ import { Check, CheckCircle2, Info, Loader2, Lock } from 'lucide-react';
 import type { Package } from '@revenuecat/purchases-js';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
+import { FormInput } from '@/shared/components/form/FormInput';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
 import { PAID_TIERS, bandLabel, type BillingPeriod, type Tier } from '@/features/marketing/tiers';
 import { useCheckoutOffering, useLocalPrices, useSubscription } from '../queries';
@@ -16,6 +17,8 @@ import type { PlanId, Subscription } from '../types';
 const POLL_MS = 3_000;
 /** After this long, say that activation is slow rather than spinning forever. */
 const SLOW_AFTER_MS = 90_000;
+/** Paddle's own rule for a discount code. */
+const DISCOUNT_CODE = /^[a-zA-Z0-9]{1,32}$/;
 
 /** One card's price: what is charged per period, in which currency. */
 interface ShownPrice {
@@ -100,16 +103,31 @@ export function PlansPage() {
   const offering = useCheckoutOffering(user?.uid, canBuy);
   const [buying, setBuying] = useState<PlanId | null>(null);
   const [failed, setFailed] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const [codeInvalid, setCodeInvalid] = useState(false);
   const localPrices = useLocalPrices();
   // `isPending` stays true for a query that is switched off, so only a running preview counts.
   const pricesLoading = localPrices.isLoading;
 
   async function buy(pkg: Package, plan: PlanId) {
     if (!user) return;
+    // Paddle codes are letters and digits only. Anything else cannot be a code, so say so here
+    // rather than open a checkout that silently shows the full price. Whether a well-formed
+    // code is valid only Paddle knows — checkout shows the resulting total before payment.
+    const discountCode = code.trim();
+    if (discountCode && !DISCOUNT_CODE.test(discountCode)) {
+      setCodeInvalid(true);
+      return;
+    }
     setBuying(plan);
     setFailed(false);
     try {
-      const outcome = await purchase(user.uid, pkg, { email: user.email, locale: i18n.language });
+      const outcome = await purchase(user.uid, pkg, {
+        email: user.email,
+        locale: i18n.language,
+        discountCode,
+      });
       if (outcome === 'purchased') {
         setParams(
           (prev) => {
@@ -207,6 +225,41 @@ export function PlansPage() {
           />
         ))}
       </div>
+
+      {/* Before the buy buttons are pressed, not inside checkout: RevenueCat opens Paddle with
+          Paddle's own discount box hidden. See `purchase` in checkout.ts. */}
+      {canBuy && CHECKOUT_AVAILABLE && (
+        <div className="mt-4">
+          {codeOpen ? (
+            <div className="max-w-[320px]">
+              <FormInput
+                label={t('subscription.plans.discountLabel')}
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  setCodeInvalid(false);
+                }}
+                error={codeInvalid ? t('subscription.plans.discountInvalid') : undefined}
+                hint={t('subscription.plans.discountHint')}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                dir="ltr"
+                maxLength={32}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCodeOpen(true)}
+              className="text-[13.5px] font-semibold hover:underline"
+              style={{ color: 'var(--color-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              {t('subscription.plans.discountToggle')}
+            </button>
+          )}
+        </div>
+      )}
 
       <p className="mt-5 text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
         {t('subscription.plans.includes', { assistant: t('subscription.settings.assistant') })}

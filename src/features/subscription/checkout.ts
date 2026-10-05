@@ -67,7 +67,7 @@ export type PurchaseOutcome = 'purchased' | 'cancelled';
 export async function purchase(
   appUserId: string,
   rcPackage: Package,
-  options: { email?: string | null; locale: string },
+  options: { email?: string | null; locale: string; discountCode?: string },
 ): Promise<PurchaseOutcome> {
   const purchases = await purchasesFor(appUserId);
   const { ErrorCode, PurchasesError } = await import('@revenuecat/purchases-js');
@@ -77,8 +77,11 @@ export async function purchase(
       customerEmail: options.email ?? undefined,
       selectedLocale: options.locale,
       defaultLocale: 'en',
-      // Off by default in the SDK. Marked experimental there, so recheck after upgrades.
-      showDiscountCodeField: true,
+      // The SDK opens Paddle with its own discount box switched off (`showAddDiscounts: false`)
+      // and only RevenueCat's server can turn it on, so /plans collects the code itself and
+      // Paddle opens with it already applied. Marked experimental in the SDK — recheck after
+      // upgrades.
+      discountCode: options.discountCode || undefined,
     });
     return 'purchased';
   } catch (error) {
