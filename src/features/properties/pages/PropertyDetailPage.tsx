@@ -7,6 +7,7 @@ import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useScanSession } from '@/features/document-scan/ScanContext';
 import type { MappedExtraction, MappedRenter } from '@/features/document-scan/utils/mapExtraction';
 import { useProperty, useDeleteProperty } from '../queries';
+import { downloadPropertySheet } from '../api/properties';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useAllTransactions } from '@/features/transactions/queries';
 import { FullPageLoader } from '@/shared/components/ui/LoadingSpinner';
@@ -52,6 +53,7 @@ export function PropertyDetailPage() {
   // queue survives into the renter form it chains into (see PropertiesListPage).
   const [scan, setScan] = useState<{ logId: number; mapped: MappedExtraction; renters: MappedRenter[]; file: File } | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [sheetLoading, setSheetLoading] = useState(false);
   const { begin: beginScan, view: scanView, session: scanSession, consume: consumeScan } = useScanSession();
   useTour('property-detail');
   const tabsAnchorRef = useTourAnchor(ANCHORS.propertyDetailTabs);
@@ -100,6 +102,18 @@ export function PropertyDetailPage() {
     } catch {
       setConfirmDeleteOpen(false);
       showToast(t('error.deleteFailed'), 'error');
+    }
+  };
+
+  const handleDownloadSheet = async () => {
+    if (!property) return;
+    setSheetLoading(true);
+    try {
+      await downloadPropertySheet(property);
+    } catch {
+      showToast(t('property.renterSheetFailed'), 'error');
+    } finally {
+      setSheetLoading(false);
     }
   };
 
@@ -155,6 +169,8 @@ export function PropertyDetailPage() {
           onEdit={() => { setScan(null); setEditDrawerOpen(true); }}
           onAddTransaction={() => setTxDrawerOpen(true)}
           onDelete={() => setConfirmDeleteOpen(true)}
+          onDownloadSheet={handleDownloadSheet}
+          sheetLoading={sheetLoading}
         />
         <div ref={tabsAnchorRef}>
           <DetailTabBar tabs={TABS} activeId={shownTab} onChange={setTab} />

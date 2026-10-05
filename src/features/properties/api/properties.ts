@@ -1,5 +1,7 @@
 import apiClient from '@/core/api/client';
 import { USE_MOCK_API, mockPropertiesApi } from '@/core/api/mock';
+import i18n from 'i18next';
+import { downloadFile } from '@/shared/utils/download';
 import type { Property, PropertyCreate, PropertyUpdate } from '@/shared/types';
 
 export async function getProperties(): Promise<Property[]> {
@@ -115,4 +117,15 @@ export async function updateProperty(
 export async function deleteProperty(id: number): Promise<void> {
   if (USE_MOCK_API) return mockPropertiesApi.deleteProperty(id);
   await apiClient.delete(`/properties/${id}`);
+}
+
+/**
+ * The one-page PDF an owner sends to a new renter — renter-safe fields only, chosen by the
+ * backend. Rendered in the language the app is in, like the reports.
+ */
+export async function downloadPropertySheet(property: Pick<Property, 'id' | 'address'>): Promise<void> {
+  const lang = i18n.language?.startsWith('he') ? 'he' : 'en';
+  // Characters no file system accepts are dropped; Hebrew is fine in a download name.
+  const name = property.address.replace(/[\\/:*?"<>|]+/g, ' ').trim() || `property-${property.id}`;
+  await downloadFile(`/properties/${property.id}/sheet`, `${name}.pdf`, { params: { lang } });
 }

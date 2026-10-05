@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pencil, Plus, MapPin, Trash2 } from 'lucide-react';
+import { Pencil, Plus, MapPin, Trash2, FileDown, Loader2 } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { PropTile } from '@/shared/components/ui/PropTile';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
@@ -25,9 +25,11 @@ interface Props {
   onEdit: () => void;
   onAddTransaction: () => void;
   onDelete: () => void;
+  onDownloadSheet: () => void;
+  sheetLoading?: boolean;
 }
 
-export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete }: Props) {
+export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete, onDownloadSheet, sheetLoading }: Props) {
   const { t } = useTranslation();
   const statsAnchorRef = useTourAnchor(ANCHORS.propertyDetailStats);
 
@@ -66,6 +68,14 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
             style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
           >
             <Pencil size={14} /> {t('common.edit')}
+          </button>
+          <button
+            onClick={onDownloadSheet}
+            disabled={sheetLoading}
+            className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-medium transition-colors disabled:opacity-60"
+            style={{ border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)', background: 'var(--color-surface)' }}
+          >
+            {sheetLoading ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />} {t('property.renterSheet')}
           </button>
           <button
             onClick={onDelete}

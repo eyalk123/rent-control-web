@@ -292,6 +292,8 @@
     "noDocuments": "לא הועלו מסמכים עדיין.",
     "fileFormats": "גרור קובץ או בחר אחד — PDF, Word, JPG או PNG, עד 10 מגה.",
     "ownedBy": "בבעלות {{owner}}",
+    "renterSheet": "דף מידע לשוכר",
+    "renterSheetFailed": "לא ניתן היה ליצור את דף המידע. נסו שוב.",
     "allProperties": "כל הנכסים",
     "backToRenter": "חזרה ל{{name}}",
     "deleteConfirmTitle": "למחוק את הנכס?",

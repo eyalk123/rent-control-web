@@ -291,6 +291,8 @@
     "noDocuments": "No documents uploaded yet.",
     "fileFormats": "Drop a file or choose one — PDF, Word, JPG or PNG, up to 10 MB.",
     "ownedBy": "Owned by {{owner}}",
+    "renterSheet": "Info sheet for renter",
+    "renterSheetFailed": "Could not create the info sheet. Please try again.",
     "allProperties": "All properties",
     "backToRenter": "Back to {{name}}",
     "deleteConfirmTitle": "Delete property?",
