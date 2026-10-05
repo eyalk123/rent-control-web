@@ -68,8 +68,12 @@ test.describe('reports', () => {
 
     await expect(page.getByText('Summary by category & property')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/^Owner:/).first()).toBeVisible();
-    // A property row, and the column totals underneath it.
-    await expect(page.getByText(/123 Main St,/).first()).toBeVisible();
+    // Owners start folded when there is more than one, as on the income report.
+    const expandAll = page.getByRole('button', { name: 'Expand all' });
+    if (await expandAll.isVisible()) await expandAll.click();
+    // A property row, an owner total under it, and the column totals.
+    await expect(page.getByRole('button', { name: /^123 Main St/ }).first()).toBeVisible();
+    await expect(page.getByText('Owner total', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Total', { exact: true }).first()).toBeVisible();
   });
 });

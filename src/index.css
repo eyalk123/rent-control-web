@@ -47,6 +47,17 @@
   --color-exp-bg:                 rgba(220, 38, 38, 0.13);
   --color-exp-fg:                 rgba(185, 28, 28, 1);
 
+  /* Chart series — categorical, in this fixed order (the order is what keeps neighbours
+     apart for colour-blind readers; validated as a set, light and dark). No red on purpose:
+     these colour expense categories, which are not bad news. Anything past five is
+     --color-chart-other. */
+  --color-chart-1:                #2a78d6;
+  --color-chart-2:                #eb6834;
+  --color-chart-3:                #1baf7a;
+  --color-chart-4:                #eda100;
+  --color-chart-5:                #e87ba4;
+  --color-chart-other:            rgba(148, 163, 184, 1);
+
   /* Avatar */
   --color-avatar-background:      #DBEAFE;
   --color-avatar-border:          rgba(203, 213, 225, 1);
@@ -103,6 +114,13 @@
   --color-rev-fg:                 rgba(52, 211, 153, 1);
   --color-exp-bg:                 rgba(248, 113, 113, 0.18);
   --color-exp-fg:                 rgba(252, 165, 165, 1);
+
+  --color-chart-1:                #3987e5;
+  --color-chart-2:                #d95926;
+  --color-chart-3:                #199e70;
+  --color-chart-4:                #c98500;
+  --color-chart-5:                #d55181;
+  --color-chart-other:            rgba(100, 116, 139, 1);
 
   --color-avatar-background:      rgba(44, 44, 46, 1);
   --color-avatar-border:          rgba(255, 255, 255, 0.15);
