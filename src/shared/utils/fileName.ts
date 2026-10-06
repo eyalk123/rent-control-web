@@ -1,14 +1,13 @@
 /**
- * Extract the original, human-readable file name from a stored file URL.
+ * The original, human-readable file name of a stored file.
  *
  * Files are uploaded to Firebase Storage under `${entityType}/${ownerId}/${uuid}/${file.name}`,
- * and the download URL encodes that whole path into a single segment after `/o/`
- * (path separators become `%2F`). To recover just the original name we must decode
- * first, drop the query string, then take the last path segment — otherwise the UI
- * shows the full storage path or raw `%2F`-encoded gibberish.
+ * and that bare path is what is stored, so the name is its last segment. A URI (a local
+ * preview, a mock-API upload) encodes the name and may carry a query string, so it is decoded.
  */
 export function fileNameFromUrl(url: string | null | undefined): string {
   if (!url) return '';
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) return url.split('/').pop() ?? '';
   try {
     const withoutQuery = url.split('?')[0];
     const decoded = decodeURIComponent(withoutQuery);

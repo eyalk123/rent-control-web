@@ -6,6 +6,7 @@ import { CheckCircle2, FileText, Loader2, Paperclip, Receipt, Sparkles } from 'l
 import { useExtractReceipt } from '@/features/document-scan/queries';
 import type { ReceiptExtraction } from '@/features/document-scan/types';
 import { useSubscription } from '@/features/subscription/queries';
+import { useAiConsent } from '@/features/legal/AiConsentContext';
 import { useToast } from '@/shared/components/ui/Toast';
 
 export interface ScannedReceipt {
@@ -43,6 +44,7 @@ export function ReceiptCard({ matchProperty, attached, previewUrl, onScanned, on
   const { showToast } = useToast();
   const { data: subscription } = useSubscription();
   const extract = useExtractReceipt();
+  const { requestAiConsent } = useAiConsent();
   const scanInput = useRef<HTMLInputElement>(null);
   const attachInput = useRef<HTMLInputElement>(null);
   /** The file the form was filled from, while it is still the one on the card. */
@@ -54,6 +56,8 @@ export function ReceiptCard({ matchProperty, attached, previewUrl, onScanned, on
   const exhausted = remaining === 0;
 
   const scan = async (file: File) => {
+    // The receipt goes to Anthropic; nothing is uploaded until that is allowed (features/legal/aiConsent.ts).
+    if (!(await requestAiConsent())) return;
     try {
       const { logId, extraction } = await extract.mutateAsync({ file, matchProperty });
       onScanned({ file, logId, extraction });

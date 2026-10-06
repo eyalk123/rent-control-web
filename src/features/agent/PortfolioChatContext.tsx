@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useRef, useState, type ReactNod
 import { useTranslation } from 'react-i18next';
 import * as Sentry from '@sentry/react';
 import { useAppAuth } from '@/core/auth/AuthContext';
+import { useAiConsent } from '@/features/legal/AiConsentContext';
 import { getConversation, streamAgentChat } from './api/agentApi';
 import { AgentHttpError } from './api/agentStream';
 import { useInvalidateConversations } from './queries';
@@ -22,7 +23,8 @@ interface ChatPanelValue {
   status: ChatStatus;
   /** i18n tool key for the current activity line, or null. */
   activity: string | null;
-  send: (text: string) => void;
+  /** Resolves false when nothing was sent — empty, busy, or AI consent declined. */
+  send: (text: string) => Promise<boolean>;
   stop: () => void;
   newChat: () => void;
   openThread: (id: number) => Promise<void>;
@@ -60,6 +62,7 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { getToken } = useAppAuth();
   const invalidateConversations = useInvalidateConversations();
+  const { requestAiConsent } = useAiConsent();
 
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ChatView>('conversation');
@@ -82,7 +85,7 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
     setStatus(s);
   }, []);
 
-  const send = useCallback(
+  const sendNow = useCallback(
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || statusRef.current === 'streaming') return;
@@ -171,6 +174,18 @@ export function ChatPanelProvider({ children }: { children: ReactNode }) {
         });
     },
     [getToken, invalidateConversations, patchMessage, setBusy, t],
+  );
+
+  // Every message goes to Anthropic, so none leaves before the user has allowed that (see
+  // features/legal/aiConsent.ts). Already allowed resolves at once; otherwise the prompt asks.
+  const send = useCallback(
+    async (text: string): Promise<boolean> => {
+      if (!text.trim() || statusRef.current === 'streaming') return false;
+      if (!(await requestAiConsent())) return false;
+      sendNow(text);
+      return true;
+    },
+    [requestAiConsent, sendNow],
   );
 
   const stop = useCallback(() => {

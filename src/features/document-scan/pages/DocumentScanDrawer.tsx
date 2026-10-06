@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, FileText, Loader2, Upload, X } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useScanSession } from '../ScanContext';
+import { useAiConsent } from '@/features/legal/AiConsentContext';
 import { ScanQuotaStrip } from '@/features/subscription/components/ScanQuotaStrip';
 import { mergeImagesToPdf } from '../utils/mergeImagesToPdf';
 import { ANCHORS } from '@/features/onboarding/anchors';
@@ -58,6 +59,7 @@ function useStagedProgress(active: boolean, merging: boolean): string {
 export function DocumentScanDrawer() {
   const { t } = useTranslation();
   const { view, session, startExtraction, dismissScan } = useScanSession();
+  const { requestAiConsent } = useAiConsent();
   const open = view === 'scan';
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +108,8 @@ export function DocumentScanDrawer() {
 
   const handleExtract = async () => {
     if (!canExtract) return;
+    // The lease goes to Anthropic; nothing is uploaded until that is allowed (features/legal/aiConsent.ts).
+    if (!(await requestAiConsent())) return;
     setError(null);
     let file = files[0];
     if (files.length > 1 && allImages) {

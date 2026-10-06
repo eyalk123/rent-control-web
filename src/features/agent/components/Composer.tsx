@@ -20,8 +20,8 @@ export function Composer() {
   const submit = () => {
     const value = text.trim();
     if (!value || streaming) return;
-    send(value);
-    setText('');
+    // Kept in the box if it wasn't sent (AI consent declined), so nothing typed is lost.
+    void send(value).then((sent) => sent && setText(''));
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

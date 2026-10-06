@@ -2,8 +2,9 @@ import apiClient from '@/core/api/client';
 import { USE_MOCK_API } from '@/core/api/mock';
 import i18n from '@/core/i18n';
 import { PRIVACY_VERSION, TERMS_VERSION } from '../legalContent';
+import { AI_CONSENT_VERSION } from '../aiConsent';
 
-export type LegalDocument = 'terms' | 'privacy';
+export type LegalDocument = 'terms' | 'privacy' | 'ai_processing';
 
 export interface LegalAcceptance {
   document: LegalDocument;
@@ -15,6 +16,8 @@ export interface LegalAcceptance {
 export interface LegalStatus {
   terms: LegalAcceptance | null;
   privacy: LegalAcceptance | null;
+  /** Permission to send data to Anthropic — asked on first AI use, not at the gate. */
+  ai_processing: LegalAcceptance | null;
 }
 
 interface LegalAcceptanceDto {
@@ -27,6 +30,8 @@ interface LegalAcceptanceDto {
 interface LegalStatusDto {
   terms: LegalAcceptanceDto | null;
   privacy: LegalAcceptanceDto | null;
+  // Absent from a backend older than the ai_processing migration.
+  ai_processing?: LegalAcceptanceDto | null;
 }
 
 function fromDto(dto: LegalStatusDto): LegalStatus {
@@ -34,13 +39,18 @@ function fromDto(dto: LegalStatusDto): LegalStatus {
     d
       ? { document: d.document, version: d.version, locale: d.locale, acceptedAt: d.accepted_at }
       : null;
-  return { terms: one(dto.terms), privacy: one(dto.privacy) };
+  return {
+    terms: one(dto.terms),
+    privacy: one(dto.privacy),
+    ai_processing: one(dto.ai_processing ?? null),
+  };
 }
 
 /** The version this build displays for each document — what the gate compares against. */
 export const REQUIRED_VERSIONS: Record<LegalDocument, string> = {
   terms: TERMS_VERSION,
   privacy: PRIVACY_VERSION,
+  ai_processing: AI_CONSENT_VERSION,
 };
 
 /**
@@ -61,19 +71,27 @@ export function outstandingDocuments(status: LegalStatus): LegalDocument[] {
  * the other answer through this override.
  */
 export const LEGAL_MOCK_OVERRIDE_KEY = 'legal.mockAccepted';
+/** Same idea for AI consent: 'off' shows the prompt on the next scan or assistant message. */
+export const AI_CONSENT_MOCK_OVERRIDE_KEY = 'legal.mockAiAccepted';
 
-function mockStatus(): LegalStatus {
-  let accepted = true;
+function readOverride(key: string): boolean {
   try {
-    accepted = localStorage.getItem(LEGAL_MOCK_OVERRIDE_KEY) !== 'off';
+    return localStorage.getItem(key) !== 'off';
   } catch {
     // Storage can be unavailable (private mode, blocked cookies). Not a reason to fail.
+    return true;
   }
-  if (!accepted) return { terms: null, privacy: null };
+}
+
+function mockStatus(): LegalStatus {
+  if (!readOverride(LEGAL_MOCK_OVERRIDE_KEY)) return { terms: null, privacy: null, ai_processing: null };
   const now = new Date().toISOString();
   return {
     terms: { document: 'terms', version: TERMS_VERSION, locale: 'en', acceptedAt: now },
     privacy: { document: 'privacy', version: PRIVACY_VERSION, locale: 'en', acceptedAt: now },
+    ai_processing: readOverride(AI_CONSENT_MOCK_OVERRIDE_KEY)
+      ? { document: 'ai_processing', version: AI_CONSENT_VERSION, locale: 'en', acceptedAt: now }
+      : null,
   };
 }
 
@@ -95,7 +113,12 @@ export async function postLegalAcceptance(
 ): Promise<LegalStatus | null> {
   if (USE_MOCK_API) {
     try {
-      localStorage.setItem(LEGAL_MOCK_OVERRIDE_KEY, 'on');
+      for (const document of documents) {
+        localStorage.setItem(
+          document === 'ai_processing' ? AI_CONSENT_MOCK_OVERRIDE_KEY : LEGAL_MOCK_OVERRIDE_KEY,
+          'on',
+        );
+      }
     } catch {
       // See above.
     }

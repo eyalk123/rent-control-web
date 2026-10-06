@@ -23,7 +23,7 @@ export function StarterPrompts() {
             key={i}
             type="button"
             dir="auto"
-            onClick={() => send(prompt)}
+            onClick={() => void send(prompt)}
             className="rounded-[var(--radius-card)] border border-[var(--color-outline)] px-3 py-2 text-start text-sm text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-input-filled-background)]"
           >
             {prompt}

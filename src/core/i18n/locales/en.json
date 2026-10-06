@@ -1,4 +1,15 @@
 {
+  "aiConsent": {
+    "title": "Allow AI processing?",
+    "intro": "Lease and receipt scanning and Ask RentVance are powered by Claude, an AI model made by Anthropic. To use them, RentVance sends Anthropic:",
+    "sendsLease": "the leases and receipts you scan, and",
+    "sendsQuestions": "your questions to the assistant, with the property, renter and payment details needed to answer them.",
+    "handling": "This can include personal details of your tenants, guarantors and suppliers. Anthropic uses it only to return the result to us, keeps it for up to 30 days, and does not use it to train its models. We keep assistant conversations for 90 days.",
+    "optional": "Nothing is sent unless you allow it. The rest of RentVance works either way.",
+    "allow": "Allow",
+    "notNow": "Not now",
+    "error": "Couldn't save your choice. Check your connection and try again."
+  },
   "legal": {
     "sectionTitle": "Legal & Privacy",
     "privacyPolicy": "Privacy Policy",

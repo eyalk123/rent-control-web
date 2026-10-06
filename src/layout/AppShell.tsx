@@ -18,6 +18,8 @@ import { AnchorRegistryProvider } from '@/features/onboarding/AnchorRegistry';
 import { TourControllerProvider } from '@/features/onboarding/TourController';
 import { TourOverlay } from '@/features/onboarding/TourOverlay';
 import { PortfolioChatPanel } from '@/features/agent/components/PortfolioChatPanel';
+import { AiConsentProvider } from '@/features/legal/AiConsentContext';
+import { AiConsentDialog } from '@/features/legal/AiConsentDialog';
 
 function useDocumentTitle() {
   const { pathname } = useLocation();
@@ -48,6 +50,7 @@ export function AppShell() {
     <AnchorRegistryProvider>
     <TourControllerProvider>
     <AlertsPanelProvider>
+    <AiConsentProvider>
       <ChatPanelProvider>
       <FeedbackPanelProvider>
         <ScanProvider>
@@ -74,10 +77,13 @@ export function AppShell() {
           <ScanSurfaces />
           {/* Onboarding. Last so its portal sits above the drawers it may point at. */}
           <TourOverlay />
+          {/* Asked before the first scan or assistant message; sits above everything. */}
+          <AiConsentDialog />
         </div>
         </ScanProvider>
       </FeedbackPanelProvider>
       </ChatPanelProvider>
+    </AiConsentProvider>
     </AlertsPanelProvider>
     </TourControllerProvider>
     </AnchorRegistryProvider>

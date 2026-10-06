@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 import { storage } from '@/core/auth/firebase';
 import { USE_MOCK_API } from '@/core/api/mock';
 
@@ -19,6 +19,8 @@ function isAllowedType(type: string): boolean {
 
 export class UploadValidationError extends Error {}
 
+/** Upload a file and return its storage path, which is what the API stores. Never a download
+ *  URL: its token would open the file for anyone holding the link (PLATFORM.md §18). */
 export async function uploadToFirebase(
   file: File,
   entityType: string,
@@ -44,8 +46,8 @@ export async function uploadToFirebase(
     return `https://mock.storage.local/${entityType}/${ownerId}/${uuid}/${encodeURIComponent(file.name)}`;
   }
 
-  const storageRef = ref(storage, `${entityType}/${ownerId}/${uuid}/${file.name}`);
+  const path = `${entityType}/${ownerId}/${uuid}/${file.name}`;
   // Pass an explicit content type so the Storage rules' contentType check is reliable.
-  await uploadBytes(storageRef, file, { contentType: file.type });
-  return getDownloadURL(storageRef);
+  await uploadBytes(ref(storage, path), file, { contentType: file.type });
+  return path;
 }

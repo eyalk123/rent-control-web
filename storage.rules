@@ -13,8 +13,9 @@ rules_version = '2';
 // NOTE: The backend uses the Admin SDK (service account) for cleanup, which
 // bypasses these rules entirely. Both apps read files through the SDK
 // (src/shared/utils/storedFile.ts here and in the mobile repo), so the read rule
-// below is what protects them there. The stored values are still tokenized download URLs, which bypass read
-// rules for anyone holding one — retiring them is tracked in PLATFORM.md §18.
+// below is what protects them there. The database stores bare storage paths, never download
+// URLs — their tokens bypassed these rules for anyone holding one, and were revoked
+// (PLATFORM.md §18, rent-control-backend/ops/revoke_download_tokens.py).
 //
 // SDK reads from a browser need the bucket's CORS config, kept in storage.cors.json
 // (the same origins as the backend's CORS_ORIGINS). Apply it with:
