@@ -229,7 +229,7 @@
     "typeGardenApartment": "דירת גן",
     "typeHousingUnit": "יחידת דיור",
     "occupancy": {
-      "occupied": "נתפס",
+      "occupied": "מושכר",
       "vacant": "פנוי"
     },
     "renters": "דיירים",
