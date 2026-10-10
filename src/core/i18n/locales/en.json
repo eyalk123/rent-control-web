@@ -1951,44 +1951,73 @@
     },
     "hero": {
       "headline": "Every apartment, every payment, one ledger.",
-      "subhead": "RentVance tracks rent, expenses and leases for the properties you own or manage for others, and tells you before a lease renews or a rent changes.",
+      "subhead": "Rent, expenses and leases, tracked for you.",
       "primaryCta": "Start free",
-      "secondaryCta": "See pricing",
       "freeNote": "Free for up to {{max}} properties. No card needed."
     },
-    "specimen": {
-      "address": "Dizengoff 42, Tel Aviv",
-      "renter": "Leased until August 2027",
+    "scanDemo": {
+      "fileName": "lease-14-maple-street.pdf",
+      "dropHint": "Drop your lease here",
+      "reading": "Reading the lease…",
+      "done": "Lease read",
+      "fields": {
+        "property": {
+          "label": "Property",
+          "value": "14 Maple Street"
+        },
+        "renter": {
+          "label": "Renter",
+          "value": "Dana Brooks"
+        },
+        "rent": {
+          "label": "Monthly rent",
+          "value": "$2,400"
+        },
+        "term": {
+          "label": "Lease",
+          "value": "Aug 2026 – Jul 2028"
+        },
+        "increase": {
+          "label": "Rent increase",
+          "value": "3% every August"
+        }
+      },
+      "next": "Rent goes up to $2,472 in August 2027.",
       "perMonth": "per month",
-      "rows": {
-        "rent": "Rent received",
-        "committee": "Building committee",
-        "repair": "Plumbing repair"
-      },
-      "escalation": "Rent rises to ₪5,562 in August, linked to the consumer price index."
-    },
-    "lead": {
-      "heading": "Rent that changes on a schedule, worked out for you",
-      "body": "Most leases do not hold one number for their whole term. RentVance stores the terms — a fixed step each year, or linkage to the consumer price index — and works out what is owed on each date, so you are not rebuilding a lease in a spreadsheet every year. Israeli index linkage is built in."
-    },
-    "features": {
-      "reports": {
-        "heading": "Reports you can hand to an accountant",
-        "body": "Income and expenses per property and per period, exported when you need them. Manage for several owners? Get one report, or a separate one for each owner."
-      },
-      "reminders": {
-        "heading": "Told before the date, not after",
-        "body": "Lease renewals, rent changes and payments due reach you while you can still act on them."
-      },
-      "bilingual": {
-        "heading": "English and Hebrew, both properly",
-        "body": "Full right-to-left support, local date and currency formats, on phone and web."
+      "lease": {
+        "title": "Residential Lease Agreement",
+        "body": "This agreement is made between Michael Green, the landlord, and <renter>, the tenant, for the apartment at <property>, Apt 3. The term runs <term>. Monthly rent is <rent>, payable on the first of each month, and rises by <increase>.",
+        "phrases": {
+          "renter": "Dana Brooks",
+          "property": "14 Maple Street",
+          "term": "from August 1, 2026 to July 31, 2028",
+          "rent": "$2,400",
+          "increase": "3% every August"
+        }
       }
     },
-    "pricingTeaser": {
-      "heading": "Priced by how many properties you hold",
-      "body": "Free up to {{max}}. Paid plans start where a spreadsheet stops being enough.",
-      "cta": "See pricing"
+    "features": {
+      "heading": "Everything after the lease",
+      "assistant": {
+        "heading": "Ask RentVance",
+        "body": "Ask about your rent and expenses in plain words. Get the answer."
+      },
+      "alerts": {
+        "heading": "Alerts with a WhatsApp shortcut",
+        "body": "Know before a lease ends or rent is late. Message the renter in one tap."
+      },
+      "rent": {
+        "heading": "Rent that updates itself",
+        "body": "Set the yearly increase once. Every new amount is worked out for you."
+      },
+      "reports": {
+        "heading": "Reports for your accountant",
+        "body": "Income and expenses per property, exported in one click."
+      }
+    },
+    "closing": {
+      "heading": "Start with your first lease.",
+      "pricingLink": "See pricing"
     },
     "pricing": {
       "heading": "Plans priced by property count",
