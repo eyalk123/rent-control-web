@@ -1,5 +1,5 @@
 import { Fragment, useState, type CSSProperties } from 'react';
-import { useLocation, useNavigate, type Location } from 'react-router-dom';
+import { Link, useLocation, useNavigate, type Location } from 'react-router-dom';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -13,7 +13,7 @@ import { auth } from '@/core/auth/firebase';
 import { useLanguage, type SupportedLanguage } from '@/hooks/useLanguage';
 import { loginSchema } from './authFormSchema';
 import { FormInput } from '@/shared/components/form/FormInput';
-import { Check } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import logoImage from '@/assets/rent-control-icon-no-text.png';
 import { useTranslation } from 'react-i18next';
 import { getPropertyColor } from '@/shared/utils/propertyColor';
@@ -192,13 +192,13 @@ export function SignInPage() {
         className="hidden md:flex flex-col justify-between flex-1 min-w-0 relative overflow-hidden rtl:order-last"
         style={{ background: 'var(--color-brand-navy)', padding: '40px 56px', color: '#fff' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
+        {/* Logo — links to the marketing page, like the header logo on the legal pages */}
+        <Link to="/" className="flex items-center gap-2.5 self-start" style={{ color: 'inherit', textDecoration: 'none' }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={logoImage} alt="RentVance" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <img src={logoImage} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </div>
           <span className="text-base font-bold tracking-tight">RentVance</span>
-        </div>
+        </Link>
 
         {/* Hero copy */}
         <div className="relative z-10">
@@ -257,11 +257,20 @@ export function SignInPage() {
         style={{ background: 'var(--color-surface)', borderInlineStart: '1px solid var(--color-outline)' }}
       >
         <div className="w-full max-w-[340px]">
+          <Link
+            to="/"
+            className="mb-6 inline-flex items-center gap-1.5 text-[12.5px] font-medium hover:underline"
+            style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}
+          >
+            <ArrowLeft size={14} className="rtl:-scale-x-100" aria-hidden="true" />
+            {t('auth.backToHome')}
+          </Link>
+
           {/* Mobile logo */}
-          <div className="md:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <img src={logoImage} alt="RentVance" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
+          <Link to="/" className="md:hidden flex items-center gap-2.5 mb-8 justify-center" style={{ textDecoration: 'none' }}>
+            <img src={logoImage} alt="" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
             <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>RentVance</span>
-          </div>
+          </Link>
 
           {mode === 'forgot' ? (
             /* Forgot password */

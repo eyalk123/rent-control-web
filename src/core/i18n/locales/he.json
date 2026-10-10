@@ -1270,6 +1270,7 @@
     "registerTitle": "צור חשבון חדש",
     "forgotPasswordTitle": "איפוס סיסמה",
     "backToSignIn": "חזרה להתחברות",
+    "backToHome": "חזרה לדף הבית",
     "emailLabel": "אימייל",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "סיסמה",

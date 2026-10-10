@@ -1264,6 +1264,7 @@
     "registerTitle": "Create a new account",
     "forgotPasswordTitle": "Reset your password",
     "backToSignIn": "Back to sign in",
+    "backToHome": "Back to home",
     "emailLabel": "Email",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
