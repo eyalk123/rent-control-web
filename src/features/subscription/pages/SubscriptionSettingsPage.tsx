@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Building2, Check, FileScan, Lock, MessageSquare, Receipt, Sparkles } from 'lucide-react';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { useProperties } from '@/features/properties/queries';
+import { CONTACT_EMAIL } from '@/features/legal/legalContent';
+import { getManageLinks, type ManageLinks } from '../api/subscriptionApi';
 import { useSubscription } from '../queries';
 
 /**
@@ -23,6 +26,7 @@ export function SubscriptionSettingsPage() {
     iso ? new Date(iso).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 
   const lockedProperties = (properties ?? []).filter((p) => data.locked_property_ids.includes(p.id));
+  const periodLine = periodLineKey(data.status, data.current_period_end);
 
   return (
     <div className="mx-auto w-full max-w-[860px] px-1 py-2">
@@ -46,9 +50,9 @@ export function SubscriptionSettingsPage() {
             <p className="mt-1 text-[24px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
               {t(`subscription.plan.${data.plan}`)}
             </p>
-            {data.current_period_end ? (
+            {periodLine ? (
               <p className="mt-1 text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
-                {t('subscription.settings.renews', { date: formatDate(data.current_period_end) })}
+                {t(periodLine, { date: formatDate(data.current_period_end) })}
               </p>
             ) : null}
           </div>
@@ -75,6 +79,8 @@ export function SubscriptionSettingsPage() {
             {t(`subscription.settings.managedBy.${data.source}`)}
           </p>
         )}
+
+        {data.source === 'paddle' && data.status !== 'expired' && <WebManageButtons />}
 
         {!data.enforced && (
           <p className="mt-3 text-[13px]" style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
@@ -160,6 +166,77 @@ export function SubscriptionSettingsPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Paddle's own pages for a web subscription. The links carry a short-lived token, so each
+ * is fetched at the moment it is pressed rather than when the page loads, and opened in
+ * the same tab — a new tab opened after an await is what popup blockers stop.
+ */
+function WebManageButtons() {
+  const { t } = useTranslation();
+  const [opening, setOpening] = useState<keyof ManageLinks | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  async function open(which: keyof ManageLinks) {
+    setOpening(which);
+    setFailed(false);
+    try {
+      const url = (await getManageLinks())[which];
+      if (!url) throw new Error('no link');
+      window.location.assign(url);
+    } catch {
+      setFailed(true);
+      setOpening(null);
+    }
+  }
+
+  const button = (which: keyof ManageLinks, label: string) => (
+    <button
+      type="button"
+      onClick={() => void open(which)}
+      disabled={opening !== null}
+      className="h-9 px-4 rounded-[9px] text-[13.5px] font-semibold"
+      style={{
+        background: 'transparent',
+        color: 'var(--color-primary)',
+        border: '1px solid var(--color-outline)',
+        cursor: opening ? 'progress' : 'pointer',
+      }}
+    >
+      {opening === which ? t('subscription.settings.opening') : label}
+    </button>
+  );
+
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-2">
+        {button('update_payment_method_url', t('subscription.settings.updatePayment'))}
+        {button('cancel_url', t('subscription.settings.cancel'))}
+      </div>
+      {failed && (
+        <p className="mt-2 text-[13px]" style={{ color: 'var(--color-error)' }} role="alert">
+          {t('subscription.settings.manageFailed', { email: CONTACT_EMAIL })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The line under the plan name. The date alone does not say what happens on it: a
+ * cancelled subscription keeps its plan until then and does not renew, and saying
+ * "Renews" there tells someone who cancelled that they will be charged again.
+ * Same rules as the mobile app's `PlanScreen`.
+ */
+function periodLineKey(status: string | null, end: string | null): string | null {
+  if (status === 'past_due') return 'subscription.settings.paymentIssue';
+  if (!end || status === 'paused') return null;
+  if (status === 'expired') return 'subscription.settings.ended';
+  if (status === 'canceled') {
+    return new Date(end) > new Date() ? 'subscription.settings.ends' : 'subscription.settings.ended';
+  }
+  return 'subscription.settings.renews';
 }
 
 function UsageCard({

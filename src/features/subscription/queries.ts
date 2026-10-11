@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { acknowledgeLockNotice, getSubscription } from './api/subscriptionApi';
+import type { BillingPeriod } from '@/features/marketing/tiers';
+import { acknowledgeLockNotice, changePlan, getSubscription } from './api/subscriptionApi';
 import { CHECKOUT_AVAILABLE, loadOffering } from './checkout';
 import { PADDLE_AVAILABLE, previewPrices } from './paddle';
-import type { Subscription } from './types';
+import type { PlanId, Subscription } from './types';
 
 export const subscriptionKeys = {
   current: ['subscription'] as const,
@@ -53,6 +54,20 @@ export function useLocalPrices() {
     enabled: PADDLE_AVAILABLE,
     staleTime: Infinity,
     retry: 1,
+  });
+}
+
+/** Switch a web subscription's plan. The server answers with the new state, used as-is. */
+export function useChangePlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ plan, period }: { plan: Exclude<PlanId, 'free'>; period: BillingPeriod }) =>
+      changePlan(plan, period),
+    onSuccess: (next) => {
+      queryClient.setQueryData<Subscription>(subscriptionKeys.current, next);
+      // Lock state moves with the plan; properties carry their own `locked` flag.
+      void queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
   });
 }
 

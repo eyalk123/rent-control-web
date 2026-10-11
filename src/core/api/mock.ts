@@ -1380,6 +1380,18 @@ export const mockSubscriptionApi = {
   acknowledgeLockNotice: async (): Promise<void> => {
     _mockLockNoticeSeen = true;
   },
+
+  // Paddle's pages do not exist offline; the mock links go nowhere harmful.
+  getManageLinks: async () => ({
+    cancel_url: 'about:blank#mock-cancel',
+    update_payment_method_url: 'about:blank#mock-update-payment',
+  }),
+
+  changePlan: async (plan: Exclude<Subscription['plan'], 'free'>): Promise<Subscription> => {
+    _mockPlan = plan;
+    _mockLockNoticeSeen = false;
+    return mockSubscriptionApi.get();
+  },
 };
 
 if (typeof window !== 'undefined') {

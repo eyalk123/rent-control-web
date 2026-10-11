@@ -27,6 +27,8 @@ import { resolveEffectiveCurrency } from '@/features/country/effectiveCurrency';
 import { CountryFlag } from '@/shared/components/ui/CountryFlag';
 import { useProperties } from '@/features/properties/queries';
 import { useFeedbackPanel } from '@/features/feedback/FeedbackPanelContext';
+import { useSubscription } from '@/features/subscription/queries';
+import type { Subscription } from '@/features/subscription/types';
 
 // ─── DeleteAccountModal ──────────────────────────────────────────────────────
 
@@ -55,6 +57,10 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     };
   }, [onClose]);
 
+  const { data: subscription } = useSubscription();
+  const notice = deletionSubscriptionNotice(subscription);
+  const subscriptionNotice = notice ? t(notice) : null;
+
   const handleDelete = async () => {
     if (!canDelete) return;
     setLoading(true);
@@ -77,7 +83,13 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
       if (isPopupCancel(err)) return;
       // A user stuck unable to delete their account is exactly what we want to hear about.
       Sentry.captureException(err, { tags: { feature: 'account_delete' } });
-      showToast(t('error.saveFailed'), 'error');
+      // The one refusal with its own message: the web subscription could not be
+      // cancelled, so nothing was deleted and trying again is the right next step.
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+      showToast(
+        t(detail === 'subscription_cancel_failed' ? 'settings.deleteAccountCancelFailed' : 'error.saveFailed'),
+        'error',
+      );
     }
   };
 
@@ -103,6 +115,15 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
             </li>
           ))}
         </ul>
+        {subscriptionNotice && (
+          <p
+            className="text-[13px] mb-4 leading-relaxed rounded-[9px] px-3 py-2.5"
+            style={{ color: 'var(--color-text-primary)', background: 'var(--color-input-filled-background)', border: '1px solid var(--color-outline)' }}
+            role="note"
+          >
+            {subscriptionNotice}
+          </p>
+        )}
         <p className="text-[13px] font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>{t('settings.deleteAccountConfirmLabel')}</p>
         <input
           ref={inputRef}
@@ -132,6 +153,21 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * What deleting the account does to a subscription still running. A web subscription is
+ * cancelled by the server as part of the deletion; an App Store or Play one cannot be
+ * cancelled by us and keeps charging unless the landlord cancels it in the store.
+ */
+function deletionSubscriptionNotice(subscription: Subscription | undefined): string | null {
+  if (!subscription?.source || !subscription.status) return null;
+  if (subscription.status === 'expired' || subscription.status === 'canceled') return null;
+  if (subscription.source === 'paddle') return 'settings.deleteAccountSubscriptionWeb';
+  if (subscription.source === 'apple' || subscription.source === 'google') {
+    return `settings.deleteAccountSubscriptionStore.${subscription.source}`;
+  }
+  return null;
+}
 
 function SettingsSection({ id, title, subtitle, danger = false, children }: { id?: string; title: string; subtitle?: string; danger?: boolean; children: React.ReactNode }) {
   return (

@@ -37,8 +37,8 @@ const UPDATED_HE = '9 ביוני 2026';
 
 // The Refund & Cancellation Policy was revised after the other documents, so it carries its
 // own date rather than restating theirs.
-const REFUND_UPDATED_EN = 'September 23, 2026';
-const REFUND_UPDATED_HE = '23 בספטמבר 2026';
+const REFUND_UPDATED_EN = 'October 11, 2026';
+const REFUND_UPDATED_HE = '11 באוקטובר 2026';
 
 /**
  * Machine-readable document versions — what gets stored against a user's acceptance.
@@ -569,7 +569,8 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '6. If your plan no longer fits',
         paragraphs: [
-          'Plans are priced by how many properties your account holds. If you remove properties and drop into a lower band, you can move to the smaller plan at your next renewal. If you exceed your current band, you will be asked to move up before adding another property. Your existing data is never deleted because of a plan change.',
+          'Plans are priced by how many properties your account holds. If you remove properties and drop into a lower band, you can move to the smaller plan at your next renewal: on the web, email us and we will arrange it; in the apps, choose the smaller plan in your Apple or Google Play subscription settings. If you exceed your current band, you will be asked to move up before adding another property.',
+          'Moving up takes effect straight away. On the web, you are charged the prorated difference for the rest of the current billing period. In the apps, Apple or Google apply their own proration. Your existing data is never deleted because of a plan change.',
         ],
       },
       {
@@ -626,7 +627,8 @@ export const refundContent: Localized<LegalDoc> = {
       {
         heading: '6. כשהתוכנית כבר לא מתאימה',
         paragraphs: [
-          'מחיר התוכנית נגזר ממספר הנכסים בחשבון. אם תסיר נכסים ותרד למדרגה נמוכה יותר, תוכל לעבור לתוכנית הקטנה יותר בחידוש הבא. אם תחרוג מהמדרגה הנוכחית, תתבקש לעלות מדרגה לפני הוספת נכס נוסף. הנתונים הקיימים שלך לעולם אינם נמחקים בעקבות שינוי תוכנית.',
+          'מחיר התוכנית נגזר ממספר הנכסים בחשבון. אם תסיר נכסים ותרד למדרגה נמוכה יותר, תוכל לעבור לתוכנית הקטנה יותר בחידוש הבא: באתר, כתוב לנו ונסדר זאת; באפליקציות, בחר בתוכנית הקטנה יותר בהגדרות המנויים של Apple או Google Play. אם תחרוג מהמדרגה הנוכחית, תתבקש לעלות מדרגה לפני הוספת נכס נוסף.',
+          'מעבר לתוכנית גדולה יותר נכנס לתוקף מיד. באתר, תחויב בהפרש היחסי עבור יתרת תקופת החיוב הנוכחית. באפליקציות, Apple או Google מחשבות את ההפרש לפי הכללים שלהן. הנתונים הקיימים שלך לעולם אינם נמחקים בעקבות שינוי תוכנית.',
         ],
       },
       {
@@ -644,8 +646,8 @@ export const refundContent: Localized<LegalDoc> = {
 // can use without the app installed. Only the web app routes to it (/delete-account); it lives
 // here so both copies of this file stay identical.
 
-const DELETION_UPDATED_EN = 'September 27, 2026';
-const DELETION_UPDATED_HE = '27 בספטמבר 2026';
+const DELETION_UPDATED_EN = 'October 11, 2026';
+const DELETION_UPDATED_HE = '11 באוקטובר 2026';
 
 export const accountDeletionContent: Localized<LegalDoc> = {
   en: {
@@ -693,6 +695,7 @@ export const accountDeletionContent: Localized<LegalDoc> = {
         heading: '5. What is kept, and for how long',
         bullets: [
           'One anonymous record with a few counts (for example, how many properties the account had), so we can measure how many accounts close. It contains nothing that identifies you or your tenants.',
+          'Your subscription record, if you ever had a paid plan: the plan, its price and the store’s purchase number, linked to an internal account number but not to your name, email or properties. We keep it so that a subscription you are still paying for through Apple or Google moves to your new account if you sign up again, and so we can answer billing and refund questions.',
           'Encrypted database backups. Deleted data can remain in them until they expire: up to 35 days for daily backups and up to 400 days for monthly backups. Backups are used only to recover from a failure and are never used to restore a deleted account.',
           'Anything we are required to keep by law.',
         ],
@@ -700,6 +703,7 @@ export const accountDeletionContent: Localized<LegalDoc> = {
       {
         heading: '6. Subscriptions',
         paragraphs: [
+          'A subscription bought on the web is cancelled automatically when you delete your account, and you will not be charged again.',
           'Deleting your account does not cancel a subscription bought through Apple or Google. Cancel it in the App Store or Google Play first, as described in our Refund & Cancellation Policy.',
         ],
       },
@@ -750,6 +754,7 @@ export const accountDeletionContent: Localized<LegalDoc> = {
         heading: '5. מה נשמר, ולכמה זמן',
         bullets: [
           'רשומה אנונימית אחת עם מספר ספירות (למשל, כמה נכסים היו בחשבון), כדי שנוכל למדוד כמה חשבונות נסגרים. אין בה דבר שמזהה אותך או את השוכרים שלך.',
+          'רשומת המנוי שלך, אם הייתה לך תוכנית בתשלום: התוכנית, המחיר ומספר הרכישה בחנות, המקושרים למספר חשבון פנימי אך לא לשמך, לכתובת הדוא"ל או לנכסים שלך. אנו שומרים אותה כדי שמנוי שאתה עדיין משלם עליו דרך Apple או Google יעבור לחשבון החדש שלך אם תירשם מחדש, וכדי שנוכל לענות על שאלות חיוב והחזרים.',
           'גיבויים מוצפנים של מסד הנתונים. מידע שנמחק עשוי להישאר בהם עד שתוקפם פג: עד 35 יום בגיבויים היומיים ועד 400 יום בגיבויים החודשיים. הגיבויים משמשים רק לשחזור לאחר תקלה, ולעולם אינם משמשים לשחזור חשבון שנמחק.',
           'כל מידע שאנו נדרשים לשמור על פי דין.',
         ],
@@ -757,6 +762,7 @@ export const accountDeletionContent: Localized<LegalDoc> = {
       {
         heading: '6. מנויים',
         paragraphs: [
+          'מנוי שנרכש באתר מבוטל אוטומטית עם מחיקת החשבון, ולא תחויב שוב.',
           'מחיקת החשבון אינה מבטלת מנוי שנרכש דרך Apple או Google. בטל אותו קודם ב־App Store או ב־Google Play, כמתואר במדיניות הביטול וההחזרים שלנו.',
         ],
       },

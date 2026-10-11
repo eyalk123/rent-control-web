@@ -8,10 +8,13 @@ import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
 import { PAID_TIERS, bandLabel, type BillingPeriod, type Tier } from '@/features/marketing/tiers';
-import { useCheckoutOffering, useLocalPrices, useSubscription } from '../queries';
+import { useChangePlan, useCheckoutOffering, useLocalPrices, useSubscription } from '../queries';
 import { CHECKOUT_AVAILABLE, packageFor, purchase } from '../checkout';
 import type { LocalPrices } from '../paddle';
 import type { PlanId, Subscription } from '../types';
+
+/** Paid plans, smallest first — what "bigger" means for an upgrade. */
+const PAID_ORDER: PlanId[] = ['tier_3_8', 'tier_9_15', 'tier_16_plus'];
 
 /** How often the page asks the server whether the purchase's webhook has landed. */
 const POLL_MS = 3_000;
@@ -65,7 +68,11 @@ function yearlySaving(monthly: ShownPrice | null, yearly: ShownPrice | null): nu
  * - **App Store or Google Play:** web checkout would bill the landlord twice through two
  *   systems that know nothing about each other, and refunding one would not cancel the
  *   other. They're told where their subscription lives.
- * - **Web:** changing plans online isn't built yet. They're told how to switch meanwhile.
+ * - **Web:** an active web subscription upgrades to a bigger plan here, through
+ *   `POST /subscription/change-plan` — Paddle charges the prorated difference at once, and
+ *   the server updates the plan from Paddle's answer. Nothing goes through checkout again.
+ *   Upgrades only: the refund policy says a smaller plan starts at the next renewal, which
+ *   Paddle cannot schedule, so a downgrade is a support request.
  * - **A grant, with no billing source** (every account that existed before billing): there
  *   is nothing to sell them. They're told their plan is included.
  *
@@ -100,6 +107,11 @@ export function PlansPage() {
   const picked = params.get('plan');
 
   const canBuy = data?.plan === 'free' && !pending;
+  const canSwitch =
+    data?.source === 'paddle' && (data.status === 'active' || data.status === 'trialing') && !pending;
+  const changePlan = useChangePlan();
+  const [confirming, setConfirming] = useState<PlanId | null>(null);
+  const [switched, setSwitched] = useState<PlanId | null>(null);
   const offering = useCheckoutOffering(user?.uid, canBuy);
   const [buying, setBuying] = useState<PlanId | null>(null);
   const [failed, setFailed] = useState(false);
@@ -145,6 +157,23 @@ export function PlansPage() {
     }
   }
 
+  function switchTo(plan: Exclude<PlanId, 'free'>) {
+    setFailed(false);
+    changePlan.mutate(
+      { plan, period },
+      {
+        onSuccess: () => {
+          setConfirming(null);
+          setSwitched(plan);
+        },
+        onError: () => {
+          setConfirming(null);
+          setFailed(true);
+        },
+      },
+    );
+  }
+
   if (isLoading || !data) return <PageLoader />;
 
   const saving = pricesLoading
@@ -163,7 +192,13 @@ export function PlansPage() {
         {t('subscription.plans.subtitle')}
       </p>
 
-      {pending ? <PendingBanner data={data} activated={activated} /> : <AccountBanner data={data} />}
+      {pending ? (
+        <PendingBanner data={data} activated={activated} />
+      ) : switched ? (
+        <SwitchedBanner plan={switched} />
+      ) : (
+        <AccountBanner data={data} canSwitch={canSwitch} />
+      )}
 
       {failed && (
         <p
@@ -171,7 +206,9 @@ export function PlansPage() {
           style={{ background: 'var(--color-surface)', border: '1px solid var(--color-error)', color: 'var(--color-error)' }}
           role="alert"
         >
-          {t('subscription.plans.purchaseFailed', { email: CONTACT_EMAIL })}
+          {t(canSwitch ? 'subscription.plans.switchFailed' : 'subscription.plans.purchaseFailed', {
+            email: CONTACT_EMAIL,
+          })}
         </p>
       )}
 
@@ -222,6 +259,15 @@ export function PlansPage() {
             offeringState={offering.isError ? 'error' : offering.isPending ? 'loading' : 'ready'}
             buying={buying}
             onBuy={buy}
+            canSwitch={canSwitch}
+            confirming={confirming === tier.plan}
+            switching={changePlan.isPending && confirming === tier.plan}
+            onSwitch={() => {
+              setSwitched(null);
+              setConfirming(tier.plan);
+            }}
+            onConfirmSwitch={() => tier.plan !== 'free' && switchTo(tier.plan)}
+            onCancelSwitch={() => setConfirming(null)}
           />
         ))}
       </div>
@@ -295,7 +341,7 @@ export function PlansPage() {
  * The one sentence about this account that frames everything below it: why the highlighted
  * card is highlighted, or why there is nothing to buy here.
  */
-function AccountBanner({ data }: { data: Subscription }) {
+function AccountBanner({ data, canSwitch }: { data: Subscription; canSwitch: boolean }) {
   const { t } = useTranslation();
 
   let icon = <Info size={16} strokeWidth={2.3} />;
@@ -314,7 +360,9 @@ function AccountBanner({ data }: { data: Subscription }) {
     icon = <Lock size={16} strokeWidth={2.3} />;
     text = t(`subscription.settings.managedBy.${data.source}`);
   } else if (data.source === 'paddle') {
-    text = t('subscription.plans.webManaged', { email: CONTACT_EMAIL });
+    text = canSwitch
+      ? t('subscription.plans.webManaged', { email: CONTACT_EMAIL })
+      : t('subscription.plans.webManagedInactive', { email: CONTACT_EMAIL });
   } else {
     icon = <Check size={16} strokeWidth={2.6} />;
     text = t('subscription.plans.included', { plan: t(`subscription.plan.${data.plan}`) });
@@ -328,6 +376,26 @@ function AccountBanner({ data }: { data: Subscription }) {
     >
       <span className="shrink-0" style={{ marginTop: 2 }}>{icon}</span>
       <p className="text-[14px] leading-relaxed">{text}</p>
+    </div>
+  );
+}
+
+/** After a plan switch: the server has already applied it, so this is a statement, not a wait. */
+function SwitchedBanner({ plan }: { plan: PlanId }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="mt-5 rounded-[12px] px-4 py-3 flex items-start gap-3"
+      style={{ background: 'var(--color-primary-container)', color: 'var(--color-on-primary-container)' }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="shrink-0" style={{ marginTop: 2 }}>
+        <CheckCircle2 size={16} strokeWidth={2.3} />
+      </span>
+      <p className="text-[14px] leading-relaxed">
+        {t('subscription.plans.switched', { plan: t(`subscription.plan.${plan}`) })}
+      </p>
     </div>
   );
 }
@@ -387,6 +455,12 @@ function PlanCard({
   offeringState,
   buying,
   onBuy,
+  canSwitch,
+  confirming,
+  switching,
+  onSwitch,
+  onConfirmSwitch,
+  onCancelSwitch,
 }: {
   tier: Tier;
   period: BillingPeriod;
@@ -399,9 +473,17 @@ function PlanCard({
   offeringState: 'loading' | 'ready' | 'error';
   buying: PlanId | null;
   onBuy: (pkg: Package, plan: PlanId) => void;
+  /** An active web subscription, which switches here instead of buying. */
+  canSwitch: boolean;
+  confirming: boolean;
+  switching: boolean;
+  onSwitch: () => void;
+  onConfirmSwitch: () => void;
+  onCancelSwitch: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const isCurrent = tier.plan === data.plan;
+  const isUpgrade = PAID_ORDER.indexOf(tier.plan) > PAID_ORDER.indexOf(data.plan);
 
   const format = (amount: number, digits: number) =>
     new Intl.NumberFormat(i18n.language, {
@@ -477,6 +559,16 @@ function PlanCard({
             : ''}
       </p>
 
+      {canSwitch && isUpgrade && (
+        <SwitchControl
+          confirming={confirming}
+          switching={switching}
+          onSwitch={onSwitch}
+          onConfirm={onConfirmSwitch}
+          onCancel={onCancelSwitch}
+        />
+      )}
+
       {canBuy && (
         <button
           type="button"
@@ -494,6 +586,72 @@ function PlanCard({
           {buttonLabel}
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * Switching a web plan charges or credits the difference immediately, so it takes a second,
+ * explicit press that says so — never a single click.
+ */
+function SwitchControl({
+  confirming,
+  switching,
+  onSwitch,
+  onConfirm,
+  onCancel,
+}: {
+  confirming: boolean;
+  switching: boolean;
+  onSwitch: () => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const primary = {
+    background: 'var(--color-primary)',
+    color: 'var(--color-on-primary)',
+    border: 'none',
+    cursor: switching ? 'progress' : 'pointer',
+  } as const;
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={onSwitch}
+        className="mt-4 h-10 rounded-[9px] text-[14px] font-semibold"
+        style={{ ...primary, background: 'transparent', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}
+      >
+        {t('subscription.plans.switch')}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-4 flex flex-col gap-2">
+      <p className="text-[13px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+        {t('subscription.plans.switchConfirm')}
+      </p>
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={switching}
+        className="h-10 rounded-[9px] text-[14px] font-semibold inline-flex items-center justify-center gap-2"
+        style={primary}
+      >
+        {switching && <Loader2 size={15} className="animate-spin" />}
+        {t(switching ? 'subscription.plans.switching' : 'subscription.plans.switchConfirmButton')}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={switching}
+        className="h-9 text-[13.5px] font-semibold"
+        style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
+      >
+        {t('subscription.plans.switchCancel')}
+      </button>
     </div>
   );
 }
