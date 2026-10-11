@@ -410,6 +410,7 @@ export function PropertyFormDrawer({
       title={isEditing ? t('property.editTitle') : t('property.addTitle')}
       width={620}
       footer={footer}
+      scrollResetKey={step}
     >
       <PropertyFormTourRequest />
       {/* Step indicator */}

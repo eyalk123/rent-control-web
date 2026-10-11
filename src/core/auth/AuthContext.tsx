@@ -4,7 +4,6 @@ import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
   getIdToken,
-  deleteUser,
   type User,
 } from 'firebase/auth';
 import * as Sentry from '@sentry/react';
@@ -18,7 +17,6 @@ interface AuthContextValue {
   isLoaded: boolean;
   getToken: () => Promise<string | null>;
   signOut: () => Promise<void>;
-  deleteFirebaseAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -87,14 +85,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(() => firebaseSignOut(auth), []);
 
-  const deleteFirebaseAccount = useCallback(async () => {
-    if (!user) throw new Error('No authenticated user');
-    await deleteUser(user);
-  }, [user]);
-
   return (
     <AuthContext.Provider
-      value={{ user, isSignedIn: !!user, isLoaded, getToken, signOut, deleteFirebaseAccount }}
+      value={{ user, isSignedIn: !!user, isLoaded, getToken, signOut }}
     >
       {children}
     </AuthContext.Provider>

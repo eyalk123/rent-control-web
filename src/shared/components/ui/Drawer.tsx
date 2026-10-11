@@ -21,6 +21,12 @@ interface DrawerProps {
    * the shade stays continuous instead of flashing transparent for a frame.
    */
   animateScrim?: boolean;
+  /**
+   * Scrolls the body back to the top whenever this changes. Multi-step forms pass their
+   * step, because every step renders in the same body and would otherwise open at the
+   * offset the previous one was left at.
+   */
+  scrollResetKey?: unknown;
 }
 
 const FOCUSABLE =
@@ -31,11 +37,12 @@ const FOCUSABLE =
 // the form underneath too — and the page stays locked until the last one closes.
 const openStack: string[] = [];
 
-export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560, animateScrim = true }: DrawerProps) {
+export function Drawer({ open, onClose, onRequestClose, title, children, footer, width = 560, animateScrim = true, scrollResetKey }: DrawerProps) {
   const { t } = useTranslation();
   const requestClose = onRequestClose ?? onClose;
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   // Track the visual viewport so the panel (and its pinned footer) stays above the
   // on-screen keyboard / browser chrome on mobile. Falls back to the `h-dvh` class.
@@ -108,6 +115,10 @@ export function Drawer({ open, onClose, onRequestClose, title, children, footer,
     };
   }, [open]);
 
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+  }, [scrollResetKey]);
+
   if (!open) return null;
 
   const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
@@ -154,7 +165,7 @@ export function Drawer({ open, onClose, onRequestClose, title, children, footer,
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div ref={bodyRef} className="flex-1 overflow-y-auto px-6 py-6">
           {children}
         </div>
 

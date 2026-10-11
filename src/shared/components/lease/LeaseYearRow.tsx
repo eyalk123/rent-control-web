@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, TrendingUp } from 'lucide-react';
+import { ArrowRightLeft, Trash2, TrendingUp } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { LeaseYearAmountField } from '@/shared/components/form/LeaseYearAmountField';
@@ -199,14 +199,22 @@ export function LeaseYearRow({
           </Pill>
         )}
 
+        {/* Outlined with a swap icon so it reads as a control — it used to be dotted-underlined
+            text whose only hint was a hover tooltip. The read-only label below stays bare. */}
         {onTypeToggle ? (
           <button
             type="button"
             onClick={onTypeToggle}
             title={t('renter.tapToChangeType')}
-            className="w-16 text-end rounded px-1 py-0.5 transition-colors hover:bg-[var(--color-input-filled-background)] underline decoration-dotted underline-offset-2"
+            aria-label={t('renter.tapToChangeType')}
+            className="inline-flex h-7 items-center gap-1 rounded-full border px-2.5 transition-colors hover:bg-[var(--color-input-filled-background)] focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+            style={{
+              borderColor: type === 'option' ? 'var(--color-warning)' : 'var(--color-input-border)',
+              color: type === 'option' ? 'var(--color-warning)' : 'var(--color-text-secondary)',
+            }}
           >
             <LeaseYearTypeText type={type} />
+            <ArrowRightLeft size={12} aria-hidden />
           </button>
         ) : (
           <LeaseYearTypeText type={type} className="w-16 text-end" />

@@ -555,6 +555,7 @@ export function RenterFormDrawer({
       title={isEditing ? t('renter.editTitle') : t('renter.addTitle')}
       width={640}
       footer={footer}
+      scrollResetKey={step}
     >
       {/* Multi-renter scan progress (which co-tenant of N we're verifying) */}
       {queueTotal > 1 && (

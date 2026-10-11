@@ -41,8 +41,8 @@ export async function signInWithApple(language: string): Promise<void> {
 /**
  * Account deletion, step one, for an account that signs in with Apple. Apple requires its
  * tokens to be revoked when the account is deleted, and revoking needs a fresh Apple access
- * token, which only a new Apple sign-in yields. The same popup also satisfies Firebase's
- * recent-login check for deleteUser.
+ * token, which only a new Apple sign-in yields. The Firebase user itself is deleted by the
+ * backend, which needs no fresh sign-in.
  *
  * Runs before anything is deleted, so closing the popup leaves the account intact (the
  * popup-closed error propagates; check it with isPopupCancel). Returns null for accounts that
@@ -55,8 +55,9 @@ export async function reauthenticateAppleForDeletion(user: User, language: strin
 }
 
 /**
- * Best-effort: the account's data is already gone when this runs, and a failed revocation
- * must not stop the Firebase account from being deleted too.
+ * Runs before the backend deletes the account: Firebase revokes on behalf of the signed-in
+ * user, so it must still exist. Best-effort — a failed revocation must not stop the account
+ * from being deleted.
  */
 export async function revokeAppleToken(accessToken: string | null): Promise<void> {
   if (!accessToken) return;

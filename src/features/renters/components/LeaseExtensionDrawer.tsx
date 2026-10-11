@@ -439,6 +439,13 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
               <p className="text-sm py-4 text-center" style={{ color: 'var(--color-text-secondary)' }}>{t('renter.noLeaseYears')}</p>
             ) : (
               <>
+              {/* The type chip is the only place a year switches between contract and option,
+                  and nothing else in the drawer says so. */}
+              {existingRows.length > 0 && (
+                <p className="text-[13px] mb-2 text-[var(--color-text-secondary)]">
+                  {t('renter.typeSwitchHint')}
+                </p>
+              )}
               <div className="flex flex-col gap-1.5">
                 {/* Existing years — editable amount, deletable, type convertible. In custom
                     mode each year past the first also carries its own rule. */}

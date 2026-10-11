@@ -33,7 +33,7 @@ import { useFeedbackPanel } from '@/features/feedback/FeedbackPanelContext';
 function DeleteAccountModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, deleteFirebaseAccount } = useAppAuth();
+  const { user, signOut } = useAppAuth();
   const { language } = useLanguage();
   const { showToast } = useToast();
   const [confirmText, setConfirmText] = useState('');
@@ -60,26 +60,22 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     try {
       // 0. Apple accounts only: the Apple popup, before anything is deleted, so closing it
-      //    leaves the account whole. Yields the token Apple needs us to revoke.
+      //    leaves the account whole. Yields the token Apple needs us to revoke, and the
+      //    revocation runs now because it needs the Firebase user to exist.
       const appleAccessToken = user ? await reauthenticateAppleForDeletion(user, language) : null;
+      await revokeAppleToken(appleAccessToken);
 
-      // 1. The account's data on the server. Without this only the sign-in was deleted and
-      //    every property, renter and file stayed behind (the mobile app always did this).
+      // 1. The backend deletes all data and then the Firebase sign-in itself — with the
+      //    Admin SDK, which has no recent-login rule, so no fresh sign-in is asked for.
       await deleteMyAccount();
 
-      // 2. Revoke Apple's tokens (Apple accounts only), then delete the Firebase sign-in.
-      await revokeAppleToken(appleAccessToken);
-      await deleteFirebaseAccount();
+      // 2. The user is gone server-side; drop the local session that still holds it.
+      await signOut();
       navigate('/sign-in', { replace: true });
     } catch (err) {
       setLoading(false);
       if (isPopupCancel(err)) return;
-      if ((err as { code?: string })?.code === 'auth/requires-recent-login') {
-        showToast(t('settings.deleteAccountRequiresReauth'), 'error');
-        return;
-      }
-      // A Firebase SDK failure, not an HTTP one — no central handler sees it, and a
-      // user stuck unable to delete their account is exactly what we want to hear about.
+      // A user stuck unable to delete their account is exactly what we want to hear about.
       Sentry.captureException(err, { tags: { feature: 'account_delete' } });
       showToast(t('error.saveFailed'), 'error');
     }

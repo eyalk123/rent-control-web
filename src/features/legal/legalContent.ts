@@ -669,7 +669,6 @@ export const accountDeletionContent: Localized<LegalDoc> = {
           'Sign in at rentvance.app.',
           'Open Settings from the sidebar (on a narrow screen, from the More menu).',
           'Choose Delete Account, type DELETE, and click Delete Account Permanently.',
-          'If you are asked to sign in again first, sign out, sign back in, and repeat these steps. This is a security check.',
         ],
       },
       {
@@ -727,7 +726,6 @@ export const accountDeletionContent: Localized<LegalDoc> = {
           'התחבר בכתובת rentvance.app.',
           'פתח את ההגדרות מהתפריט הצדדי (במסך צר, מתפריט "עוד").',
           'בחר "מחק חשבון", הקלד DELETE ולחץ על "מחק חשבון לצמיתות".',
-          'אם תתבקש להתחבר מחדש קודם, התנתק, התחבר שוב וחזור על השלבים. זוהי בדיקת אבטחה.',
         ],
       },
       {
