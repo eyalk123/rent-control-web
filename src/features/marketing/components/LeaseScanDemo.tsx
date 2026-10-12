@@ -99,6 +99,8 @@ export function LeaseScanDemo() {
     const id = window.setTimeout(() => {
       if (phase === FADING) {
         setLanded(0);
+        // Back to the top while hidden, so the first step doesn't slide up from the last one.
+        setLineY(0);
         setPhase(DRAG);
       } else {
         setPhase(phase + 1);
@@ -189,7 +191,7 @@ export function LeaseScanDemo() {
 
   return (
     <div
-      className="w-full max-w-[420px] rounded-[16px]"
+      className="w-full max-w-[880px] rounded-[16px]"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-outline)',
@@ -205,160 +207,170 @@ export function LeaseScanDemo() {
 
       <div
         ref={rootRef}
-        className="relative px-5 pt-4 pb-5 flex flex-col gap-3"
+        className="relative px-5 pt-4 pb-5 flex flex-col gap-3 md:grid md:grid-cols-[1.15fr_1fr] md:gap-6 md:px-6 md:pb-6"
         style={{ opacity: phase === FADING ? 0 : 1, transition: `opacity ${FADE_MS}ms ease` }}
       >
-        {/* The uploaded file */}
-        <div
-          className="flex items-center gap-2 text-[12.5px]"
-          style={{ color: 'var(--color-text-primary)', opacity: dropping ? 0 : 1, transition: 'opacity 300ms ease' }}
-        >
-          <FileText size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
-          {/* A file name reads left to right even on a Hebrew page — otherwise ".pdf" lands first */}
-          <span className="flex-1 min-w-0 truncate">
-            <span dir="ltr">{t('marketing.scanDemo.fileName')}</span>
-          </span>
-          {finished ? (
-            <span className="flex items-center gap-1 shrink-0" style={{ color: 'var(--color-success)' }}>
-              <Check size={14} strokeWidth={2.5} />
-              {t('marketing.scanDemo.done')}
+        {/* The document side */}
+        <div className="flex flex-col gap-3 min-w-0">
+          {/* The uploaded file */}
+          <div
+            className="flex items-center gap-2 text-[12.5px]"
+            style={{ color: 'var(--color-text-primary)', opacity: dropping ? 0 : 1, transition: 'opacity 300ms ease' }}
+          >
+            <FileText size={15} className="shrink-0" style={{ color: 'var(--color-primary)' }} />
+            {/* A file name reads left to right even on a Hebrew page — otherwise ".pdf" lands first */}
+            <span className="flex-1 min-w-0 truncate">
+              <span dir="ltr">{t('marketing.scanDemo.fileName')}</span>
             </span>
-          ) : (
-            <span className="flex items-center gap-1.5 shrink-0" style={{ color: 'var(--color-text-secondary)' }}>
-              <Loader2 size={13} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
-              {t('marketing.scanDemo.reading')}
-            </span>
-          )}
-        </div>
-
-        {/* The lease itself, as paper */}
-        <div
-          ref={paperRef}
-          className="relative rounded-[6px] px-4 pt-3.5 pb-4"
-          style={{
-            background: '#FFFFFF',
-            color: '#334155',
-            border: '1px solid rgba(15, 23, 42, 0.12)',
-            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
-            fontFamily: "Georgia, 'David', 'Times New Roman', serif",
-          }}
-        >
-          <p className="text-center text-[12px] font-bold" style={{ color: '#0F172A' }}>
-            {t('marketing.scanDemo.lease.title')}
-          </p>
-          <p className="mt-2 text-[11.5px] leading-[1.7]">{withLinks(t('marketing.scanDemo.lease.body'), marks)}</p>
-          <div className="mt-2.5 flex flex-col gap-[7px]">
-            <span className="block h-[5px] rounded-full" style={{ background: 'rgba(15, 23, 42, 0.08)' }} />
-            <span className="block h-[5px] w-3/4 rounded-full" style={{ background: 'rgba(15, 23, 42, 0.08)' }} />
+            {finished ? (
+              <span className="flex items-center gap-1 shrink-0" style={{ color: 'var(--color-success)' }}>
+                <Check size={14} strokeWidth={2.5} />
+                {t('marketing.scanDemo.done')}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 shrink-0" style={{ color: 'var(--color-text-secondary)' }}>
+                <Loader2 size={13} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+                {t('marketing.scanDemo.reading')}
+              </span>
+            )}
           </div>
 
-          {/* The drop zone, as the real scan drawer draws it, covering the page until the file lands */}
+          {/* The lease itself, as paper */}
           <div
-            className="pointer-events-none absolute -inset-px flex flex-col items-center justify-center gap-2 rounded-[12px] border-2 border-dashed"
+            ref={paperRef}
+            className="relative flex-1 rounded-[6px] px-4 pt-3.5 pb-4 md:px-6 md:pt-5 md:pb-6"
             style={{
-              fontFamily: "'Rubik', system-ui, sans-serif",
-              borderColor: active ? 'var(--color-primary)' : 'var(--color-input-border)',
-              background:
-                active
-                  ? 'color-mix(in srgb, var(--color-primary) 7%, var(--color-surface))'
-                  : 'var(--color-surface)',
-              opacity: dropping ? 1 : 0,
-              transition: 'opacity 350ms ease, border-color 200ms ease, background-color 200ms ease',
+              background: '#FFFFFF',
+              color: '#334155',
+              border: '1px solid rgba(15, 23, 42, 0.12)',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+              fontFamily: "Georgia, 'David', 'Times New Roman', serif",
             }}
           >
-            {uploading ? (
-              <>
-                <Loader2 size={22} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
-                <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
-                  {t('documentScan.progress.uploading')}
-                </span>
-              </>
-            ) : (
-              <>
-                <Upload size={20} style={{ color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)' }} />
-                <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
-                  {t('marketing.scanDemo.dropHint')}
-                </span>
-              </>
-            )}
-            {/* Always rendered, so the jump from empty to full can transition */}
-            <span
-              className="mt-1 h-1 w-32 overflow-hidden rounded-full"
+            <p className="text-center text-[12px] md:text-[14px] font-bold" style={{ color: '#0F172A' }}>
+              {t('marketing.scanDemo.lease.title')}
+            </p>
+            <p className="mt-2 md:mt-3 text-[11.5px] md:text-[13px] leading-[1.7]">{withLinks(t('marketing.scanDemo.lease.body'), marks)}</p>
+            <div className="mt-2.5 flex flex-col gap-[7px]">
+              <span className="block h-[5px] rounded-full" style={{ background: 'rgba(15, 23, 42, 0.08)' }} />
+              <span className="block h-[5px] w-3/4 rounded-full" style={{ background: 'rgba(15, 23, 42, 0.08)' }} />
+            </div>
+            {/* Signature lines, with the room the wide layout gives the page */}
+            <div className="hidden md:flex mt-6 justify-between gap-8">
+              <span className="block h-px flex-1" style={{ background: 'rgba(15, 23, 42, 0.25)' }} />
+              <span className="block h-px flex-1" style={{ background: 'rgba(15, 23, 42, 0.25)' }} />
+            </div>
+
+            {/* The drop zone, as the real scan drawer draws it, covering the page until the file lands */}
+            <div
+              className="pointer-events-none absolute -inset-px flex flex-col items-center justify-center gap-2 rounded-[12px] border-2 border-dashed"
               style={{
-                background: 'var(--color-input-filled-background)',
-                opacity: uploading ? 1 : 0,
+                fontFamily: "'Rubik', system-ui, sans-serif",
+                borderColor: active ? 'var(--color-primary)' : 'var(--color-input-border)',
+                background:
+                  active
+                    ? 'color-mix(in srgb, var(--color-primary) 7%, var(--color-surface))'
+                    : 'var(--color-surface)',
+                opacity: dropping ? 1 : 0,
+                transition: 'opacity 350ms ease, border-color 200ms ease, background-color 200ms ease',
               }}
             >
+              {uploading ? (
+                <>
+                  <Loader2 size={22} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+                  <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
+                    {t('documentScan.progress.uploading')}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Upload size={20} style={{ color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)' }} />
+                  <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
+                    {t('marketing.scanDemo.dropHint')}
+                  </span>
+                </>
+              )}
+              {/* Always rendered, so the jump from empty to full can transition */}
               <span
-                className="block h-full rounded-full"
+                className="mt-1 h-1 w-32 overflow-hidden rounded-full"
                 style={{
-                  background: 'var(--color-primary)',
-                  width: uploading ? '100%' : '0%',
-                  transition: uploading ? `width ${UPLOAD_MS - 200}ms ease-out` : 'none',
+                  background: 'var(--color-input-filled-background)',
+                  opacity: uploading ? 1 : 0,
                 }}
-              />
-            </span>
-          </div>
+              >
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    background: 'var(--color-primary)',
+                    width: uploading ? '100%' : '0%',
+                    transition: uploading ? `width ${UPLOAD_MS - 200}ms ease-out` : 'none',
+                  }}
+                />
+              </span>
+            </div>
 
-          {/* Scan line */}
-          <span
-            className="pointer-events-none absolute inset-x-2 h-[2px] rounded-full"
-            style={{
-              top: lineY,
-              background: 'var(--color-primary)',
-              boxShadow: '0 0 10px 1px var(--color-primary)',
-              opacity: scanning ? 0.85 : 0,
-              transition: 'top 450ms ease, opacity 250ms ease',
-            }}
-          />
+            {/* Scan line */}
+            <span
+              className="pointer-events-none absolute inset-x-2 h-[2px] rounded-full"
+              style={{
+                top: lineY,
+                background: 'var(--color-primary)',
+                boxShadow: '0 0 10px 1px var(--color-primary)',
+                opacity: scanning ? 0.85 : 0,
+                transition: 'top 450ms ease, opacity 250ms ease',
+              }}
+            />
+          </div>
         </div>
 
         {/* What the app builds from it */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <ResultCard icon={Home} label={t('marketing.scanDemo.fields.property.label')}>
-            <span className="block text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              {value('property')}
-            </span>
-            <span
-              className="mt-1 flex items-baseline gap-1 text-[12px]"
-              style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
-            >
-              <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                {value('rent')}
+        <div className="flex flex-col gap-3 min-w-0 md:justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-2.5 md:gap-3">
+            <ResultCard icon={Home} label={t('marketing.scanDemo.fields.property.label')}>
+              <span className="block text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {value('property')}
               </span>
-              {filled(FIELDS.indexOf('rent')) && <span className="shrink-0">{t('marketing.scanDemo.perMonth')}</span>}
-            </span>
-          </ResultCard>
-          <ResultCard icon={User} label={t('marketing.scanDemo.fields.renter.label')}>
-            <span className="block text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              {value('renter')}
-            </span>
-            <span
-              className="mt-1 block text-[12px]"
-              style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
-            >
-              {value('term')}
-            </span>
-          </ResultCard>
-        </div>
+              <span
+                className="mt-1 flex items-baseline gap-1 text-[12px]"
+                style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+              >
+                <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                  {value('rent')}
+                </span>
+                {filled(FIELDS.indexOf('rent')) && <span className="shrink-0">{t('marketing.scanDemo.perMonth')}</span>}
+              </span>
+            </ResultCard>
+            <ResultCard icon={User} label={t('marketing.scanDemo.fields.renter.label')}>
+              <span className="block text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {value('renter')}
+              </span>
+              <span
+                className="mt-1 block text-[12px]"
+                style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}
+              >
+                {value('term')}
+              </span>
+            </ResultCard>
+          </div>
 
-        {/* The next rent change — where the increase clause lands */}
-        <div
-          className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5"
-          style={{
-            background: 'var(--color-primary-container)',
-            opacity: filled(FIELDS.indexOf('increase')) ? 1 : 0,
-            transition: 'opacity 400ms ease',
-          }}
-        >
-          <TrendingUp size={15} strokeWidth={2.5} style={{ color: 'var(--color-on-primary-container)', flexShrink: 0 }} />
-          <span
-            ref={(el) => void (targetRefs.current.increase = el)}
-            className="text-[12.5px] leading-snug"
-            style={{ color: 'var(--color-on-primary-container)' }}
+          {/* The next rent change — where the increase clause lands */}
+          <div
+            className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5"
+            style={{
+              background: 'var(--color-primary-container)',
+              opacity: filled(FIELDS.indexOf('increase')) ? 1 : 0,
+              transition: 'opacity 400ms ease',
+            }}
           >
-            {t('marketing.scanDemo.next')}
-          </span>
+            <TrendingUp size={15} strokeWidth={2.5} style={{ color: 'var(--color-on-primary-container)', flexShrink: 0 }} />
+            <span
+              ref={(el) => void (targetRefs.current.increase = el)}
+              className="text-[12.5px] leading-snug"
+              style={{ color: 'var(--color-on-primary-container)' }}
+            >
+              {t('marketing.scanDemo.next')}
+            </span>
+          </div>
         </div>
 
         {drag && (phase === DRAG || phase === DROPPED) && (

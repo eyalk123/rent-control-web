@@ -109,16 +109,17 @@ export function MarketingHeader({ tone }: { tone: ChromeTone }) {
   );
 }
 
-export function MarketingFooter() {
+/** `flush` drops the top margin, for a page whose last section has its own background. */
+export function MarketingFooter({ flush = false }: { flush?: boolean }) {
   const { t } = useTranslation();
   return (
     <footer
-      className="mt-20 px-6 py-8"
+      className={`${flush ? '' : 'mt-20 '}px-6 py-8`}
       style={{ borderTop: '1px solid var(--color-outline)', background: 'var(--color-surface)' }}
     >
       <div className="mx-auto max-w-[1080px] flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <p className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
-          {t('marketing.footer.operator')}
+          {t('marketing.footer.brand')}
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[13px]">
           {/* Contact sits ahead of the legal row, and in the footer rather than only inside

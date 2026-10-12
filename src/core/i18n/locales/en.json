@@ -2007,24 +2007,45 @@
       "heading": "Everything after the lease",
       "assistant": {
         "heading": "Ask RentVance",
-        "body": "Ask about your rent and expenses in plain words. Get the answer."
+        "body": "Ask about your rent and expenses in plain words. Get the answer.",
+        "example": {
+          "question": "Did Dana pay July's rent?",
+          "answer": "Yes, $2,400 on July 1."
+        }
       },
       "alerts": {
         "heading": "Alerts with a WhatsApp shortcut",
-        "body": "Know before a lease ends or rent is late. Message the renter in one tap."
+        "body": "Know before a lease ends or rent is late. Message the renter in one tap.",
+        "example": {
+          "notice": "Dana's lease ends in 60 days",
+          "action": "Message Dana"
+        }
       },
       "rent": {
         "heading": "Rent that updates itself",
-        "body": "Set the yearly increase once. Every new amount is worked out for you."
+        "body": "Set the yearly increase once. Every new amount is worked out for you.",
+        "example": {
+          "from": "$2,400",
+          "to": "$2,472",
+          "when": "From August 2027"
+        }
       },
       "reports": {
         "heading": "Reports for your accountant",
-        "body": "Income and expenses per property, exported in one click."
+        "body": "Income and expenses per property, exported in one click.",
+        "example": {
+          "title": "14 Maple Street, 2026",
+          "net": "Net $25,600"
+        }
       }
     },
     "closing": {
       "heading": "Start with your first lease.",
       "pricingLink": "See pricing"
+    },
+    "stores": {
+      "appStore": "Download on the",
+      "googlePlay": "Get it on"
     },
     "pricing": {
       "heading": "Plans priced by property count",
@@ -2066,7 +2087,7 @@
       "operatorBody": "RentVance is operated by Eyal Kook, based in Israel."
     },
     "footer": {
-      "operator": "RentVance — Eyal Kook"
+      "brand": "RentVance"
     }
   },
   "subscription": {
