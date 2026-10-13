@@ -386,11 +386,14 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
 
   // When the renters change and the chosen month / contract year / custom months are no longer
   // covered by any lease, clear them rather than pick a replacement — the user chooses again.
+  // Only a value of the current type's shape is judged: on a type switch this runs in the same
+  // pass as the re-seed above, still holding the old type's value ("2026-02" under 'year'), and
+  // clearing that would wipe the fresh default. The next pass checks the re-seeded value.
   useEffect(() => {
-    if (periodType === '1month' && periodValue && leaseMonths && !leaseMonths.includes(periodValue)) {
+    if (periodType === '1month' && periodValue.length === 7 && leaseMonths && !leaseMonths.includes(periodValue)) {
       setPeriodValue('');
     }
-    if (periodType === 'year' && periodValue && !yearOptions.some((o) => o.value === periodValue)) {
+    if (periodType === 'year' && periodValue.length === 4 && !yearOptions.some((o) => o.value === periodValue)) {
       setPeriodValue('');
     }
     if (periodType === 'custom' && leaseMonths) {
