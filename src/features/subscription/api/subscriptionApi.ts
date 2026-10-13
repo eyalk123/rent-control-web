@@ -33,3 +33,32 @@ export async function changePlan(plan: Exclude<PlanId, 'free'>, period: BillingP
   const { data } = await apiClient.post<Subscription>('/subscription/change-plan', { plan, period });
   return data;
 }
+
+/**
+ * What a discount code gives, from `GET /subscription/discount`. Mirrors `DiscountLookup` in
+ * the backend's `app/schemas/subscription.py`. Web only — the apps sell through the stores,
+ * whose offer codes never reach us — so it lives here rather than in the shared `types.ts`.
+ */
+export interface DiscountLookup {
+  code: string;
+  valid: boolean;
+  reason: 'not_found' | 'expired' | 'used_up' | 'not_applicable' | null;
+  /** `dsc_…`, handed to Paddle's price preview so the cards show what checkout will charge. */
+  discount_id: string | null;
+  type: 'percentage' | 'flat' | null;
+  /** A percentage ("20"), or a flat amount in minor units of `currency_code` ("500"). */
+  amount: string | null;
+  currency_code: string | null;
+  /** False: the first payment only. True: `maximum_recurring_intervals` payments, or all. */
+  recur: boolean;
+  maximum_recurring_intervals: number | null;
+  expires_at: string | null;
+  /** `<plan>_<period>` keys the code covers; null means every plan. */
+  plans: string[] | null;
+}
+
+export async function lookupDiscount(code: string): Promise<DiscountLookup> {
+  if (USE_MOCK_API) return mockSubscriptionApi.lookupDiscount(code);
+  const { data } = await apiClient.get<DiscountLookup>('/subscription/discount', { params: { code } });
+  return data;
+}

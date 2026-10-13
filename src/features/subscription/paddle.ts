@@ -25,7 +25,7 @@ export interface PaddleEvent {
 interface PreviewLineItem {
   price: { id: string };
   /** Minor units (cents/agorot), as strings. */
-  unitTotals: { subtotal: string; tax: string; total: string };
+  unitTotals: { subtotal: string; discount?: string; tax: string; total: string };
 }
 
 interface PricePreviewResult {
@@ -41,7 +41,10 @@ interface PaddleGlobal {
   Environment: { set: (env: 'sandbox') => void };
   Initialize: (options: { token: string; eventCallback?: (event: PaddleEvent) => void }) => void;
   Update: (options: { eventCallback?: (event: PaddleEvent) => void }) => void;
-  PricePreview: (request: { items: { priceId: string; quantity: number }[] }) => Promise<PricePreviewResult>;
+  PricePreview: (request: {
+    items: { priceId: string; quantity: number }[];
+    discountId?: string;
+  }) => Promise<PricePreviewResult>;
 }
 
 declare global {
@@ -117,11 +120,18 @@ export interface LocalPrices {
 /**
  * What each package costs this visitor, from Paddle's price preview. Paddle picks the
  * country from the visitor's IP and applies the same per-country prices checkout uses.
+ *
+ * With `discountId`, the amounts are what the first payment comes to with that discount —
+ * Paddle applies it per line exactly as checkout will, including leaving alone the plans it
+ * is not restricted to, and converting a flat amount into the visitor's currency.
  */
-export async function previewPrices(): Promise<LocalPrices> {
+export async function previewPrices(discountId?: string): Promise<LocalPrices> {
   const paddle = await initPaddle();
   const keys = Object.keys(PRICE_IDS) as (keyof typeof PRICE_IDS)[];
-  const request = paddle.PricePreview({ items: keys.map((k) => ({ priceId: PRICE_IDS[k], quantity: 1 })) });
+  const request = paddle.PricePreview({
+    items: keys.map((k) => ({ priceId: PRICE_IDS[k], quantity: 1 })),
+    ...(discountId ? { discountId } : {}),
+  });
   let timer: number | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = window.setTimeout(() => reject(new Error('Paddle price preview timed out')), PREVIEW_TIMEOUT_MS);
@@ -136,9 +146,11 @@ export async function previewPrices(): Promise<LocalPrices> {
     const item = data.details.lineItems.find((li) => li.price.id === PRICE_IDS[key]);
     // A missing price would leave one card in another currency; fall back to USD for all.
     if (!item) throw new Error(`Paddle price preview is missing ${key}`);
-    // Tax-inclusive: the total is the listed price. Tax-exclusive: the subtotal is, and
-    // tax is added at checkout.
-    const minor = Number(taxExclusive ? item.unitTotals.subtotal : item.unitTotals.total);
+    // Tax-inclusive: the total is the listed price. Tax-exclusive: the subtotal less any
+    // discount is, and tax is added at checkout. (`total` already has the discount off.)
+    const minor = taxExclusive
+      ? Number(item.unitTotals.subtotal) - Number(item.unitTotals.discount ?? 0)
+      : Number(item.unitTotals.total);
     amounts[key] = minor / 10 ** digits;
   }
   return { currency: data.currencyCode, taxExclusive, amounts };

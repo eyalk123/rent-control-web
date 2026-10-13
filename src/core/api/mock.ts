@@ -28,6 +28,7 @@ import type {
 } from '@/features/agent/types';
 import type { StreamChatArgs } from '@/features/agent/api/agentStream';
 import type { Subscription } from '@/features/subscription/types';
+import type { DiscountLookup } from '@/features/subscription/api/subscriptionApi';
 
 // Set to true to use in-memory mock data when no backend is available.
 // Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
@@ -1391,6 +1392,32 @@ export const mockSubscriptionApi = {
     _mockPlan = plan;
     _mockLockNoticeSeen = false;
     return mockSubscriptionApi.get();
+  },
+
+  // Offline codes, one per state the field has to draw: SAVE20 (every plan, three payments),
+  // YEARLY10 ($10 off the yearly plans, first payment), EXPIRED, USEDUP. Anything else is
+  // unknown. Matching ignores case, as Paddle's does.
+  lookupDiscount: async (code: string): Promise<DiscountLookup> => {
+    await new Promise((r) => setTimeout(r, 400));
+    const none = {
+      code, valid: false, reason: null, discount_id: null, type: null, amount: null, currency_code: null,
+      recur: false, maximum_recurring_intervals: null, expires_at: null, plans: null,
+    } satisfies DiscountLookup;
+    switch (code.toUpperCase()) {
+      case 'SAVE20':
+        return { ...none, valid: true, discount_id: 'dsc_mock_save20', type: 'percentage', amount: '20', recur: true, maximum_recurring_intervals: 3 };
+      case 'YEARLY10':
+        return {
+          ...none, valid: true, discount_id: 'dsc_mock_yearly10', type: 'flat', amount: '1000', currency_code: 'USD',
+          plans: ['tier_16_plus_yearly', 'tier_3_8_yearly', 'tier_9_15_yearly'],
+        };
+      case 'EXPIRED':
+        return { ...none, reason: 'expired' };
+      case 'USEDUP':
+        return { ...none, reason: 'used_up' };
+      default:
+        return { ...none, reason: 'not_found' };
+    }
   },
 };
 

@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { isAxiosError } from 'axios';
 import { Check, CheckCircle2, Info, Loader2, Lock } from 'lucide-react';
 import type { Package } from '@revenuecat/purchases-js';
 import { useAppAuth } from '@/core/auth/AuthContext';
 import { PageLoader } from '@/shared/components/ui/LoadingSpinner';
-import { FormInput } from '@/shared/components/form/FormInput';
 import { CONTACT_EMAIL } from '@/features/legal/legalContent';
 import { PAID_TIERS, bandLabel, type BillingPeriod, type Tier } from '@/features/marketing/tiers';
-import { useChangePlan, useCheckoutOffering, useLocalPrices, useSubscription } from '../queries';
+import {
+  useChangePlan,
+  useCheckoutOffering,
+  useDiscountedPrices,
+  useLocalPrices,
+  useLookupDiscount,
+  useSubscription,
+} from '../queries';
 import { CHECKOUT_AVAILABLE, packageFor, purchase } from '../checkout';
 import type { LocalPrices } from '../paddle';
+import type { DiscountLookup } from '../api/subscriptionApi';
+import { DiscountCodeField, discountOff } from '../components/DiscountCodeField';
 import type { PlanId, Subscription } from '../types';
 
 /** Paid plans, smallest first — what "bigger" means for an upgrade. */
@@ -45,6 +54,42 @@ function shownPrice(tier: Tier, period: BillingPeriod, local: LocalPrices | unde
   }
   const usd = period === 'monthly' ? tier.monthly : tier.yearly;
   return usd === null ? null : { amount: usd, currency: 'USD', taxExclusive: false };
+}
+
+/** Whether an applied code covers this plan and period. */
+function covers(discount: DiscountLookup, plan: PlanId, period: BillingPeriod): boolean {
+  return discount.plans === null || discount.plans.includes(`${plan}_${period}`);
+}
+
+/**
+ * What the first payment comes to with the applied code, or null when the code does not
+ * lower this card's price.
+ *
+ * Paddle's discounted preview is the answer whenever it exists — it is the same calculation
+ * checkout makes, in the same currency. Only without one (Paddle.js blocked, or the USD
+ * fallback prices showing) is the discount worked out here from its terms, and a flat amount
+ * only when it is in the currency being shown.
+ */
+function discountedPrice(
+  tier: Tier,
+  period: BillingPeriod,
+  base: ShownPrice | null,
+  discount: DiscountLookup | null,
+  preview: LocalPrices | undefined,
+): ShownPrice | null {
+  if (!base || !discount || !covers(discount, tier.plan, period)) return null;
+  let amount: number | null = null;
+  if (preview && preview.currency === base.currency) {
+    amount = preview.amounts[`${tier.plan}_${period}`] ?? null;
+  } else if (discount.type === 'percentage') {
+    amount = Math.round(base.amount * (1 - Number(discount.amount) / 100) * 100) / 100;
+  } else if (discount.currency_code === base.currency && discount.amount) {
+    const digits =
+      new Intl.NumberFormat('en', { style: 'currency', currency: base.currency }).resolvedOptions()
+        .maximumFractionDigits ?? 2;
+    amount = Math.max(0, base.amount - Number(discount.amount) / 10 ** digits);
+  }
+  return amount !== null && amount < base.amount ? { ...base, amount } : null;
 }
 
 /** Whole-percent saving of yearly over twelve monthly payments, from the prices shown. */
@@ -115,22 +160,74 @@ export function PlansPage() {
   const offering = useCheckoutOffering(user?.uid, canBuy);
   const [buying, setBuying] = useState<PlanId | null>(null);
   const [failed, setFailed] = useState(false);
-  const [codeOpen, setCodeOpen] = useState(false);
-  const [code, setCode] = useState('');
-  const [codeInvalid, setCodeInvalid] = useState(false);
   const localPrices = useLocalPrices();
   // `isPending` stays true for a query that is switched off, so only a running preview counts.
   const pricesLoading = localPrices.isLoading;
 
+  // The discount code: what was typed, the code the server confirmed, and — when the server
+  // could not reach Paddle to check — a code passed to checkout unchecked, as before the
+  // lookup existed, so an outage never costs anyone their discount.
+  const [codeDraft, setCodeDraft] = useState('');
+  const [appliedCode, setAppliedCode] = useState<DiscountLookup | null>(null);
+  const [unverifiedCode, setUnverifiedCode] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const lookup = useLookupDiscount();
+  const discountedPrices = useDiscountedPrices(appliedCode?.discount_id ?? null);
+
+  /**
+   * Check the typed code. Resolves to the code to send to checkout, null when nothing was
+   * typed, or false when the code cannot be used (the reason is then on screen).
+   */
+  async function applyCode(): Promise<string | null | false> {
+    const value = codeDraft.trim();
+    if (!value) return null;
+    // Paddle's own rule; anything else cannot be a code, so there is nothing to ask.
+    if (!DISCOUNT_CODE.test(value)) {
+      setCodeError(t('subscription.plans.discountInvalid'));
+      return false;
+    }
+    setCodeError(null);
+    setUnverifiedCode(null);
+    try {
+      const result = await lookup.mutateAsync(value);
+      if (result.valid) {
+        setAppliedCode(result);
+        setCodeDraft('');
+        return result.code;
+      }
+      setCodeError(t(`subscription.plans.discount.reason.${result.reason ?? 'not_found'}`));
+      return false;
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 429) {
+        setCodeError(t('subscription.plans.discount.tooMany'));
+        return false;
+      }
+      setUnverifiedCode(value);
+      return value;
+    }
+  }
+
+  function removeCode() {
+    setAppliedCode(null);
+    setUnverifiedCode(null);
+    setCodeDraft('');
+    setCodeError(null);
+  }
+
   async function buy(pkg: Package, plan: PlanId) {
     if (!user) return;
-    // Paddle codes are letters and digits only. Anything else cannot be a code, so say so here
-    // rather than open a checkout that silently shows the full price. Whether a well-formed
-    // code is valid only Paddle knows — checkout shows the resulting total before payment.
-    const discountCode = code.trim();
-    if (discountCode && !DISCOUNT_CODE.test(discountCode)) {
-      setCodeInvalid(true);
-      return;
+    let discountCode = appliedCode?.code ?? unverifiedCode ?? undefined;
+    // A code typed but never applied is checked now rather than silently dropped.
+    const typed = codeDraft.trim();
+    if (typed && typed.toUpperCase() !== discountCode?.toUpperCase()) {
+      const result = await applyCode();
+      if (result === false) return;
+      discountCode = result ?? undefined;
+    }
+    // A code restricted to other plans is left out: the card already says it does not apply,
+    // and checkout should open at the price the card shows.
+    if (appliedCode && discountCode === appliedCode.code && !covers(appliedCode, plan, period)) {
+      discountCode = undefined;
     }
     setBuying(plan);
     setFailed(false);
@@ -212,8 +309,9 @@ export function PlansPage() {
         </p>
       )}
 
-      {/* Billing period */}
-      <div className="mt-6 flex items-center gap-3 flex-wrap">
+      {/* Billing period, and the discount code beside it: both change the prices below. */}
+      <div className="mt-6 flex items-start gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap min-h-[46px]">
         <div
           className="inline-flex p-1 rounded-[11px]"
           style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
@@ -243,15 +341,45 @@ export function PlansPage() {
             {t('marketing.pricing.yearlySaving', { percent: saving })}
           </span>
         )}
+        </div>
+
+        {/* Here rather than inside checkout: RevenueCat opens Paddle with Paddle's own
+            discount box hidden. See `purchase` in checkout.ts. */}
+        {canBuy && CHECKOUT_AVAILABLE && (
+          <div className="w-full sm:w-auto sm:ms-auto">
+            <DiscountCodeField
+              draft={codeDraft}
+              onDraftChange={(value) => {
+                setCodeDraft(value);
+                setCodeError(null);
+                setUnverifiedCode(null);
+              }}
+              applied={appliedCode}
+              unverified={unverifiedCode}
+              checking={lookup.isPending}
+              error={codeError}
+              onApply={() => void applyCode()}
+              onRemove={removeCode}
+            />
+          </div>
+        )}
       </div>
 
       <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {PAID_TIERS.map((tier) => (
+        {PAID_TIERS.map((tier) => {
+          const price = pricesLoading ? undefined : shownPrice(tier, period, localPrices.data);
+          return (
           <PlanCard
             key={tier.id}
             tier={tier}
             period={period}
-            price={pricesLoading ? undefined : shownPrice(tier, period, localPrices.data)}
+            price={price}
+            discount={canBuy ? appliedCode : null}
+            discounted={
+              canBuy && price && !discountedPrices.isLoading
+                ? discountedPrice(tier, period, price, appliedCode, discountedPrices.data)
+                : null
+            }
             data={data}
             canBuy={canBuy}
             highlighted={tier.plan === picked || (canBuy && !picked && tier.plan === data.required_plan)}
@@ -269,43 +397,9 @@ export function PlansPage() {
             onConfirmSwitch={() => tier.plan !== 'free' && switchTo(tier.plan)}
             onCancelSwitch={() => setConfirming(null)}
           />
-        ))}
+          );
+        })}
       </div>
-
-      {/* Before the buy buttons are pressed, not inside checkout: RevenueCat opens Paddle with
-          Paddle's own discount box hidden. See `purchase` in checkout.ts. */}
-      {canBuy && CHECKOUT_AVAILABLE && (
-        <div className="mt-4">
-          {codeOpen ? (
-            <div className="max-w-[320px]">
-              <FormInput
-                label={t('subscription.plans.discountLabel')}
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  setCodeInvalid(false);
-                }}
-                error={codeInvalid ? t('subscription.plans.discountInvalid') : undefined}
-                hint={t('subscription.plans.discountHint')}
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                dir="ltr"
-                maxLength={32}
-              />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setCodeOpen(true)}
-              className="text-[13.5px] font-semibold hover:underline"
-              style={{ color: 'var(--color-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-            >
-              {t('subscription.plans.discountToggle')}
-            </button>
-          )}
-        </div>
-      )}
 
       <p className="mt-5 text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
         {t('subscription.plans.includes', { assistant: t('subscription.settings.assistant') })}
@@ -448,6 +542,8 @@ function PlanCard({
   tier,
   period,
   price,
+  discount,
+  discounted,
   data,
   canBuy,
   highlighted,
@@ -466,6 +562,10 @@ function PlanCard({
   period: BillingPeriod;
   /** Undefined while the preview is loading. */
   price: ShownPrice | null | undefined;
+  /** The applied discount code, if any. */
+  discount: DiscountLookup | null;
+  /** The first payment with that code, or null when it does not lower this card's price. */
+  discounted: ShownPrice | null;
   data: Subscription;
   canBuy: boolean;
   highlighted: boolean;
@@ -494,6 +594,31 @@ function PlanCard({
     }).format(amount);
   const priceText = price ? format(price.amount, Number.isInteger(price.amount) ? 0 : 2) : '…';
   const perMonth = price ? format(price.amount / 12, 2) : null;
+  const discountedText = discounted
+    ? format(discounted.amount, Number.isInteger(discounted.amount) ? 0 : 2)
+    : null;
+  const discountExcludes = discount !== null && !covers(discount, tier.plan, period);
+
+  // Under the price: how long the discounted price lasts and what follows it, or that the
+  // code does not cover this plan, or (yearly) the monthly equivalent.
+  let note = '';
+  if (discounted && discount) {
+    note =
+      discount.recur && discount.maximum_recurring_intervals === null
+        ? t('subscription.plans.discount.everyPayment')
+        : t(`subscription.plans.discount.then_${period}`, {
+            count: discount.recur ? (discount.maximum_recurring_intervals ?? 1) : 1,
+            price: priceText,
+          });
+  } else if (discountExcludes) {
+    // A code for yearly plans read on the monthly tab would otherwise just look useless.
+    const other: BillingPeriod = period === 'monthly' ? 'yearly' : 'monthly';
+    note = covers(discount, tier.plan, other)
+      ? t(`subscription.plans.discount.otherPeriod_${other}`)
+      : t('subscription.plans.discount.notThisPlan');
+  } else if (period === 'yearly' && perMonth !== null) {
+    note = t('subscription.plans.perMonth', { amount: perMonth });
+  }
 
   const purchasable = CHECKOUT_AVAILABLE && pkg !== null && buying === null;
   let buttonLabel = t('subscription.plans.checkoutSoon');
@@ -531,24 +656,45 @@ function PlanCard({
             {t('subscription.plans.current')}
           </span>
         )}
+        {discounted && discount && (
+          <span
+            className="text-[11.5px] font-semibold rounded-full px-2 py-0.5"
+            style={{
+              background: 'var(--color-primary-container)',
+              color: 'var(--color-on-primary-container)',
+              animation: 'fadeIn 0.2s ease',
+            }}
+          >
+            {t('subscription.plans.discount.badge', { off: discountOff(discount, i18n.language) })}
+          </span>
+        )}
       </div>
 
-      <div className="mt-3 flex items-baseline gap-1.5">
+      {/* Keyed on the shown amount, so a newly discounted price fades in where it lands. */}
+      <div
+        key={discountedText ?? priceText}
+        className="mt-3 flex items-baseline gap-x-2 gap-y-0.5 flex-wrap"
+        style={{ animation: discountedText ? 'fadeIn 0.2s ease' : undefined }}
+      >
         <span
           className="text-[30px] font-semibold"
           style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}
         >
-          {priceText}
+          {discountedText ?? priceText}
         </span>
+        {discountedText && (
+          <s className="text-[15px]" style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--color-text-secondary)' }}>
+            <span className="sr-only">{t('subscription.plans.discount.wasPrice')} </span>
+            {priceText}
+          </s>
+        )}
         <span className="text-[13.5px]" style={{ color: 'var(--color-text-secondary)' }}>
           {t(`marketing.pricing.per.${period}`)}
           {price?.taxExclusive ? ` ${t('subscription.plans.plusTax')}` : ''}
         </span>
       </div>
       <p className="mt-1 text-[13px] min-h-[18px]" style={{ color: 'var(--color-text-secondary)' }}>
-        {period === 'yearly' && perMonth !== null
-          ? t('subscription.plans.perMonth', { amount: perMonth })
-          : ''}
+        {note}
       </p>
 
       <p className="mt-3 text-[13px] leading-snug min-h-[36px]" style={{ color: 'var(--color-text-secondary)' }}>

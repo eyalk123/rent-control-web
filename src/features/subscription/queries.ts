@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BillingPeriod } from '@/features/marketing/tiers';
-import { acknowledgeLockNotice, changePlan, getSubscription } from './api/subscriptionApi';
+import { acknowledgeLockNotice, changePlan, getSubscription, lookupDiscount } from './api/subscriptionApi';
 import { CHECKOUT_AVAILABLE, loadOffering } from './checkout';
 import { PADDLE_AVAILABLE, previewPrices } from './paddle';
 import type { PlanId, Subscription } from './types';
@@ -50,11 +50,31 @@ export function useCheckoutOffering(appUserId: string | undefined, enabled: bool
 export function useLocalPrices() {
   return useQuery({
     queryKey: ['subscription', 'local-prices'] as const,
-    queryFn: previewPrices,
+    queryFn: () => previewPrices(),
     enabled: PADDLE_AVAILABLE,
     staleTime: Infinity,
     retry: 1,
   });
+}
+
+/**
+ * The same preview with a discount applied — what the first payment comes to with the code.
+ * Kept beside the full prices rather than replacing them, so a card can show both, and
+ * removing the code needs no new request.
+ */
+export function useDiscountedPrices(discountId: string | null) {
+  return useQuery({
+    queryKey: ['subscription', 'local-prices', 'discount', discountId] as const,
+    queryFn: () => previewPrices(discountId ?? undefined),
+    enabled: PADDLE_AVAILABLE && discountId !== null,
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+/** Ask the server what a discount code gives. Each tap of Apply is one lookup. */
+export function useLookupDiscount() {
+  return useMutation({ mutationFn: (code: string) => lookupDiscount(code) });
 }
 
 /** Switch a web subscription's plan. The server answers with the new state, used as-is. */
