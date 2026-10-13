@@ -7,7 +7,9 @@
 # step with the protected subtree in src/App.tsx when adding a page there. The one Allow
 # line only makes /licenses explicit; it would be crawlable without it.
 #
-# No Sitemap line yet: there is no sitemap.xml, and the final domain is not decided.
+# The public pages are listed in sitemap.xml, beside this file.
+
+Sitemap: https://rentvance.app/sitemap.xml
 
 User-agent: *
 Allow: /licenses

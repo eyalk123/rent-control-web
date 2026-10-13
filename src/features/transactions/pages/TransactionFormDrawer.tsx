@@ -57,6 +57,9 @@ import {
 import { getCurrentMonthlyRent, isNonMonthlyCadence, paymentFrequencyLabel } from '@/shared/types';
 import {
   dueMonthsWithin,
+  isWithinLease,
+  leaseContractYearsForRenters,
+  leaseMonthsForRenters,
   paymentIntervalMonths,
 } from '../utils/rentSchedule';
 import type { Transaction, Renter, PaymentMethod } from '@/shared/types';
@@ -196,6 +199,7 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
   const [propertyError, setPropertyError] = useState('');
   const [renterError, setRenterError] = useState('');
   const [bulkDateError, setBulkDateError] = useState('');
+  const [periodError, setPeriodError] = useState('');
   // Months about to be written that already hold a payment, held between the submit and
   // the confirmation. Never auto-skipped — the user decides whether to record them anyway.
   const [duplicateWarning, setDuplicateWarning] = useState<
@@ -362,23 +366,69 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
     });
   }
 
-  /**
-   * The months the chosen period covers for one renter, before cadence is applied.
-   * Shared by the submit path and the per-renter note so the two cannot drift apart.
-   */
-  function periodMonthsFor(renter: RenterWithProperty): string[] {
+  // The period pickers offer only what the leases cover: the checked renters' leases, or every
+  // listed renter's before any is checked. Union, not intersection — a renter whose lease
+  // misses the chosen month is skipped and says so on its row. Null means some lease has no
+  // range to go by, and the pickers fall back to free choice.
+  const periodRenters = useMemo(() => {
+    const checked = allRenters.filter((r) => selectedRenterIds.has(r.id));
+    return checked.length > 0 ? checked : allRenters;
+  }, [allRenters, selectedRenterIds]);
+  const leaseMonths = useMemo(() => leaseMonthsForRenters(periodRenters), [periodRenters]);
+  const leaseMonthSet = useMemo(() => (leaseMonths ? new Set(leaseMonths) : undefined), [leaseMonths]);
+  const yearOptions = useMemo(() => {
+    const years = leaseContractYearsForRenters(periodRenters);
+    if (!years) return YEAR_OPTIONS;
+    return years.map((y) => ({ label: `${String(y).slice(2)}/${String(y + 1).slice(2)}`, value: String(y) }));
+  }, [periodRenters]);
+  const leaseFirstYear = leaseMonths ? Number(leaseMonths[0].slice(0, 4)) : undefined;
+  const leaseLastYear = leaseMonths ? Number(leaseMonths[leaseMonths.length - 1].slice(0, 4)) : undefined;
+
+  // When the renters change and the chosen month / contract year / custom months are no longer
+  // covered by any lease, clear them rather than pick a replacement — the user chooses again.
+  useEffect(() => {
+    if (periodType === '1month' && periodValue && leaseMonths && !leaseMonths.includes(periodValue)) {
+      setPeriodValue('');
+    }
+    if (periodType === 'year' && periodValue && !yearOptions.some((o) => o.value === periodValue)) {
+      setPeriodValue('');
+    }
+    if (periodType === 'custom' && leaseMonths) {
+      setCustomMonths((prev) => {
+        const kept = [...prev].filter((m) => leaseMonths.includes(m.slice(0, 7)));
+        return kept.length === prev.size ? prev : new Set(kept);
+      });
+    }
+    if (periodType === 'custom' && leaseFirstYear != null && leaseLastYear != null) {
+      setGridYear((y) => Math.min(Math.max(y, leaseFirstYear), leaseLastYear));
+    }
+  }, [periodType, periodValue, leaseMonths, yearOptions, leaseFirstYear, leaseLastYear]);
+
+  /** The months the chosen period covers, before the lease and cadence are applied. */
+  function rawPeriodMonthsFor(renter: RenterWithProperty): string[] {
+    if (periodType !== 'custom' && !periodValue) return [];
     if (periodType === 'year') return getContractYearMonths(Number(periodValue), renter.lease_start ?? '');
     if (periodType === 'custom') return [...customMonths].sort();
     return getMonthsForPeriod(periodType as '1month', periodValue);
+  }
+
+  /**
+   * The months the chosen period covers that fall inside this renter's lease, before cadence
+   * is applied. Shared by the submit path and the per-renter note so the two cannot drift apart.
+   */
+  function periodMonthsFor(renter: RenterWithProperty): string[] {
+    return rawPeriodMonthsFor(renter).filter((m) => isWithinLease(renter, m));
   }
 
   async function handleBulkSubmit() {
     setPropertyError('');
     setRenterError('');
     setBulkDateError('');
+    setPeriodError('');
     if (selectedPropertyIds.length === 0) { setPropertyError(t('transactions.selectProperties')); return; }
     if (selectedRenterIds.size === 0) { setRenterError(t('transactions.bulkRevenue.noSelectionError')); return; }
     if (periodType === 'custom' && customMonths.size === 0) { setRenterError(t('transactions.bulkRevenue.noMonthsError')); return; }
+    if (periodType !== 'custom' && !periodValue) { setPeriodError(t('transactions.bulkRevenue.noPeriodError')); return; }
     if (!bulkDate) { setBulkDateError(t('common.required')); return; }
 
     const checkedRenters = allRenters.filter((r) => selectedRenterIds.has(r.id));
@@ -553,7 +603,13 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
                   : contractMin === contractMax
                     ? formatMoney(contractMin)
                     : `${formatMoney(contractMin)}–${formatMoney(contractMax)}`;
-                const cadenceNote = !cadenceLabel
+                // Every month picked is outside this renter's lease: nothing will be written.
+                const outsideLease = dueMonths.length === 0
+                  && rawPeriodMonthsFor(renter).length > 0
+                  && periodMonthsFor(renter).length === 0;
+                const cadenceNote = outsideLease
+                  ? t('transactions.bulkRevenue.outsideLease')
+                  : !cadenceLabel
                   ? null
                   : dueMonths.length === 0
                     ? t('transactions.bulkRevenue.nothingDue', { cadence: cadenceLabel })
@@ -662,7 +718,9 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
           mode="month"
           label={t('transactions.bulkRevenue.oneMonth')}
           value={periodValue}
-          onChange={(v) => setPeriodValue(v as string)}
+          onChange={(v) => { setPeriodValue(v as string); setPeriodError(''); }}
+          allowedMonths={leaseMonths ?? undefined}
+          error={periodError}
         />
       )}
       {periodType === 'custom' && (
@@ -671,6 +729,9 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
           onToggle={(m) => setCustomMonths((prev) => { const next = new Set(prev); if (next.has(m)) next.delete(m); else next.add(m); return next; })}
           gridYear={gridYear}
           onGridYearChange={setGridYear}
+          enabledMonths={leaseMonthSet}
+          minYear={leaseFirstYear}
+          maxYear={leaseLastYear}
         />
       )}
       {periodType === 'year' && (
@@ -678,11 +739,14 @@ function RevenueForm({ onClose, transaction, initialPropertyId, initialRenterId,
           <label className="text-sm font-medium text-[var(--color-text-primary)]">{t('transactions.bulkRevenue.contractYear')}</label>
           <select
             value={periodValue}
-            onChange={(e) => setPeriodValue(e.target.value)}
-            className="w-full h-[42px] rounded-xl bg-[var(--color-input-bg)] border border-[var(--color-input-border)] px-3.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)]"
+            onChange={(e) => { setPeriodValue(e.target.value); setPeriodError(''); }}
+            className="w-full h-[42px] rounded-xl bg-[var(--color-input-bg)] border px-3.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-primary)]"
+            style={{ borderColor: periodError ? 'var(--color-error)' : 'var(--color-input-border)' }}
           >
-            {YEAR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {!periodValue && <option value="" disabled>{t('transactions.bulkRevenue.selectContractYear')}</option>}
+            {yearOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
+          {periodError && <p className="text-xs text-[var(--color-error)]">{periodError}</p>}
         </div>
       )}
 

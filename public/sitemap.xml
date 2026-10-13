@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The public pages worth finding through search: marketing and policy. Utility routes that are
+  public only so a link can reach them (/sign-in, /pay, /delete-account) are left out, and the
+  authenticated app is disallowed in robots.txt. Keep in step with the public routes in
+  src/App.tsx. No <lastmod>: a hand-written date goes stale and search engines then ignore it.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://rentvance.app/</loc></url>
+  <url><loc>https://rentvance.app/pricing</loc></url>
+  <url><loc>https://rentvance.app/contact</loc></url>
+  <url><loc>https://rentvance.app/privacy</loc></url>
+  <url><loc>https://rentvance.app/terms</loc></url>
+  <url><loc>https://rentvance.app/refunds</loc></url>
+  <url><loc>https://rentvance.app/accessibility</loc></url>
+  <url><loc>https://rentvance.app/licenses</loc></url>
+</urlset>

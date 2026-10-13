@@ -90,7 +90,7 @@ export function PricingPage() {
               {t('marketing.pricing.freeHeading', { max: free.max })}
             </p>
             <p className="mt-1 text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
-              {t('marketing.pricing.freeBody')}
+              {t('marketing.pricing.freeBody', { scans: free.monthlyScans })}
             </p>
           </div>
           <Link
@@ -168,7 +168,9 @@ export function PricingPage() {
           })}
         </div>
 
-        {/* What every plan includes — stated once rather than repeated in each card. */}
+        {/* What every paid plan includes — stated once rather than repeated in each card.
+            Scoped to paid plans because the free plan limits scans and has no assistant;
+            the free band above says so itself. */}
         <section className="mt-10">
           <h2 className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
             {t('marketing.pricing.includedHeading')}

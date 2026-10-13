@@ -880,6 +880,9 @@
       "instalmentsNote": "{{cadence}}, {{count}} x {{amount}}",
       "nothingDue": "{{cadence}}: nothing due in this period",
       "skippedNothingDue": "Skipped {{count}} with nothing due in this period",
+      "outsideLease": "Lease does not cover this period",
+      "noPeriodError": "Please choose a period.",
+      "selectContractYear": "Choose a contract year",
       "filters": "Filters",
       "ownerFilter": "Owner",
       "allOwners": "All owners",
@@ -2056,7 +2059,7 @@
       "yearlySaving": "Yearly saves {{percent}}%",
       "free": "Free",
       "freeHeading": "Up to {{max}} properties",
-      "freeBody": "Everything in the product, at no cost, for as long as you stay at this size.",
+      "freeBody": "No cost for as long as you stay at this size. Includes {{scans}} lease scans and {{scans}} receipt scans a month; Ask RentVance comes with the paid plans.",
       "freeCta": "Create an account",
       "propertiesBand": "{{band}} properties",
       "per": {
@@ -2065,7 +2068,7 @@
       },
       "perMonthEquivalent": "Works out at ${{amount}} a month",
       "choose": "Choose plan",
-      "includedHeading": "Every plan includes",
+      "includedHeading": "Every paid plan includes",
       "included": {
         "ledger": "Unlimited renters, transactions and expense categories",
         "leases": "Lease terms with fixed or index-linked rent changes",

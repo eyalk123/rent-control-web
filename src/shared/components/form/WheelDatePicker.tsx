@@ -1,6 +1,6 @@
 import Picker from 'react-mobile-picker';
 import { useTranslation } from 'react-i18next';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar, Lock, Pencil } from 'lucide-react';
 import type { PickerValue } from 'react-mobile-picker';
 import { RequiredMark } from './RequiredMark';
@@ -20,6 +20,11 @@ interface Props {
   required?: boolean;
   /** RHF field name, set only when this picker should participate in document-scan review. */
   reviewName?: string;
+  /**
+   * `month` mode only: the months ("YYYY-MM", ascending) the wheels may land on. The year wheel
+   * shows only years that hold one, the month wheel only that year's. Overrides min/maxYear.
+   */
+  allowedMonths?: string[];
 }
 
 const THIS_YEAR = new Date().getFullYear();
@@ -48,6 +53,20 @@ function parseValue(value: string | number | undefined, mode: WheelDatePickerMod
     : { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
 }
 
+/** The allowed month closest to `year`/`month`, preferring the later one on a tie. */
+function nearestAllowed(allowed: string[], year: number, month: number): PickerState {
+  const target = year * 12 + month;
+  let best = allowed[0];
+  let bestDist = Infinity;
+  for (const key of allowed) {
+    const [y, m] = key.split('-').map(Number);
+    const dist = Math.abs(y * 12 + m - target);
+    if (dist <= bestDist) { best = key; bestDist = dist; }
+  }
+  const [y, m] = best.split('-').map(Number);
+  return { year: y, month: m };
+}
+
 function formatValue(state: PickerState, mode: WheelDatePickerMode): string | number {
   if (mode === 'day') return state.day;
   const y = String(state.year).padStart(4, '0');
@@ -66,6 +85,7 @@ export function WheelDatePicker({
   maxYear = THIS_YEAR + 10,
   required,
   reviewName,
+  allowedMonths,
 }: Props) {
   const { t, i18n } = useTranslation();
   const review = useFieldReview(reviewName);
@@ -77,6 +97,13 @@ export function WheelDatePicker({
   const [locked, setLocked] = useState(
     () => value !== undefined && value !== null && value !== '',
   );
+  // A value cleared from outside (it fell out of the allowed months) reopens the wheel, so the
+  // field asks for a choice instead of showing one nobody made.
+  const isEmpty = value === undefined || value === null || value === '';
+  useEffect(() => { if (isEmpty) setLocked(false); }, [isEmpty]);
+
+  const allowed = mode === 'month' && allowedMonths?.length ? allowedMonths : null;
+
   // Hover highlight on the editing wheel — reinforces that the box is clickable (locks).
   const [hovered, setHovered] = useState(false);
 
@@ -89,18 +116,29 @@ export function WheelDatePicker({
   );
 
   const years = useMemo(
-    () => Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i),
-    [minYear, maxYear],
+    () => allowed
+      ? [...new Set(allowed.map((k) => Number(k.slice(0, 4))))]
+      : Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i),
+    [allowed, minYear, maxYear],
   );
 
   const pickerValue = useMemo(() => {
     const parsed = parseValue(value, mode);
+    // Only where the wheels rest while nothing valid is chosen — not committed until the user
+    // scrolls or presses Done.
+    if (allowed && !allowed.includes(formatValue(parsed, mode) as string)) {
+      return nearestAllowed(allowed, parsed.year, parsed.month);
+    }
     if (mode === 'date') {
       const max = daysInMonth(parsed.year, parsed.month);
       if (parsed.day > max) return { ...parsed, day: max };
     }
     return parsed;
-  }, [value, mode]);
+  }, [value, mode, allowed]);
+
+  const monthsInYear = allowed
+    ? allowed.filter((k) => Number(k.slice(0, 4)) === pickerValue.year).map((k) => Number(k.slice(5, 7)))
+    : null;
 
   const dayCount = mode === 'date' ? daysInMonth(pickerValue.year, pickerValue.month) : 31;
 
@@ -121,6 +159,10 @@ export function WheelDatePicker({
     if (mode === 'date') {
       const max = daysInMonth(s.year, s.month);
       if (s.day > max) s.day = max;
+    }
+    // Scrolling the year can leave the month wheel on a month that year does not have.
+    if (allowed && !allowed.includes(formatValue(s, mode) as string)) {
+      Object.assign(s, nearestAllowed(allowed.filter((k) => Number(k.slice(0, 4)) === s.year), s.year, s.month));
     }
     onChange(formatValue(s, mode));
     if (reviewName) dismissReview?.(reviewName);
@@ -249,13 +291,13 @@ export function WheelDatePicker({
             )}
             {(mode === 'date' || mode === 'month') && (
               <Picker.Column name="month">
-                {monthNames.map((name, i) => (
+                {monthNames.map((name, i) => (monthsInYear && !monthsInYear.includes(i + 1) ? null : (
                   <Picker.Item key={i + 1} value={i + 1}>
                     <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
                       {name}
                     </span>
                   </Picker.Item>
-                ))}
+                )))}
               </Picker.Column>
             )}
             {(mode === 'date' || mode === 'month') && (

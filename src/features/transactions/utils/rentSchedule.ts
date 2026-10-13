@@ -143,6 +143,69 @@ export function getLeaseScheduleEnd(renter: Renter): Date | null {
 }
 
 /**
+ * First and last month ("YYYY-MM") the lease schedule covers, options included, or null when
+ * there is no start date to anchor it on. A lease with a start but no schedule is open-ended.
+ */
+export function leaseMonthRange(renter: Renter): { first: string; last: string | null } | null {
+  const start = parseLeaseStart(renter);
+  if (!start) return null;
+  const end = getLeaseScheduleEnd(renter);
+  const last = end ? new Date(end.getFullYear(), end.getMonth() - 1, 1) : null;
+  return {
+    first: monthKeyOf(start.getFullYear(), start.getMonth()),
+    last: last ? monthKeyOf(last.getFullYear(), last.getMonth()) : null,
+  };
+}
+
+/**
+ * Is `monthKey` ("YYYY-MM", or any longer ISO date) inside this renter's lease? Same bounds
+ * the payment grid draws. A renter with no lease start is never ruled out.
+ */
+export function isWithinLease(renter: Renter, monthKey: string): boolean {
+  const range = leaseMonthRange(renter);
+  if (!range) return true;
+  const key = monthKey.slice(0, 7);
+  return key >= range.first && (range.last == null || key <= range.last);
+}
+
+/**
+ * Every month ("YYYY-MM", ascending) covered by at least one of these leases — what the bulk
+ * revenue form's period pickers offer. Null when any renter has no lease start or an
+ * open-ended schedule: there is then no range to offer, and the form falls back to free choice.
+ */
+export function leaseMonthsForRenters(renters: Renter[]): string[] | null {
+  if (renters.length === 0) return null;
+  const set = new Set<string>();
+  for (const r of renters) {
+    const range = leaseMonthRange(r);
+    if (!range || !range.last) return null;
+    let [y, m] = range.first.split('-').map(Number);
+    for (let key = range.first; key <= range.last; key = monthKeyOf(y, m - 1)) {
+      set.add(key);
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+  }
+  return [...set].sort();
+}
+
+/**
+ * Contract years (by the calendar year each one starts in, descending) that at least one of
+ * these leases runs through. Null on the same terms as {@link leaseMonthsForRenters}.
+ */
+export function leaseContractYearsForRenters(renters: Renter[]): number[] | null {
+  if (renters.length === 0) return null;
+  const set = new Set<number>();
+  for (const r of renters) {
+    const range = leaseMonthRange(r);
+    if (!range || !range.last) return null;
+    const [startYear, startMonth] = range.first.split('-').map(Number);
+    for (let y = startYear; monthKeyOf(y, startMonth - 1) <= range.last; y++) set.add(y);
+  }
+  return [...set].sort((a, b) => b - a);
+}
+
+/**
  * Calendar years the renter can have payments recorded against: from the lease start year
  * up to the earlier of the schedule end and the current year.
  *

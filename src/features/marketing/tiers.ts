@@ -30,13 +30,18 @@ export interface Tier {
   monthly: number | null;
   /** USD billed once a year. null means free. */
   yearly: number | null;
+  /**
+   * AI lease scans per month, and the same number again for receipts. null means
+   * unlimited. Like `min`/`max`, must match `entitlement_service` in the backend.
+   */
+  monthlyScans: number | null;
 }
 
 export const TIERS: Tier[] = [
-  { id: 'free', plan: 'free', min: 1, max: 2, monthly: null, yearly: null },
-  { id: 'tier1', plan: 'tier_3_8', min: 3, max: 8, monthly: 15, yearly: 135 },
-  { id: 'tier2', plan: 'tier_9_15', min: 9, max: 15, monthly: 20, yearly: 180 },
-  { id: 'tier3', plan: 'tier_16_plus', min: 16, max: null, monthly: 25, yearly: 225 },
+  { id: 'free', plan: 'free', min: 1, max: 2, monthly: null, yearly: null, monthlyScans: 3 },
+  { id: 'tier1', plan: 'tier_3_8', min: 3, max: 8, monthly: 15, yearly: 135, monthlyScans: null },
+  { id: 'tier2', plan: 'tier_9_15', min: 9, max: 15, monthly: 20, yearly: 180, monthlyScans: null },
+  { id: 'tier3', plan: 'tier_16_plus', min: 16, max: null, monthly: 25, yearly: 225, monthlyScans: null },
 ];
 
 export const PAID_TIERS = TIERS.filter((t) => t.monthly !== null);

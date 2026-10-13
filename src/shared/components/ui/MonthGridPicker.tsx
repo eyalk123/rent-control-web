@@ -7,9 +7,14 @@ interface Props {
   onToggle: (month: string) => void;
   gridYear: number;
   onGridYearChange: (year: number) => void;
+  /** Months ("YYYY-MM") that can be picked; every other month is drawn disabled. Omit for no limit. */
+  enabledMonths?: Set<string>;
+  /** Year navigation stops here. */
+  minYear?: number;
+  maxYear?: number;
 }
 
-export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYearChange }: Props) {
+export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYearChange, enabledMonths, minYear, maxYear }: Props) {
   const { t, i18n } = useTranslation();
   const { isRtl } = useLanguage();
   const monthNames = Array.from({ length: 12 }, (_, i) =>
@@ -23,7 +28,8 @@ export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYear
         <button
           type="button"
           onClick={() => onGridYearChange(gridYear - 1)}
-          className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors"
+          disabled={minYear != null && gridYear <= minYear}
+          className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
         >
           {isRtl ? <ChevronRight size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} />}
         </button>
@@ -31,7 +37,8 @@ export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYear
         <button
           type="button"
           onClick={() => onGridYearChange(gridYear + 1)}
-          className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors"
+          disabled={maxYear != null && gridYear >= maxYear}
+          className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-[var(--color-outline)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
         >
           {isRtl ? <ChevronLeft size={15} style={{ color: 'var(--color-text-secondary)' }} /> : <ChevronRight size={15} style={{ color: 'var(--color-text-secondary)' }} />}
         </button>
@@ -42,12 +49,14 @@ export function MonthGridPicker({ selectedMonths, onToggle, gridYear, onGridYear
         {monthNames.map((name, i) => {
           const monthStr = `${gridYear}-${String(i + 1).padStart(2, '0')}-01`;
           const selected = selectedMonths.has(monthStr);
+          const disabled = !!enabledMonths && !selected && !enabledMonths.has(monthStr.slice(0, 7));
           return (
             <button
               key={monthStr}
               type="button"
               onClick={() => onToggle(monthStr)}
-              className="h-9 rounded-[8px] text-[12px] font-medium transition-colors"
+              disabled={disabled}
+              className="h-9 rounded-[8px] text-[12px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               style={{
                 background: selected ? 'var(--color-primary)' : 'var(--color-input-filled-background)',
                 color: selected ? 'white' : 'var(--color-text-primary)',

@@ -882,6 +882,9 @@
       "instalmentsNote": "{{cadence}}, {{count}} x {{amount}}",
       "nothingDue": "{{cadence}}: אין תשלום בתקופה זו",
       "skippedNothingDue": "דולג על {{count}} שאין להם תשלום בתקופה זו",
+      "outsideLease": "החוזה אינו מכסה תקופה זו",
+      "noPeriodError": "יש לבחור תקופה.",
+      "selectContractYear": "בחירת שנת חוזה",
       "filters": "סינון",
       "ownerFilter": "בעלים",
       "allOwners": "כל הבעלים",
@@ -2063,7 +2066,7 @@
       "yearlySaving": "במסלול השנתי חוסכים {{percent}}%",
       "free": "חינם",
       "freeHeading": "עד {{max}} נכסים",
-      "freeBody": "כל היכולות של המוצר, ללא עלות, כל עוד אתה בגודל הזה.",
+      "freeBody": "ללא עלות כל עוד אתה בגודל הזה. כולל {{scans}} סריקות חוזה ו-{{scans}} סריקות קבלה בחודש; העוזר \"שאלו את RentVance\" כלול בתוכניות בתשלום.",
       "freeCta": "פתח חשבון",
       "propertiesBand": "{{band}} נכסים",
       "per": {
@@ -2072,7 +2075,7 @@
       },
       "perMonthEquivalent": "שקול ל‏${{amount}} לחודש",
       "choose": "בחר תוכנית",
-      "includedHeading": "כל תוכנית כוללת",
+      "includedHeading": "כל תוכנית בתשלום כוללת",
       "included": {
         "ledger": "דיירים, תנועות וקטגוריות הוצאה ללא הגבלה",
         "leases": "תנאי חוזה עם עליית שכר קבועה או צמודה למדד",
