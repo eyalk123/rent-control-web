@@ -26,7 +26,7 @@ import {
 } from '@/shared/utils/leaseSchedule';
 import { getLeaseEndDate, getScheduleEndDate } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, toISODate } from '@/shared/utils/dates';
 import type {
   LeaseYear,
   LeaseYearRuleMode,
@@ -347,7 +347,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
               <div>
                 <p className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                   {t('renter.extendBackdatedTitle', {
-                    date: fmtDate(scheduleEnd.toISOString().split('T')[0]),
+                    date: fmtDate(toISODate(scheduleEnd)),
                   })}
                 </p>
                 <p className="mt-0.5">
@@ -513,10 +513,10 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
           <div className="rounded-[var(--radius-card)] p-4" style={{ border: '1px solid var(--color-outline)', background: 'var(--color-input-filled-background)' }}>
             <div className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
               <CalendarClock size={15} />
-              <LtrSpan>{originalEnd ? fmtDate(originalEnd.toISOString().split('T')[0]) : '—'}</LtrSpan>
+              <LtrSpan>{originalEnd ? fmtDate(toISODate(originalEnd)) : '—'}</LtrSpan>
               {isRtl ? <ArrowLeft size={13} /> : <ArrowRight size={13} />}
               <LtrSpan className="font-semibold text-[var(--color-text-primary)]">
-                {newEnd ? fmtDate(newEnd.toISOString().split('T')[0]) : '—'}
+                {newEnd ? fmtDate(toISODate(newEnd)) : '—'}
               </LtrSpan>
             </div>
             {yearDelta !== 0 && (

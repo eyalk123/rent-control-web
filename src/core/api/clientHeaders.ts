@@ -31,8 +31,26 @@ declare const __APP_VERSION__: string | undefined;
 
 const version = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '';
 
+/**
+ * The device's IANA timezone (`Asia/Jerusalem`). The backend stores it on the account and
+ * reads every business "today" on it — overdue rent, expiring leases, reminders — because
+ * the server itself runs on UTC, which is a different day for hours of every day almost
+ * everywhere. Read once at startup; an unknown or missing value is simply not sent, and the
+ * backend ignores anything it does not recognise.
+ */
+function deviceTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+  } catch {
+    return '';
+  }
+}
+
+const timeZone = deviceTimeZone();
+
 export const CLIENT_HEADERS: Record<string, string> = {
   'X-Client-App': 'web',
   'X-Client-Platform': 'web',
   ...(version ? { 'X-Client-Version': version } : {}),
+  ...(timeZone ? { 'X-Client-Timezone': timeZone } : {}),
 };

@@ -31,10 +31,11 @@ function useAllExpenses() {
 }
 
 import i18n from '@/core/i18n';
+import { parseISODate } from '@/shared/utils/dates';
 
 function fmtDate(s: string): string {
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return s;
+  const d = parseISODate(s);
+  if (!d) return s;
   return new Intl.DateTimeFormat(i18n.language, { day: 'numeric', month: 'short' }).format(d);
 }
 

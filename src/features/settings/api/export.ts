@@ -1,8 +1,9 @@
 import { USE_MOCK_API, mockExportApi } from '@/core/api/mock';
 import { downloadFile } from '@/shared/utils/download';
+import { todayISO } from '@/shared/utils/dates';
 
 function todayStamp(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayISO();
 }
 
 /** Download everything the owner owns: a ZIP holding an .xlsx workbook plus their files.

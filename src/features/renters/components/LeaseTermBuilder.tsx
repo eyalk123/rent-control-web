@@ -19,7 +19,7 @@ import type {
 import type { RenterFormValues } from '../validation/renterValidation';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { buildLeaseYears, hasYearStarted, isProjectedYear } from '@/shared/utils/leaseSchedule';
-import { fmtDate, toISODate } from '@/shared/utils/dates';
+import { fmtDate, toISODate, parseISODate } from '@/shared/utils/dates';
 import { Stepper } from '@/shared/components/ui/Stepper';
 import { FormInput } from '@/shared/components/form/FormInput';
 import { RentChangeField } from '@/shared/components/lease/RentChangeField';
@@ -197,8 +197,8 @@ export function LeaseTermBuilder({ control, setValue }: Props) {
   // so the option periods do too, which the old arithmetic silently dropped.
   let endDateISO: string | null = null;
   if (leaseStart && modelRows.length > 0) {
-    const s = new Date(leaseStart);
-    if (!isNaN(s.getTime())) {
+    const s = parseISODate(leaseStart);
+    if (s) {
       const months = modelRows.reduce((sum, y) => sum + periodMonths(y), 0);
       endDateISO = toISODate(addMonths(s, months));
     }

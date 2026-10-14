@@ -1,3 +1,5 @@
+import { parseISODate } from '@/shared/utils/dates';
+
 // Property type - backend expects lowercase
 // Every value the column can hold, everywhere. `garden_apartment` and `housing_unit` are
 // Israeli categories and `bit` is an Israeli payment app — they stay in the unions because
@@ -203,8 +205,8 @@ export function getRentForMonth(renter: Renter, monthStr: string): number {
   if (!years?.length) return 0;
   if (!renter.lease_start) return years[0].amount;
 
-  const leaseStart = new Date(renter.lease_start);
-  if (isNaN(leaseStart.getTime())) return years[0].amount;
+  const leaseStart = parseISODate(renter.lease_start);
+  if (!leaseStart) return years[0].amount;
 
   const [y, m] = monthStr.split('-').map(Number);
   const monthDate = new Date(y, m - 1, 1);
@@ -278,8 +280,8 @@ export function isNonMonthlyCadence(numberOfPayments: number | null | undefined)
  */
 export function getLeaseEndDate(renter: Renter): Date | null {
   if (!renter.lease_start || !renter.lease_years?.length) return null;
-  const start = new Date(renter.lease_start);
-  if (isNaN(start.getTime())) return null;
+  const start = parseISODate(renter.lease_start);
+  if (!start) return null;
 
   let months = 0;
   let contractMonths = 0;
@@ -294,8 +296,8 @@ export function getLeaseEndDate(renter: Renter): Date | null {
 /** End of the whole signed schedule, options included. */
 export function getScheduleEndDate(renter: Renter): Date | null {
   if (!renter.lease_start || !renter.lease_years?.length) return null;
-  const start = new Date(renter.lease_start);
-  if (isNaN(start.getTime())) return null;
+  const start = parseISODate(renter.lease_start);
+  if (!start) return null;
   return addMonths(
     start,
     renter.lease_years.reduce((sum, y) => sum + periodMonths(y), 0),

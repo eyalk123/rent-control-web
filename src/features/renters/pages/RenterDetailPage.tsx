@@ -28,6 +28,7 @@ import { getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { getCurrentMonthlyRent, getLeaseEndDate } from '@/shared/types';
 import { getEffectiveLeaseEnd, getRenterLifecycle } from '@/shared/utils/renterStatus';
 import { effectiveDate } from '@/shared/utils/txDate';
+import { parseISODate } from '@/shared/utils/dates';
 
 type TabId = 'info' | 'property' | 'transactions';
 const TAB_IDS: TabId[] = ['info', 'property', 'transactions'];
@@ -42,8 +43,8 @@ function daysUntil(d: Date | null): number | null {
 /** Whole months the tenant actually held the property, start to effective end. */
 function monthsBetween(start: string | null, end: Date | null): number | null {
   if (!start || !end) return null;
-  const from = new Date(start);
-  if (isNaN(from.getTime())) return null;
+  const from = parseISODate(start);
+  if (!from) return null;
   const months =
     (end.getFullYear() - from.getFullYear()) * 12 + (end.getMonth() - from.getMonth());
   return Math.max(0, end.getDate() >= from.getDate() ? months : months - 1);

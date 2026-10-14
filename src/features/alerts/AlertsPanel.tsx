@@ -7,7 +7,7 @@ import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, thisMonthISO } from '@/shared/utils/dates';
 import { useMarkRentPaid } from '@/features/transactions/queries';
 import {
   useNotifications,
@@ -68,7 +68,7 @@ export function AlertsPanel() {
         property_id: item.property_id,
         renter_id: item.renter_id,
         amount: item.data.amount ?? 0,
-        monthFor: new Date().toISOString().slice(0, 7),
+        monthFor: thisMonthISO(),
         paymentType: item.payment_type,
       });
       // A payment already on file means the alert is stale, not that the user needs a

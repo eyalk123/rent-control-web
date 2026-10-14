@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, thisMonthISO } from '@/shared/utils/dates';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -48,7 +48,7 @@ export function NeedsAttentionSection() {
         property_id: item.property_id,
         renter_id: item.renter_id,
         amount: item.data.amount ?? 0,
-        monthFor: new Date().toISOString().slice(0, 7),
+        monthFor: thisMonthISO(),
         paymentType: item.payment_type,
       });
       // A payment already on file means the alert is stale, not that the user needs a

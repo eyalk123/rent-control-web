@@ -1,5 +1,6 @@
 import { getRentForMonth, getScheduleEndDate, type Renter, type Transaction } from '@/shared/types';
 import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
+import { parseISODate } from '@/shared/utils/dates';
 
 /**
  * Derives the per-month rent-payment picture for a renter from their lease and their
@@ -122,9 +123,7 @@ function monthsBetween(from: Date, year: number, monthIndex: number): number {
 }
 
 function parseLeaseStart(renter: Renter): Date | null {
-  if (!renter.lease_start) return null;
-  const d = new Date(renter.lease_start);
-  return isNaN(d.getTime()) ? null : d;
+  return parseISODate(renter.lease_start);
 }
 
 /**
@@ -347,8 +346,8 @@ export function buildRentGrid(
 
     if (paidSum > 0) {
       const earliestPayment = txs
-        .map((tx) => new Date(tx.date_of_payment))
-        .filter((d) => !isNaN(d.getTime()))
+        .map((tx) => parseISODate(tx.date_of_payment))
+        .filter((d): d is Date => d !== null)
         .sort((a, b) => a.getTime() - b.getTime())[0];
       // Judged against what was actually being asked for at the time, so a month settled
       // correctly is never reported as a shortfall just because the rent has since moved.

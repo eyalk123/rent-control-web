@@ -23,6 +23,7 @@ import { notificationKeys } from '@/features/notifications/queries';
 import { normalizePaymentType } from '@/shared/constants/paymentMethods';
 import type { Transaction, TransactionCreateRevenue, TransactionCreateExpense } from '@/shared/types';
 import type { TransactionsListParams, TransactionUpdateRevenue, TransactionUpdateExpense } from './api/transactions';
+import { todayISO } from '@/shared/utils/dates';
 
 const PAGE_SIZE = 10;
 
@@ -162,7 +163,7 @@ export function useMarkRentPaid() {
         property_id: input.property_id,
         renter_id: input.renter_id,
         amount: input.amount,
-        date_of_payment: new Date().toISOString().slice(0, 10),
+        date_of_payment: todayISO(),
         month_for: `${input.monthFor}-01`,
         payment_method: normalizePaymentType(input.paymentType),
       });

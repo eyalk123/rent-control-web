@@ -1,4 +1,5 @@
 import { addMonths, periodMonths, type LeaseYear } from '@/shared/types';
+import { parseISODate } from '@/shared/utils/dates';
 
 /**
  * Where each lease period sits on the calendar.
@@ -10,9 +11,7 @@ import { addMonths, periodMonths, type LeaseYear } from '@/shared/types';
  */
 
 function parseStart(leaseStart: string | null | undefined): Date | null {
-  if (!leaseStart) return null;
-  const start = new Date(leaseStart);
-  return isNaN(start.getTime()) ? null : start;
+  return parseISODate(leaseStart);
 }
 
 function monthsBefore(rows: LeaseYear[] | undefined, index: number): number {

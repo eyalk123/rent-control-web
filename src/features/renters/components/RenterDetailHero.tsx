@@ -3,7 +3,7 @@ import { Pencil, Plus, Phone, Mail, Building2, Trash2, CalendarPlus, CalendarX, 
 import { Pill } from '@/shared/components/ui/Pill';
 import { HeroStat } from '@/shared/components/detail/HeroStat';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, toISODate } from '@/shared/utils/dates';
 import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { isOpenEnded, getRenterLifecycle, isTerminated } from '@/shared/utils/renterStatus';
@@ -78,7 +78,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
               {terminated && renter.terminated_on
                 ? t('renter.terminatedLease', { date: fmtDate(renter.terminated_on) })
                 : t('renter.endedLease', {
-                    date: leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : '\u2014',
+                    date: leaseEnd ? fmtDate(toISODate(leaseEnd)) : '\u2014',
                   })}
             </p>
             {renter.termination_reason && (
@@ -194,7 +194,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           <HeroStat
             label={t('renter.monthsTenanted')}
             value={monthsTenanted != null ? String(monthsTenanted) : '—'}
-            sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
+            sub={leaseEnd ? fmtDate(toISODate(leaseEnd)) : undefined}
           />
         ) : openEnded ? (
           // No countdown, because there is nothing to count down to. An open-ended lease
@@ -211,7 +211,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           <HeroStat
             label={t('renter.leaseEndsIn')}
             value={days != null ? t('renter.leaseEndsInDays', { days }) : '—'}
-            sub={leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : undefined}
+            sub={leaseEnd ? fmtDate(toISODate(leaseEnd)) : undefined}
             tone={days != null && days < 90 ? 'warning' : undefined}
           />
         )}

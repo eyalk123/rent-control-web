@@ -1,4 +1,5 @@
 import { getCurrentMonthlyRent, getLeaseEndDate, getScheduleEndDate, type Renter } from '@/shared/types';
+import { parseISODate } from '@/shared/utils/dates';
 
 /**
  * Where a renter sits in the lease lifecycle.
@@ -21,8 +22,8 @@ function startOfToday(): Date {
 /** The earlier of an early termination and `scheduled`. Shared by the two end dates below. */
 function withTermination(renter: Renter, scheduled: Date | null): Date | null {
   if (!renter.terminated_on) return scheduled;
-  const terminated = new Date(renter.terminated_on);
-  if (isNaN(terminated.getTime())) return scheduled;
+  const terminated = parseISODate(renter.terminated_on);
+  if (!terminated) return scheduled;
   if (!scheduled) return terminated;
   return terminated < scheduled ? terminated : scheduled;
 }
@@ -81,8 +82,8 @@ export function getRenterLifecycle(renter: Renter, today: Date = startOfToday())
   if (end && end < today) return 'ended';
 
   if (renter.lease_start) {
-    const start = new Date(renter.lease_start);
-    if (!isNaN(start.getTime()) && start > today) return 'upcoming';
+    const start = parseISODate(renter.lease_start);
+    if (start && start > today) return 'upcoming';
   }
 
   // No dates at all reads as active rather than ended — a half-entered renter is

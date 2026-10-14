@@ -5,7 +5,7 @@ import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Pill } from '@/shared/components/ui/Pill';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate } from '@/shared/utils/dates';
+import { fmtDate, toISODate } from '@/shared/utils/dates';
 import { getLeaseEndDate, periodMonths } from '@/shared/types';
 import { getLeaseYearLabel, isCurrentLeaseYear } from '@/shared/utils/leaseYear';
 import { isUnsettledCpiYear } from '@/shared/utils/leaseSchedule';
@@ -49,7 +49,7 @@ export function LeaseTimeline({ renter }: Props) {
       <div className="p-5">
         {/* Date range header */}
         <div className="flex items-center justify-between mb-3 text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
-          <span>{leaseStart ? fmtDate(leaseStart) : '—'} {isRtl ? '←' : '→'} {leaseEnd ? fmtDate(leaseEnd.toISOString().split('T')[0]) : '—'}</span>
+          <span>{leaseStart ? fmtDate(leaseStart) : '—'} {isRtl ? '←' : '→'} {leaseEnd ? fmtDate(toISODate(leaseEnd)) : '—'}</span>
           <span>{yearsLabel}</span>
         </div>
 
