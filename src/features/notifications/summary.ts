@@ -44,7 +44,8 @@ export function eventSummary(
     return t('notifications.cpiSummaryAll');
   }
   const active = rules.filter((r) => r.enabled);
-  if (active.length === 0) return t(`notifications.schedule.${event}`);
-  if (active.length === 1) return ruleScheduleText(active[0], t);
+  // Tagged so the overview shows whether the user has customised an alert without opening it.
+  if (active.length === 0) return t('notifications.summaryDefault', { schedule: t(`notifications.schedule.${event}`) });
+  if (active.length === 1) return t('notifications.summaryYours', { schedule: ruleScheduleText(active[0], t) });
   return t('notifications.customCount', { count: active.length });
 }

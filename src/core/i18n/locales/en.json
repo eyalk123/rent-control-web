@@ -1302,12 +1302,12 @@
     "brandPlatforms": "iOS · Android · Web"
   },
   "notifications": {
-    "subtitle": "Choose which alerts you receive and when.",
+    "subtitle": "Choose which alerts you get, and on which days you're reminded.",
     "manage": "Open",
     "manageTitle": "Manage notifications",
-    "manageHint": "Create rules for overdue rent and expiring leases.",
-    "master": "Notifications",
-    "masterHint": "Get alerts in the app and on your phone.",
+    "manageHint": "Choose which alerts you get and set your own reminder days.",
+    "master": "All alerts",
+    "masterHint": "Turns every alert below on or off, in the app and on your phone.",
     "event": {
       "overdue": "Rent due",
       "lease_expiring": "Lease expiring",
@@ -1352,14 +1352,14 @@
     "previewLoading": "Calculating…",
     "previewEmpty": "Add at least one reminder day to see an estimate.",
     "saveRule": "Save reminder",
-    "savedToast": "Notification rule saved",
-    "deletedToast": "Rule deleted",
+    "savedToast": "Reminder saved",
+    "deletedToast": "Reminder deleted",
     "untitledRule": "Custom reminder",
     "ruleEnabled": "Reminder on",
     "deleteRuleTitle": "Delete this reminder?",
     "deleteRuleMessage": "It will be removed. If it was your last one, the default schedule applies again.",
-    "masterOff": "Notifications are off. You won't get any reminders until you turn them back on.",
-    "turnOn": "Turn on notifications",
+    "masterOff": "All alerts are off. You won't get any reminders until you turn them back on.",
+    "turnOn": "Turn alerts back on",
     "sectionAlerts": "Alerts",
     "eventOff": "Off",
     "schedule": {
@@ -1375,10 +1375,15 @@
     "eventOffHint": "This alert is off. Turn it on to choose when you're reminded.",
     "whenTitle": "When you'll be reminded",
     "defaultLabel": "Default",
-    "defaultHint": "Add your own reminders to change the days, or to cover only some owners, properties or renters. Yours replace the default.",
-    "allPaused": "All your reminders are off, so the default schedule applies.",
+    "defaultHint": "Add your own reminders to change the days, or to cover only some owners, properties or renters.",
     "cpiWhenTitle": "When you hear about it",
-    "deleteRule": "Delete reminder"
+    "deleteRule": "Delete reminder",
+    "summaryDefault": "{{schedule}} · default",
+    "summaryYours": "{{schedule}} · your reminder",
+    "defaultInUse": "Default · in use until you add your own",
+    "defaultReplaced": "Default · replaced by your reminders",
+    "defaultPaused": "Default · in use because your reminders are off",
+    "sectionAlertsHint": "Click an alert to change when it reminds you."
   },
   "agent": {
     "title": "Ask RentVance",
@@ -1813,16 +1818,16 @@
       },
       "notifications": {
         "events": {
-          "title": "Three things we watch",
-          "body": "Rent that hasn't arrived, leases about to expire, and rent changes. Mute any of them, or all of them."
+          "title": "Three kinds of alert",
+          "body": "Late rent, leases about to end, and CPI rent changes. The switch above turns them all off at once, and each one can also be turned off on its own."
         },
         "rules": {
-          "title": "Your own reminders",
-          "body": "Open an alert to change its reminder days and who they apply to."
+          "title": "Your own reminder days",
+          "body": "Open an alert to see when it reminds you. Add your own days, or limit them to some owners, properties or renters. Yours replace the default."
         },
         "templates": {
           "title": "WhatsApp messages",
-          "body": "The wording is yours."
+          "body": "Every alert has a Message button. This is the text it opens in WhatsApp, and the wording is yours to change."
         }
       },
       "notification-rules": {
@@ -1832,11 +1837,11 @@
         },
         "scope": {
           "title": "Who",
-          "body": "Everything, or specific owners, properties or renters. A live estimate shows how many renters a rule matches."
+          "body": "Everything, or specific owners, properties or renters. A live estimate shows how many renters this reminder matches."
         },
         "cpiException": {
           "title": "Except CPI",
-          "body": "'How long before' means nothing for an index that has already moved, so CPI gets a materiality threshold instead of a rule."
+          "body": "A CPI change isn't a deadline you chase, so it has no reminder days. Instead, you choose how big a change has to be before we tell you."
         }
       },
       "whatsapp-templates": {
@@ -1846,7 +1851,7 @@
         },
         "perLanguage": {
           "title": "Per language",
-          "body": "English and Hebrew keep separate versions — editing one never touches the other. Reset restores the original."
+          "body": "English and Hebrew keep separate versions: editing one never touches the other. Restore original brings back our wording."
         }
       },
       "reports": {
@@ -1883,7 +1888,7 @@
       "scan-lease": "Have the lease as a file? Scan it and we'll read it and create the property and the renter in one pass.",
       "suppliers": "Suppliers lives in here too — save the plumber or the management company once, then attach them to any expense.",
       "reports": "Income against expenses for any period, and a full expense log you can filter and export.",
-      "notifications": "Rent, expiring leases and rent changes each get their own reminder — change when it fires, or mute it.",
+      "notifications": "Late rent, expiring leases and rent changes each get their own alert. Choose its reminder days, or turn it off.",
       "property-owner": "Set this if you ever manage units for more than one person — it later filters rent recording and scopes reminders.",
       "ended-tenants": "Past tenants are never deleted. They're under Ended, and search always looks in both.",
       "bulk-select": "Long-press any card to select several at once.",
@@ -1900,7 +1905,7 @@
     "callbacks": {
       "suppliers": "Here's the Suppliers list we mentioned.",
       "reports": "Here are the reports we mentioned.",
-      "notifications": "Here's where reminders are set up.",
+      "notifications": "Here's where alerts and reminders are set up.",
       "scan-lease": "Here's the lease scanner we mentioned.",
       "cpi": "You picked CPI — here's what it does.",
       "custom-schedule": "You picked Custom — here's how the years work.",

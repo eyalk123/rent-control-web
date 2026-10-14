@@ -78,6 +78,7 @@ export function NotificationsSettingsPage() {
               <h2 className="text-[12px] font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-secondary)' }}>
                 {t('notifications.sectionAlerts')}
               </h2>
+              <p className="text-[13px] px-1 -mt-1" style={{ color: 'var(--color-text-secondary)' }}>{t('notifications.sectionAlertsHint')}</p>
               <div ref={eventListAnchorRef} className="rounded-[var(--radius-card)] overflow-hidden" style={cardStyle}>
                 {availableEvents.map((event, i) => {
                   const muted = settings.muted_events.includes(event);

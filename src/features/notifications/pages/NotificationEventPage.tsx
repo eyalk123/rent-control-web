@@ -162,19 +162,25 @@ export function NotificationEventPage() {
     <p className="text-[13px] px-1" style={{ color: 'var(--color-text-secondary)' }}>{text}</p>
   );
 
-  // Shown whenever no custom reminder is active — which is exactly when the backend
-  // falls back to it, including when every custom reminder has been switched off.
+  // Always shown, so "yours replace the default" is something you can see rather than a
+  // sentence to remember. The label names its state — the backend falls back to it whenever
+  // no custom reminder is enabled, including when every one is switched off — and once it
+  // has been replaced the schedule is dimmed and struck through. Mirrors the mobile screen.
+  const defaultState = hasActiveRule ? 'defaultReplaced' : rules.length > 0 ? 'defaultPaused' : 'defaultInUse';
   const defaultCard = (
-    <div className="px-5 py-4 rounded-[var(--radius-card)]" style={cardStyle}>
-      <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{t('notifications.defaultLabel')}</p>
-      <p className="text-[14px] font-semibold mt-1" style={{ color: 'var(--color-text-primary)' }}>{t(`notifications.default.${event}`)}</p>
+    <div className="px-5 py-4 rounded-[var(--radius-card)]" style={{ ...cardStyle, opacity: hasActiveRule ? 0.6 : 1 }}>
+      <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{t(`notifications.${defaultState}`)}</p>
+      {/* Regular weight: a schedule is a description. Bold is kept for what you act on. */}
+      <p className={`text-[14px] mt-1${hasActiveRule ? ' line-through' : ''}`} style={{ color: 'var(--color-text-primary)' }}>
+        {t(`notifications.default.${event}`)}
+      </p>
     </div>
   );
 
   const reminders = (
     <section className="flex flex-col gap-2">
       <SectionLabel>{t('notifications.whenTitle')}</SectionLabel>
-      {!hasActiveRule && defaultCard}
+      {defaultCard}
       {rules.length > 0 && (
         <div className="rounded-[var(--radius-card)] overflow-hidden" style={cardStyle}>
           {rules.map((rule, i) => (
@@ -203,7 +209,7 @@ export function NotificationEventPage() {
           ))}
         </div>
       )}
-      {!hasActiveRule && hint(rules.length > 0 ? t('notifications.allPaused') : t('notifications.defaultHint'))}
+      {rules.length === 0 && hint(t('notifications.defaultHint'))}
       <button
         onClick={() => setEditor({ rule: null })}
         className="flex items-center gap-1.5 self-start text-[13px] font-medium px-1 py-1"
@@ -219,7 +225,7 @@ export function NotificationEventPage() {
       <section className="flex flex-col gap-2">
         <SectionLabel>{t('notifications.cpiWhenTitle')}</SectionLabel>
         <div className="px-5 py-4 rounded-[var(--radius-card)]" style={cardStyle}>
-          <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t(`notifications.default.${event}`)}</p>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-primary)' }}>{t(`notifications.default.${event}`)}</p>
         </div>
       </section>
       <CpiThresholdCard settings={settings} onSave={setSetting} />
