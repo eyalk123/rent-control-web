@@ -11,6 +11,8 @@ import { useCreatePropertyValuation } from '../queries';
 import { PropertyValueDialog } from './PropertyValueDialog';
 import { PropertyValueHistoryDialog } from './PropertyValueHistoryDialog';
 import { formatPercent } from '../utils/propertyReturns';
+import { MortgagePanel } from './MortgagePanel';
+import { capabilities } from '@/shared/utils/capabilities';
 import type { Property } from '@/shared/types';
 
 interface Props {
@@ -39,6 +41,12 @@ export function PropertyDetailsTab({ property }: Props) {
       </DetailPanel>
 
       <PurchaseAndValuePanel property={property} />
+
+      {capabilities().mortgage && (
+        <div className="flex flex-col gap-4">
+          <MortgagePanel property={property} />
+        </div>
+      )}
 
       <DetailPanel title={t('property.utilitiesNumbers')}>
         <DetailRow icon={Car} label={t('property.parking')} value={parking} />

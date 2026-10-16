@@ -12,3 +12,8 @@ export function formatPercent(ratio: number, signed = false): string {
   const text = signed && ratio > 0 ? `+${pct}%` : `${pct}%`;
   return `\u2066${text}\u2069`;
 }
+
+/** Rent ÷ mortgage as a whole percentage — "131%" — isolated like `formatPercent`. */
+export function formatCoverage(ratio: number): string {
+  return `\u2066${Math.round(ratio * 100)}%\u2069`;
+}

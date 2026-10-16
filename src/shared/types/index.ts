@@ -614,5 +614,56 @@ export interface PropertyReturns {
   net_income_12m: number | null;
   window_start: string | null;
   window_end: string | null;
+  /**
+   * Cash flow after the mortgage, per month. All null for a property without a mortgage (and
+   * outside Israel), with no `unavailable` entry for them. `monthly_left` and
+   * `mortgage_coverage` are withheld for a vacant property ("vacant").
+   */
+  monthly_mortgage?: number | null;
+  /** Expenses over the trailing twelve months ÷ 12. */
+  monthly_expenses?: number | null;
+  /** Current monthly rent − monthly_mortgage − monthly_expenses. */
+  monthly_left?: number | null;
+  /** Current monthly rent ÷ monthly_mortgage, as a fraction (1.31 is 131%). */
+  mortgage_coverage?: number | null;
   unavailable: Record<string, string>;
+}
+
+/** A monthly mortgage payment, from a date on. */
+export interface MortgagePaymentInput {
+  amount: number;
+  effective_from: string;
+}
+
+export interface MortgagePayment extends MortgagePaymentInput {
+  id: number;
+  created_at: string;
+}
+
+/**
+ * A mortgage on one property, as the owner knows it: what goes to the bank each month and
+ * when. Not the loan's structure — see the backend's `PropertyMortgage`.
+ */
+export interface Mortgage {
+  id: number;
+  property_id: number;
+  /** Day of the month the bank collects, 1-31. */
+  charge_day: number;
+  end_date: string | null;
+  /** The payment in force today; null before the first starts and after `end_date`. */
+  current_payment: number | null;
+  /** Newest first. */
+  payments: MortgagePayment[];
+  created_at: string;
+}
+
+export interface MortgageCreate {
+  monthly_payment: number;
+  charge_day: number;
+  end_date?: string | null;
+}
+
+export interface MortgageUpdate {
+  charge_day?: number;
+  end_date?: string | null;
 }

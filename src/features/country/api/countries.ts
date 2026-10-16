@@ -16,6 +16,7 @@ export interface CountryCapabilities {
   israeliPropertyTypes: boolean;
   bitPayments: boolean;
   structuredBankDetails: boolean;
+  mortgage: boolean;
 }
 
 export interface Country {
@@ -78,6 +79,8 @@ interface CountryDto {
     israeli_property_types: boolean;
     bit_payments: boolean;
     structured_bank_details: boolean;
+    /** Optional: a server from before the flag existed sends none, read as off. */
+    mortgage?: boolean;
   };
 }
 
@@ -109,6 +112,7 @@ function fromDto(d: CountryDto): Country {
       israeliPropertyTypes: d.capabilities.israeli_property_types,
       bitPayments: d.capabilities.bit_payments,
       structuredBankDetails: d.capabilities.structured_bank_details,
+      mortgage: d.capabilities.mortgage ?? false,
     },
   };
 }
@@ -145,6 +149,7 @@ const MOCK_COUNTRIES: Country[] = [
       israeliPropertyTypes: true,
       bitPayments: true,
       structuredBankDetails: true,
+      mortgage: true,
     },
   },
   {
@@ -174,6 +179,7 @@ const MOCK_COUNTRIES: Country[] = [
       israeliPropertyTypes: false,
       bitPayments: false,
       structuredBankDetails: false,
+      mortgage: false,
     },
   },
   {
@@ -203,6 +209,7 @@ const MOCK_COUNTRIES: Country[] = [
       israeliPropertyTypes: false,
       bitPayments: false,
       structuredBankDetails: false,
+      mortgage: false,
     },
   },
 ];

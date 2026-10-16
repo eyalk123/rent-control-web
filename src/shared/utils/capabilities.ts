@@ -21,6 +21,8 @@ export interface Capabilities {
   israeliPropertyTypes: boolean;
   bitPayments: boolean;
   structuredBankDetails: boolean;
+  /** Mortgage payments per property and the cash flow after them. Israel only for now. */
+  mortgage: boolean;
 }
 
 const ISRAEL: Capabilities = {
@@ -29,6 +31,7 @@ const ISRAEL: Capabilities = {
   israeliPropertyTypes: true,
   bitPayments: true,
   structuredBankDetails: true,
+  mortgage: true,
 };
 
 let active: Capabilities = ISRAEL;

@@ -7,6 +7,7 @@ import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 import { RenterRentStat } from './RenterRentStat';
 import { formatMoney } from '@/shared/utils/money';
+import { formatCoverage } from '../utils/propertyReturns';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import type { Property } from '@/shared/types';
 
@@ -32,6 +33,8 @@ interface Props {
 export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, year, renterName, rentersCount, statsLoading, onEdit, onAddTransaction, onDelete, onDownloadSheet, sheetLoading }: Props) {
   const { t } = useTranslation();
   const statsAnchorRef = useTourAnchor(ANCHORS.propertyDetailStats);
+  const monthlyLeft = property.returns?.monthly_left ?? null;
+  const coverage = property.returns?.mortgage_coverage ?? null;
 
   return (
     <>
@@ -95,7 +98,7 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
       </div>
 
       {/* KPI strip */}
-      <div ref={statsAnchorRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mt-7 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div ref={statsAnchorRef} className={`grid grid-cols-2 sm:grid-cols-3 ${monthlyLeft != null ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} mt-7 pt-4`} style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <RenterRentStat
           renters={property.renters ?? []}
           renterName={renterName}
@@ -106,6 +109,17 @@ export function PropertyDetailHero({ property, monthlyRent, revTotal, expTotal, 
         <HeroStat label={t('property.net', { year })} value={formatMoney(revTotal - expTotal)} tone={revTotal - expTotal >= 0 ? 'success' : 'danger'} loading={statsLoading} />
         <HeroStat label={t('property.totalRevenue', { year })} value={formatMoney(revTotal)} tone="success" loading={statsLoading} />
         <HeroStat label={t('property.totalExpenses', { year })} value={formatMoney(expTotal)} tone="danger" loading={statsLoading} />
+        {/* Beside the yearly net, never instead of it. Only for a property with a mortgage and
+            a tenant — the server sends null otherwise. */}
+        {monthlyLeft != null && (
+          <HeroStat
+            label={t('mortgage.left')}
+            // A computed average, not a typed amount: whole units read as what it is.
+            value={formatMoney(Math.round(monthlyLeft))}
+            sub={coverage != null ? t('mortgage.coverageSub', { pct: formatCoverage(coverage) }) : undefined}
+            tone={monthlyLeft >= 0 ? 'success' : 'danger'}
+          />
+        )}
       </div>
     </>
   );

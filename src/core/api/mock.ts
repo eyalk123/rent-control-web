@@ -6,6 +6,10 @@ import type {
   PropertyUpdate,
   PropertyValuation,
   PropertyValuationInput,
+  Mortgage,
+  MortgageCreate,
+  MortgagePaymentInput,
+  MortgageUpdate,
   PropertyReturns,
   PropertyOwner,
   PropertyOwnerCreate,
@@ -615,6 +619,7 @@ function mockReturns(p: Property, value: number | null, valueDate: string | null
     net_income_12m: revenue > 0 ? revenue - expenses : null, window_start: from, window_end: to,
     unavailable: {},
   };
+  mockCashFlow(r, p.id, monthly, expenses, to);
   if (!value) r.unavailable.gross_yield = 'no_current_value';
   else if (monthly == null) r.unavailable.gross_yield = 'vacant';
   else if (monthly <= 0) r.unavailable.gross_yield = 'no_rent_amount';
@@ -632,6 +637,82 @@ function mockReturns(p: Property, value: number | null, valueDate: string | null
   }
   return r;
 }
+
+/** Preview-only mirror of the backend's `property_returns._cash_flow`. */
+function mockCashFlow(r: PropertyReturns, propertyId: number, monthly: number | null, expenses12m: number, today: string) {
+  const mortgages = mockMortgages.filter((m) => m.property_id === propertyId);
+  if (!mortgages.length) return;
+  r.monthly_mortgage = mortgages.reduce((s, m) => s + (mockPaymentOn(m, today) ?? 0), 0);
+  r.monthly_expenses = expenses12m / 12;
+  r.monthly_left = null;
+  r.mortgage_coverage = null;
+  if (monthly == null || monthly <= 0) {
+    r.unavailable.monthly_left = r.unavailable.mortgage_coverage = monthly == null ? 'vacant' : 'no_rent_amount';
+    return;
+  }
+  r.monthly_left = monthly - r.monthly_mortgage - r.monthly_expenses;
+  if (r.monthly_mortgage <= 0) r.unavailable.mortgage_coverage = 'no_active_mortgage';
+  else r.mortgage_coverage = monthly / r.monthly_mortgage;
+}
+
+// Mortgages, each carrying its payments newest first — the shape the API returns.
+let mockMortgages: Mortgage[] = [];
+let nextMortgageId = 1;
+
+function mockPaymentOn(m: Mortgage, day: string): number | null {
+  if (m.end_date && day > m.end_date) return null;
+  return m.payments.find((p) => p.effective_from <= day)?.amount ?? null;
+}
+
+function mockMortgageRead(m: Mortgage): Mortgage {
+  m.payments.sort((a, b) => b.effective_from.localeCompare(a.effective_from) || b.id - a.id);
+  return { ...m, current_payment: mockPaymentOn(m, toISODate(new Date())), payments: [...m.payments] };
+}
+
+function findMockMortgage(id: number): Mortgage {
+  const m = mockMortgages.find((x) => x.id === id);
+  if (!m) throw new Error('Mortgage not found');
+  return m;
+}
+
+export const mockMortgagesApi = {
+  list: async (propertyId: number): Promise<Mortgage[]> =>
+    mockMortgages.filter((m) => m.property_id === propertyId).map(mockMortgageRead),
+  create: async (propertyId: number, data: MortgageCreate): Promise<Mortgage> => {
+    const now = new Date().toISOString();
+    const m: Mortgage = {
+      id: nextMortgageId++,
+      property_id: propertyId,
+      charge_day: data.charge_day,
+      end_date: data.end_date ?? null,
+      current_payment: null,
+      payments: [{ id: nextMortgageId++, amount: data.monthly_payment, effective_from: toISODate(new Date()), created_at: now }],
+      created_at: now,
+    };
+    mockMortgages.push(m);
+    return mockMortgageRead(m);
+  },
+  update: async (mortgageId: number, data: MortgageUpdate): Promise<Mortgage> => {
+    const m = findMockMortgage(mortgageId);
+    if (data.charge_day != null) m.charge_day = data.charge_day;
+    if (data.end_date !== undefined) m.end_date = data.end_date;
+    return mockMortgageRead(m);
+  },
+  delete: async (mortgageId: number): Promise<void> => {
+    mockMortgages = mockMortgages.filter((m) => m.id !== mortgageId);
+  },
+  addPayment: async (mortgageId: number, data: MortgagePaymentInput): Promise<Mortgage> => {
+    const m = findMockMortgage(mortgageId);
+    m.payments.push({ id: nextMortgageId++, ...data, created_at: new Date().toISOString() });
+    return mockMortgageRead(m);
+  },
+  deletePayment: async (mortgageId: number, paymentId: number): Promise<Mortgage> => {
+    const m = findMockMortgage(mortgageId);
+    if (m.payments.length <= 1) throw new Error('A mortgage needs at least one payment amount');
+    m.payments = m.payments.filter((p) => p.id !== paymentId);
+    return mockMortgageRead(m);
+  },
+};
 
 function addMockValuation(propertyId: number, data: PropertyValuationInput): PropertyValuation {
   const entry: PropertyValuation = {
@@ -734,6 +815,7 @@ export const mockPropertiesApi = {
   deleteProperty: async (id: number): Promise<void> => {
     mockProperties = mockProperties.filter((x) => x.id !== id);
     mockValuations = mockValuations.filter((v) => v.property_id !== id);
+    mockMortgages = mockMortgages.filter((m) => m.property_id !== id);
     mockRenters = mockRenters.map((r) =>
       r.property_id === id ? { ...r, property_id: null, property: null } : r
     );

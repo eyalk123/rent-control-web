@@ -9,16 +9,29 @@ import {
   getPropertyValuations,
   createPropertyValuation,
   deletePropertyValuation,
+  getPropertyMortgages,
+  createPropertyMortgage,
+  updatePropertyMortgage,
+  deletePropertyMortgage,
+  createMortgagePayment,
+  deleteMortgagePayment,
 } from './api/properties';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { useSubscription } from '@/features/subscription/queries';
-import type { PropertyUpdate, PropertyValuationInput } from '@/shared/types';
+import type {
+  MortgageCreate,
+  MortgagePaymentInput,
+  MortgageUpdate,
+  PropertyUpdate,
+  PropertyValuationInput,
+} from '@/shared/types';
 
 export const propertyKeys = {
   all: ['properties'] as const,
   detail: (id: number) => ['properties', id] as const,
   // Under the property's own key, so any property write refreshes the history too.
   valuations: (id: number) => ['properties', id, 'valuations'] as const,
+  mortgages: (id: number) => ['properties', id, 'mortgages'] as const,
 };
 
 // Each owner carries a count of their properties, so a property write invalidates the owner
@@ -115,4 +128,51 @@ export function useDeletePropertyValuation(propertyId: number) {
     mutationFn: (valuationId: number) => deletePropertyValuation(propertyId, valuationId),
     onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
   });
+}
+
+export function usePropertyMortgages(propertyId: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: propertyKeys.mortgages(propertyId),
+    queryFn: () => getPropertyMortgages(propertyId),
+    enabled: (options?.enabled ?? true) && propertyId > 0,
+    retry: retryNon4xx,
+  });
+}
+
+/**
+ * Every mortgage change moves the cash flow the server computes on the property, so all of
+ * them refresh the property (and with it the mortgage list, which sits under its key).
+ */
+function useMortgageMutation<V, R>(fn: (vars: V) => Promise<R>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
+  });
+}
+
+export function useCreatePropertyMortgage(propertyId: number) {
+  return useMortgageMutation((data: MortgageCreate) => createPropertyMortgage(propertyId, data));
+}
+
+export function useUpdatePropertyMortgage(propertyId: number) {
+  return useMortgageMutation(({ mortgageId, data }: { mortgageId: number; data: MortgageUpdate }) =>
+    updatePropertyMortgage(propertyId, mortgageId, data),
+  );
+}
+
+export function useDeletePropertyMortgage(propertyId: number) {
+  return useMortgageMutation((mortgageId: number) => deletePropertyMortgage(propertyId, mortgageId));
+}
+
+export function useCreateMortgagePayment(propertyId: number) {
+  return useMortgageMutation(({ mortgageId, data }: { mortgageId: number; data: MortgagePaymentInput }) =>
+    createMortgagePayment(propertyId, mortgageId, data),
+  );
+}
+
+export function useDeleteMortgagePayment(propertyId: number) {
+  return useMortgageMutation(({ mortgageId, paymentId }: { mortgageId: number; paymentId: number }) =>
+    deleteMortgagePayment(propertyId, mortgageId, paymentId),
+  );
 }

@@ -1,11 +1,15 @@
 import apiClient from '@/core/api/client';
-import { USE_MOCK_API, mockPropertiesApi, mockPropertyValuationsApi } from '@/core/api/mock';
+import { USE_MOCK_API, mockMortgagesApi, mockPropertiesApi, mockPropertyValuationsApi } from '@/core/api/mock';
 import i18n from 'i18next';
 import { downloadFile } from '@/shared/utils/download';
 import type {
   Property,
   PropertyCreate,
   PropertyUpdate,
+  Mortgage,
+  MortgageCreate,
+  MortgagePaymentInput,
+  MortgageUpdate,
   PropertyValuation,
   PropertyValuationInput,
 } from '@/shared/types';
@@ -164,4 +168,59 @@ export async function createPropertyValuation(
 export async function deletePropertyValuation(propertyId: number, valuationId: number): Promise<void> {
   if (USE_MOCK_API) return mockPropertyValuationsApi.delete(propertyId, valuationId);
   await apiClient.delete(`/properties/${propertyId}/valuations/${valuationId}`);
+}
+
+/** The property's mortgages. Israel only: the API refuses this elsewhere. */
+export async function getPropertyMortgages(propertyId: number): Promise<Mortgage[]> {
+  if (USE_MOCK_API) return mockMortgagesApi.list(propertyId);
+  const response = await apiClient.get<Mortgage[]>(`/properties/${propertyId}/mortgages`);
+  return response.data;
+}
+
+export async function createPropertyMortgage(propertyId: number, data: MortgageCreate): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.create(propertyId, data);
+  const response = await apiClient.post<Mortgage>(`/properties/${propertyId}/mortgages`, data);
+  return response.data;
+}
+
+export async function updatePropertyMortgage(
+  propertyId: number,
+  mortgageId: number,
+  data: MortgageUpdate,
+): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.update(mortgageId, data);
+  const response = await apiClient.patch<Mortgage>(`/properties/${propertyId}/mortgages/${mortgageId}`, data);
+  return response.data;
+}
+
+export async function deletePropertyMortgage(propertyId: number, mortgageId: number): Promise<void> {
+  if (USE_MOCK_API) return mockMortgagesApi.delete(mortgageId);
+  await apiClient.delete(`/properties/${propertyId}/mortgages/${mortgageId}`);
+}
+
+/** A new monthly amount from a date on. Answers with the whole mortgage. */
+export async function createMortgagePayment(
+  propertyId: number,
+  mortgageId: number,
+  data: MortgagePaymentInput,
+): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.addPayment(mortgageId, data);
+  const response = await apiClient.post<Mortgage>(
+    `/properties/${propertyId}/mortgages/${mortgageId}/payments`,
+    data,
+  );
+  return response.data;
+}
+
+/** The last remaining amount cannot be removed (400) — delete the mortgage instead. */
+export async function deleteMortgagePayment(
+  propertyId: number,
+  mortgageId: number,
+  paymentId: number,
+): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.deletePayment(mortgageId, paymentId);
+  const response = await apiClient.delete<Mortgage>(
+    `/properties/${propertyId}/mortgages/${mortgageId}/payments/${paymentId}`,
+  );
+  return response.data;
 }

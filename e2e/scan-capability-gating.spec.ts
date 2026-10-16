@@ -23,6 +23,7 @@ const ISRAEL: Capabilities = {
   israeliPropertyTypes: true,
   bitPayments: true,
   structuredBankDetails: true,
+  mortgage: true,
 };
 
 const SPAIN: Capabilities = {
@@ -31,6 +32,7 @@ const SPAIN: Capabilities = {
   israeliPropertyTypes: false,
   bitPayments: false,
   structuredBankDetails: false,
+  mortgage: false,
 };
 
 const EMPTY_PROPERTY: ExtractedProperty = {
