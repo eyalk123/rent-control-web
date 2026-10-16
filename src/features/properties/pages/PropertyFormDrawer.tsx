@@ -17,13 +17,15 @@ import { FormChipInput } from '@/shared/components/form/FormChipInput';
 import { FormDateInput } from '@/shared/components/form/FormDateInput';
 import { Plus } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
+import { Toggle } from '@/shared/components/ui/Toggle';
+import { capabilities } from '@/shared/utils/capabilities';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
 import { PropertyValueDialog } from '../components/PropertyValueDialog';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
-import type { Property, PropertyValuationInput } from '@/shared/types';
+import type { MortgageCreate, Property, PropertyValuationInput } from '@/shared/types';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { PropertyImageField } from '../components/PropertyImageField';
@@ -55,6 +57,7 @@ const EMPTY_FORM: FormData = {
   waterMeterNumber: '', waterAccountNumber: '', propertyTax: '', houseCommittee: '',
   floor: '', apartment: '', basicContractUrl: undefined, landRegistryUrl: undefined,
   purchasePrice: '', purchaseDate: '',
+  hasMortgage: false, mortgagePayment: '', mortgageChargeDay: '', mortgageEndDate: '',
 };
 
 interface Props {
@@ -152,6 +155,8 @@ export function PropertyFormDrawer({
   // than an edit of one. Sent with the save; cancelling the form drops it.
   const [pendingValuation, setPendingValuation] = useState<PropertyValuationInput | null>(null);
   const [valueDialogOpen, setValueDialogOpen] = useState(false);
+  // Turning the mortgage switch off on a property that has one deletes it on save — asked first.
+  const [confirmMortgageOff, setConfirmMortgageOff] = useState(false);
 
   const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema) as never,
@@ -171,9 +176,10 @@ export function PropertyFormDrawer({
     [owners, ownerName],
   );
   const ownerReadOnLease = ownersLoaded && ownerName && !ownerRecord ? ownerName : null;
+  const hasMortgage = useWatch({ control, name: 'hasMortgage' });
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); setPendingValuation(null); setValueDialogOpen(false); }
+    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); setPendingValuation(null); setValueDialogOpen(false); setConfirmMortgageOff(false); }
   }, [open]);
 
   // Whether this is a scan attaching to an existing property (edit mode with scan prefill) — the
@@ -211,6 +217,12 @@ export function PropertyFormDrawer({
         landRegistryUrl: existing.land_registry_url ?? undefined,
         purchasePrice: existing.purchase_price?.toString() ?? '',
         purchaseDate: existing.purchase_date ?? '',
+        // The switch is simply "this property has a mortgage" — there is no separate flag
+        // to fall out of step with the data.
+        hasMortgage: !!existing.mortgage,
+        mortgagePayment: mortgageAmount(existing.mortgage)?.toString() ?? '',
+        mortgageChargeDay: existing.mortgage?.charge_day.toString() ?? '',
+        mortgageEndDate: existing.mortgage?.end_date ?? '',
       };
       // Scan attaching to this property: overlay the lease — fill the fields it left blank
       // (silent) and surface the ones that differ for the user to keep or replace.
@@ -304,6 +316,7 @@ export function PropertyFormDrawer({
         purchase_price: data.purchasePrice ? Number(data.purchasePrice) : null,
         purchase_date: data.purchaseDate || null,
         ...(pendingValuation ? { valuation: pendingValuation } : {}),
+        ...mortgagePayload(data, !!existing?.mortgage),
       };
 
       if (isEditing && propertyId) {
@@ -579,6 +592,59 @@ export function PropertyFormDrawer({
               pending={!!pendingValuation}
               onAdd={() => setValueDialogOpen(true)}
             />
+            {capabilities().mortgage && (
+              <div className="flex flex-col gap-3 rounded-xl p-3.5" style={{ border: '1px solid var(--color-outline)' }}>
+                <Controller
+                  control={control}
+                  name="hasMortgage"
+                  render={({ field }) => (
+                    <div className="flex items-center gap-3">
+                      <span className="flex-1 text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                        {t('mortgage.switchLabel')}
+                      </span>
+                      <Toggle
+                        checked={field.value}
+                        label={t('mortgage.switchLabel')}
+                        onChange={(on) => {
+                          if (!on && existing?.mortgage) setConfirmMortgageOff(true);
+                          else setValue('hasMortgage', on, { shouldDirty: true });
+                        }}
+                      />
+                    </div>
+                  )}
+                />
+                {hasMortgage && (
+                  <>
+                    <FormInput
+                      label={`${t('mortgage.monthlyPayment')} (${currencySymbol()})`}
+                      hint={existing?.mortgage ? t('mortgage.formEditNote') : t('mortgage.formAmountNote')}
+                      type="number"
+                      inputMode="decimal"
+                      step="any"
+                      min={0}
+                      required
+                      error={errors.mortgagePayment?.message}
+                      {...register('mortgagePayment')}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormInput
+                        label={t('mortgage.chargeDay')}
+                        hint={t('mortgage.chargeDayHint')}
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={31}
+                        step={1}
+                        required
+                        error={errors.mortgageChargeDay?.message}
+                        {...register('mortgageChargeDay')}
+                      />
+                      <FormDateInput label={t('mortgage.endDateOptional')} error={errors.mortgageEndDate?.message} {...register('mortgageEndDate')} />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.inventoryNotes')}</label>
               <textarea
@@ -638,6 +704,14 @@ export function PropertyFormDrawer({
       onClose={() => setValueDialogOpen(false)}
     />
     <ConfirmDialog
+      open={confirmMortgageOff}
+      title={t('mortgage.turnOffTitle')}
+      message={t('mortgage.turnOffMessage')}
+      confirmLabel={t('mortgage.turnOff')}
+      onConfirm={() => { setValue('hasMortgage', false, { shouldDirty: true }); setConfirmMortgageOff(false); }}
+      onClose={() => setConfirmMortgageOff(false)}
+    />
+    <ConfirmDialog
       open={showDiscard}
       tone="primary"
       title={t('common.discardChanges')}
@@ -667,6 +741,31 @@ export function PropertyFormDrawer({
     />
     </>
   );
+}
+
+/** The amount the form shows for a mortgage: the one in force today, else the newest. */
+function mortgageAmount(mortgage: Property['mortgage']): number | null {
+  if (!mortgage) return null;
+  return mortgage.current_payment ?? mortgage.payments[0]?.amount ?? null;
+}
+
+/**
+ * The `mortgage` field of a save. Switch on: the mortgage — the server creates it, or corrects
+ * today's amount (a dated change is the property page's job). Switch off: `null` deletes it,
+ * sent only when there is one to delete. Nothing at all where the country has no mortgages.
+ */
+function mortgagePayload(data: FormData, hadMortgage: boolean): { mortgage?: MortgageCreate | null } {
+  if (!capabilities().mortgage) return {};
+  if (data.hasMortgage) {
+    return {
+      mortgage: {
+        monthly_payment: Number(data.mortgagePayment),
+        charge_day: Number(data.mortgageChargeDay),
+        end_date: data.mortgageEndDate || null,
+      },
+    };
+  }
+  return hadMortgage ? { mortgage: null } : {};
 }
 
 /**

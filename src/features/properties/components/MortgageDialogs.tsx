@@ -7,7 +7,7 @@ import { FormInput } from '@/shared/components/form/FormInput';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { currencySymbol, formatDate, formatMoney } from '@/shared/utils/money';
 import { todayISO } from '@/shared/utils/dates';
-import type { Mortgage, MortgageCreate, MortgagePaymentInput, MortgageUpdate } from '@/shared/types';
+import type { Mortgage, MortgagePaymentInput } from '@/shared/types';
 
 function useEscape(open: boolean, enabled: boolean, onClose: () => void) {
   useEffect(() => {
@@ -90,93 +90,6 @@ function DialogButtons({ submitLabel, loading, onClose }: { submitLabel: string;
 }
 
 const amountValid = (raw: string) => raw.trim() !== '' && !Number.isNaN(Number(raw)) && Number(raw) > 0;
-const dayValid = (raw: string) => /^\d+$/.test(raw.trim()) && Number(raw) >= 1 && Number(raw) <= 31;
-
-interface MortgageDialogProps {
-  open: boolean;
-  /** Editing this mortgage; omitted to add a new one. The payment changes through its own dialog. */
-  mortgage?: Mortgage | null;
-  loading?: boolean;
-  onCreate: (data: MortgageCreate) => void;
-  onUpdate: (data: MortgageUpdate) => void;
-  onClose: () => void;
-}
-
-/** Add a mortgage (payment, charge day, optional end date), or edit the day and end date. */
-export function MortgageDialog({ open, mortgage, loading, onCreate, onUpdate, onClose }: MortgageDialogProps) {
-  const { t } = useTranslation();
-  const editing = !!mortgage;
-  const [amount, setAmount] = useState('');
-  const [day, setDay] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [touched, setTouched] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setAmount('');
-    setDay(mortgage ? String(mortgage.charge_day) : '');
-    setEndDate(mortgage?.end_date ?? '');
-    setTouched(false);
-  }, [open, mortgage]);
-
-  useEscape(open, !loading, onClose);
-  if (!open) return null;
-
-  const amountInvalid = !editing && !amountValid(amount);
-  const dayInvalid = !dayValid(day);
-
-  const submit = () => {
-    setTouched(true);
-    if (amountInvalid || dayInvalid) return;
-    const end = endDate || null;
-    if (editing) onUpdate({ charge_day: Number(day), end_date: end });
-    else onCreate({ monthly_payment: Number(amount), charge_day: Number(day), end_date: end });
-  };
-
-  return (
-    <DialogShell title={editing ? t('mortgage.edit') : t('mortgage.add')} loading={loading} onClose={onClose}>
-      <form className="mt-5 flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); submit(); }}>
-        {!editing && (
-          <FormInput
-            label={`${t('mortgage.monthlyPayment')} (${currencySymbol()})`}
-            hint={t('mortgage.monthlyPaymentHint')}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="any"
-            autoFocus
-            required
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            error={touched && amountInvalid ? t('mortgage.amountInvalid') : undefined}
-            name="mortgage_monthly_payment"
-          />
-        )}
-        <FormInput
-          label={t('mortgage.chargeDay')}
-          hint={t('mortgage.chargeDayHint')}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={31}
-          step={1}
-          autoFocus={editing}
-          required
-          value={day}
-          onChange={(e) => setDay(e.target.value)}
-          error={touched && dayInvalid ? t('mortgage.chargeDayInvalid') : undefined}
-          name="mortgage_charge_day"
-        />
-        <FormDateInput
-          label={t('mortgage.endDateOptional')}
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-        <DialogButtons submitLabel={editing ? t('common.save') : t('mortgage.add')} loading={loading} onClose={onClose} />
-      </form>
-    </DialogShell>
-  );
-}
 
 interface PaymentDialogProps {
   open: boolean;

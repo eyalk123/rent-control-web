@@ -9,7 +9,6 @@ import type {
   Mortgage,
   MortgageCreate,
   MortgagePaymentInput,
-  MortgageUpdate,
   PropertyReturns,
   PropertyOwner,
   PropertyOwnerCreate,
@@ -582,7 +581,7 @@ function mockValuationsFor(propertyId: number): PropertyValuation[] {
 
 function mockCurrentValue(
   propertyId: number,
-): Pick<Property, 'current_value' | 'current_value_date' | 'returns'> {
+): Pick<Property, 'current_value' | 'current_value_date' | 'returns' | 'mortgage'> {
   const latest = mockValuationsFor(propertyId)[0];
   const value = latest?.value ?? null;
   const p = mockProperties.find((x) => x.id === propertyId);
@@ -590,6 +589,7 @@ function mockCurrentValue(
     current_value: value,
     current_value_date: latest?.valued_on ?? null,
     returns: p ? mockReturns(p, value, latest?.valued_on ?? null) : null,
+    mortgage: mockMortgageFor(propertyId),
   };
 }
 
@@ -675,32 +675,40 @@ function findMockMortgage(id: number): Mortgage {
   return m;
 }
 
-export const mockMortgagesApi = {
-  list: async (propertyId: number): Promise<Mortgage[]> =>
-    mockMortgages.filter((m) => m.property_id === propertyId).map(mockMortgageRead),
-  create: async (propertyId: number, data: MortgageCreate): Promise<Mortgage> => {
+function mockMortgageFor(propertyId: number): Mortgage | null {
+  const m = mockMortgages.find((x) => x.property_id === propertyId);
+  return m ? mockMortgageRead(m) : null;
+}
+
+/** Mirror of the backend's `PropertyService._set_mortgage`: the form's switch. */
+function setMockMortgage(propertyId: number, data: MortgageCreate | null) {
+  const today = toISODate(new Date());
+  const existing = mockMortgages.find((x) => x.property_id === propertyId);
+  if (!data) {
+    mockMortgages = mockMortgages.filter((x) => x.property_id !== propertyId);
+    return;
+  }
+  if (!existing) {
     const now = new Date().toISOString();
-    const m: Mortgage = {
+    mockMortgages.push({
       id: nextMortgageId++,
       property_id: propertyId,
       charge_day: data.charge_day,
       end_date: data.end_date ?? null,
       current_payment: null,
-      payments: [{ id: nextMortgageId++, amount: data.monthly_payment, effective_from: toISODate(new Date()), created_at: now }],
+      payments: [{ id: nextMortgageId++, amount: data.monthly_payment, effective_from: today, created_at: now }],
       created_at: now,
-    };
-    mockMortgages.push(m);
-    return mockMortgageRead(m);
-  },
-  update: async (mortgageId: number, data: MortgageUpdate): Promise<Mortgage> => {
-    const m = findMockMortgage(mortgageId);
-    if (data.charge_day != null) m.charge_day = data.charge_day;
-    if (data.end_date !== undefined) m.end_date = data.end_date;
-    return mockMortgageRead(m);
-  },
-  delete: async (mortgageId: number): Promise<void> => {
-    mockMortgages = mockMortgages.filter((m) => m.id !== mortgageId);
-  },
+    });
+    return;
+  }
+  mockMortgageRead(existing); // sorts the payments newest first
+  const entry = existing.payments.find((p) => p.effective_from <= today) ?? existing.payments[0];
+  entry.amount = data.monthly_payment;
+  existing.charge_day = data.charge_day;
+  existing.end_date = data.end_date ?? null;
+}
+
+export const mockMortgagesApi = {
   addPayment: async (mortgageId: number, data: MortgagePaymentInput): Promise<Mortgage> => {
     const m = findMockMortgage(mortgageId);
     m.payments.push({ id: nextMortgageId++, ...data, created_at: new Date().toISOString() });
@@ -798,16 +806,19 @@ export const mockPropertiesApi = {
     };
     mockProperties.push(newProp);
     if ('valuation' in data && data.valuation) addMockValuation(newProp.id, data.valuation);
+    if ('mortgage' in data && data.mortgage) setMockMortgage(newProp.id, data.mortgage as MortgageCreate);
     return { ...newProp, ...mockCurrentValue(newProp.id) };
   },
   updateProperty: async (id: number, data: PropertyUpdate | Partial<Property>): Promise<Property> => {
     const idx = mockProperties.findIndex((x) => x.id === id);
     if (idx < 0) throw new Error('Property not found');
-    const { renters: _r, valuation, ...rest } = data as Partial<Property> & {
+    const { renters: _r, valuation, mortgage, ...rest } = data as Partial<Property> & {
       renters?: unknown;
       valuation?: PropertyValuationInput;
+      mortgage?: MortgageCreate | null;
     };
     if (valuation) addMockValuation(id, valuation);
+    if (mortgage !== undefined) setMockMortgage(id, mortgage as MortgageCreate | null);
     const owner = 'property_owner_id' in rest || 'property_owner' in rest ? resolveMockOwner(rest) : {};
     mockProperties[idx] = { ...mockProperties[idx], ...rest, ...owner };
     return mockPropertiesApi.getPropertyById(id);

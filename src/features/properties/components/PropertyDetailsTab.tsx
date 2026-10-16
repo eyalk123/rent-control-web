@@ -42,10 +42,8 @@ export function PropertyDetailsTab({ property }: Props) {
 
       <PurchaseAndValuePanel property={property} />
 
-      {capabilities().mortgage && (
-        <div className="flex flex-col gap-4">
-          <MortgagePanel property={property} />
-        </div>
+      {capabilities().mortgage && property.mortgage && (
+        <MortgagePanel property={property} mortgage={property.mortgage} />
       )}
 
       <DetailPanel title={t('property.utilitiesNumbers')}>

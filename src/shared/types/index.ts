@@ -62,6 +62,8 @@ export interface Property {
   /** The latest entry of the value history (`/properties/{id}/valuations`), and its date. */
   current_value?: number | null;
   current_value_date?: string | null;
+  /** The property's mortgage, or null. What the form's mortgage switch reads. */
+  mortgage?: Mortgage | null;
   /** Yields and appreciation, computed by the server. Null on a locked stub. */
   returns?: PropertyReturns | null;
   /** Enriched on list when renters are fetched; used for occupancy display */
@@ -496,6 +498,12 @@ export interface PropertyCreate {
   plot?: string | null;
   /** A new value-history entry, saved with the property. Appended, never a replacement. */
   valuation?: PropertyValuationInput;
+  /**
+   * The form's mortgage switch (Israel only). On create: the mortgage, if the switch is on.
+   * On update: omitted leaves it alone; an object creates it or corrects today's amount;
+   * `null` (the switch turned off) deletes it and its payment history.
+   */
+  mortgage?: MortgageCreate | null;
 }
 
 // Update payload (PATCH /properties/{id}) - all fields optional
@@ -529,6 +537,12 @@ export interface PropertyUpdate {
   plot?: string | null;
   /** A new value-history entry, saved with the property. Appended, never a replacement. */
   valuation?: PropertyValuationInput;
+  /**
+   * The form's mortgage switch (Israel only). On create: the mortgage, if the switch is on.
+   * On update: omitted leaves it alone; an object creates it or corrects today's amount;
+   * `null` (the switch turned off) deletes it and its payment history.
+   */
+  mortgage?: MortgageCreate | null;
 }
 
 // Create payload (POST /renters)

@@ -2304,14 +2304,6 @@
   },
   "mortgage": {
     "section": "Mortgage",
-    "sectionNumbered": "Mortgage {{n}}",
-    "inviteTitle": "Have a mortgage on this property?",
-    "inviteBody": "Add the monthly payment and see how much is really left each month.",
-    "add": "Add mortgage",
-    "addAnother": "Add another mortgage",
-    "edit": "Edit mortgage",
-    "delete": "Delete mortgage",
-    "deleteConfirm": "Delete this mortgage and its payment history?",
     "monthlyPayment": "Monthly payment",
     "monthlyPaymentHint": "Principal and interest together: what the bank takes each month.",
     "chargeDay": "Charge day",
@@ -2329,7 +2321,7 @@
     "history": "Payment history",
     "deletePayment": "Remove amount",
     "deletePaymentConfirm": "Remove this amount from the history?",
-    "lastPayment": "A mortgage needs at least one amount. To remove it, delete the mortgage.",
+    "lastPayment": "A mortgage needs at least one amount. To remove the mortgage, turn off its switch in the property form.",
     "amountInvalid": "Enter an amount above 0",
     "chargeDayInvalid": "Enter a day between 1 and 31",
     "saveFailed": "The mortgage couldn't be saved. Please try again.",
@@ -2337,6 +2329,12 @@
     "leftSub": "Rent − mortgage − average expenses",
     "averageExpenses": "Average expenses (12 months)",
     "coverage": "Rent coverage",
-    "coverageSub": "Rent covers {{pct}} of the mortgage"
+    "coverageSub": "Rent covers {{pct}} of the mortgage",
+    "switchLabel": "This property has a mortgage",
+    "formAmountNote": "This amount is used for every month from now on, until you update it (for example after a rate change).",
+    "formEditNote": "Correcting a mistake? Change it here. If the payment itself changed, use \"Update payment\" (+) in the property's Mortgage section, so earlier months keep the old amount.",
+    "turnOffTitle": "Remove the mortgage?",
+    "turnOffMessage": "Saving will delete this property's mortgage and its payment history.",
+    "turnOff": "Remove"
   }
 }
