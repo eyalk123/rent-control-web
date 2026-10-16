@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
-import { areaUnitLabel } from '@/shared/utils/money';
+import { areaUnitLabel, currencySymbol, formatDate, formatMoney } from '@/shared/utils/money';
+import { todayISO } from '@/shared/utils/dates';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch, Controller, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,14 +14,16 @@ import { FormInput } from '@/shared/components/form/FormInput';
 import { FormSelect } from '@/shared/components/form/FormSelect';
 import { FormDocumentInput } from '@/shared/components/form/FormDocumentInput';
 import { FormChipInput } from '@/shared/components/form/FormChipInput';
+import { FormDateInput } from '@/shared/components/form/FormDateInput';
 import { Plus } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
+import { PropertyValueDialog } from '../components/PropertyValueDialog';
 import { RenterFormDrawer } from '@/features/renters/pages/RenterFormDrawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import type { z } from 'zod';
-import type { Property } from '@/shared/types';
+import type { Property, PropertyValuationInput } from '@/shared/types';
 import { uploadToFirebase } from '@/shared/utils/firebaseUpload';
 import { getPropertyImageSrc } from '../utils/propertyImageSrc';
 import { PropertyImageField } from '../components/PropertyImageField';
@@ -51,6 +54,7 @@ const EMPTY_FORM: FormData = {
   inventoryNotes: '', electricityMeterNumber: '', electricityAccountNumber: '',
   waterMeterNumber: '', waterAccountNumber: '', propertyTax: '', houseCommittee: '',
   floor: '', apartment: '', basicContractUrl: undefined, landRegistryUrl: undefined,
+  purchasePrice: '', purchaseDate: '',
 };
 
 interface Props {
@@ -144,6 +148,10 @@ export function PropertyFormDrawer({
   // user to keep or replace (mirrors the renter form). Only populated when editing via a scan.
   const [propertyConflicts, setPropertyConflicts] = useState<PropertyFormFieldConflict[]>([]);
   const [conflictChoices, setConflictChoices] = useState<Record<string, 'keep' | 'update'>>({});
+  // A value added with the "+" — not a form field, since it is a new history entry rather
+  // than an edit of one. Sent with the save; cancelling the form drops it.
+  const [pendingValuation, setPendingValuation] = useState<PropertyValuationInput | null>(null);
+  const [valueDialogOpen, setValueDialogOpen] = useState(false);
 
   const { register, handleSubmit, control, reset, trigger, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(propertyFormSchema) as never,
@@ -165,7 +173,7 @@ export function PropertyFormDrawer({
   const ownerReadOnLease = ownersLoaded && ownerName && !ownerRecord ? ownerName : null;
 
   useEffect(() => {
-    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); }
+    if (!open) { setStep(1); setShowDiscard(false); setImageFile(null); setImagePresetUrl(null); setImageDirty(false); setBasicContractFile(null); setLandRegistryFile(null); setPropertyConflicts([]); setConflictChoices({}); setPendingValuation(null); setValueDialogOpen(false); }
   }, [open]);
 
   // Whether this is a scan attaching to an existing property (edit mode with scan prefill) — the
@@ -174,7 +182,7 @@ export function PropertyFormDrawer({
   // Files live outside RHF, so isDirty alone misses them. Scanner prefill lives in the form's
   // defaultValues, so RHF reports isDirty=false even though there's reviewed data to lose.
   const hasScanPrefill = !!prefill;
-  const dirty = isDirty || !!imageFile || imageDirty || !!basicContractFile || !!landRegistryFile || hasScanPrefill || propertyConflicts.length > 0;
+  const dirty = isDirty || !!imageFile || imageDirty || !!basicContractFile || !!landRegistryFile || hasScanPrefill || propertyConflicts.length > 0 || !!pendingValuation;
   const attemptClose = () => { if (dirty) setShowDiscard(true); else onClose(); };
 
   useEffect(() => {
@@ -201,6 +209,8 @@ export function PropertyFormDrawer({
         parkingNumbersStr: existing.parking_numbers?.join(', ') ?? '',
         basicContractUrl: existing.basic_contract_url ?? undefined,
         landRegistryUrl: existing.land_registry_url ?? undefined,
+        purchasePrice: existing.purchase_price?.toString() ?? '',
+        purchaseDate: existing.purchase_date ?? '',
       };
       // Scan attaching to this property: overlay the lease — fill the fields it left blank
       // (silent) and surface the ones that differ for the user to keep or replace.
@@ -291,10 +301,14 @@ export function PropertyFormDrawer({
         image_url: imageUrl,
         basic_contract_url: basicContractUrl,
         land_registry_url: landRegistryUrl,
+        purchase_price: data.purchasePrice ? Number(data.purchasePrice) : null,
+        purchase_date: data.purchaseDate || null,
+        ...(pendingValuation ? { valuation: pendingValuation } : {}),
       };
 
       if (isEditing && propertyId) {
         await updateMutation.mutateAsync(payload);
+        setPendingValuation(null);
         // Audit: for a scan attach, record which prefilled fields the user changed on the property.
         if (isScanEdit && logId && provenance) {
           updateExtractionLog(logId, {
@@ -326,6 +340,7 @@ export function PropertyFormDrawer({
         // Start clean for the next "Add property" — the drawer stays mounted, so without
         // this the previous values would persist.
         reset(EMPTY_FORM);
+        setPendingValuation(null);
         setImageFile(null);
         setImagePresetUrl(null);
         setImageDirty(false);
@@ -554,6 +569,16 @@ export function PropertyFormDrawer({
                 </div>
               </div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormInput label={`${t('property.purchasePrice')} (${currencySymbol()})`} type="number" step="any" min={0} error={errors.purchasePrice?.message} {...register('purchasePrice')} />
+              <FormDateInput label={t('property.purchaseDate')} max={todayISO()} error={errors.purchaseDate?.message} {...register('purchaseDate')} />
+            </div>
+            <CurrentValueField
+              value={pendingValuation?.value ?? existing?.current_value ?? null}
+              date={pendingValuation?.valued_on ?? existing?.current_value_date ?? null}
+              pending={!!pendingValuation}
+              onAdd={() => setValueDialogOpen(true)}
+            />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.inventoryNotes')}</label>
               <textarea
@@ -607,6 +632,11 @@ export function PropertyFormDrawer({
       </form>
       </FieldReviewProvider>
     </Drawer>
+    <PropertyValueDialog
+      open={valueDialogOpen}
+      onConfirm={(valuation) => { setPendingValuation(valuation); setValueDialogOpen(false); }}
+      onClose={() => setValueDialogOpen(false)}
+    />
     <ConfirmDialog
       open={showDiscard}
       tone="primary"
@@ -636,5 +666,59 @@ export function PropertyFormDrawer({
       onClose={() => { setRenterDrawerOpen(false); setCreatedPropertyId(null); }}
     />
     </>
+  );
+}
+
+/**
+ * The property's current value, read-only, with a "+" that opens the value dialog. Shows the
+ * entry about to be saved when there is one, so the owner sees what they just added.
+ */
+function CurrentValueField({ value, date, pending, onAdd }: {
+  value: number | null;
+  date: string | null;
+  pending: boolean;
+  onAdd: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{t('property.currentValue')}</span>
+      <div
+        className="flex items-center gap-3 rounded-xl px-3.5 py-2"
+        style={{ background: 'var(--color-input-bg)', border: '1px solid var(--color-input-border)' }}
+      >
+        <div className="flex-1 min-w-0">
+          {value != null ? (
+            <>
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatMoney(value)}
+              </span>
+              {date && (
+                <span className="ms-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t('property.valueAsOf', { date: formatDate(date) })}
+                </span>
+              )}
+              {pending && (
+                <span className="block text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t('property.valuePending')}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('property.noCurrentValue')}</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label={t('property.addValue')}
+          title={t('property.addValue')}
+          className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-white hover:opacity-90"
+          style={{ background: 'var(--color-primary)' }}
+        >
+          <Plus size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
   );
 }

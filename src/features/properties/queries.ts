@@ -6,14 +6,19 @@ import {
   createProperty,
   updateProperty,
   deleteProperty,
+  getPropertyValuations,
+  createPropertyValuation,
+  deletePropertyValuation,
 } from './api/properties';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { useSubscription } from '@/features/subscription/queries';
-import type { PropertyUpdate } from '@/shared/types';
+import type { PropertyUpdate, PropertyValuationInput } from '@/shared/types';
 
 export const propertyKeys = {
   all: ['properties'] as const,
   detail: (id: number) => ['properties', id] as const,
+  // Under the property's own key, so any property write refreshes the history too.
+  valuations: (id: number) => ['properties', id, 'valuations'] as const,
 };
 
 // Each owner carries a count of their properties, so a property write invalidates the owner
@@ -83,5 +88,31 @@ export function useDeleteProperty() {
       qc.invalidateQueries({ queryKey: propertyKeys.all });
       qc.invalidateQueries({ queryKey: PROPERTY_OWNERS_KEY });
     },
+  });
+}
+
+export function usePropertyValuations(propertyId: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: propertyKeys.valuations(propertyId),
+    queryFn: () => getPropertyValuations(propertyId),
+    enabled: (options?.enabled ?? true) && propertyId > 0,
+    retry: retryNon4xx,
+  });
+}
+
+/** Adding or removing a value moves `current_value` on the property and in the list. */
+export function useCreatePropertyValuation(propertyId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: PropertyValuationInput) => createPropertyValuation(propertyId, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
+  });
+}
+
+export function useDeletePropertyValuation(propertyId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (valuationId: number) => deletePropertyValuation(propertyId, valuationId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
   });
 }

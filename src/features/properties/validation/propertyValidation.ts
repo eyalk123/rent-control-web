@@ -85,6 +85,10 @@ export const propertyFormSchema = z.object({
   waterAccountNumber: optionalString,
   propertyTax: optionalNumericString,
   houseCommittee: optionalNumericString,
+  purchasePrice: optionalNumericString.refine((val) => val === '' || Number(val) > 0, {
+    message: 'property.valueMustBePositive',
+  }),
+  purchaseDate: optionalString,
   basicContractUrl: z.string().nullable().optional(),
   landRegistryUrl: z.string().nullable().optional(),
   floor: optionalNumericString,

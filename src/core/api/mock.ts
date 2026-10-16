@@ -1,9 +1,12 @@
-import { getRenterLifecycle } from '@/shared/utils/renterStatus';
+import { getCurrentRenters, getRenterLifecycle } from '@/shared/utils/renterStatus';
 import type {
   Property,
   PropertyBrief,
   PropertyCreate,
   PropertyUpdate,
+  PropertyValuation,
+  PropertyValuationInput,
+  PropertyReturns,
   PropertyOwner,
   PropertyOwnerCreate,
   PropertyOwnerUpdate,
@@ -18,7 +21,8 @@ import type {
   Transaction,
   PropertyRenterSummary,
 } from '@/shared/types';
-import { getLeaseEndDate, getRentForMonth } from '@/shared/types';
+import { getCurrentMonthlyRent, getLeaseEndDate, getRentForMonth } from '@/shared/types';
+import { toISODate } from '@/shared/utils/dates';
 import type { LeaseExtraction, ReceiptExtraction } from '@/features/document-scan/types';
 import type {
   AgentStatus,
@@ -562,6 +566,94 @@ async function lockedPropertyIds(): Promise<number[]> {
   return enforced ? locked_property_ids : [];
 }
 
+// Value history, newest first per property — the order the API returns it in.
+let mockValuations: PropertyValuation[] = [];
+let nextValuationId = 1;
+
+function mockValuationsFor(propertyId: number): PropertyValuation[] {
+  return mockValuations
+    .filter((v) => v.property_id === propertyId)
+    .sort((a, b) => b.valued_on.localeCompare(a.valued_on) || b.id - a.id);
+}
+
+function mockCurrentValue(
+  propertyId: number,
+): Pick<Property, 'current_value' | 'current_value_date' | 'returns'> {
+  const latest = mockValuationsFor(propertyId)[0];
+  const value = latest?.value ?? null;
+  const p = mockProperties.find((x) => x.id === propertyId);
+  return {
+    current_value: value,
+    current_value_date: latest?.valued_on ?? null,
+    returns: p ? mockReturns(p, value, latest?.valued_on ?? null) : null,
+  };
+}
+
+/**
+ * Preview-only stand-in for the backend's `property_returns.compute_returns`, so the mock
+ * shows the same rows a real account does. Not a source of figures for anything real.
+ */
+function mockReturns(p: Property, value: number | null, valueDate: string | null): PropertyReturns {
+  const today = new Date();
+  const to = toISODate(today);
+  const from = toISODate(new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()));
+  const current = getCurrentRenters(mockRenters.filter((r) => r.property_id === p.id));
+  const monthly = current.length ? current.reduce((s, r) => s + getCurrentMonthlyRent(r), 0) : null;
+  let revenue = 0;
+  let expenses = 0;
+  for (const tx of mockTransactions) {
+    if (tx.property_id !== p.id) continue;
+    const day = tx.month_for ?? tx.date_of_payment;
+    if (day <= from || day > to) continue;
+    if (tx.type === 'revenue') revenue += tx.amount;
+    else expenses += tx.amount;
+  }
+  const price = p.purchase_price && p.purchase_price > 0 ? p.purchase_price : null;
+  const r: PropertyReturns = {
+    gross_yield: null, net_yield: null, appreciation: null, appreciation_pct: null,
+    appreciation_per_year: null, annual_rent: monthly != null ? monthly * 12 : null,
+    net_income_12m: revenue > 0 ? revenue - expenses : null, window_start: from, window_end: to,
+    unavailable: {},
+  };
+  if (!value) r.unavailable.gross_yield = 'no_current_value';
+  else if (monthly == null) r.unavailable.gross_yield = 'vacant';
+  else if (monthly <= 0) r.unavailable.gross_yield = 'no_rent_amount';
+  else r.gross_yield = (monthly * 12) / value;
+  if (!value) r.unavailable.net_yield = 'no_current_value';
+  else if (revenue <= 0) r.unavailable.net_yield = 'no_recent_rent';
+  else r.net_yield = (revenue - expenses) / value;
+  if (!value || !price) return r;
+  r.appreciation = value - price;
+  r.appreciation_pct = r.appreciation / price;
+  if (p.purchase_date) {
+    const end = new Date(valueDate ?? to).getTime();
+    const years = (end - new Date(p.purchase_date).getTime()) / (365.25 * 24 * 3600 * 1000);
+    if (years >= 1) r.appreciation_per_year = Math.pow(value / price, 1 / years) - 1;
+  }
+  return r;
+}
+
+function addMockValuation(propertyId: number, data: PropertyValuationInput): PropertyValuation {
+  const entry: PropertyValuation = {
+    id: nextValuationId++,
+    property_id: propertyId,
+    value: data.value,
+    valued_on: data.valued_on,
+    created_at: new Date().toISOString(),
+  };
+  mockValuations.push(entry);
+  return entry;
+}
+
+export const mockPropertyValuationsApi = {
+  list: async (propertyId: number): Promise<PropertyValuation[]> => mockValuationsFor(propertyId),
+  create: async (propertyId: number, data: PropertyValuationInput): Promise<PropertyValuation> =>
+    addMockValuation(propertyId, data),
+  delete: async (_propertyId: number, valuationId: number): Promise<void> => {
+    mockValuations = mockValuations.filter((v) => v.id !== valuationId);
+  },
+};
+
 export const mockPropertiesApi = {
   getProperties: async (): Promise<Property[]> => {
     // Mirrors the API: a locked property comes back as a stub — enough to recognise it,
@@ -581,6 +673,7 @@ export const mockPropertiesApi = {
           } as Property)
         : {
             ...p,
+            ...mockCurrentValue(p.id),
             locked: false,
             renters: mockRenters.filter((r) => r.property_id === p.id).map((r) => ({
               ...r,
@@ -597,7 +690,7 @@ export const mockPropertiesApi = {
       ...r,
       property: toPropertyBrief(p),
     }));
-    return { ...p, renters, locked: false };
+    return { ...p, ...mockCurrentValue(id), renters, locked: false };
   },
   createProperty: async (data: PropertyCreate | Partial<Property>): Promise<Property> => {
     const newProp: Property = {
@@ -617,22 +710,30 @@ export const mockPropertiesApi = {
       water_account_number: data.water_account_number ?? null,
       property_tax: data.property_tax ?? null,
       house_committee: data.house_committee ?? null,
+      purchase_price: data.purchase_price ?? null,
+      purchase_date: data.purchase_date ?? null,
       ...resolveMockOwner(data),
       renters: [],
     };
     mockProperties.push(newProp);
-    return { ...newProp };
+    if ('valuation' in data && data.valuation) addMockValuation(newProp.id, data.valuation);
+    return { ...newProp, ...mockCurrentValue(newProp.id) };
   },
   updateProperty: async (id: number, data: PropertyUpdate | Partial<Property>): Promise<Property> => {
     const idx = mockProperties.findIndex((x) => x.id === id);
     if (idx < 0) throw new Error('Property not found');
-    const { renters: _r, ...rest } = data as Partial<Property> & { renters?: unknown };
+    const { renters: _r, valuation, ...rest } = data as Partial<Property> & {
+      renters?: unknown;
+      valuation?: PropertyValuationInput;
+    };
+    if (valuation) addMockValuation(id, valuation);
     const owner = 'property_owner_id' in rest || 'property_owner' in rest ? resolveMockOwner(rest) : {};
     mockProperties[idx] = { ...mockProperties[idx], ...rest, ...owner };
     return mockPropertiesApi.getPropertyById(id);
   },
   deleteProperty: async (id: number): Promise<void> => {
     mockProperties = mockProperties.filter((x) => x.id !== id);
+    mockValuations = mockValuations.filter((v) => v.property_id !== id);
     mockRenters = mockRenters.map((r) =>
       r.property_id === id ? { ...r, property_id: null, property: null } : r
     );
