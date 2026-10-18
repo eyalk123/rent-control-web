@@ -75,7 +75,7 @@ export function NotificationsSettingsPage() {
 
           {settings.master_enabled ? (
             <section className="flex flex-col gap-2">
-              <h2 className="text-[12px] font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-secondary)' }}>
+              <h2 className="text-[12.5px] font-semibold px-1" style={{ color: 'var(--color-text-secondary)' }}>
                 {t('notifications.sectionAlerts')}
               </h2>
               <p className="text-[13px] px-1 -mt-1" style={{ color: 'var(--color-text-secondary)' }}>{t('notifications.sectionAlertsHint')}</p>

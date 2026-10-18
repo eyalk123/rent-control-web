@@ -88,7 +88,7 @@ export function OverLimitNotice() {
             to="/plans"
             className="h-9 px-4 flex items-center rounded-[9px] text-[13.5px] font-semibold"
             style={{
-              background: 'var(--color-primary)',
+              background: 'var(--color-primary-fill)',
               color: 'var(--color-on-primary)',
               textDecoration: 'none',
             }}

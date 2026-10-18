@@ -131,7 +131,7 @@ export function FormSelect<T extends string>({
                   {index > 0 && <Select.Separator className="my-1 h-px bg-[var(--color-outline)]" />}
                   <Select.Group>
                     {group.label && (
-                      <Select.Label className="px-3 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
+                      <Select.Label className="px-3 pt-1.5 pb-1 text-[12px] font-semibold text-[var(--color-text-secondary)]">
                         {group.label}
                       </Select.Label>
                     )}

@@ -50,19 +50,20 @@ export function ReportsHubPage() {
     }
   };
 
+  // Icon colours are chart tokens, not success/error: an expense report is not bad news.
   const reportCards = [
     {
       icon: BarChart2,
       title: t('reports.incomeExpense'),
       subtitle: t('reports.incomeExpenseDescription'),
-      color: 'var(--color-success)',
+      color: 'var(--color-chart-3)',
       path: '/reports/income-expense',
     },
     {
       icon: List,
       title: t('reports.expenseLog'),
       subtitle: t('reports.expenseLogDescription'),
-      color: 'var(--color-error)',
+      color: 'var(--color-chart-1)',
       path: '/reports/expense-log',
     },
   ];
@@ -77,7 +78,7 @@ export function ReportsHubPage() {
 
       {/* Report type cards */}
       <section>
-        <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.generateSection')}</p>
+        <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.generateSection')}</p>
         <div ref={cardsAnchorRef} className="grid gap-4 sm:grid-cols-2">
           {reportCards.map((card) => (
             <div
@@ -86,7 +87,7 @@ export function ReportsHubPage() {
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}
             >
               <div className="flex items-start gap-3.5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]" style={{ background: card.color, color: '#fff' }}>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]" style={{ background: `color-mix(in srgb, ${card.color} 16%, transparent)`, color: card.color }}>
                   <card.icon size={22} />
                 </div>
                 <div>
@@ -96,8 +97,8 @@ export function ReportsHubPage() {
               </div>
               <button
                 onClick={() => navigate(card.path)}
-                className="flex items-center justify-center gap-1.5 h-9 w-full rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-                style={{ background: 'var(--color-primary)' }}
+                className="flex items-center justify-center gap-1.5 h-9 w-full rounded-[9px] text-[13px] font-semibold transition-colors hover:bg-[var(--color-input-filled-background)]"
+                style={{ border: '1px solid var(--color-input-border)', color: 'var(--color-text-primary)' }}
               >
                 {t('reports.openReport')} {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
               </button>
@@ -111,7 +112,7 @@ export function ReportsHubPage() {
           and get shared onwards. Mounted whether or not there is history in it. */}
       <section ref={exportAnchorRef}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.recentReports')}</p>
+          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.recentReports')}</p>
           <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.savedCount', { count: history.length })}</span>
         </div>
         {isLoading ? <PageLoader /> : history.length === 0 ? (

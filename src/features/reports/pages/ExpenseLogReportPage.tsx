@@ -353,7 +353,7 @@ export function ExpenseLogReportPage() {
             disabled={!!isDownloading}
             onDownload={handleDownload}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           />
         </div>
       </div>
@@ -400,7 +400,7 @@ export function ExpenseLogReportPage() {
               <button
                 onClick={() => refetch()}
                 className="h-9 px-4 rounded-[9px] text-[13px] font-semibold text-white"
-                style={{ background: 'var(--color-primary)' }}
+                style={{ background: 'var(--color-primary-fill)' }}
               >
                 {t('common.retry')}
               </button>
@@ -433,7 +433,7 @@ export function ExpenseLogReportPage() {
               </div>
               <div className="overflow-x-auto">
                 <div className="rounded-[var(--radius-card)] overflow-hidden min-w-max" style={{ border: `1px solid ${reportTheme.gridStrong}` }}>
-                  <div className="flex items-center py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+                  <div className="flex items-center py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--report-header-bg)', color: '#fff' }}>
                     <div className="flex-1 min-w-[16rem] px-4">{t('reports.property')}</div>
                     {pivotCategories.map((cat) => (
                       <div key={cat} className="w-28 shrink-0 px-2 text-end" style={{ color: 'rgba(255,255,255,0.75)', ...monthDivider('header') }}>{cat}</div>
@@ -448,7 +448,7 @@ export function ExpenseLogReportPage() {
                         {/* The owner is the top of the hierarchy, so it is the largest row. Folded,
                             it carries the owner's own figures, so a folded table still reads as
                             a summary; open, they move to the Owner total row below. */}
-                        <div className="flex items-stretch" style={{ background: 'var(--color-rev-bg)', color: 'var(--color-text-primary)', borderTop: `2px solid ${reportTheme.gridStrong}` }}>
+                        <div className="flex items-stretch" style={{ background: 'var(--report-owner-row-bg)', color: 'var(--color-text-primary)', borderTop: `2px solid ${reportTheme.gridStrong}` }}>
                           <button
                             type="button"
                             onClick={() => toggleOwner(group.owner)}
@@ -522,7 +522,7 @@ export function ExpenseLogReportPage() {
                   {/* Every owner together. With one owner it would repeat that owner's total. */}
                   {pivotOwners.length > 1 && (
                     <div className="flex items-stretch font-bold" style={{ borderTop: `3px solid ${reportTheme.gridStrong}` }}>
-                      <div className="flex-1 min-w-[16rem] flex items-center px-4 py-3 text-[14.5px]" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+                      <div className="flex-1 min-w-[16rem] flex items-center px-4 py-3 text-[14.5px]" style={{ background: 'var(--report-header-bg)', color: '#fff' }}>
                         {t('reports.portfolioTotal')}
                       </div>
                       <PivotFigures
@@ -647,7 +647,7 @@ export function ExpenseLogReportPage() {
                         style={{
                           height: maxMonth > 0 ? `${(amount / maxMonth) * 100}%` : 0,
                           minHeight: amount > 0 ? 2 : 0,
-                          background: 'var(--color-primary)',
+                          background: 'var(--color-primary-fill)',
                           opacity: 0.7,
                         }}
                       />
@@ -701,7 +701,7 @@ export function ExpenseLogReportPage() {
               </div>
 
               <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ border: '1px solid var(--color-outline)' }}>
-                <div className="flex items-center gap-3 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+                <div className="flex items-center gap-3 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--report-header-bg)', color: '#fff' }}>
                   <div className="w-[64px] shrink-0">{t('reports.date')}</div>
                   <div className="flex-[1.5] min-w-0">{t('reports.supplier')}</div>
                   <div className="flex-1 min-w-0 hidden md:block">{t('reports.category')}</div>

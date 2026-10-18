@@ -527,7 +527,7 @@ export function RenterFormDrawer({
             if (ok) setStep(2);
           }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {t('common.next')}
         </button>
@@ -538,7 +538,7 @@ export function RenterFormDrawer({
           form="renter-form"
           disabled={isSubmitting}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {isSubmitting ? '...' : hasNextRenter ? t('documentScan.saveAndNextRenter') : t('common.save')}
         </button>
@@ -568,7 +568,7 @@ export function RenterFormDrawer({
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
+          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary-fill)]' : 'bg-[var(--color-outline)]'}`} />
         ))}
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{shownStep}/2</span>
       </div>

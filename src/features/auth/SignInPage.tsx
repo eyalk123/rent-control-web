@@ -195,7 +195,7 @@ export function SignInPage() {
         {/* Logo — links to the marketing page, like the header logo on the legal pages */}
         <Link to="/" className="flex items-center gap-2.5 self-start" style={{ color: 'inherit', textDecoration: 'none' }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={logoImage} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+            <img src={logoImage} alt="" style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <span className="text-base font-bold tracking-tight">RentVance</span>
         </Link>
@@ -268,7 +268,7 @@ export function SignInPage() {
 
           {/* Mobile logo */}
           <Link to="/" className="md:hidden flex items-center gap-2.5 mb-8 justify-center" style={{ textDecoration: 'none' }}>
-            <img src={logoImage} alt="" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
+            <img src={logoImage} alt="" className="brand-logo" style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }} />
             <span className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>RentVance</span>
           </Link>
 
@@ -300,7 +300,7 @@ export function SignInPage() {
                   onClick={handleForgot}
                   disabled={loading}
                   className="mt-4 w-full h-11 rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                  style={{ background: 'var(--color-primary)' }}
+                  style={{ background: 'var(--color-primary-fill)' }}
                 >
                   {loading ? '…' : t('auth.sendResetLink')}
                 </button>
@@ -432,7 +432,7 @@ export function SignInPage() {
                   type="submit"
                   disabled={loading || (mode === 'register' && !accepted)}
                   className="mt-1 h-11 w-full rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                  style={{ background: 'var(--color-primary)' }}
+                  style={{ background: 'var(--color-primary-fill)' }}
                 >
                   {loading ? '…' : mode === 'login' ? t('auth.signInButton') : t('auth.registerButton')}
                 </button>

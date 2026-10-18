@@ -18,7 +18,7 @@ interface Props {
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>
+      <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
         {label}
       </span>
       <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
@@ -67,7 +67,7 @@ export function PropertyOwnerDetailDrawer({ open, owner, onClose, onEdit }: Prop
         type="button"
         onClick={() => onEdit(owner.id)}
         className="flex items-center gap-1.5 h-10 px-5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 ms-auto"
-        style={{ background: 'var(--color-primary)' }}
+        style={{ background: 'var(--color-primary-fill)' }}
       >
         <Pencil size={14} />{t('common.edit')}
       </button>

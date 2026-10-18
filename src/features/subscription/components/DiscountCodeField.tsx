@@ -213,7 +213,7 @@ export function DiscountCodeField({
           disabled={!draft.trim() || checking}
           className="shrink-0 h-9 px-4 rounded-[8px] text-[13.5px] font-semibold inline-flex items-center gap-1.5 transition-opacity disabled:opacity-50"
           style={{
-            background: 'var(--color-primary)',
+            background: 'var(--color-primary-fill)',
             color: 'var(--color-on-primary)',
             border: 'none',
             cursor: !draft.trim() || checking ? 'not-allowed' : 'pointer',

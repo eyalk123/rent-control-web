@@ -13,11 +13,13 @@ interface Props {
   tone?: 'danger' | 'primary';
   /** Disables the confirm button and shows a pending state. */
   loading?: boolean;
+  /** A quieter way out under the buttons, for when "no" has a better "instead". */
+  altAction?: { label: string; onClick: () => void };
   onConfirm: () => void;
   onClose: () => void;
 }
 
-export function ConfirmDialog({ open, title, message, confirmLabel, tone = 'danger', loading, onConfirm, onClose }: Props) {
+export function ConfirmDialog({ open, title, message, confirmLabel, tone = 'danger', loading, altAction, onConfirm, onClose }: Props) {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -83,6 +85,17 @@ export function ConfirmDialog({ open, title, message, confirmLabel, tone = 'dang
             {loading ? '...' : (confirmLabel ?? t('common.delete'))}
           </button>
         </div>
+        {altAction && (
+          <button
+            type="button"
+            onClick={altAction.onClick}
+            disabled={loading}
+            className="mt-3 w-full text-center text-[13px] font-medium hover:underline disabled:opacity-50"
+            style={{ color: 'var(--color-primary)' }}
+          >
+            {altAction.label}
+          </button>
+        )}
       </div>
     </div>
   );

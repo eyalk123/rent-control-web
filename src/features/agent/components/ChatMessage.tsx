@@ -19,7 +19,7 @@ export function ChatMessage({ message }: { message: ChatDisplayMessage }) {
             asMarkdown ? '' : 'whitespace-pre-wrap'
           } ${
             isUser
-              ? 'bg-[var(--color-primary)] text-white'
+              ? 'bg-[var(--color-primary-fill)] text-white'
               : message.error
                 ? 'bg-[var(--color-exp-bg)] text-[var(--color-exp-fg)]'
                 : 'bg-[var(--color-input-filled-background)] text-[var(--color-text-primary)]'

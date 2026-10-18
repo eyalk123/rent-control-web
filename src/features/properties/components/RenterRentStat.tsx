@@ -41,7 +41,7 @@ export function RenterRentStat({ renters, renterName, rentersCount, total }: Pro
     <Popover.Root>
       <Popover.Trigger asChild>
         <button type="button" className="px-5 py-4 text-start outline-none group">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
             {t('property.renter')}
           </p>
           <span
@@ -64,7 +64,7 @@ export function RenterRentStat({ renters, renterName, rentersCount, total }: Pro
           className="z-50 min-w-[16rem] rounded-xl border p-2 shadow-lg"
           style={{ background: 'var(--color-surface)', borderColor: 'var(--color-outline)' }}
         >
-          <p className="px-2 pt-1 pb-2 text-[10.5px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="px-2 pt-1 pb-2 text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
             {t('property.rentBreakdown')}
           </p>
           {currentRenters.map((r) => (

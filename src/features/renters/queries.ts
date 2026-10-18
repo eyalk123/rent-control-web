@@ -7,6 +7,7 @@ import {
   deleteRenter,
   terminateLease,
   undoTermination,
+  setLeaseYearAmount,
 } from './api/renters';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { notificationKeys } from '@/features/notifications/queries';
@@ -104,4 +105,23 @@ export function useTerminateLease(id: number) {
 
 export function useUndoTermination(id: number) {
   return useLeaseLifecycleMutation<void>(id, () => undoTermination(id));
+}
+
+/**
+ * Confirm or edit the new rent from a confirmed CPI alert. Not tied to one renter like the
+ * hooks above: the alerts list fires it for whichever row was acted on. Refreshes the same
+ * caches — the renter's schedule changed, and the server dismissed the alert.
+ */
+export function useSetLeaseYearAmount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { renterId: number; yearIndex: number; amount: number }) =>
+      setLeaseYearAmount(args.renterId, args.yearIndex, args.amount),
+    onSuccess: (_data, { renterId }) => {
+      qc.invalidateQueries({ queryKey: renterKeys.all });
+      qc.invalidateQueries({ queryKey: renterKeys.detail(renterId) });
+      qc.invalidateQueries({ queryKey: ['home'] });
+      qc.invalidateQueries({ queryKey: notificationKeys.feed });
+    },
+  });
 }

@@ -26,16 +26,9 @@ export function PortfolioOccupancy({ properties, loading }: Props) {
     ? Math.round((occupiedCount / properties.length) * 100)
     : 0;
   const showSquares = properties.length <= MAX_SQUARES;
-  const occupancyColor =
-    occupancyPct >= 80
-      ? 'var(--color-rev-fg)'
-      : occupancyPct >= 50
-        ? 'var(--color-warning)'
-        : 'var(--color-exp-fg)';
-
   return (
     <div ref={anchorRef}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+      <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.portfolioOccupancy')}
       </p>
 
@@ -50,7 +43,7 @@ export function PortfolioOccupancy({ properties, loading }: Props) {
           </div>
         ) : (
           <div className="flex items-baseline gap-3 flex-wrap">
-            <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: occupancyColor }}>
+            <p className="text-6xl font-bold leading-none tracking-tight" style={{ letterSpacing: '-1px', color: 'var(--color-text-primary)' }}>
               {occupancyPct}%
             </p>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>

@@ -651,7 +651,7 @@ function PlanCard({
         {isCurrent && (
           <span
             className="text-[11.5px] font-semibold rounded-full px-2 py-0.5"
-            style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
           >
             {t('subscription.plans.current')}
           </span>
@@ -755,7 +755,7 @@ function SwitchControl({
 }) {
   const { t } = useTranslation();
   const primary = {
-    background: 'var(--color-primary)',
+    background: 'var(--color-primary-fill)',
     color: 'var(--color-on-primary)',
     border: 'none',
     cursor: switching ? 'progress' : 'pointer',

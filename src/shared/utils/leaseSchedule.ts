@@ -201,6 +201,8 @@ export function isUnsettledCpiYear(
   mode: RentEscalationMode | null | undefined,
   today: Date = new Date(),
 ): boolean {
+  // The owner set this year's rent by hand: it is agreed, not waiting on an index.
+  if (rows[index]?.set_by_owner) return false;
   // Per-year rules win when the schedule has any, whatever `mode` claims. Gating this on
   // `mode === 'custom'` would miss every renter whose rows carry a CPI rule while the
   // structured mode field was never persisted — the same legacy shape
@@ -407,6 +409,46 @@ export function hasContractAfterOptionYear(years: LeaseYear[]): boolean {
     else if (seenOption) return true;
   }
   return false;
+}
+
+/**
+ * Index of the option year the tenant would take up next — the first one in the schedule —
+ * or -1 when none is left. Only ever the first: exercising a later option before an earlier
+ * one would put a contract year after an option year.
+ */
+export function nextOptionIndex(years: LeaseYear[] | undefined): number {
+  return (years ?? []).findIndex((y) => y.type === 'option');
+}
+
+/**
+ * The schedule with the next option year exercised — flipped to a contract year, amount,
+ * rule and length untouched — plus the intent fields a save must send with it, derived the
+ * same way the Extend flow derives them. Null when there is no option year to exercise.
+ */
+export function exerciseNextOption(years: LeaseYear[] | undefined): {
+  index: number;
+  leaseYears: LeaseYear[];
+  intent: {
+    contract_term_years: number;
+    contract_term_months: number;
+    option_years: number;
+    option_term_months: number;
+  };
+} | null {
+  const index = nextOptionIndex(years);
+  if (index < 0) return null;
+  const leaseYears = (years ?? []).map((y, i) => (i === index ? { ...y, type: 'contract' as const } : y));
+  const intent = reconstructIntentFromLeaseYears(leaseYears);
+  return {
+    index,
+    leaseYears,
+    intent: {
+      contract_term_years: intent.contractTermYears,
+      contract_term_months: intent.contractTermMonths,
+      option_years: intent.optionYears,
+      option_term_months: intent.optionTermMonths,
+    },
+  };
 }
 
 export interface ReconstructedIntent {

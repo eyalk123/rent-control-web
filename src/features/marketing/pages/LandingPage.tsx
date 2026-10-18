@@ -100,7 +100,7 @@ function StartFree() {
     <Link
       to="/sign-in"
       className="h-11 px-6 flex items-center rounded-[10px] text-[14.5px] font-semibold"
-      style={{ background: 'var(--color-primary)', color: '#FFFFFF', textDecoration: 'none' }}
+      style={{ background: 'var(--color-primary-fill)', color: '#FFFFFF', textDecoration: 'none' }}
     >
       {t('marketing.hero.primaryCta')}
     </Link>

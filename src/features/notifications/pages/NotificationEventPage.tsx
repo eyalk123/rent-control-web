@@ -21,7 +21,7 @@ const cardStyle = { background: 'var(--color-surface)', border: '1px solid var(-
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[12px] font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--color-text-secondary)' }}>
+    <h2 className="text-[12.5px] font-semibold px-1" style={{ color: 'var(--color-text-secondary)' }}>
       {children}
     </h2>
   );
@@ -232,6 +232,16 @@ export function NotificationEventPage() {
     </>
   );
 
+  // An event with nothing to set beyond on/off: just when it fires.
+  const when = (
+    <section className="flex flex-col gap-2">
+      <SectionLabel>{t('notifications.cpiWhenTitle')}</SectionLabel>
+      <div className="px-5 py-4 rounded-[var(--radius-card)]" style={cardStyle}>
+        <p className="text-[14px]" style={{ color: 'var(--color-text-primary)' }}>{t(`notifications.default.${event}`)}</p>
+      </div>
+    </section>
+  );
+
   return (
     <div className="max-w-[760px] mx-auto px-4 py-6 lg:px-8 lg:py-8">
       {header}
@@ -247,7 +257,9 @@ export function NotificationEventPage() {
             ? hint(t('notifications.eventOffHint'))
             : isRuleEvent(event)
               ? reminders
-              : cpi}
+              : event === 'cpi_rent_change'
+                ? cpi
+                : when}
       </div>
 
       {editor && (

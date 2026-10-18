@@ -118,7 +118,7 @@ export function AiConsentDialog() {
             onClick={() => void allow()}
             disabled={saving}
             className="h-10 flex-1 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           >
             {saving ? '…' : t('aiConsent.allow')}
           </button>

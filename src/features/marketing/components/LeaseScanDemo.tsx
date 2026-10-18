@@ -301,7 +301,7 @@ export function LeaseScanDemo() {
                 <span
                   className="block h-full rounded-full"
                   style={{
-                    background: 'var(--color-primary)',
+                    background: 'var(--color-primary-fill)',
                     width: uploading ? '100%' : '0%',
                     transition: uploading ? `width ${UPLOAD_MS - 200}ms ease-out` : 'none',
                   }}
@@ -314,7 +314,7 @@ export function LeaseScanDemo() {
               className="pointer-events-none absolute inset-x-2 h-[2px] rounded-full"
               style={{
                 top: lineY,
-                background: 'var(--color-primary)',
+                background: 'var(--color-primary-fill)',
                 boxShadow: '0 0 10px 1px var(--color-primary)',
                 opacity: scanning ? 0.85 : 0,
                 transition: 'top 450ms ease, opacity 250ms ease',
@@ -462,7 +462,7 @@ function FlyingChip({
     <span
       className="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
       style={{
-        background: 'var(--color-primary)',
+        background: 'var(--color-primary-fill)',
         color: 'var(--color-on-primary)',
         boxShadow: '0 6px 16px -4px rgba(37, 99, 235, 0.55)',
         transform: `translate(${at.x}px, ${at.y}px) translate(-50%, -50%) scale(${moved ? 0.9 : 1})`,

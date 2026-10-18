@@ -143,7 +143,7 @@ export function DocumentScanDrawer() {
         onClick={handleExtract}
         disabled={!canExtract}
         className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-        style={{ background: 'var(--color-primary)' }}
+        style={{ background: 'var(--color-primary-fill)' }}
       >
         {t('documentScan.extractAction')}
       </button>

@@ -36,6 +36,18 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload()
 })
 
+// The favicon is navy on transparent, which disappears on a dark browser tab strip. The tab
+// strip follows the browser's colour scheme, not the app's theme setting, so this tracks
+// prefers-color-scheme. Done in script because `media` on <link rel="icon"> is not honoured
+// everywhere.
+const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+const darkChrome = window.matchMedia('(prefers-color-scheme: dark)')
+const syncFavicon = () => {
+  if (favicon) favicon.href = darkChrome.matches ? '/favicon-dark.png' : '/favicon.png'
+}
+syncFavicon()
+darkChrome.addEventListener('change', syncFavicon)
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

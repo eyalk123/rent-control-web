@@ -52,7 +52,7 @@ export function RouteErrorPage() {
         <button
           onClick={() => navigate('/home', { replace: true })}
           className="h-9 px-4 rounded-[9px] text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           Go home
         </button>

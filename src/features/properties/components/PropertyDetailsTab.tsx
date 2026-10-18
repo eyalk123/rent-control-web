@@ -4,7 +4,7 @@ import { registryKey1, registryKey2 } from '@/shared/utils/registryLabels';
 import { formatArea } from '@/shared/utils/money';
 import { MapPin, Car, Zap, Droplets, Receipt, Users, Calendar, TrendingUp, Plus, History, Percent } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
-import { DetailRow } from '@/shared/components/detail/DetailRow';
+import { DetailLabel, DetailRow } from '@/shared/components/detail/DetailRow';
 import { formatDate, formatMoney } from '@/shared/utils/money';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useCreatePropertyValuation } from '../queries';
@@ -96,8 +96,8 @@ function PurchaseAndValuePanel({ property }: Props) {
         value={property.purchase_date ? formatDate(property.purchase_date) : null}
       />
       <div className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-        <TrendingUp size={15} style={{ color: 'var(--color-brand-navy)' }} strokeWidth={1.6} />
-        <span className="flex-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('property.currentValue')}</span>
+        <TrendingUp size={15} style={{ color: 'var(--color-brand-navy-fg)' }} strokeWidth={1.6} />
+        <DetailLabel label={t('property.currentValue')} info={t('property.info.currentValue')} />
         {property.current_value != null ? (
           <span className="flex flex-col items-end">
             <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
@@ -129,7 +129,7 @@ function PurchaseAndValuePanel({ property }: Props) {
           aria-label={t('property.addValue')}
           title={t('property.addValue')}
           className={`${iconBtn} w-8 text-white hover:opacity-90`}
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           <Plus size={16} aria-hidden="true" />
         </button>
@@ -138,17 +138,28 @@ function PurchaseAndValuePanel({ property }: Props) {
       <DetailRow
         icon={Percent}
         label={t('property.grossYield')}
+        info={<>
+          <p>{t('property.info.grossYield')}</p>
+          <p className="mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>{t('property.info.grossYieldExample')}</p>
+        </>}
         value={returns?.gross_yield != null ? formatPercent(returns.gross_yield) : null}
       />
       <DetailRow
         icon={Percent}
         label={t('property.netYield')}
+        info={t('property.info.netYield')}
         value={returns?.net_yield != null ? formatPercent(returns.net_yield) : null}
       />
       {returns?.appreciation != null && returns.appreciation_pct != null && (
         <div className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-          <TrendingUp size={15} style={{ color: 'var(--color-brand-navy)' }} strokeWidth={1.6} />
-          <span className="flex-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('property.appreciation')}</span>
+          <TrendingUp size={15} style={{ color: 'var(--color-brand-navy-fg)' }} strokeWidth={1.6} />
+          <DetailLabel
+            label={t('property.appreciation')}
+            info={<>
+              <p>{t('property.info.appreciation')}</p>
+              <p className="mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>{t('property.info.appreciationPerYear')}</p>
+            </>}
+          />
           <span className="flex flex-col items-end">
             {/* dir="ltr", or a Hebrew line moves the sign and brackets to the far end. */}
             <span dir="ltr" className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>

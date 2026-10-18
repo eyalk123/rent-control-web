@@ -44,7 +44,7 @@ export function SubscriptionSettingsPage() {
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[12.5px] font-semibold uppercase" style={{ color: 'var(--color-text-secondary)', letterSpacing: '0.04em' }}>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
               {t('subscription.settings.currentPlan')}
             </p>
             <p className="mt-1 text-[24px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
@@ -61,7 +61,7 @@ export function SubscriptionSettingsPage() {
             <Link
               to="/plans"
               className="h-10 px-5 flex items-center gap-2 rounded-[9px] text-[14px] font-semibold shrink-0"
-              style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)', textDecoration: 'none' }}
+              style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)', textDecoration: 'none' }}
             >
               <Sparkles size={15} /> {t('subscription.settings.upgrade')}
             </Link>

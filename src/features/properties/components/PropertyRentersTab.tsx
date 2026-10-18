@@ -67,7 +67,7 @@ export function PropertyRentersTab({ property, onAddRenter, onScanRenter }: Prop
             <button
               onClick={onAddRenter}
               className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
-              style={{ background: 'var(--color-primary)' }}
+              style={{ background: 'var(--color-primary-fill)' }}
             >
               <Plus size={14} /> {addLabel}
             </button>

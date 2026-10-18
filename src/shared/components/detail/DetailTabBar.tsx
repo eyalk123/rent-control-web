@@ -18,8 +18,8 @@ export function DetailTabBar<T extends string>({ tabs, activeId, onChange }: Pro
           style={{
             background: 'transparent',
             border: 'none',
-            borderBottom: activeId === tab.id ? '2px solid var(--color-brand-navy)' : '2px solid transparent',
-            color: activeId === tab.id ? 'var(--color-brand-navy)' : 'var(--color-text-secondary)',
+            borderBottom: activeId === tab.id ? '2px solid var(--color-brand-navy-fg)' : '2px solid transparent',
+            color: activeId === tab.id ? 'var(--color-brand-navy-fg)' : 'var(--color-text-secondary)',
             fontWeight: activeId === tab.id ? 700 : 500,
             cursor: 'pointer',
           }}

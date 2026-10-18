@@ -216,7 +216,7 @@ export function BankAccountInput({
         />
       </div>
 
-      <div className="flex text-[10px] tracking-wide uppercase text-[var(--color-text-secondary)]">
+      <div className="flex text-[12px] text-[var(--color-text-secondary)]">
         <span className="w-14 text-center">{t('suppliers.bankCode')}</span>
         <span className="w-px" />
         <span className="w-16 text-center">{t('suppliers.branchCode')}</span>

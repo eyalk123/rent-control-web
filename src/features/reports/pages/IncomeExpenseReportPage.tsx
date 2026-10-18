@@ -437,7 +437,7 @@ export function IncomeExpenseReportPage() {
             disabled={!!isDownloading}
             onDownload={handleDownload}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           />
         </div>
       </div>
@@ -459,13 +459,13 @@ export function IncomeExpenseReportPage() {
             { label: t('reports.net'), value: grand.rev - grand.exp, color: grand.rev - grand.exp >= 0 ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)' },
           ].map(({ label, value, color }) => (
             <div key={label} className="flex flex-col items-end">
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
               <LtrSpan className="text-[14px] font-bold mt-0.5" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(value)}</LtrSpan>
             </div>
           ))}
           {grandShare !== null && (
             <div className="flex flex-col items-end" title={t('reports.expenseRatioHint')}>
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.expenseRatioLabel')}</span>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{t('reports.expenseRatioLabel')}</span>
               <LtrSpan className="text-[14px] font-bold mt-0.5" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{grandShare}%</LtrSpan>
             </div>
           )}
@@ -481,7 +481,7 @@ export function IncomeExpenseReportPage() {
               <button
                 onClick={() => refetch()}
                 className="h-9 px-4 rounded-[9px] text-[13px] font-semibold text-white"
-                style={{ background: 'var(--color-primary)' }}
+                style={{ background: 'var(--color-primary-fill)' }}
               >
                 {t('common.retry')}
               </button>
@@ -512,7 +512,7 @@ export function IncomeExpenseReportPage() {
             <div className="rounded-[var(--radius-card)] overflow-hidden min-w-[1120px]" style={{ border: `1px solid ${reportTheme.gridStrong}` }}>
               {/* Header row. Padding lives inside the cells so every label sits directly above
                   the figures beneath it — see the note in reportTheme. */}
-              <div className="flex items-center py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--color-brand-navy)', color: '#fff' }}>
+              <div className="flex items-center py-3 text-[11px] font-semibold uppercase tracking-wide" style={{ background: 'var(--report-header-bg)', color: '#fff' }}>
                 <div className={`${reportCols.property} px-4`}>{t('reports.property')}</div>
                 <div className={reportCols.metric} />
                 {monthsLocale.map((m, idx) => (
@@ -531,7 +531,7 @@ export function IncomeExpenseReportPage() {
                       moves to the Owner total row below (when there is one). */}
                   <div
                     className="flex items-stretch"
-                    style={{ background: 'var(--color-rev-bg)', color: 'var(--color-text-primary)', borderTop: `2px solid ${reportTheme.gridStrong}` }}
+                    style={{ background: 'var(--report-owner-row-bg)', color: 'var(--color-text-primary)', borderTop: `2px solid ${reportTheme.gridStrong}` }}
                   >
                     <button
                       type="button"
@@ -614,7 +614,7 @@ export function IncomeExpenseReportPage() {
                 <div className="flex items-stretch" style={{ borderTop: `3px solid ${reportTheme.gridStrong}` }}>
                   <div
                     className={`${reportCols.property} flex items-center px-4 py-3 text-[14.5px] font-bold`}
-                    style={{ background: 'var(--color-brand-navy)', color: '#fff' }}
+                    style={{ background: 'var(--report-header-bg)', color: '#fff' }}
                   >
                     {t('reports.portfolioTotal')}
                   </div>

@@ -314,7 +314,7 @@ export function LeaseExtensionDrawer({ open, onClose, renter }: Props) {
         onClick={handleSave}
         disabled={updateMutation.isPending || !dirty || orderInvalid || ruleIncomplete}
         className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-        style={{ background: 'var(--color-primary)' }}
+        style={{ background: 'var(--color-primary-fill)' }}
       >
         {updateMutation.isPending ? '...' : t('common.save')}
       </button>

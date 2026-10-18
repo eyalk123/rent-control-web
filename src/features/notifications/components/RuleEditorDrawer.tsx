@@ -142,7 +142,7 @@ export function RuleEditorDrawer({ open, onClose, event, rule }: Props) {
             onClick={handleSave}
             disabled={saving || offsets.length === 0}
             className="h-9 px-4 rounded-[9px] text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           >
             {saving ? t('home.actionSaving') : t('notifications.saveRule')}
           </button>

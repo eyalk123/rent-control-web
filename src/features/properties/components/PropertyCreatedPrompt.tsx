@@ -52,7 +52,7 @@ export function PropertyCreatedPrompt({ open, onAddRenter, onSkip }: Props) {
             type="button"
             onClick={onAddRenter}
             className="h-11 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           >
             {t('property.addRenterNow')}
           </button>

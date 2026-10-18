@@ -24,7 +24,7 @@ export function RecentTransactions({ transactions, loading }: Props) {
   return (
     <div ref={anchorRef}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
           {t('home.recentTransactions')}
         </p>
         <button

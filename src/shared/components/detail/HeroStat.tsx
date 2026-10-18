@@ -18,7 +18,7 @@ export function HeroStat({ label, value, sub, tone, loading }: Props) {
     'var(--color-text-primary)';
   return (
     <div className="px-5 py-4">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+      <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
       {loading ? (
         <Skeleton className="mt-1.5" width="70%" height={20} />
       ) : (

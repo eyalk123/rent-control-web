@@ -90,7 +90,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
                 onClick={toggleAll}
                 className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-outline)] outline-none"
               >
-                <span className={`flex h-4 w-4 items-center justify-center rounded border ${allSelected ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--color-input-border)]'}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded border ${allSelected ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary)]' : 'border-[var(--color-input-border)]'}`}>
                   {allSelected && <Check size={10} className="text-white" />}
                 </span>
                 {allSelected ? t('transactions.bulkRevenue.deselectAll') : t('transactions.bulkRevenue.selectAll')}
@@ -104,7 +104,7 @@ export function PropertyMultiSelect({ label, options, selectedIds, onChange, err
                     onClick={() => toggle(opt.value)}
                     className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-outline)] outline-none"
                   >
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? 'bg-[var(--color-primary)] border-[var(--color-primary)]' : 'border-[var(--color-input-border)]'}`}>
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? 'bg-[var(--color-primary-fill)] border-[var(--color-primary)]' : 'border-[var(--color-input-border)]'}`}>
                       {checked && <Check size={10} className="text-white" />}
                     </span>
                     {opt.label}

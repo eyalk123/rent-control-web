@@ -97,6 +97,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2.5">
           <img
             src={logoImage}
+            className="brand-logo"
             alt=""
             style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }}
           />
@@ -210,7 +211,7 @@ export function CountryGate() {
           type="button"
           onClick={() => window.location.reload()}
           className="mt-6 w-full rounded-[10px] py-3 text-sm font-semibold"
-          style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
         >
           {t('common.tryAgain')}
         </button>
@@ -431,7 +432,7 @@ export function CountryGate() {
           });
         }}
         className="mt-6 w-full rounded-[10px] py-3 text-sm font-semibold disabled:opacity-60"
-        style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+        style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
       >
         {setCountry.isPending || setPreferences.isPending
           ? t('common.loading')

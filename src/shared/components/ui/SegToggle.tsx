@@ -46,7 +46,7 @@ export function SegToggle<T extends string>({
             {opt.count !== undefined && (
               <span className={`rounded-full px-1.5 py-px text-[10px] font-semibold leading-none ${
                 active
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--color-primary-fill)] text-white'
                   : 'bg-[var(--color-outline)] text-[var(--color-text-secondary)]'
               }`}>
                 {opt.count}

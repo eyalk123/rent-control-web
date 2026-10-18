@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, Clock, Settings2, TrendingUp } from 'lucide-react';
+import { AlertCircle, Clock, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '@/hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { useToast } from '@/shared/components/ui/Toast';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate, thisMonthISO } from '@/shared/utils/dates';
+import { thisMonthISO } from '@/shared/utils/dates';
 import { useMarkRentPaid } from '@/features/transactions/queries';
 import {
   useNotifications,
@@ -15,14 +14,16 @@ import {
   useDismissNotification,
 } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
+import { RateChangeCard } from '@/features/notifications/components/RateChangeCard';
+import { CpiChangeCard } from '@/features/notifications/components/CpiChangeCard';
 import { NotificationsOffNotice, useNotificationsOff } from '@/features/notifications/components/NotificationsOffNotice';
 import { useAlertsPanel } from './AlertsPanelContext';
+import { ExpiringLeaseAction } from '@/features/renters/components/ExpiringLeaseAction';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 export function AlertsPanel() {
   const { t } = useTranslation();
-  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { isOpen, closePanel, setHasAlerts } = useAlertsPanel();
@@ -41,6 +42,7 @@ export function AlertsPanel() {
   const overdue = items.filter((i) => i.type === 'overdue');
   const expiring = items.filter((i) => i.type === 'lease_expiring');
   const cpiChanges = items.filter((i) => i.type === 'cpi_rent_change');
+  const rateChanges = items.filter((i) => i.type === 'mortgage_rate_change');
 
   // Surface the unread dot on the bell.
   useEffect(() => {
@@ -169,13 +171,15 @@ export function AlertsPanel() {
                     >
                       {t('home.actionIgnore')}
                     </button>
-                    <button
-                      onClick={() => handleNavigate(item.renter_id)}
+                    <ExpiringLeaseAction
+                      renterId={item.renter_id}
+                      onUpdateLease={() => {
+                        navigate(`/renters/${item.renter_id}?extend=1`);
+                        closePanel();
+                      }}
                       className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
                       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-warning)', color: 'var(--color-warning)' }}
-                    >
-                      {t('home.actionUpdateLease')}
-                    </button>
+                    />
                   </div>
                 </div>
               ))}
@@ -183,76 +187,22 @@ export function AlertsPanel() {
           </div>
         )}
 
-        {cpiChanges.length > 0 && (
-          <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={15} style={{ color: 'var(--color-primary)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-primary)' }}>
-                {t('notifications.event.cpi_rent_change')} ({cpiChanges.length})
-              </span>
-            </div>
-            <div className="space-y-2">
-              {cpiChanges.map((item) => (
-                <div key={item.id} className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleNavigate(item.renter_id)}
-                    className="flex-1 text-start hover:opacity-80 min-w-0"
-                  >
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{item.first_name} {item.last_name}</p>
-                    <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                      <LtrSpan>{formatMoney(item.data.old_amount ?? 0)}</LtrSpan>
-                      {isRtl ? ' ← ' : ' → '}
-                      <LtrSpan className="font-semibold">{formatMoney(item.data.new_amount ?? 0)}</LtrSpan>
-                      {' · '}
-                      <bdi>
-                        {t(
-                          item.data.stage === 'upcoming'
-                            ? 'notifications.cpiChangesOn'
-                            : 'notifications.cpiEffective',
-                          { date: fmtDate(item.data.effective_date ?? '') },
-                        )}
-                      </bdi>
-                    </p>
-                    {/* The reading behind the figure, so a disputed change is traceable. */}
-                    {item.data.stage === 'upcoming' ? (
-                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                        {t('notifications.cpiEstimateNote')}
-                      </p>
-                    ) : item.data.index_month ? (
-                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                        <bdi>{t('notifications.cpiIndexNote', {
-                          month: item.data.index_month,
-                          value: item.data.known_index,
-                          source: (item.data.index_source ?? '').toUpperCase(),
-                        })}</bdi>
-                      </p>
-                    ) : null}
-                  </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => dismissNotification.mutate(item.id)}
-                      className="rounded-full px-2 py-0.5 text-xs transition-opacity"
-                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)' }}
-                    >
-                      {t('home.actionIgnore')}
-                    </button>
-                    <button
-                      onClick={() => handleNavigate(item.renter_id)}
-                      className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
-                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-primary)', color: 'var(--color-primary)' }}
-                    >
-                      {t('notifications.cpiViewRenter')}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <CpiChangeCard
+          items={cpiChanges}
+          onOpenRenter={handleNavigate}
+          onDismiss={(id) => dismissNotification.mutate(id)}
+          detailed
+        />
+
+        <RateChangeCard
+          items={rateChanges}
+          onOpen={(p) => { navigate(p); closePanel(); }}
+          onDismiss={(id) => dismissNotification.mutate(id)}
+        />
 
         {notificationsOff ? (
           <NotificationsOffNotice onNavigate={closePanel} />
-        ) : overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
+        ) : overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && rateChanges.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

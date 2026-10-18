@@ -25,7 +25,7 @@ export function AddMenu({ label, onManual, onScan, anchorRef, trigger }: Props) 
           <button
             ref={anchorRef}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity outline-none"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           >
             <Plus size={14} /> {label}
           </button>

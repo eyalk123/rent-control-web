@@ -20,3 +20,13 @@ export function getPropertyColorBg(id: number, alpha = 0.12): string {
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
+
+/**
+ * The large no-photo block on a property card. Its strength is a theme token
+ * (`--property-placeholder-tint`) rather than a fixed alpha: at the light theme's 35%, a
+ * saturated hue over the dark surface turned into a dull teal / plum / brown slab that was
+ * the loudest colour on the page.
+ */
+export function getPropertyPlaceholderBg(id: number): string {
+  return `color-mix(in srgb, ${getPropertyColor(id)} var(--property-placeholder-tint), transparent)`;
+}

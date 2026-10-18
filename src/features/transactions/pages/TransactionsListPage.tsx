@@ -200,7 +200,7 @@ export function TransactionsListPage() {
               ref={addAnchorRef}
               onClick={() => setDrawerOpen(true)}
               className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--color-primary)' }}
+              style={{ background: 'var(--color-primary-fill)' }}
             >
               <Plus size={14} /> {t('transactions.addTransactionBtn')}
             </button>
@@ -263,7 +263,7 @@ export function TransactionsListPage() {
               ];
             })().map(({ label, value, tone }) => (
               <div key={label} className="rounded-[var(--radius-md)] p-4 flex-1" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-                <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+                <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
                 <LtrSpan className="text-[22px] font-bold mt-1 block" style={{ color: tone === 'success' ? 'var(--color-rev-fg)' : 'var(--color-exp-fg)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(value)}
                 </LtrSpan>
@@ -309,7 +309,7 @@ export function TransactionsListPage() {
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
-                style={{ background: 'var(--color-primary)' }}
+                style={{ background: 'var(--color-primary-fill)' }}
               >
                 <Plus size={14} /> {t('transactions.addNew')}
               </button>

@@ -81,7 +81,7 @@ function DialogButtons({ submitLabel, loading, onClose }: { submitLabel: string;
         type="submit"
         disabled={loading}
         className="flex-1 h-10 rounded-[10px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-        style={{ background: 'var(--color-primary)' }}
+        style={{ background: 'var(--color-primary-fill)' }}
       >
         {submitLabel}
       </button>

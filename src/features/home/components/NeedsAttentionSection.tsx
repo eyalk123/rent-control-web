@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { AlertCircle, Clock, Settings2, TrendingUp } from 'lucide-react';
+import { AlertCircle, Clock, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '@/hooks/useLanguage';
 import { useNavigate } from 'react-router-dom';
 import { formatMoney } from '@/shared/utils/money';
-import { fmtDate, thisMonthISO } from '@/shared/utils/dates';
+import { thisMonthISO } from '@/shared/utils/dates';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -12,6 +11,9 @@ import { useMarkRentPaid } from '@/features/transactions/queries';
 import { useAlertsPanel } from '@/features/alerts/AlertsPanelContext';
 import { useNotifications, useDismissNotification } from '@/features/notifications/queries';
 import type { NotificationItem } from '@/features/notifications/types';
+import { RateChangeCard } from '@/features/notifications/components/RateChangeCard';
+import { CpiChangeCard } from '@/features/notifications/components/CpiChangeCard';
+import { ExpiringLeaseAction } from '@/features/renters/components/ExpiringLeaseAction';
 import { NotificationsOffNotice, useNotificationsOff } from '@/features/notifications/components/NotificationsOffNotice';
 import { ANCHORS } from '@/features/onboarding/anchors';
 import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
@@ -22,7 +24,6 @@ const MAX_ROWS_PER_SECTION = 2;
 
 export function NeedsAttentionSection() {
   const { t } = useTranslation();
-  const { isRtl } = useLanguage();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { openPanel } = useAlertsPanel();
@@ -37,6 +38,7 @@ export function NeedsAttentionSection() {
   const overdue = items.filter((i) => i.type === 'overdue');
   const expiring = items.filter((i) => i.type === 'lease_expiring');
   const cpiChanges = items.filter((i) => i.type === 'cpi_rent_change');
+  const rateChanges = items.filter((i) => i.type === 'mortgage_rate_change');
 
   async function handleMarkPaid(item: NotificationItem) {
     if (!item.property_id) return;
@@ -71,7 +73,7 @@ export function NeedsAttentionSection() {
           forget, so being two clicks deep behind the bell made them easy to never find.
           The copy in the panel stays: someone already reading alerts wants it there. */}
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
           {t('home.needsAttention')}
         </p>
         <button
@@ -98,7 +100,7 @@ export function NeedsAttentionSection() {
           </div>
         )}
         {!loading && overdue.length > 0 && (
-          <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-exp-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
+          <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)', borderInlineStart: '3px solid var(--color-error)' }}>
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle size={15} style={{ color: 'var(--color-exp-fg)' }} />
               <span className="text-sm font-semibold" style={{ color: 'var(--color-exp-fg)' }}>
@@ -120,7 +122,7 @@ export function NeedsAttentionSection() {
                           {item.property_address} · <bdi>{t(item.data.days_overdue === 1 ? 'home.daysOverdue' : 'home.daysOverdue_plural', { count: item.data.days_overdue ?? 0 })}</bdi>
                         </p>
                       </div>
-                      <LtrSpan className="text-sm font-semibold shrink-0 ms-2" style={{ color: 'var(--color-exp-fg)' }}>{formatMoney(item.data.amount ?? 0)}</LtrSpan>
+                      <LtrSpan className="text-sm font-semibold shrink-0 ms-2" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(item.data.amount ?? 0)}</LtrSpan>
                     </button>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
@@ -162,7 +164,7 @@ export function NeedsAttentionSection() {
           <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <div className="flex items-center gap-2 mb-3">
               <Clock size={15} style={{ color: 'var(--color-warning)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-warning)' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
                 {t('home.expiringLeases')} ({expiring.length})
               </span>
             </div>
@@ -188,13 +190,12 @@ export function NeedsAttentionSection() {
                     >
                       {t('home.actionIgnore')}
                     </button>
-                    <button
-                      onClick={() => navigate(`/renters/${item.renter_id}?extend=1`)}
+                    <ExpiringLeaseAction
+                      renterId={item.renter_id}
+                      onUpdateLease={() => navigate(`/renters/${item.renter_id}?extend=1`)}
                       className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
-                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-warning)', color: 'var(--color-warning)' }}
-                    >
-                      {t('home.actionUpdateLease')}
-                    </button>
+                      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)', color: 'var(--color-text-primary)' }}
+                    />
                   </div>
                 </div>
               ))}
@@ -203,7 +204,7 @@ export function NeedsAttentionSection() {
               <button
                 onClick={openPanel}
                 className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--color-warning)' }}
+                style={{ color: 'var(--color-text-secondary)' }}
               >
                 {t('home.seeAll')} ({expiring.length - MAX_ROWS_PER_SECTION} {t('home.more')})
               </button>
@@ -211,62 +212,23 @@ export function NeedsAttentionSection() {
           </div>
         )}
 
-        {cpiChanges.length > 0 && (
-          <div className="rounded-[var(--radius-card)] p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={15} style={{ color: 'var(--color-primary)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-primary)' }}>
-                {t('notifications.event.cpi_rent_change')} ({cpiChanges.length})
-              </span>
-            </div>
-            <div className="space-y-2">
-              {cpiChanges.slice(0, MAX_ROWS_PER_SECTION).map((item) => (
-                <div key={item.id} className="flex items-center gap-2">
-                  <button
-                    onClick={() => navigate(`/renters/${item.renter_id}`)}
-                    className="flex-1 text-start hover:opacity-80 min-w-0"
-                  >
-                    <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{item.first_name} {item.last_name}</p>
-                    <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                      <LtrSpan>{formatMoney(item.data.old_amount ?? 0)}</LtrSpan>
-                      {isRtl ? ' ← ' : ' → '}
-                      <LtrSpan className="font-semibold">{formatMoney(item.data.new_amount ?? 0)}</LtrSpan>
-                      {' · '}
-                      <bdi>
-                        {t(
-                          item.data.stage === 'upcoming'
-                            ? 'notifications.cpiChangesOn'
-                            : 'notifications.cpiEffective',
-                          { date: fmtDate(item.data.effective_date ?? '') },
-                        )}
-                      </bdi>
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => dismissNotification.mutate(item.id)}
-                    className="shrink-0 rounded-full px-2 py-0.5 text-xs transition-opacity"
-                    style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)', color: 'var(--color-text-secondary)' }}
-                  >
-                    {t('home.actionIgnore')}
-                  </button>
-                </div>
-              ))}
-            </div>
-            {cpiChanges.length > MAX_ROWS_PER_SECTION && (
-              <button
-                onClick={openPanel}
-                className="mt-3 text-xs font-medium hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                {t('home.seeAll')} ({cpiChanges.length - MAX_ROWS_PER_SECTION} {t('home.more')})
-              </button>
-            )}
-          </div>
-        )}
+        <CpiChangeCard
+          items={cpiChanges}
+          onOpenRenter={(id) => navigate(`/renters/${id}`)}
+          onDismiss={(id) => dismissNotification.mutate(id)}
+          limit={MAX_ROWS_PER_SECTION}
+          onSeeAll={openPanel}
+        />
+
+        <RateChangeCard
+          items={rateChanges}
+          onOpen={navigate}
+          onDismiss={(id) => dismissNotification.mutate(id)}
+        />
 
         {!loading && notificationsOff ? (
           <NotificationsOffNotice />
-        ) : !loading && overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && (
+        ) : !loading && overdue.length === 0 && expiring.length === 0 && cpiChanges.length === 0 && rateChanges.length === 0 && (
           <div className="rounded-[var(--radius-card)] p-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('home.allCaughtUp')}</p>
           </div>

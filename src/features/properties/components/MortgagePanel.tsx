@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, CalendarX, History, Landmark, Plus, Wallet } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
-import { DetailRow } from '@/shared/components/detail/DetailRow';
+import { DetailLabel, DetailRow } from '@/shared/components/detail/DetailRow';
 import { useToast } from '@/shared/components/ui/Toast';
 import { formatDate, formatMoney } from '@/shared/utils/money';
 import { todayISO } from '@/shared/utils/dates';
@@ -36,7 +36,7 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
   return (
     <DetailPanel title={t('mortgage.section')}>
       <div className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-        <Wallet size={15} style={{ color: 'var(--color-brand-navy)' }} strokeWidth={1.6} />
+        <Wallet size={15} style={{ color: 'var(--color-brand-navy-fg)' }} strokeWidth={1.6} />
         <span className="flex-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('mortgage.monthlyPayment')}</span>
         <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
           {mortgage.current_payment != null
@@ -53,7 +53,7 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
           aria-label={t('mortgage.newPayment')}
           title={t('mortgage.newPayment')}
           className={`${iconBtn} w-8 text-white hover:opacity-90`}
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           <Plus size={16} aria-hidden="true" />
         </button>
@@ -65,13 +65,10 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
           whole units — they are computed, not amounts anyone typed. */}
       {r?.monthly_left != null && (
         <>
-          <DetailRow icon={Wallet} label={t('mortgage.averageExpenses')} value={formatMoney(Math.round(r.monthly_expenses ?? 0))} />
+          <DetailRow icon={Wallet} label={t('mortgage.averageExpenses')} info={t('mortgage.info.averageExpenses')} value={formatMoney(Math.round(r.monthly_expenses ?? 0))} />
           <div className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-            <Wallet size={15} style={{ color: 'var(--color-brand-navy)' }} strokeWidth={1.6} />
-            <span className="flex-1 flex flex-col">
-              <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{t('mortgage.left')}</span>
-              <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{t('mortgage.leftSub')}</span>
-            </span>
+            <Wallet size={15} style={{ color: 'var(--color-brand-navy-fg)' }} strokeWidth={1.6} />
+            <DetailLabel label={t('mortgage.left')} sub={t('mortgage.leftSub')} info={t('mortgage.info.left')} />
             <span dir="ltr" className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
               {formatMoney(Math.round(r.monthly_left))}
             </span>
@@ -81,6 +78,7 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
       <DetailRow
         icon={Landmark}
         label={t('mortgage.coverage')}
+        info={t('mortgage.info.coverage')}
         value={r?.mortgage_coverage != null ? formatCoverage(r.mortgage_coverage) : null}
         last
       />

@@ -5,7 +5,7 @@ import { MapPin } from 'lucide-react';
 import { Pill } from '@/shared/components/ui/Pill';
 import { LtrSpan } from '@/shared/components/ui/LtrSpan';
 import { formatMoney } from '@/shared/utils/money';
-import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { getPropertyColor, getPropertyPlaceholderBg } from '@/shared/utils/propertyColor';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { usePropertyImageSrc } from '@/features/properties/utils/propertyImageSrc';
 import type { DetailBackState } from '@/shared/components/detail/useDetailBackTarget';
@@ -21,7 +21,7 @@ export function RenterPropertyCard({ property, monthlyRent, backTo, backLabel }:
   const navigate = useNavigate();
   const open = () => navigate(`/properties/${property.id}`, { state: { backTo, backLabel } });
   const color = getPropertyColor(property.id);
-  const bg = getPropertyColorBg(property.id, 0.35);
+  const bg = getPropertyPlaceholderBg(property.id);
   const imageSrc = usePropertyImageSrc(property.image_url);
 
   return (
@@ -65,7 +65,7 @@ export function RenterPropertyCard({ property, monthlyRent, backTo, backLabel }:
             { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+              <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
               <LtrSpan className="text-[13px] font-bold mt-0.5 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {String(value)}
               </LtrSpan>

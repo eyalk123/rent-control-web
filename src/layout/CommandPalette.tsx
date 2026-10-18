@@ -135,7 +135,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             if (!items?.length) return null;
             return (
               <div key={group}>
-                <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                <div className="px-4 py-2 text-[12px] font-semibold text-[var(--color-text-secondary)]">
                   {group}
                 </div>
                 {items.map((item, i) => (

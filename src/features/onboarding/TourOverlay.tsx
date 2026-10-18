@@ -395,7 +395,7 @@ export function TourOverlay() {
             className={`rounded-lg font-bold transition-opacity hover:opacity-90 ${
               isTitleCard ? 'px-6 py-2.5 text-sm' : 'px-4 py-2 text-[13px]'
             }`}
-            style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
           >
             {controller?.isLast ? t('onboarding.ui.done') : t('onboarding.ui.next')}
           </button>

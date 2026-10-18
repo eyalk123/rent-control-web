@@ -30,7 +30,7 @@ export function DetailNotFound({ title, detail }: { title: string; detail?: stri
         <button
           onClick={() => navigate('/home', { replace: true })}
           className="h-9 px-4 rounded-[9px] text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {t('common.goHome')}
         </button>

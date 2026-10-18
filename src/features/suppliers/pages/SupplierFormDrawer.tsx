@@ -142,7 +142,7 @@ export function SupplierFormDrawer({ open, onClose, supplierId }: Props) {
         form="supplier-form"
         disabled={isSubmitting}
         className="h-10 px-5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-        style={{ background: 'var(--color-primary)' }}
+        style={{ background: 'var(--color-primary-fill)' }}
       >
         {isSubmitting ? '...' : t('common.save')}
       </button>

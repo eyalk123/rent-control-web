@@ -1350,7 +1350,7 @@ export function TransactionFormDrawer({ open, onClose, initialType, initialPrope
       form={isBulkRevenue ? undefined : 'transaction-form'}
       onClick={isBulkRevenue ? () => document.getElementById('bulk-revenue-submit')?.click() : undefined}
       className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-50"
-      style={{ background: 'var(--color-primary)' }}
+      style={{ background: 'var(--color-primary-fill)' }}
     >
       {t('common.save')}
     </button>

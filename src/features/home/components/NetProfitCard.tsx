@@ -19,7 +19,7 @@ export function NetProfitCard({ currentBucket, loading }: Props) {
 
   return (
     <div className="rounded-[var(--radius-card)] p-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+      <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.netProfitMtd')}
       </p>
       {loading ? (

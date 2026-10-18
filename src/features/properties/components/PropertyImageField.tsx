@@ -158,7 +158,7 @@ export function PropertyImageField({
                     {isSelected && (
                       <span
                         className="absolute top-1 end-1 flex h-5 w-5 items-center justify-center rounded-full text-white"
-                        style={{ background: 'var(--color-primary)' }}
+                        style={{ background: 'var(--color-primary-fill)' }}
                       >
                         <Check size={12} strokeWidth={3} aria-hidden="true" />
                       </span>

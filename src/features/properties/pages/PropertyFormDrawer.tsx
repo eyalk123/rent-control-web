@@ -18,6 +18,7 @@ import { FormDateInput } from '@/shared/components/form/FormDateInput';
 import { Plus } from 'lucide-react';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { Toggle } from '@/shared/components/ui/Toggle';
+import { InfoTip } from '@/shared/components/ui/InfoTip';
 import { capabilities } from '@/shared/utils/capabilities';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { PropertyCreatedPrompt } from '../components/PropertyCreatedPrompt';
@@ -58,6 +59,7 @@ const EMPTY_FORM: FormData = {
   floor: '', apartment: '', basicContractUrl: undefined, landRegistryUrl: undefined,
   purchasePrice: '', purchaseDate: '',
   hasMortgage: false, mortgagePayment: '', mortgageChargeDay: '', mortgageEndDate: '',
+  hasPrimeTrack: true,
 };
 
 interface Props {
@@ -223,6 +225,7 @@ export function PropertyFormDrawer({
         mortgagePayment: mortgageAmount(existing.mortgage)?.toString() ?? '',
         mortgageChargeDay: existing.mortgage?.charge_day.toString() ?? '',
         mortgageEndDate: existing.mortgage?.end_date ?? '',
+        hasPrimeTrack: existing.mortgage?.has_prime_track ?? true,
       };
       // Scan attaching to this property: overlay the lease — fill the fields it left blank
       // (silent) and surface the ones that differ for the user to keep or replace.
@@ -410,7 +413,7 @@ export function PropertyFormDrawer({
             if (ok) setStep(2);
           }}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {t('common.next')}
         </button>
@@ -421,7 +424,7 @@ export function PropertyFormDrawer({
           form="property-form"
           disabled={isSubmitting}
           className="flex-1 h-10 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {isSubmitting ? '...' : t('common.save')}
         </button>
@@ -444,7 +447,7 @@ export function PropertyFormDrawer({
       {/* Step indicator */}
       <div ref={stepperAnchorRef} className="flex items-center gap-2 mb-5">
         {[1, 2].map((s) => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary)]' : 'bg-[var(--color-outline)]'}`} />
+          <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= shownStep ? 'bg-[var(--color-primary-fill)]' : 'bg-[var(--color-outline)]'}`} />
         ))}
         <span className="ms-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{shownStep}/2</span>
       </div>
@@ -641,6 +644,25 @@ export function PropertyFormDrawer({
                       />
                       <FormDateInput label={t('mortgage.endDateOptional')} error={errors.mortgageEndDate?.message} {...register('mortgageEndDate')} />
                     </div>
+                    <Controller
+                      control={control}
+                      name="hasPrimeTrack"
+                      render={({ field }) => (
+                        <div className="flex items-center gap-3">
+                          <span className="flex-1 flex items-center gap-0.5 min-w-0">
+                            <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                              {t('mortgage.primeLabel')}
+                            </span>
+                            <InfoTip label={t('mortgage.primeInfoLabel')}>{t('mortgage.primeInfo')}</InfoTip>
+                          </span>
+                          <Toggle
+                            checked={field.value}
+                            label={t('mortgage.primeLabel')}
+                            onChange={(on) => setValue('hasPrimeTrack', on, { shouldDirty: true })}
+                          />
+                        </div>
+                      )}
+                    />
                   </>
                 )}
               </div>
@@ -762,6 +784,7 @@ function mortgagePayload(data: FormData, hadMortgage: boolean): { mortgage?: Mor
         monthly_payment: Number(data.mortgagePayment),
         charge_day: Number(data.mortgageChargeDay),
         end_date: data.mortgageEndDate || null,
+        has_prime_track: data.hasPrimeTrack,
       },
     };
   }
@@ -813,7 +836,7 @@ function CurrentValueField({ value, date, pending, onAdd }: {
           aria-label={t('property.addValue')}
           title={t('property.addValue')}
           className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg text-white hover:opacity-90"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           <Plus size={16} aria-hidden="true" />
         </button>

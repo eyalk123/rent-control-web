@@ -79,7 +79,7 @@ export function LeaseTimeline({ renter }: Props) {
                 style={{ background: bgColor, border: '1px solid var(--color-outline)' }}
               >
                 {isCurrent && (
-                  <span className="absolute top-1.5 end-2 text-[9px] font-bold uppercase tracking-wide" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
+                  <span className="absolute top-1.5 end-2 text-[11px] font-bold" style={{ color: 'var(--color-rev-fg)' }}>{t('renter.currentLease')}</span>
                 )}
                 <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{getLeaseYearLabel(leaseStart, years, i, i18n.language)}</p>
                 <LtrSpan
@@ -97,7 +97,13 @@ export function LeaseTimeline({ renter }: Props) {
                     {t(indexLabelKey())}
                   </Pill>
                 )}
-                <p className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}>
+                {/* Why this year doesn't follow the index like the ones around it. */}
+                {y.set_by_owner && (
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                    {t('renter.leaseYearSetByOwner')}
+                  </p>
+                )}
+                <p className="text-[12px] font-semibold mt-0.5" style={{ color: isOption ? 'var(--color-warning)' : 'var(--color-text-secondary)' }}>
                   {typeLabel}
                   {/* Only a short period is called out. Sizing the cell by its duration
                       instead would collapse in this wrapping auto-fill grid, and worse

@@ -5,9 +5,15 @@
    `@theme inline` block further down, so a token changed here changes everywhere.
    This palette is intentionally NOT the mobile app's - see CLAUDE.md. */
 :root {
-  /* Brand */
+  /* Brand. `brand-navy` is a fill (white text sits on it), so it stays navy in both themes.
+     Text, icons and underlines drawn in the brand colour use `brand-navy-fg`, which
+     lightens in dark mode - navy on the dark surface is 1.2:1, i.e. invisible. */
   --color-brand-navy:             #1A2D4A;
+  --color-brand-navy-fg:          #1A2D4A;
   --color-primary:                #2563EB;
+  /* Solid primary surfaces (buttons, badges) that carry white text. Same as primary in
+     light; deeper in dark - see the dark block. */
+  --color-primary-fill:           #2563EB;
   --color-primary-container:      #DBEAFE;
   --color-on-primary-container:   #1E3A8A;
   --color-on-primary:             #FFFFFF;
@@ -58,6 +64,14 @@
   --color-chart-5:                #e87ba4;
   --color-chart-other:            rgba(148, 163, 184, 1);
 
+  /* How strongly a property's colour fills its no-photo card block (getPropertyPlaceholderBg). */
+  --property-placeholder-tint:    35%;
+
+  /* On-screen report tables (white text sits on the header). Screen-only - the PDF has
+     neither band - so dark mode is free to tone them down. */
+  --report-header-bg:             var(--color-brand-navy);
+  --report-owner-row-bg:          var(--color-rev-bg);
+
   /* Avatar */
   --color-avatar-background:      #DBEAFE;
   --color-avatar-border:          rgba(203, 213, 225, 1);
@@ -82,7 +96,13 @@
 }
 
 [data-theme="dark"] {
+  --color-brand-navy-fg:          rgb(147, 197, 253);
+
+  /* Primary splits in dark: no single blue clears 4.5:1 both as text on the dark surface
+     and under white text. `primary` stays light for links and icons; `primary-fill` is
+     deep enough for white button labels (5.1:1, against 3.7:1 for the light one). */
   --color-primary:                rgb(40, 136, 226);
+  --color-primary-fill:           rgb(31, 111, 197);
   --color-primary-container:      rgba(40, 136, 226, 0.2);
   --color-on-primary-container:   rgb(147, 197, 253);
   --color-secondary:              rgb(70, 150, 224);
@@ -104,15 +124,18 @@
   --color-subtle-outline:         rgba(255, 255, 255, 0.08);
 
   --color-success:                rgba(16, 185, 129, 1);
-  --color-warning:                rgba(245, 158, 11, 1);
+  /* A muted ochre rather than Tailwind amber-500: at full chroma on the near-black surface
+     the amber glowed gold and out-shouted everything else on the page. Same 7.5:1 contrast. */
+  --color-warning:                rgba(217, 165, 90, 1);
   --color-error:                  rgba(248, 113, 113, 1);
   --color-section-accent:         rgba(86, 132, 174, 1);
 
-  --color-warning-bg:             rgba(245, 158, 11, 0.18);
-  --color-warning-fg:             rgba(252, 211, 77, 1);
+  --color-warning-bg:             rgba(217, 165, 90, 0.14);
+  --color-warning-fg:             rgba(230, 196, 142, 1);
   --color-rev-bg:                 rgba(16, 185, 129, 0.18);
   --color-rev-fg:                 rgba(52, 211, 153, 1);
-  --color-exp-bg:                 rgba(248, 113, 113, 0.18);
+  /* Lower than the other tints: a large red wash turns into a maroon block on dark. */
+  --color-exp-bg:                 rgba(248, 113, 113, 0.10);
   --color-exp-fg:                 rgba(252, 165, 165, 1);
 
   --color-chart-1:                #3987e5;
@@ -121,6 +144,12 @@
   --color-chart-4:                #c98500;
   --color-chart-5:                #d55181;
   --color-chart-other:            rgba(100, 116, 139, 1);
+
+  --property-placeholder-tint:    16%;
+
+  /* A navy band and an 18% green band were the heaviest things on the dark report. */
+  --report-header-bg:             rgba(52, 52, 56, 1);
+  --report-owner-row-bg:          rgba(16, 185, 129, 0.07);
 
   --color-avatar-background:      rgba(44, 44, 46, 1);
   --color-avatar-border:          rgba(255, 255, 255, 0.15);
@@ -133,6 +162,8 @@
   --font-family-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --color-primary:            var(--color-primary);
+  --color-primary-fill:       var(--color-primary-fill);
+  --color-brand-navy-fg:      var(--color-brand-navy-fg);
   --color-primary-container:  var(--color-primary-container);
   --color-secondary:          var(--color-secondary);
   --color-accent:             var(--color-accent);
@@ -235,6 +266,11 @@ html[data-a11y-reduce-motion="true"] *::after {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Logo ────────────────────────────────────────────────────────── */
+/* The logo PNG is solid navy on transparent, which vanishes on the dark surface. In dark
+   mode it is redrawn in the primary text colour (black, then inverted to ~#F0F0F0). */
+[data-theme="dark"] .brand-logo { filter: brightness(0) invert(0.94); }
 
 /* ── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }

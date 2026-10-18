@@ -138,6 +138,25 @@ export async function terminateLease(
   return response.data;
 }
 
+/**
+ * Sets one CPI year's rent to the amount the owner agreed with the tenant (zero-based
+ * `yearIndex`), from a confirmed rent-change alert. Confirming the figure as it stands
+ * sends the calculated amount. The server re-derives the later years from it and
+ * dismisses that year's alert.
+ */
+export async function setLeaseYearAmount(
+  id: number,
+  yearIndex: number,
+  amount: number,
+): Promise<Renter> {
+  if (USE_MOCK_API) return mockRentersApi.setLeaseYearAmount(id, yearIndex, amount);
+  const response = await apiClient.put<Renter>(
+    `/renters/${id}/lease-years/${yearIndex}/amount`,
+    { amount },
+  );
+  return response.data;
+}
+
 /** Reopens a lease ended by mistake. Nothing was destroyed, so this just clears it. */
 export async function undoTermination(id: number): Promise<Renter> {
   if (USE_MOCK_API) return mockRentersApi.undoTermination(id);

@@ -22,7 +22,7 @@ export function MessageList() {
       ))}
       {status === 'streaming' && activity && (
         <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-primary)]" />
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-primary-fill)]" />
           {/* falls back to a generic label for any tool without its own string */}
           <span>{t([`agent.tool.${activity}`, 'agent.tool.default'])}</span>
         </div>

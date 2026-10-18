@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { RenterFormDrawer } from './RenterFormDrawer';
 import { LeaseExtensionDrawer } from '../components/LeaseExtensionDrawer';
+import { ExerciseOptionDialog } from '../components/ExerciseOptionDialog';
 import { TransactionFormDrawer } from '@/features/transactions/pages/TransactionFormDrawer';
 import { useRenter, useDeleteRenter, useTerminateLease, useUndoTermination } from '../queries';
 import { useToast } from '@/shared/components/ui/Toast';
@@ -61,6 +62,7 @@ export function RenterDetailPage() {
   const { showToast } = useToast();
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [extendDrawerOpen, setExtendDrawerOpen] = useState(false);
+  const [exerciseOptionOpen, setExerciseOptionOpen] = useState(false);
   const [txDrawerOpen, setTxDrawerOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [endLeaseOpen, setEndLeaseOpen] = useState(false);
@@ -105,8 +107,9 @@ export function RenterDetailPage() {
     ? t('renter.backToProperty', { name: backState.backLabel })
     : t('renter.allRenters');
 
-  // Deep-link from the "Update lease" notification action (?extend=1) opens the
-  // extension drawer directly, then clears the param so a refresh won't re-open it.
+  // Deep-link from the alert actions — "Update lease" (?extend=1) opens the extension
+  // drawer, "Change terms instead" on the exercise-option dialog likewise — then clears the
+  // param so a refresh won't re-open it.
   useEffect(() => {
     if (searchParams.get('extend') === '1') {
       setExtendDrawerOpen(true);
@@ -255,13 +258,21 @@ export function RenterDetailPage() {
 
       {/* Tab content */}
       <div className="p-4 lg:p-10" ref={panelAnchorRef}>
-        {shownTab === 'info' && <LeaseInfoTab renter={renter} />}
+        {shownTab === 'info' && <LeaseInfoTab renter={renter} onExerciseOption={() => setExerciseOptionOpen(true)} />}
         {shownTab === 'property' && <RenterPropertyTab renter={renter} />}
         {shownTab === 'transactions' && <RenterTransactionsTab renter={renter} transactions={transactions} tourSection={tourSection} />}
       </div>
 
       <RenterFormDrawer open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} renterId={renterId} />
       <LeaseExtensionDrawer open={extendDrawerOpen} onClose={() => setExtendDrawerOpen(false)} renter={renter} />
+      <ExerciseOptionDialog
+        renter={exerciseOptionOpen ? renter : null}
+        onClose={() => setExerciseOptionOpen(false)}
+        onChangeTerms={() => {
+          setExerciseOptionOpen(false);
+          setExtendDrawerOpen(true);
+        }}
+      />
       {/* No `initialType`: the drawer opens on its revenue/expense chooser, so a bill paid
           for this renter can be logged from here too. Both branches take the same prefill. */}
       <TransactionFormDrawer

@@ -45,6 +45,7 @@ export function ConsentGate({ outstanding }: { outstanding: LegalDocument[] }) {
         <div className="flex items-center gap-2.5">
           <img
             src={logoImage}
+            className="brand-logo"
             alt=""
             style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }}
           />
@@ -94,7 +95,7 @@ export function ConsentGate({ outstanding }: { outstanding: LegalDocument[] }) {
           onClick={() => accept.mutate(outstanding)}
           disabled={!checked || accept.isPending}
           className="mt-5 h-11 w-full rounded-[10px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           {accept.isPending ? '…' : t('legal.gateAccept')}
         </button>

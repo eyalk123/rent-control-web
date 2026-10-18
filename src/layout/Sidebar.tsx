@@ -87,7 +87,7 @@ export function Sidebar() {
           aria-label={t('tabs.home')}
           className="flex w-full items-center gap-2.5 px-4 py-5 cursor-pointer text-start"
         >
-          <img src={logoImage} alt="" className="h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
+          <img src={logoImage} alt="" className="brand-logo h-[34px] w-[34px] shrink-0 rounded-lg object-contain" />
           <div>
             <div className="text-sm font-bold text-[var(--color-text-primary)] tracking-tight">RentVance</div>
             <div className="text-[10.5px] text-[var(--color-text-secondary)]">
@@ -100,7 +100,7 @@ export function Sidebar() {
           {mainNavItems.map((item) => (
             <NavBtn key={item.path} {...item} />
           ))}
-          <div className="mt-3.5 mb-1.5 px-3 text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest">
+          <div className="mt-3.5 mb-1.5 px-3 text-[12px] font-semibold text-[var(--color-text-secondary)]">
             {t('common.manage')}
           </div>
           {bottomNavItems.map((item) => (
@@ -116,7 +116,7 @@ export function Sidebar() {
           </div>
         ) : summary && (
           <div className="mx-3.5 mb-3 rounded-[10px] bg-[var(--color-input-filled-background)] p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">
+            <p className="text-[12px] font-semibold text-[var(--color-text-secondary)] mb-1">
               {t('home.ytdNet', { year: summary.ytd_year })}
             </p>
             <LtrSpan
@@ -172,7 +172,7 @@ export function Sidebar() {
           aria-label={t('tabs.home')}
           className="mx-auto mb-5 block"
         >
-          <img src={logoImage} alt="" className="h-9 w-9 rounded-[9px] object-contain" />
+          <img src={logoImage} alt="" className="brand-logo h-9 w-9 rounded-[9px] object-contain" />
         </button>
 
         <nav className="flex flex-col gap-1 px-2.5 flex-1">

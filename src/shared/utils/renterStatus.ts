@@ -1,5 +1,7 @@
-import { getCurrentMonthlyRent, getLeaseEndDate, getScheduleEndDate, type Renter } from '@/shared/types';
+import { addMonths, getCurrentMonthlyRent, getLeaseEndDate, getScheduleEndDate, type Renter } from '@/shared/types';
 import { parseISODate } from '@/shared/utils/dates';
+import { nextOptionIndex } from '@/shared/utils/leaseSchedule';
+import { leaseYearStart } from '@/shared/utils/leaseYear';
 
 /**
  * Where a renter sits in the lease lifecycle.
@@ -89,6 +91,29 @@ export function getRenterLifecycle(renter: Renter, today: Date = startOfToday())
   // No dates at all reads as active rather than ended — a half-entered renter is
   // something the owner is still working on, not an archived one.
   return 'active';
+}
+
+/**
+ * True when the lease still has an option year the owner can turn into a binding one.
+ *
+ * Available on the same terms as Extend: after the contract has run out too — a renewal is
+ * often confirmed late, with the tenant already living in the option year — but not on a
+ * terminated lease, which is Reopen-first. Never on an open-ended one, whose periods are
+ * generated rather than options.
+ */
+export function canExerciseOption(renter: Renter): boolean {
+  return !isTerminated(renter) && !renter.open_ended && nextOptionIndex(renter.lease_years) >= 0;
+}
+
+/**
+ * Whether the renter page should prompt for the next option year: from a month before it
+ * starts, and on after that until it is taken up. Any earlier and the decision isn't due
+ * yet; Extend still covers the owner who wants to record it anyway.
+ */
+export function isOptionDecisionDue(renter: Renter, today: Date = startOfToday()): boolean {
+  if (!canExerciseOption(renter)) return false;
+  const start = leaseYearStart(renter.lease_start, renter.lease_years, nextOptionIndex(renter.lease_years));
+  return !!start && start <= addMonths(today, 1);
 }
 
 /**

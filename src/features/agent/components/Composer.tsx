@@ -58,7 +58,7 @@ export function Composer() {
           onClick={submit}
           disabled={!text.trim()}
           aria-label={t('agent.send')}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-primary)] text-white transition-opacity disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-[var(--color-primary-fill)] text-white transition-opacity disabled:opacity-40"
         >
           <Send size={16} aria-hidden="true" />
         </button>

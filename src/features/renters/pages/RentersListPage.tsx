@@ -167,7 +167,7 @@ function RenterCard({ renter, status, isSelectMode, isSelected, onToggle, onLong
           { label: t('renter.payDay'), value: renter.payment_day_of_month ? t('renter.payDayShort', { day: renter.payment_day_of_month }) : '—', color: undefined },
         ].map(({ label, value, color }) => (
           <div key={label}>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+            <p className="text-[12px] font-semibold first-letter:uppercase" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
             <p className="text-[13.5px] font-bold mt-0.5" style={{ color: color ?? 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value}</p>
           </div>
         ))}
@@ -549,8 +549,8 @@ export function RentersListPage() {
             style={{
               background: 'transparent',
               border: 'none',
-              borderBottom: statusFilter === key ? '2px solid var(--color-brand-navy)' : '2px solid transparent',
-              color: statusFilter === key ? 'var(--color-brand-navy)' : 'var(--color-text-secondary)',
+              borderBottom: statusFilter === key ? '2px solid var(--color-brand-navy-fg)' : '2px solid transparent',
+              color: statusFilter === key ? 'var(--color-brand-navy-fg)' : 'var(--color-text-secondary)',
               fontWeight: statusFilter === key ? 700 : 500,
               cursor: 'pointer',
               marginBottom: -1,
@@ -604,7 +604,7 @@ export function RentersListPage() {
                 <button
                   onClick={openBlankRenterForm}
                   className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
-                  style={{ background: 'var(--color-primary)' }}
+                  style={{ background: 'var(--color-primary-fill)' }}
                 >
                   <Plus size={14} /> {t('renter.addNew')}
                 </button>

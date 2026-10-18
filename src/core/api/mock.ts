@@ -695,6 +695,7 @@ function setMockMortgage(propertyId: number, data: MortgageCreate | null) {
       property_id: propertyId,
       charge_day: data.charge_day,
       end_date: data.end_date ?? null,
+      has_prime_track: data.has_prime_track ?? true,
       current_payment: null,
       payments: [{ id: nextMortgageId++, amount: data.monthly_payment, effective_from: today, created_at: now }],
       created_at: now,
@@ -706,6 +707,7 @@ function setMockMortgage(propertyId: number, data: MortgageCreate | null) {
   entry.amount = data.monthly_payment;
   existing.charge_day = data.charge_day;
   existing.end_date = data.end_date ?? null;
+  existing.has_prime_track = data.has_prime_track ?? true;
 }
 
 export const mockMortgagesApi = {
@@ -913,6 +915,28 @@ export const mockRentersApi = {
     const idx = mockRenters.findIndex((x) => x.id === id);
     if (idx < 0) throw new Error('Renter not found');
     mockRenters[idx] = { ...mockRenters[idx], terminated_on: null, termination_reason: null };
+    return mockRentersApi.getRenterById(id);
+  },
+  /**
+   * Stands in for `PUT /renters/{id}/lease-years/{n}/amount`: the year keeps the typed
+   * amount and is marked owner-set, later years move by the same ratio (the server
+   * re-derives them from the index; mock mode has none), and the CPI alert for the renter
+   * is dismissed. The fixed sample may name a year the mock lease doesn't have; the alert
+   * is still cleared so the flow can be walked end to end.
+   */
+  setLeaseYearAmount: async (id: number, yearIndex: number, amount: number): Promise<Renter> => {
+    const idx = mockRenters.findIndex((x) => x.id === id);
+    if (idx < 0) throw new Error('Renter not found');
+    const years = [...(mockRenters[idx].lease_years ?? [])];
+    if (yearIndex >= 1 && yearIndex < years.length) {
+      const ratio = years[yearIndex].amount ? amount / years[yearIndex].amount : 1;
+      years[yearIndex] = { ...years[yearIndex], amount, set_by_owner: true };
+      for (let i = yearIndex + 1; i < years.length; i++) {
+        if (!years[i].set_by_owner) years[i] = { ...years[i], amount: Math.round(years[i].amount * ratio) };
+      }
+      mockRenters[idx] = { ...mockRenters[idx], lease_years: years };
+    }
+    notifDismissed.add(id * 10 + 2);
     return mockRentersApi.getRenterById(id);
   },
 };
@@ -1142,7 +1166,7 @@ export const mockHomeApi = {
 // feed is derived from the mock overdue/expiring computations; read/dismissed
 // state and rules live in module-scoped state for the session.
 
-type MockEvent = 'overdue' | 'lease_expiring' | 'cpi_rent_change';
+type MockEvent = 'overdue' | 'lease_expiring' | 'cpi_rent_change' | 'mortgage_rate_change';
 
 interface MockRule {
   id: number;
@@ -1244,6 +1268,66 @@ async function buildMockFeed() {
       });
       break; // one sample is enough; a per-renter loop would swamp the mock feed
     }
+    // And one estimate, so both stages of the row (estimated / final amount) can be seen.
+    const upcoming = new Date();
+    upcoming.setDate(upcoming.getDate() + 18);
+    const [, second] = await mockHomeApi.getExpiringRenters({ days_until: 3650 });
+    if (second) {
+      items.push({
+        id: second.renter_id * 10 + 3, // stable synthetic id (offset 30)
+        type: 'cpi_rent_change' as MockEvent,
+        renter_id: second.renter_id,
+        first_name: second.first_name,
+        last_name: second.last_name,
+        property_id: second.property_id,
+        property_address: second.property_address,
+        payment_type: null,
+        offset: 30,
+        data: {
+          stage: 'upcoming' as const,
+          old_amount: 4000,
+          new_amount: 4120,
+          delta: 120,
+          delta_percent: 3,
+          effective_date: upcoming.toISOString().slice(0, 10),
+          year_index: 1,
+          offset: 30,
+        },
+        read: false,
+        dismissed: false,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+  const prime = mockMortgages.filter((m) => m.has_prime_track);
+  if (mockNotifSettings.master_enabled && !muted.has('mortgage_rate_change') && prime.length > 0) {
+    // A fixed sample, like the CPI one: the Bank of Israel cut by 0.25 two days ago.
+    const changed = new Date();
+    changed.setDate(changed.getDate() - 2);
+    const ids = [...new Set(prime.map((m) => m.property_id))];
+    items.push({
+      id: 999001,
+      type: 'mortgage_rate_change' as MockEvent,
+      renter_id: 0,
+      first_name: null,
+      last_name: null,
+      property_id: ids.length === 1 ? ids[0] : null,
+      property_address: null,
+      payment_type: null,
+      offset: 0,
+      data: {
+        old_rate: 3.5,
+        new_rate: 3.25,
+        old_prime: 5,
+        new_prime: 4.75,
+        effective_date: changed.toISOString().slice(0, 10),
+        property_ids: ids,
+        offset: 0,
+      },
+      read: false,
+      dismissed: false,
+      created_at: new Date().toISOString(),
+    });
   }
   return items
     .filter((i) => !notifDismissed.has(i.id))

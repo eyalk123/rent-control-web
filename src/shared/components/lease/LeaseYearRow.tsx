@@ -132,7 +132,7 @@ export function LeaseYearRow({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span
           className={`text-[15px] min-w-[52px] text-[var(--color-text-primary)] ${
-            isCurrent ? 'font-extrabold' : 'font-semibold'
+            isCurrent ? 'font-bold' : 'font-semibold'
           }`}
         >
           {label}

@@ -1,18 +1,20 @@
 // Shared types for the notifications feed and the preferences/rules engine.
 // Mirrors the backend schemas in app/schemas/notification.py.
 
-export type NotificationEvent = 'overdue' | 'lease_expiring' | 'cpi_rent_change';
+export type NotificationEvent = 'overdue' | 'lease_expiring' | 'cpi_rent_change' | 'mortgage_rate_change';
 
 export const NOTIFICATION_EVENTS: NotificationEvent[] = [
   'overdue',
   'lease_expiring',
   'cpi_rent_change',
+  'mortgage_rate_change',
 ];
 
 // Events with no rule editor: offsets and scope describe "how long before a date I know
 // about", and a CPI change has no such date — it fires when the index moves. Configured
 // by mute + materiality threshold instead. Mirrors RULE_EXEMPT_EVENTS on the backend.
-export const RULE_EXEMPT_EVENTS: NotificationEvent[] = ['cpi_rent_change'];
+// The mortgage rate change likewise fires when the Bank of Israel moves the rate.
+export const RULE_EXEMPT_EVENTS: NotificationEvent[] = ['cpi_rent_change', 'mortgage_rate_change'];
 
 export const isRuleEvent = (event: NotificationEvent) => !RULE_EXEMPT_EVENTS.includes(event);
 
@@ -23,8 +25,9 @@ export const isRuleEvent = (event: NotificationEvent) => !RULE_EXEMPT_EVENTS.inc
 // The type and the array above keep every event: a *historical* CPI notification must still
 // render for an Israeli account, and the feed does not ask permission before displaying
 // what the server sent. Only the settings list narrows.
-export const EVENT_REQUIREMENTS: Partial<Record<NotificationEvent, 'cpiLinkage'>> = {
+export const EVENT_REQUIREMENTS: Partial<Record<NotificationEvent, 'cpiLinkage' | 'mortgage'>> = {
   cpi_rent_change: 'cpiLinkage',
+  mortgage_rate_change: 'mortgage',
 };
 
 // The two stages of a cpi_rent_change: an estimate before the lease anniversary, and the
@@ -48,6 +51,13 @@ export interface NotificationData {
   known_index?: number | null;
   index_month?: string | null;
   index_source?: string | null;
+  // mortgage_rate_change only. Percent; prime is the Bank of Israel rate + 1.5.
+  old_rate?: number;
+  new_rate?: number;
+  old_prime?: number;
+  new_prime?: number;
+  /** The properties whose mortgage has a prime track. */
+  property_ids?: number[];
 }
 
 export interface NotificationItem {

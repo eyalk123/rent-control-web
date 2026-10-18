@@ -21,7 +21,7 @@ export function QuickActions({ onNavigate }: Props) {
 
   return (
     <div ref={anchorRef}>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+      <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--color-text-secondary)' }}>
         {t('home.quickActions')}
       </p>
       {/* Five columns leaves ~62px per tile at 390px, which wraps every label onto two

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { CalendarClock, TrendingUp, Wallet, type LucideIcon } from 'lucide-react';
+import { CalendarClock, Landmark, TrendingUp, Wallet, type LucideIcon } from 'lucide-react';
 import { formatMoney } from '@/shared/utils/money';
 import { isRuleEvent, type NotificationEvent, type NotificationRule, type NotificationSettings } from './types';
 
@@ -7,6 +7,7 @@ export const EVENT_ICONS: Record<NotificationEvent, LucideIcon> = {
   overdue: Wallet,
   lease_expiring: CalendarClock,
   cpi_rent_change: TrendingUp,
+  mortgage_rate_change: Landmark,
 };
 
 export function ruleScheduleText(rule: NotificationRule, t: TFunction): string {
@@ -33,6 +34,7 @@ export function eventSummary(
   settings: NotificationSettings,
   t: TFunction,
 ): string {
+  if (event === 'mortgage_rate_change') return t('notifications.rateSummary');
   if (!isRuleEvent(event)) {
     const amount = settings.cpi_min_change_amount;
     const percent = settings.cpi_min_change_percent;

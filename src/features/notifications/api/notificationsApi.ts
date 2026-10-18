@@ -7,7 +7,8 @@ export async function getNotifications(
 ): Promise<NotificationItem[]> {
   if (USE_MOCK_API) return mockNotificationsApi.getNotifications(status);
   const { data } = await apiClient.get<NotificationItem[]>('/notifications', {
-    params: { status },
+    // Asked for explicitly: older app builds can't render an alert that names no renter.
+    params: { status, include_mortgage_alerts: true },
   });
   return data;
 }

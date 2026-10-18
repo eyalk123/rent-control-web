@@ -70,7 +70,7 @@ export function PropertyOwnersPage() {
         <button
           onClick={openAdd}
           className="flex shrink-0 items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--color-primary-fill)' }}
         >
           <Plus size={14} /> {t('propertyOwners.add')}
         </button>

@@ -119,6 +119,12 @@ export interface LeaseYear {
    * job would read to tell its own rows from ones the owner has corrected by hand.
    */
   generated?: boolean;
+  /**
+   * The owner set this CPI year's rent by hand from a confirmed rent-change alert, usually
+   * the index figure rounded. The server never reprices it, and later CPI years derive from
+   * it. Server-owned: only `setLeaseYearAmount` sets it, and a form save cannot.
+   */
+  set_by_owner?: boolean;
 }
 
 /** How the monthly rent changes from one lease year to the next. */
@@ -664,6 +670,8 @@ export interface Mortgage {
   /** Day of the month the bank collects, 1-31. */
   charge_day: number;
   end_date: string | null;
+  /** Part of the loan is on the prime track, so a Bank of Israel rate change moves the payment. */
+  has_prime_track: boolean;
   /** The payment in force today; null before the first starts and after `end_date`. */
   current_payment: number | null;
   /** Newest first. */
@@ -675,9 +683,12 @@ export interface MortgageCreate {
   monthly_payment: number;
   charge_day: number;
   end_date?: string | null;
+  /** On when omitted. */
+  has_prime_track?: boolean;
 }
 
 export interface MortgageUpdate {
   charge_day?: number;
   end_date?: string | null;
+  has_prime_track?: boolean;
 }

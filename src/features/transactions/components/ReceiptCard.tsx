@@ -221,7 +221,7 @@ export function ReceiptCard({ matchProperty, attached, previewUrl, onScanned, on
           onClick={() => scanInput.current?.click()}
           disabled={exhausted}
           className="h-9 px-4 rounded-[9px] flex items-center gap-1.5 text-[13px] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
         >
           <Sparkles size={15} aria-hidden="true" />
           {t('transactions.receiptScan.scan')}

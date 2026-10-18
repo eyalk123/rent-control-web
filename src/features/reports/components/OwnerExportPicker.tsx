@@ -211,7 +211,7 @@ export function DownloadButton({ format, selection, busy, disabled, onDownload, 
           style={{ background: 'var(--color-surface)', borderColor: 'var(--color-outline)' }}
         >
           <div className="px-4 pt-3 pb-2.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
               {t('reports.exporting')}
             </p>
             <p className="text-[13px] font-bold mt-0.5 break-words" style={{ color: 'var(--color-text-primary)' }}>

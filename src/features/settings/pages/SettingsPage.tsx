@@ -173,7 +173,7 @@ function SettingsSection({ id, title, subtitle, danger = false, children }: { id
   return (
     <section id={id} style={{ scrollMarginTop: 20 }}>
       <div className="mb-3">
-        <h2 className="text-[16px] font-black tracking-tight" style={{ color: danger ? 'var(--color-error)' : 'var(--color-text-primary)', letterSpacing: '-0.2px' }}>{title}</h2>
+        <h2 className="text-[16px] font-bold tracking-tight" style={{ color: danger ? 'var(--color-error)' : 'var(--color-text-primary)', letterSpacing: '-0.2px' }}>{title}</h2>
         {subtitle && <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>}
       </div>
       <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'var(--color-surface)', border: `1px solid ${danger ? 'var(--color-error)' : 'var(--color-outline)'}` }}>

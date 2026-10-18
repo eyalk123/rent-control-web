@@ -23,7 +23,7 @@ import { TriStateCheckbox } from '@/shared/components/ui/TriStateCheckbox';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
 import { useSelectMode } from '@/hooks/useSelectMode';
 import { useLongPress } from '@/hooks/useLongPress';
-import { getPropertyColor, getPropertyColorBg } from '@/shared/utils/propertyColor';
+import { getPropertyColor, getPropertyColorBg, getPropertyPlaceholderBg } from '@/shared/utils/propertyColor';
 import { usePropertyImageSrc } from '../utils/propertyImageSrc';
 import { formatFloorApartment } from '@/shared/utils/propertyAddress';
 import { formatArea, formatMoney } from '@/shared/utils/money';
@@ -77,7 +77,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
   const { t } = useTranslation();
   const navigate = useNavigate();
   const color = getPropertyColor(property.id);
-  const bg = getPropertyColorBg(property.id, 0.35);
+  const bg = getPropertyPlaceholderBg(property.id);
   const imageSrc = usePropertyImageSrc(property.image_url);
   // `renters` is every renter the property ever had, in no particular order, so `[0]` was
   // as likely to be a tenant who moved out years ago — named on the card, with their lease
@@ -151,7 +151,7 @@ function PropertyCard({ property, isSelectMode, isSelected, onToggle, onLongPres
             { label: t('property.size'), value: formatArea(property.sq_ft) },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+              <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
               <LtrSpan className="text-[13px] font-bold mt-0.5 block" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {String(value)}
               </LtrSpan>
@@ -240,7 +240,7 @@ function LockedPropertyCard({ property, isSelectMode, isSelected, onToggle, onDe
           <button
             onClick={() => navigate('/plans')}
             className="h-8 px-3 rounded-[8px] text-[12.5px] font-semibold hover:opacity-90"
-            style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
           >
             {t('subscription.lockedCard.upgrade')}
           </button>
@@ -666,7 +666,7 @@ export function PropertiesListPage() {
               <button
                 onClick={openBlankPropertyForm}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-[9px] text-sm font-semibold text-white hover:opacity-90"
-                style={{ background: 'var(--color-primary)' }}
+                style={{ background: 'var(--color-primary-fill)' }}
               >
                 <Plus size={14} /> {t('property.addNew')}
               </button>

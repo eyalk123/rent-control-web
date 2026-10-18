@@ -174,7 +174,7 @@ export function RenterDetailHero({ renter, pillTone, pillLabel, monthly, days, l
           <button
             onClick={onAddTransaction}
             className="flex items-center gap-1.5 h-9 px-3.5 rounded-[9px] text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--color-primary-fill)' }}
           >
             <Plus size={14} /> {t('renter.addTransaction')}
           </button>

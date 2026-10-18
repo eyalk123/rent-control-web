@@ -56,7 +56,7 @@ export function LockedPropertyState() {
         <button
           onClick={() => navigate('/plans')}
           className="h-9 px-4 rounded-[9px] text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
         >
           {t('subscription.lockedDetail.cta')}
         </button>

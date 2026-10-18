@@ -65,7 +65,7 @@ export function RenterPropertyTab({ renter }: Props) {
                   disabled={!selectedId || updateRenter.isPending}
                   onClick={() => updateRenter.mutate({ property_id: Number(selectedId) }, { onSuccess: closeLinking })}
                   className="flex-1 py-2 rounded-[10px] text-[13px] font-medium"
-                  style={{ background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: selectedId ? 'pointer' : 'not-allowed', opacity: selectedId ? 1 : 0.5 }}
+                  style={{ background: 'var(--color-primary-fill)', color: '#fff', border: 'none', cursor: selectedId ? 'pointer' : 'not-allowed', opacity: selectedId ? 1 : 0.5 }}
                 >
                   {updateRenter.isPending ? '…' : t('renter.link')}
                 </button>
@@ -94,7 +94,7 @@ export function RenterPropertyTab({ renter }: Props) {
           <button
             onClick={() => setLinking(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[13px] font-medium"
-            style={{ background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: 'pointer' }}
+            style={{ background: 'var(--color-primary-fill)', color: '#fff', border: 'none', cursor: 'pointer' }}
           >
             {t('renter.linkProperty')}
           </button>

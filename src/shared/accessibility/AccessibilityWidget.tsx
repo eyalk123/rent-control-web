@@ -108,7 +108,7 @@ export function AccessibilityWidget() {
         style={{
           insetInlineStart: 16,
           zIndex: 50,
-          background: 'var(--color-primary)',
+          background: 'var(--color-primary-fill)',
           color: 'var(--color-on-primary)',
         }}
       >

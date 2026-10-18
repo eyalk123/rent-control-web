@@ -54,7 +54,7 @@ function Vignette({ name }: { name: Key }) {
       <div className="w-full max-w-[280px] flex flex-col gap-2 text-[13px]">
         <span
           className="self-end rounded-[14px] rounded-ee-[4px] px-3 py-2"
-          style={{ background: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+          style={{ background: 'var(--color-primary-fill)', color: 'var(--color-on-primary)' }}
         >
           {ex('question')}
         </span>

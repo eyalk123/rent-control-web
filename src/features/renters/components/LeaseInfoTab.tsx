@@ -4,6 +4,7 @@ import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { DetailRow } from '@/shared/components/detail/DetailRow';
 import { DocRow } from '@/shared/components/detail/DocRow';
 import { LeaseTimeline } from './LeaseTimeline';
+import { OptionYearCard } from './OptionYearCard';
 import { formatMoney } from '@/shared/utils/money';
 import { getPaymentMethodLabel } from '@/shared/constants/paymentMethods';
 import { DEFAULT_PAYMENT_DAY_NUM } from '@/shared/constants/paymentDay';
@@ -13,9 +14,10 @@ import { useTourAnchor } from '@/features/onboarding/AnchorRegistry';
 
 interface Props {
   renter: Renter;
+  onExerciseOption: () => void;
 }
 
-export function LeaseInfoTab({ renter }: Props) {
+export function LeaseInfoTab({ renter, onExerciseOption }: Props) {
   // Named, not numbered: "4" meant nothing on a screen whose own form offers
   // Monthly / Quarterly / Yearly. An unsupported stored value still shows itself
   // ("6 per year") rather than rendering blank.
@@ -32,6 +34,8 @@ export function LeaseInfoTab({ renter }: Props) {
   };
   return (
     <div className="flex flex-col gap-4">
+      <OptionYearCard renter={renter} onExercise={onExerciseOption} />
+
       {/* Full-width lease timeline */}
       <div ref={timelineAnchorRef}>
         <LeaseTimeline renter={renter} />

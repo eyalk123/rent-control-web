@@ -137,7 +137,7 @@ export function FormCreatableSelect<TFieldValues extends FieldValues>({
                       type="button"
                       onClick={handleConfirm}
                       disabled={!newName.trim()}
-                      className="px-4 py-2 text-sm font-medium rounded-xl bg-[var(--color-primary)] text-white disabled:opacity-40 transition-opacity"
+                      className="px-4 py-2 text-sm font-medium rounded-xl bg-[var(--color-primary-fill)] text-white disabled:opacity-40 transition-opacity"
                     >
                       {t('common.add')}
                     </button>
