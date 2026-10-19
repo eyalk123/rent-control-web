@@ -35,7 +35,19 @@ export interface TaxCheck {
 /** What a track still needs before it can be computed. The per-flat ones carry the flat. */
 export type TaxMissing =
   | { code: 'tax_figures' | 'other_income' | 'mixed_ages' }
-  | ({ code: 'purchase_price' | 'purchase_date' | 'interest' | 'cpi' } & TaxPropertyBrief);
+  | ({ code: 'purchase_price' | 'purchase_date' | 'cpi' } & TaxPropertyBrief)
+  /** The year's figures from the bank's mortgage statement. */
+  | ({ code: 'interest'; mortgage_id: number } & TaxPropertyBrief);
+
+/** Mortgage interest and linkage differences deducted for one flat. */
+export interface TaxInterest extends TaxPropertyBrief {
+  /** The statement's year — last year's for the current one, marked `estimated`. */
+  year: number;
+  interest: number;
+  linkage: number;
+  amount: number;
+  estimated: boolean;
+}
 
 /** The tax on rent that is taxed at the marginal rate, once everything it needs is known. */
 interface TaxAssessed {
@@ -92,6 +104,8 @@ export interface TaxMarginal extends TaxAssessed {
   missing: TaxMissing[];
   rent: number;
   expenses: number;
+  interest: TaxInterest[];
+  interest_total: number;
   depreciation: TaxDepreciation[];
   depreciation_total?: number;
   income?: number;

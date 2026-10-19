@@ -693,7 +693,34 @@ export interface Mortgage {
   current_payment: number | null;
   /** Newest first. */
   payments: MortgagePayment[];
+  /** The bank's yearly summaries, newest year first. */
+  years: MortgageYear[];
   created_at: string;
+}
+
+/**
+ * One finished year from the bank's yearly mortgage statement (the mortgage plan's layer 2):
+ * what the year's payments were made of, and what is left to pay.
+ */
+export interface MortgageYear {
+  year: number;
+  interest: number;
+  /** How much the debt rose with the index; 0 without a linked track. */
+  linkage: number;
+  /** What was still owed on December 31. */
+  balance: number | null;
+  /** The statement, kept as one of the property's files. */
+  document: { id: number; url: string; label: string } | null;
+  updated_at: string;
+}
+
+export interface MortgageYearInput {
+  interest: number;
+  linkage: number;
+  balance: number | null;
+  /** A statement just uploaded. Left out: the year keeps its document; null removes it. */
+  document_url?: string | null;
+  document_label?: string;
 }
 
 export interface MortgageCreate {

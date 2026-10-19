@@ -1282,7 +1282,7 @@
     "missingOtherIncome": "Your other income for {{year}}, above",
     "missingPurchasePrice": "Purchase price: {{address}}",
     "missingPurchaseDate": "Purchase date: {{address}}",
-    "missingInterest": "Mortgage interest for {{year}}: {{address}}. It comes from the bank’s yearly statement, which the app can’t take in yet.",
+    "missingInterest": "Mortgage interest for {{year}}: {{address}}, from the bank’s yearly statement",
     "missingCpi": "The price index for the year {{address}} was bought isn’t available.",
     "missingMixedAges": "The owners in this group are on different brackets (one is 60 or over in {{year}}). The app doesn’t split rent between people, so work this out per owner.",
     "showDetail": "How it’s worked out",
@@ -1311,7 +1311,13 @@
     "purchasePriceInfo": "For a flat inherited or received as a gift, the price paid by whoever last bought it.",
     "purchaseRequired": "Enter the price and the date.",
     "aboutField": "About “{{field}}”",
-    "purchaseSaved": "Saved on the property"
+    "purchaseSaved": "Saved on the property",
+    "interest": "Mortgage interest",
+    "interestEstimated": "Mortgage interest (estimate)",
+    "interestTitle": "Mortgage interest",
+    "interestLine": "{{address}}: interest {{interest}} + linkage differences {{linkage}} ({{year}} statement) = {{amount}}",
+    "interestEstimateNote": "This year’s statement comes next year, so {{year}}’s stands in as an estimate.",
+    "linkageNote": "Linkage differences are counted with the interest: the law allows “interest and linkage differences”, and we found nothing specific to rent. Only a mortgage registered on the rented flat counts."
   },
   "reports": {
     "scrollHint": "Swipe the table sideways to see all months.",
@@ -2515,6 +2521,32 @@
     "formEditNote": "Correcting a mistake? Change it here. If the payment itself changed, use \"Update payment\" (+) in the property's Mortgage section, so earlier months keep the old amount.",
     "turnOffTitle": "Remove the mortgage?",
     "turnOffMessage": "Saving will delete this property's mortgage and its payment history.",
-    "turnOff": "Remove"
+    "turnOff": "Remove",
+    "yearly": {
+      "title": "Yearly from the bank",
+      "info": "Once a year, typed from the bank’s yearly mortgage statement (at Leumi, “פירוט תשלומים מצטבר”), usually in January to March for the year before. The tax report deducts the interest and linkage differences; the balance gives your equity.",
+      "empty": "No years yet. Add last year’s figures from the bank’s yearly statement.",
+      "addTitle": "Add a year",
+      "editTitle": "{{year}} from the bank",
+      "note": "From the bank’s yearly statement for a year that is over.",
+      "year": "Year",
+      "interest": "Interest paid",
+      "linkage": "Linkage differences",
+      "linkageHint": "How much the debt rose with the index. 0 if no part is linked.",
+      "balance": "Balance on December 31",
+      "optional": "Optional",
+      "required": "Enter an amount (0 if none).",
+      "document": "The bank’s statement (optional)",
+      "documentLabel": "Mortgage statement {{year}}",
+      "saved": "{{year}} saved",
+      "rowInterest": "Interest {{interest}}, linkage {{linkage}}",
+      "rowBalance": "balance {{balance}}",
+      "openDocument": "Open the {{year}} statement",
+      "delete": "Delete {{year}}",
+      "deleteConfirm": "Its figures and the bank’s statement saved with them will be deleted.",
+      "equity": "Equity",
+      "equityInfo": "The purchase price less what was still owed at the end of the latest year entered. By the purchase price, not today’s value.",
+      "equitySub": "by purchase price, end of {{year}}"
+    }
   }
 }

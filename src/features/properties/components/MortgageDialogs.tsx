@@ -21,7 +21,7 @@ function useEscape(open: boolean, enabled: boolean, onClose: () => void) {
 }
 
 /** The modal frame the property-value dialogs use, with the mortgage icon. */
-function DialogShell({
+export function DialogShell({
   title,
   note,
   loading,
@@ -64,7 +64,7 @@ function DialogShell({
   );
 }
 
-function DialogButtons({ submitLabel, loading, onClose }: { submitLabel: string; loading?: boolean; onClose: () => void }) {
+export function DialogButtons({ submitLabel, loading, onClose }: { submitLabel: string; loading?: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   return (
     <div className="mt-2 flex gap-3">

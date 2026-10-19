@@ -13,6 +13,7 @@ import { useTaxReport } from '../taxQueries';
 import { TaxGroupDrawer } from '../components/TaxGroupDrawer';
 import { TaxPurchaseDrawer } from '../components/TaxPurchaseDrawer';
 import { TaxYearInputs } from '../components/TaxYearInputs';
+import { MortgageYearDialog } from '@/features/properties/components/MortgageYearDialog';
 import type {
   TaxFigure,
   TaxFigureKey,
@@ -131,8 +132,20 @@ function TaxLines({ result, total }: { result: { income_tax?: number; surtax?: n
   );
 }
 
+/** Where the report asks for a year of the bank's mortgage statement. */
+interface InterestTarget {
+  propertyId: number;
+  mortgageId: number;
+  year: number;
+}
+
 /** What a track still needs, each item with where to fill it in. */
-function MissingList({ items, year, onPurchase }: { items: TaxMissing[]; year: number; onPurchase: (p: TaxPropertyBrief) => void }) {
+function MissingList({ items, year, onPurchase, onInterest }: {
+  items: TaxMissing[];
+  year: number;
+  onPurchase: (p: TaxPropertyBrief) => void;
+  onInterest: (target: InterestTarget) => void;
+}) {
   const { t } = useTranslation();
   if (items.some((m) => m.code === 'tax_figures')) return <Note>{t('taxTracks.missingFigures', { year })}</Note>;
   return (
@@ -151,8 +164,20 @@ function MissingList({ items, year, onPurchase }: { items: TaxMissing[]; year: n
               </li>
             );
           }
-          if (m.code === 'interest' || m.code === 'cpi') {
-            return <li key={key}>{t(m.code === 'interest' ? 'taxTracks.missingInterest' : 'taxTracks.missingCpi', { address: m.address, year })}</li>;
+          if (m.code === 'interest') {
+            // The current year's statement doesn't exist yet; last year's stands in for it.
+            const statementYear = Math.min(year, new Date().getFullYear() - 1);
+            return (
+              <li key={key}>
+                <button type="button" onClick={() => onInterest({ propertyId: m.id, mortgageId: m.mortgage_id, year: statementYear })}
+                  className="underline text-start" style={{ color: 'var(--color-primary)', background: 'none', border: 'none', padding: 0 }}>
+                  {t('taxTracks.missingInterest', { address: m.address, year: statementYear })}
+                </button>
+              </li>
+            );
+          }
+          if (m.code === 'cpi') {
+            return <li key={key}>{t('taxTracks.missingCpi', { address: m.address })}</li>;
           }
           return <li key={key}>{t(m.code === 'other_income' ? 'taxTracks.missingOtherIncome' : 'taxTracks.missingMixedAges', { year })}</li>;
         })}
@@ -161,11 +186,12 @@ function MissingList({ items, year, onPurchase }: { items: TaxMissing[]; year: n
   );
 }
 
-function GroupCard({ group, report, onEdit, onPurchase }: {
+function GroupCard({ group, report, onEdit, onPurchase, onInterest }: {
   group: TaxReportGroup;
   report: TaxReport;
   onEdit: (g: TaxGroup) => void;
   onPurchase: (p: TaxPropertyBrief) => void;
+  onInterest: (target: InterestTarget) => void;
 }) {
   const { t } = useTranslation();
   const monthName = useMonthName();
@@ -263,7 +289,7 @@ function GroupCard({ group, report, onEdit, onPurchase }: {
                       </>
                     )
                   ) : (
-                    <MissingList items={exemption.missing} year={year} onPurchase={onPurchase} />
+                    <MissingList items={exemption.missing} year={year} onPurchase={onPurchase} onInterest={onInterest} />
                   )}
                 </>
               ) : exemption.missing.some((m) => m.code === 'tax_figures') ? (
@@ -309,13 +335,18 @@ function GroupCard({ group, report, onEdit, onPurchase }: {
                 <>
                   <Line label={t('taxTracks.rent')}><Money value={marginal.rent} /></Line>
                   <Line label={t('taxTracks.expenses')}><Money value={deducted(marginal.expenses)} /></Line>
+                  {marginal.interest_total > 0 && (
+                    <Line label={marginal.interest.some((i) => i.estimated) ? t('taxTracks.interestEstimated') : t('taxTracks.interest')}>
+                      <Money value={deducted(marginal.interest_total)} />
+                    </Line>
+                  )}
                   <Line label={t('taxTracks.depreciation')}><Money value={deducted(marginal.depreciation_total)} /></Line>
                   <Line label={t('taxTracks.taxableIncome')}><Money value={marginal.income ?? 0} /></Line>
                   <TaxLines result={marginal} total={marginal.tax} />
                   {marginal.loss && <Note>{t('taxTracks.lossNote')}</Note>}
                 </>
               ) : (
-                <MissingList items={marginal.missing} year={year} onPurchase={onPurchase} />
+                <MissingList items={marginal.missing} year={year} onPurchase={onPurchase} onInterest={onInterest} />
               )}
             </TrackRow>
 
@@ -412,6 +443,26 @@ function GroupCard({ group, report, onEdit, onPurchase }: {
                 {expenses.renovation > 0 && <Note>{t('taxTracks.renovationNote', { amount: formatMoney(expenses.renovation) })}</Note>}
                 {marginal.expenses_so_far && <Note>{t('taxTracks.expensesSoFar')}</Note>}
               </div>
+              {marginal.interest.length > 0 && (
+                <div>
+                  <p className="font-semibold">{t('taxTracks.interestTitle')}</p>
+                  <div className="mt-1 space-y-0.5">
+                    {marginal.interest.map((i) => (
+                      <Note key={i.id}>
+                        {t('taxTracks.interestLine', {
+                          address: i.address,
+                          year: i.year,
+                          interest: formatMoney(i.interest),
+                          linkage: formatMoney(i.linkage),
+                          amount: formatMoney(i.amount),
+                        })}
+                        {i.estimated && ` ${t('taxTracks.interestEstimateNote', { year: i.year })}`}
+                      </Note>
+                    ))}
+                  </div>
+                  <Note>{t('taxTracks.linkageNote')}</Note>
+                </div>
+              )}
               <div>
                 <p className="font-semibold">{t('taxTracks.depreciationTitle')}</p>
                 <div className="mt-1 space-y-0.5">
@@ -496,6 +547,7 @@ export function TaxTracksReportPage() {
   const { data: report, isLoading, isError } = useTaxReport(year);
   const [editing, setEditing] = useState<{ open: boolean; group?: TaxGroup }>({ open: false });
   const [purchaseFor, setPurchaseFor] = useState<TaxPropertyBrief | null>(null);
+  const [interestFor, setInterestFor] = useState<InterestTarget | null>(null);
 
   const years = report?.years ?? [year];
 
@@ -555,6 +607,7 @@ export function TaxTracksReportPage() {
                   report={report}
                   onEdit={(group) => setEditing({ open: true, group })}
                   onPurchase={setPurchaseFor}
+                  onInterest={setInterestFor}
                 />
               ))
             )}
@@ -564,6 +617,15 @@ export function TaxTracksReportPage() {
 
       <TaxGroupDrawer open={editing.open} group={editing.group} onClose={() => setEditing({ open: false })} />
       <TaxPurchaseDrawer property={purchaseFor} onClose={() => setPurchaseFor(null)} />
+      {interestFor && (
+        <MortgageYearDialog
+          open
+          propertyId={interestFor.propertyId}
+          mortgageId={interestFor.mortgageId}
+          presetYear={interestFor.year}
+          onClose={() => setInterestFor(null)}
+        />
+      )}
     </div>
   );
 }

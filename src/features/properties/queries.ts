@@ -11,11 +11,14 @@ import {
   deletePropertyValuation,
   createMortgagePayment,
   deleteMortgagePayment,
+  deleteMortgageYear,
+  saveMortgageYear,
 } from './api/properties';
 import { retryNon4xx } from '@/core/api/queryRetry';
 import { useSubscription } from '@/features/subscription/queries';
 import type {
   MortgagePaymentInput,
+  MortgageYearInput,
   PropertyUpdate,
   PropertyValuationInput,
 } from '@/shared/types';
@@ -131,7 +134,11 @@ function useMortgageMutation<V, R>(fn: (vars: V) => Promise<R>) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => qc.invalidateQueries({ queryKey: propertyKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: propertyKeys.all });
+      // The tax report deducts the yearly interest.
+      qc.invalidateQueries({ queryKey: ['tax-tracks'] });
+    },
   });
 }
 
@@ -144,5 +151,18 @@ export function useCreateMortgagePayment(propertyId: number) {
 export function useDeleteMortgagePayment(propertyId: number) {
   return useMortgageMutation(({ mortgageId, paymentId }: { mortgageId: number; paymentId: number }) =>
     deleteMortgagePayment(propertyId, mortgageId, paymentId),
+  );
+}
+
+export function useSaveMortgageYear(propertyId: number) {
+  return useMortgageMutation(
+    ({ mortgageId, year, data }: { mortgageId: number; year: number; data: MortgageYearInput }) =>
+      saveMortgageYear(propertyId, mortgageId, year, data),
+  );
+}
+
+export function useDeleteMortgageYear(propertyId: number) {
+  return useMortgageMutation(({ mortgageId, year }: { mortgageId: number; year: number }) =>
+    deleteMortgageYear(propertyId, mortgageId, year),
   );
 }

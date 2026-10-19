@@ -9,6 +9,7 @@ import type {
   Mortgage,
   MortgageCreate,
   MortgagePaymentInput,
+  MortgageYearInput,
   PropertyReturns,
   PropertyOwner,
   PropertyOwnerCreate,
@@ -667,7 +668,8 @@ function mockPaymentOn(m: Mortgage, day: string): number | null {
 
 function mockMortgageRead(m: Mortgage): Mortgage {
   m.payments.sort((a, b) => b.effective_from.localeCompare(a.effective_from) || b.id - a.id);
-  return { ...m, current_payment: mockPaymentOn(m, toISODate(new Date())), payments: [...m.payments] };
+  m.years.sort((a, b) => b.year - a.year);
+  return { ...m, current_payment: mockPaymentOn(m, toISODate(new Date())), payments: [...m.payments], years: [...m.years] };
 }
 
 function findMockMortgage(id: number): Mortgage {
@@ -699,6 +701,7 @@ function setMockMortgage(propertyId: number, data: MortgageCreate | null) {
       has_prime_track: data.has_prime_track ?? true,
       current_payment: null,
       payments: [{ id: nextMortgageId++, amount: data.monthly_payment, effective_from: today, created_at: now }],
+      years: [],
       created_at: now,
     });
     return;
@@ -721,6 +724,23 @@ export const mockMortgagesApi = {
     const m = findMockMortgage(mortgageId);
     if (m.payments.length <= 1) throw new Error('A mortgage needs at least one payment amount');
     m.payments = m.payments.filter((p) => p.id !== paymentId);
+    return mockMortgageRead(m);
+  },
+  saveYear: async (mortgageId: number, year: number, data: MortgageYearInput): Promise<Mortgage> => {
+    const m = findMockMortgage(mortgageId);
+    const existing = m.years.find((y) => y.year === year);
+    const document = data.document_url === undefined
+      ? existing?.document ?? null
+      : data.document_url === null ? null : { id: nextMortgageId++, url: data.document_url, label: data.document_label ?? `Mortgage ${year}` };
+    m.years = [
+      ...m.years.filter((y) => y.year !== year),
+      { year, interest: data.interest, linkage: data.linkage, balance: data.balance, document, updated_at: new Date().toISOString() },
+    ];
+    return mockMortgageRead(m);
+  },
+  deleteYear: async (mortgageId: number, year: number): Promise<Mortgage> => {
+    const m = findMockMortgage(mortgageId);
+    m.years = m.years.filter((y) => y.year !== year);
     return mockMortgageRead(m);
   },
 };
@@ -1889,7 +1909,7 @@ export const mockTaxTracksApi = {
         ...(known ? { surtax: 0, capital_surtax: 0 } : {}),
       };
       group.marginal = {
-        available: known, missing: needsOther, rent: group.total_rent, expenses: 0, depreciation: [],
+        available: known, missing: needsOther, rent: group.total_rent, expenses: 0, interest: [], interest_total: 0, depreciation: [],
         expenses_so_far: year === thisYear,
         ...(known ? { depreciation_total: 0, income: group.total_rent, income_tax: group.total_rent * 0.31, surtax: 0, capital_surtax: 0, tax: group.total_rent * 0.31 } : {}),
       };
@@ -1942,7 +1962,7 @@ function emptyMockTaxGroup(key: string, kind: TaxReportGroup['kind'], name: stri
     properties: [], commercial: [], rent_by_month: Array(12).fill(0), forecast_months: [], total_rent: 0, checks: [],
     exemption: { available: false, ceiling: null, missing: [], company_renter: [] },
     ten_percent: { available: false, rate_pct: null, gross: 0, base_tax: null, tax: null, missing: [] },
-    marginal: { available: false, missing: [], rent: 0, expenses: 0, depreciation: [], expenses_so_far: false },
+    marginal: { available: false, missing: [], rent: 0, expenses: 0, interest: [], interest_total: 0, depreciation: [], expenses_so_far: false },
     combination: { available: false, reason: null },
     expenses: { counted: [], not_counted: [], renovation: 0, recognised: ['insurance', 'legal_professional', 'maintenance', 'repairs'] },
     inputs: { other_income: null, credit_points: null, credit_points_asked: false, credit_points_used: null, credit_points_threshold: null },

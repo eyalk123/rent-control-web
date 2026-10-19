@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, CalendarX, History, Landmark, Plus, Wallet } from 'lucide-react';
+import { CalendarDays, CalendarX, FileText, History, Landmark, Pencil, Plus, Trash2, Wallet } from 'lucide-react';
 import { DetailPanel } from '@/shared/components/detail/DetailPanel';
 import { DetailLabel, DetailRow } from '@/shared/components/detail/DetailRow';
 import { useToast } from '@/shared/components/ui/Toast';
+import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
+import { InfoTip } from '@/shared/components/ui/InfoTip';
+import { useOpenStoredFile } from '@/shared/utils/storedFile';
 import { formatDate, formatMoney } from '@/shared/utils/money';
 import { todayISO } from '@/shared/utils/dates';
-import { useCreateMortgagePayment, useDeleteMortgagePayment } from '../queries';
+import { useCreateMortgagePayment, useDeleteMortgagePayment, useDeleteMortgageYear } from '../queries';
 import { formatCoverage } from '../utils/propertyReturns';
 import { MortgagePaymentDialog, MortgagePaymentHistoryDialog } from './MortgageDialogs';
-import type { Mortgage, Property } from '@/shared/types';
+import { MortgageYearDialog, statementYears } from './MortgageYearDialog';
+import type { Mortgage, MortgageYear, Property } from '@/shared/types';
 
 const iconBtn =
   'h-8 shrink-0 flex items-center justify-center gap-1 rounded-lg text-[12px] font-medium hover:bg-[var(--color-input-bg)]';
@@ -28,6 +32,16 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
   const deletePayment = useDeleteMortgagePayment(property.id);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [yearDialog, setYearDialog] = useState<{ open: boolean; entry?: MortgageYear }>({ open: false });
+  const [deletingYear, setDeletingYear] = useState<number | null>(null);
+  const deleteYear = useDeleteMortgageYear(property.id);
+  const openFile = useOpenStoredFile();
+  // Equity by the purchase price: what was paid less what is still owed at the latest year end.
+  const latestBalance = mortgage.years.find((y) => y.balance != null);
+  const equity = latestBalance && property.purchase_price != null
+    ? property.purchase_price - latestBalance.balance!
+    : null;
+  const canAddYear = statementYears().some((y) => !mortgage.years.some((e) => e.year === y));
 
   const ended = mortgage.end_date != null && mortgage.end_date < todayISO();
   // Computed by the server, like the yields.
@@ -80,7 +94,90 @@ export function MortgagePanel({ property, mortgage }: { property: Property; mort
         label={t('mortgage.coverage')}
         info={t('mortgage.info.coverage')}
         value={r?.mortgage_coverage != null ? formatCoverage(r.mortgage_coverage) : null}
+      />
+
+      {/* Layer 2: the bank's yearly statement, typed in. What the payments were made of. */}
+      <div className="flex items-center gap-3 px-[18px] py-3" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+        <FileText size={15} style={{ color: 'var(--color-brand-navy-fg)' }} strokeWidth={1.6} />
+        <span className="flex-1 flex items-center gap-1 text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>
+          {t('mortgage.yearly.title')}
+          <InfoTip label={t('taxTracks.aboutField', { field: t('mortgage.yearly.title') })}>
+            <p>{t('mortgage.yearly.info')}</p>
+          </InfoTip>
+        </span>
+        {canAddYear && (
+          <button
+            type="button"
+            onClick={() => setYearDialog({ open: true })}
+            aria-label={t('mortgage.yearly.addTitle')}
+            title={t('mortgage.yearly.addTitle')}
+            className={`${iconBtn} w-8 text-white hover:opacity-90`}
+            style={{ background: 'var(--color-primary-fill)' }}
+          >
+            <Plus size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      {mortgage.years.length === 0 ? (
+        <p className="px-[18px] py-3 text-[12.5px]" style={{ color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-outline)' }}>
+          {t('mortgage.yearly.empty')}
+        </p>
+      ) : (
+        mortgage.years.map((y) => (
+          <div key={y.year} className="flex items-center gap-3 px-[18px] py-2.5" style={{ borderBottom: '1px solid var(--color-outline)' }}>
+            <span className="w-12 text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{y.year}</span>
+            <span className="flex-1 min-w-0 text-[12.5px] leading-relaxed" style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              {t('mortgage.yearly.rowInterest', { interest: formatMoney(y.interest), linkage: formatMoney(y.linkage) })}
+              {y.balance != null && <> · {t('mortgage.yearly.rowBalance', { balance: formatMoney(y.balance) })}</>}
+            </span>
+            {y.document && (
+              <button type="button" onClick={() => openFile(y.document!.url)} aria-label={t('mortgage.yearly.openDocument', { year: y.year })}
+                title={t('mortgage.yearly.openDocument', { year: y.year })} className={`${iconBtn} w-8`} style={{ color: 'var(--color-primary)' }}>
+                <FileText size={14} aria-hidden="true" />
+              </button>
+            )}
+            <button type="button" onClick={() => setYearDialog({ open: true, entry: y })} aria-label={t('mortgage.yearly.editTitle', { year: y.year })}
+              title={t('mortgage.yearly.editTitle', { year: y.year })} className={`${iconBtn} w-8`} style={{ color: 'var(--color-text-secondary)' }}>
+              <Pencil size={14} aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => setDeletingYear(y.year)} aria-label={t('mortgage.yearly.delete', { year: y.year })}
+              title={t('mortgage.yearly.delete', { year: y.year })} className={`${iconBtn} w-8`} style={{ color: 'var(--color-text-secondary)' }}>
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          </div>
+        ))
+      )}
+      <DetailRow
+        icon={Landmark}
+        label={t('mortgage.yearly.equity')}
+        info={t('mortgage.yearly.equityInfo')}
+        value={equity != null ? `${formatMoney(equity)} · ${t('mortgage.yearly.equitySub', { year: latestBalance!.year })}` : null}
         last
+      />
+
+      <MortgageYearDialog
+        open={yearDialog.open}
+        propertyId={property.id}
+        mortgageId={mortgage.id}
+        entry={yearDialog.entry}
+        takenYears={mortgage.years.map((y) => y.year)}
+        onClose={() => setYearDialog({ open: false })}
+      />
+      <ConfirmDialog
+        open={deletingYear != null}
+        title={t('mortgage.yearly.delete', { year: deletingYear ?? '' })}
+        message={t('mortgage.yearly.deleteConfirm')}
+        loading={deleteYear.isPending}
+        onConfirm={async () => {
+          if (deletingYear == null) return;
+          try {
+            await deleteYear.mutateAsync({ mortgageId: mortgage.id, year: deletingYear });
+          } catch {
+            showToast(t('error.deleteFailed'), 'error');
+          }
+          setDeletingYear(null);
+        }}
+        onClose={() => setDeletingYear(null)}
       />
 
       <MortgagePaymentDialog

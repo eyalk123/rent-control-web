@@ -8,6 +8,7 @@ import type {
   PropertyUpdate,
   Mortgage,
   MortgagePaymentInput,
+  MortgageYearInput,
   PropertyValuation,
   PropertyValuationInput,
 } from '@/shared/types';
@@ -185,6 +186,29 @@ export async function createMortgagePayment(
   const response = await apiClient.post<Mortgage>(
     `/properties/${propertyId}/mortgages/${mortgageId}/payments`,
     data,
+  );
+  return response.data;
+}
+
+/** One finished year's figures from the bank's statement. Answers with the whole mortgage. */
+export async function saveMortgageYear(
+  propertyId: number,
+  mortgageId: number,
+  year: number,
+  data: MortgageYearInput,
+): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.saveYear(mortgageId, year, data);
+  const response = await apiClient.put<Mortgage>(
+    `/properties/${propertyId}/mortgages/${mortgageId}/years/${year}`,
+    data,
+  );
+  return response.data;
+}
+
+export async function deleteMortgageYear(propertyId: number, mortgageId: number, year: number): Promise<Mortgage> {
+  if (USE_MOCK_API) return mockMortgagesApi.deleteYear(mortgageId, year);
+  const response = await apiClient.delete<Mortgage>(
+    `/properties/${propertyId}/mortgages/${mortgageId}/years/${year}`,
   );
   return response.data;
 }
