@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   propertyOwnerFormSchema,
@@ -13,6 +13,10 @@ import {
   useUpdatePropertyOwner,
 } from '../queries';
 import { FormInput } from '@/shared/components/form/FormInput';
+import { FormDateInput } from '@/shared/components/form/FormDateInput';
+import { InfoTip } from '@/shared/components/ui/InfoTip';
+import { Toggle } from '@/shared/components/ui/Toggle';
+import { todayISO } from '@/shared/utils/dates';
 import { BankAccountInput, isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
 import { capabilities } from '@/shared/utils/capabilities';
 import { Drawer } from '@/shared/components/ui/Drawer';
@@ -37,7 +41,17 @@ const EMPTY: PropertyOwnerFormValues = {
   notes: '',
   bankAccount: { bank: '', branch: '', account: '' },
   paymentDetails: '',
+  isCompany: false,
+  birthDate: '',
+  over60: false,
 };
+
+/** The year someone born on `birthDate` (YYYY-MM-DD) turns 60. The law asks whether they
+ *  had by the end of the tax year, so the year is all that matters. */
+function sixtiethYear(birthDate: string): number | null {
+  const year = Number(birthDate.slice(0, 4));
+  return birthDate.length === 10 && Number.isFinite(year) ? year + 60 : null;
+}
 
 export function PropertyOwnerFormDrawer({ open, onClose, ownerId, onCreated, initialName }: Props) {
   const { t } = useTranslation();
@@ -53,6 +67,17 @@ export function PropertyOwnerFormDrawer({ open, onClose, ownerId, onCreated, ini
     resolver: zodResolver(propertyOwnerFormSchema) as never,
     defaultValues: EMPTY,
   });
+
+  const isCompany = useWatch({ control, name: 'isCompany' });
+  const birthDate = useWatch({ control, name: 'birthDate' });
+  const over60 = useWatch({ control, name: 'over60' });
+  const turns60In = birthDate ? sixtiethYear(birthDate) : null;
+  const thisYear = new Date().getFullYear();
+  // The year a hand tick counts from: the day the server recorded, or this year for a tick
+  // not saved yet.
+  const over60Since = existing?.over_60 && existing.over_60_marked_on
+    ? Number(existing.over_60_marked_on.slice(0, 4))
+    : thisYear;
 
   const attemptClose = () => { if (isDirty) setShowDiscard(true); else onClose(); };
 
@@ -78,6 +103,9 @@ export function PropertyOwnerFormDrawer({ open, onClose, ownerId, onCreated, ini
         notes: existing.notes ?? '',
         bankAccount: { bank: parts[0] ?? '', branch: parts[1] ?? '', account: parts[2] ?? '' },
         paymentDetails: structured ? '' : (existing.bank_account ?? ''),
+        isCompany: existing.is_company ?? false,
+        birthDate: existing.birth_date ?? '',
+        over60: existing.over_60 ?? false,
       });
     }
   }, [existing, open, reset]);
@@ -93,6 +121,11 @@ export function PropertyOwnerFormDrawer({ open, onClose, ownerId, onCreated, ini
           ? `${data.bankAccount.bank}/${data.bankAccount.branch}/${data.bankAccount.account}`
           : null
         : data.paymentDetails.trim() || null,
+      // Sent as they stand even when the section is hidden: a company's stored birth date is
+      // kept, not cleared. The comparison just does not ask about a company's age.
+      is_company: data.isCompany,
+      birth_date: data.birthDate || null,
+      over_60: data.over60,
     };
     try {
       if (isEditing && ownerId) {
@@ -186,6 +219,80 @@ export function PropertyOwnerFormDrawer({ open, onClose, ownerId, onCreated, ini
               />
             )}
           </div>
+
+          {capabilities().taxTracks && (
+            <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-outline)' }}>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                  {t('propertyOwners.tax.section')}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {t('propertyOwners.tax.sectionHint')}
+                </p>
+              </div>
+              <Controller
+                control={control}
+                name="isCompany"
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{t('propertyOwners.tax.isCompany')}</p>
+                    <InfoTip label={t('propertyOwners.tax.isCompany')}>{t('propertyOwners.tax.isCompanyInfo')}</InfoTip>
+                    <span className="flex-1" />
+                    <Toggle checked={Boolean(field.value)} onChange={field.onChange} label={t('propertyOwners.tax.isCompany')} />
+                  </div>
+                )}
+              />
+              {/* A company has no age. Its stored answers are kept, just not asked about. */}
+              {!isCompany && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-1">
+                      <label htmlFor="property-owner-birth-date" className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                        {t('propertyOwners.tax.birthDate')}
+                      </label>
+                      <InfoTip label={t('propertyOwners.tax.birthDate')}>{t('propertyOwners.tax.birthDateInfo')}</InfoTip>
+                    </div>
+                    <FormDateInput
+                      id="property-owner-birth-date"
+                      min="1900-01-01"
+                      max={todayISO()}
+                      error={errors.birthDate?.message}
+                      {...register('birthDate')}
+                    />
+                  </div>
+                  <Controller
+                    control={control}
+                    name="over60"
+                    render={({ field }) => (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{t('propertyOwners.tax.over60')}</p>
+                          <InfoTip label={t('propertyOwners.tax.over60')}>{t('propertyOwners.tax.over60Info')}</InfoTip>
+                          <span className="flex-1" />
+                          {/* With a birth date the switch follows it, and the hand tick is not used. */}
+                          <Toggle
+                            checked={turns60In != null ? turns60In <= thisYear : Boolean(field.value)}
+                            onChange={field.onChange}
+                            label={t('propertyOwners.tax.over60')}
+                            disabled={turns60In != null}
+                          />
+                        </div>
+                        {turns60In != null ? (
+                          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                            {t('propertyOwners.tax.over60FromBirthDate', { year: turns60In })}
+                          </p>
+                        ) : over60 ? (
+                          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                            {t('propertyOwners.tax.over60Since', { year: over60Since })}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  />
+                </>
+              )}
+            </div>
+          )}
         </form>
       </Drawer>
       <ConfirmDialog

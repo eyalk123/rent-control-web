@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isValidBankAccount, type BankAccountValue } from '@/shared/components/form/BankAccountInput';
+import { todayISO } from '@/shared/utils/dates';
 
 const nonEmptyTrimmed = z
   .string()
@@ -27,6 +28,13 @@ export const propertyOwnerFormSchema = z.object({
   notes: optionalString,
   bankAccount: bankAccountSchema,
   paymentDetails: optionalString,
+  // The tax comparison's questions (Israel only). All optional.
+  isCompany: z.boolean(),
+  birthDate: optionalString.refine(
+    (val) => val === '' || (val >= '1900-01-01' && val <= todayISO()),
+    { message: 'propertyOwners.tax.birthDateInvalid' },
+  ),
+  over60: z.boolean(),
 });
 
 export type PropertyOwnerFormValues = z.infer<typeof propertyOwnerFormSchema>;

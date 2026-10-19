@@ -176,6 +176,8 @@ export interface Renter extends LeaseTermIntent {
    * `suppress_expiry_alerts`, because the countdown would be to a date that keeps moving.
    */
   open_ended?: boolean;
+  /** A company renter, which rules out the rent exemption in the tax tracks report. */
+  is_company?: boolean;
   terminated_on?: string | null;
   termination_reason?: string | null;
   number_of_payments?: number | null;
@@ -361,6 +363,8 @@ export interface Transaction {
   supplier_id: number | null;
   notes: string | null;
   receipt_image_url?: string | null;
+  /** Expenses only: a renovation rather than a repair, for the tax tracks report. */
+  is_renovation?: boolean;
   // Denormalized display fields
   property_name: string;
   renter_name: string | null;
@@ -389,6 +393,7 @@ export interface TransactionCreateExpense {
   supplier_id?: number | null;
   notes?: string;
   receipt_image_url?: string | null;
+  is_renovation?: boolean;
 }
 
 export interface ExpenseCategory {
@@ -447,6 +452,13 @@ export interface PropertyOwner {
   is_active: boolean;
   /** Properties pointing at this owner. One with any left cannot be deleted. */
   property_count: number;
+  /** The tax tracks report's questions — see the owner form. Israel only. */
+  is_company?: boolean;
+  birth_date?: string | null;
+  /** Ticked by hand instead of a birth date. Counts from the year in `over_60_marked_on`. */
+  over_60?: boolean;
+  /** Server-set: the day `over_60` was ticked. */
+  over_60_marked_on?: string | null;
 }
 
 export interface PropertyOwnerCreate {
@@ -455,6 +467,9 @@ export interface PropertyOwnerCreate {
   email?: string | null;
   notes?: string | null;
   bank_account?: string | null;
+  is_company?: boolean;
+  birth_date?: string | null;
+  over_60?: boolean;
 }
 
 export type PropertyOwnerUpdate = Partial<PropertyOwnerCreate> & { is_active?: boolean };
@@ -557,6 +572,7 @@ export interface RenterCreate extends LeaseTermIntent {
   suppress_expiry_alerts?: boolean;
   /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
   open_ended?: boolean;
+  is_company?: boolean;
   property_id?: number | null;
   first_name: string;
   last_name: string;
@@ -581,6 +597,7 @@ export interface RenterUpdate extends LeaseTermIntent {
   suppress_expiry_alerts?: boolean;
   /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
   open_ended?: boolean;
+  is_company?: boolean;
   property_id?: number | null;
   first_name?: string;
   last_name?: string;

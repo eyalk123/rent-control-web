@@ -638,6 +638,8 @@
     "colRenter": "Renter",
     "colPhone": "Phone",
     "suppressExpiryAlerts": "Don't warn me when this lease expires",
+    "isCompany": "The renter is a company",
+    "isCompanyInfo": "For example, a firm renting the flat for an employee. When the renter is a company, the rent can’t be tax-exempt; the 10% track still applies. Used only for the tax comparison in Reports.",
     "openEnded": "Open-ended lease",
     "openEndedOnNote": "No agreed end date. We keep the next five years on the schedule and add another each year — correct any year's rent whenever it changes.",
     "openEndedOffNote": "Tenancies here usually have no end date. Turn this on and we'll keep the schedule running instead of asking you to invent one.",
@@ -902,6 +904,8 @@
     "selectProperty": "Select property",
     "selectSupplier": "Select supplier",
     "newSupplier": "New supplier",
+    "isRenovation": "Renovation, not a repair",
+    "isRenovationInfo": "An ordinary repair is deducted from the rent on the marginal track. A renovation that improves the property isn’t. Used only for the tax comparison in Reports.",
     "otherSuppliers": "Other suppliers",
     "supplierMismatch": {
       "title": "Supplier not in this category",
@@ -2337,7 +2341,20 @@
     "deleteConfirm": "Delete this owner?",
     "deleteMessage": "Their contact and bank details will be removed.",
     "deleteBlocked": "An owner with properties can’t be deleted. Move their properties to another owner first.",
-    "readOnLease": "On the lease: “{{name}}” — not one of your owners"
+    "readOnLease": "On the lease: “{{name}}” — not one of your owners",
+    "tax": {
+      "section": "Tax comparison",
+      "sectionHint": "Optional. Used only to compare the tax tracks in Reports.",
+      "isCompany": "This owner is a company",
+      "isCompanyInfo": "The exemption, the 10% track and the marginal track are for individuals. A company pays company tax on its profit, so its properties are left out of the tax comparison.",
+      "birthDate": "Birth date",
+      "birthDateInfo": "From the tax year an owner turns 60, rent on the marginal track is taxed from the 10% bracket instead of 31%. With a birth date, every year is worked out correctly.",
+      "birthDateInvalid": "Enter a past date",
+      "over60": "Over 60",
+      "over60Info": "Instead of a birth date. It counts from the year you tick it; for earlier years the comparison will say the age is missing.",
+      "over60FromBirthDate": "From the birth date: 60 in {{year}}.",
+      "over60Since": "Counts from {{year}}."
+    }
   },
   "mortgage": {
     "section": "Mortgage",

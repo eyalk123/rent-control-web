@@ -25,7 +25,7 @@ import type {
   PropertyRenterSummary,
 } from '@/shared/types';
 import { getCurrentMonthlyRent, getLeaseEndDate, getRentForMonth } from '@/shared/types';
-import { toISODate } from '@/shared/utils/dates';
+import { toISODate, todayISO } from '@/shared/utils/dates';
 import type { LeaseExtraction, ReceiptExtraction } from '@/features/document-scan/types';
 import type {
   AgentStatus,
@@ -883,6 +883,7 @@ export const mockRentersApi = {
       property: null,
       contact_id: (data as RenterCreate).contact_id ?? (data as Renter).contact_id ?? null,
       extra_contacts: (data as RenterCreate).extra_contacts ?? (data as Renter).extra_contacts ?? null,
+      is_company: data.is_company ?? false,
     };
     mockRenters.push(newRenter);
     return mockRentersApi.getRenterById(newRenter.id);
@@ -1470,6 +1471,10 @@ export const mockPropertyOwnersApi = {
       bank_account: data.bank_account ?? null,
       is_active: true,
       property_count: 0,
+      is_company: data.is_company ?? false,
+      birth_date: data.birth_date ?? null,
+      over_60: data.over_60 ?? false,
+      over_60_marked_on: data.over_60 ? todayISO() : null,
     };
     mockPropertyOwners.push(owner);
     return { ...owner };
@@ -1481,7 +1486,11 @@ export const mockPropertyOwnersApi = {
     if (name && mockPropertyOwners.some((o) => o.name === name && o.id !== id)) {
       throw mockConflict('A property owner with this name already exists');
     }
+    const wasOver60 = mockPropertyOwners[idx].over_60;
     mockPropertyOwners[idx] = { ...mockPropertyOwners[idx], ...data, name: name || mockPropertyOwners[idx].name };
+    // Mirrors the server: the day is recorded when the tick goes on, and cleared when it goes off.
+    if (data.over_60 === false) mockPropertyOwners[idx].over_60_marked_on = null;
+    else if (data.over_60 && !wasOver60) mockPropertyOwners[idx].over_60_marked_on = todayISO();
     for (const p of mockProperties) {
       if (p.property_owner_id === id) p.property_owner = mockPropertyOwners[idx].name;
     }
@@ -1809,3 +1818,4 @@ export const mockFeedbackApi = {
     return { id: nextFeedbackId++, type: data.type, created_at: new Date().toISOString() };
   },
 };
+

@@ -24,6 +24,9 @@ import { WheelDatePicker } from '@/shared/components/form/WheelDatePicker';
 import { PropertyMultiSelect } from '@/shared/components/form/PropertyMultiSelect';
 import { RequiredMark } from '@/shared/components/form/RequiredMark';
 import { SegToggle } from '@/shared/components/ui/SegToggle';
+import { Toggle } from '@/shared/components/ui/Toggle';
+import { InfoTip } from '@/shared/components/ui/InfoTip';
+import { capabilities } from '@/shared/utils/capabilities';
 import { MonthGridPicker } from '@/shared/components/ui/MonthGridPicker';
 import { Drawer } from '@/shared/components/ui/Drawer';
 import { ConfirmDialog } from '@/shared/components/ui/ConfirmDialog';
@@ -819,7 +822,12 @@ interface ExpenseEditFields {
   supplierId: string;
   paymentMethod: string;
   notes: string;
+  isRenovation: boolean;
 }
+
+/** The built-in categories where a renovation gets entered as a repair. Only there does the
+ *  tax comparison ask which it was. */
+const RENOVATION_CATEGORY_KEYS = new Set(['repairs', 'maintenance']);
 
 interface SupplierFieldProps {
   value: string;
@@ -944,10 +952,24 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       supplierId: transaction?.supplier_id?.toString() ?? '',
       paymentMethod: transaction?.payment_method ?? '',
       notes: transaction?.notes ?? '',
+      isRenovation: transaction?.is_renovation ?? false,
     },
   });
 
   const watchedAmount = watch('amount');
+  const askRenovation = capabilities().taxTracks && (categories ?? []).some(
+    (c) => selectedCategoryIds.includes(c.id) && c.key != null && RENOVATION_CATEGORY_KEYS.has(c.key),
+  );
+  const renovationField = askRenovation && (
+    <Controller control={control} name="isRenovation" render={({ field }) => (
+      <div className="flex items-center gap-2">
+        <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{t('transactions.isRenovation')}</p>
+        <InfoTip label={t('transactions.isRenovation')}>{t('transactions.isRenovationInfo')}</InfoTip>
+        <span className="flex-1" />
+        <Toggle checked={Boolean(field.value)} onChange={field.onChange} label={t('transactions.isRenovation')} />
+      </div>
+    )} />
+  );
 
   // Report unsaved-changes state up to the drawer. Categories are seeded from the
   // transaction in edit mode, so only count them as dirty in create mode.
@@ -1077,6 +1099,9 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
         supplier_id: data.supplierId ? Number(data.supplierId) : null,
         notes: data.notes || null,
         receipt_image_url: receiptUrl ?? null,
+        // Off whenever the question is not on screen, so a category change cannot leave a
+        // hidden mark behind.
+        is_renovation: askRenovation && data.isRenovation,
       });
       showToast(t('transactions.updateSuccess'), 'success');
       onClose();
@@ -1107,6 +1132,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
       supplier_id: data.supplierId ? Number(data.supplierId) : null,
       notes: data.notes || undefined,
       receipt_image_url: receiptFile ? undefined : null,
+      is_renovation: askRenovation && data.isRenovation,
     }));
 
     try {
@@ -1192,6 +1218,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
           onChange={handleCategoryChange}
           error={categoryError}
         />
+        {renovationField}
         <Controller control={control} name="supplierId" render={({ field }) => (
           <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} onAddSupplier={onAddSupplier} />
         )} />
@@ -1292,6 +1319,7 @@ function ExpenseForm({ onClose, transaction, initialPropertyId, initialRenterId,
         />
         {scan?.categoryNote && <FieldReviewNotice source={scan.categoryNote.source_text} />}
       </div>
+      {renovationField}
       <Controller control={control} name="supplierId" render={({ field }) => (
         <SupplierField value={field.value} onChange={field.onChange} options={supplierOptions} onAddSupplier={onAddSupplier} readOnReceipt={scan?.supplierReadAs} />
       )} />

@@ -105,6 +105,8 @@ export const renterFormSchema = z.object({
   suppressExpiryAlerts: z.boolean(),
   /** A tenancy with no agreed end; the server keeps a rolling window of periods on it. */
   openEnded: z.boolean(),
+  /** A company renter, for the tax comparison (Israel only). */
+  isCompany: z.boolean(),
   leaseYears: z.array(leaseYearSchema).default([{ amount: '', type: 'contract' }]),
   extraContacts: z.array(extraContactSchema).default([]),
   idImageUrl: z.string().nullable().optional(),

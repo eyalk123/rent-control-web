@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { isOpenEndedCountry } from '@/shared/utils/capabilities';
+import { capabilities, isOpenEndedCountry } from '@/shared/utils/capabilities';
 import { Toggle } from '@/shared/components/ui/Toggle';
+import { InfoTip } from '@/shared/components/ui/InfoTip';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useForm, Controller, useFieldArray, useWatch, type DefaultValues } from 'react-hook-form';
@@ -184,7 +185,7 @@ export function RenterFormDrawer({
     // paymentDayOfMonth defaults to '1' rather than '' because the overdue engine treats a
     // missing day as the 1st. Leaving it blank meant rent was chased on a day the owner was
     // never shown; pre-filling discloses the default and leaves it editable.
-    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, ...openEndedDefault() },
+    defaultValues: { leaseStart: '', leaseYears: [{ amount: '', type: 'contract' }], extraContacts: [], propertyId: '', paymentType: '', paymentDayOfMonth: DEFAULT_PAYMENT_DAY, contractTermYears: '', contractTermMonths: '', optionYears: '', optionTermMonths: '', baseRent: '', escalationMode: 'none', escalationValue: '', suppressExpiryAlerts: false, isCompany: false, ...openEndedDefault() },
   });
 
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({ control, name: 'extraContacts' });
@@ -281,6 +282,7 @@ export function RenterFormDrawer({
         // rather than inside the intent ternary, whose other branch would have dropped it.
         suppressExpiryAlerts: existing.suppress_expiry_alerts ?? false,
         openEnded: existing.open_ended ?? false,
+        isCompany: existing.is_company ?? false,
         insuranceType: (existing.insurance_type as 'wire_transfer' | 'bank_guarantee' | '' | undefined) ?? '',
         insuranceAmount: existing.insurance_amount?.toString() ?? '',
         idImageUrl: existing.id_image_url ?? undefined,
@@ -330,6 +332,7 @@ export function RenterFormDrawer({
         escalationMode: 'none',
         escalationValue: '',
         suppressExpiryAlerts: false,
+        isCompany: false,
         contractTermYears: '',
         // Before the prefill, so a scanned lease's own term still wins. The switch replaces
         // the silent five-year pre-fill this used to carry: the same countries, but stated
@@ -420,6 +423,7 @@ export function RenterFormDrawer({
         contract_term_years: toNumOrNull(data.contractTermYears),
         suppress_expiry_alerts: data.suppressExpiryAlerts || data.openEnded,
         open_ended: data.openEnded,
+        is_company: data.isCompany,
         contract_term_months: toNumOrNull(data.contractTermMonths),
         option_years: toNumOrNull(data.optionYears),
         option_term_months: toNumOrNull(data.optionTermMonths),
@@ -632,6 +636,20 @@ export function RenterFormDrawer({
             </div>
             <FormInput label={t('renter.phone')} type="tel" required error={errors.phone?.message} {...register('phone')} />
             <FormInput label={t('renter.email')} type="email" error={errors.email?.message} {...register('email')} />
+            {capabilities().taxTracks && (
+              <Controller
+                control={control}
+                name="isCompany"
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{t('renter.isCompany')}</p>
+                    <InfoTip label={t('renter.isCompany')}>{t('renter.isCompanyInfo')}</InfoTip>
+                    <span className="flex-1" />
+                    <Toggle checked={Boolean(field.value)} onChange={field.onChange} label={t('renter.isCompany')} />
+                  </div>
+                )}
+              />
+            )}
             <Controller control={control} name="propertyId" render={({ field }) => (
               <FormSelect label={t('renter.property')} value={field.value} onValueChange={field.onChange} options={propertyOptions} placeholder={t('renter.selectProperty')} />
             )} />

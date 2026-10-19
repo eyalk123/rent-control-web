@@ -31,6 +31,7 @@ export interface TransactionUpdateExpense {
   supplier_id?: number | null;
   notes?: string | null;
   receipt_image_url?: string | null;
+  is_renovation?: boolean;
 }
 
 export type TransactionsListParams = {
@@ -162,6 +163,7 @@ export async function createExpenseTransaction(
       category_ids: payload.category_ids,
       supplier_id: payload.supplier_id ?? null,
       notes: payload.notes ?? null,
+      is_renovation: payload.is_renovation ?? false,
       property_name: '',
       renter_name: null,
       category_name: null,

@@ -41,6 +41,7 @@ function sanitizeRenterCreate(data: RenterCreate): RenterCreate {
     rent_escalation_value,
     suppress_expiry_alerts,
     open_ended,
+    is_company,
   } = data;
   const out: RenterCreate = {
     property_id: property_id ?? null,
@@ -69,6 +70,7 @@ function sanitizeRenterCreate(data: RenterCreate): RenterCreate {
   if (id_image_url !== undefined) out.id_image_url = id_image_url;
   if (suppress_expiry_alerts !== undefined) out.suppress_expiry_alerts = suppress_expiry_alerts;
   if (open_ended !== undefined) out.open_ended = open_ended;
+  if (is_company !== undefined) out.is_company = is_company;
   return out;
 }
 
@@ -99,6 +101,7 @@ function sanitizeRenterUpdate(data: RenterUpdate): Record<string, unknown> {
     'rent_escalation_value',
     'suppress_expiry_alerts',
     'open_ended',
+    'is_company',
   ];
   const out: Record<string, unknown> = {};
   for (const key of allowed) {

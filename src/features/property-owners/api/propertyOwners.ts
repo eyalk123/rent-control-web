@@ -35,6 +35,9 @@ export async function createPropertyOwner(data: PropertyOwnerCreate): Promise<Pr
     email: data.email ?? null,
     notes: data.notes ?? null,
     bank_account: data.bank_account ?? null,
+    is_company: data.is_company ?? false,
+    birth_date: data.birth_date ?? null,
+    over_60: data.over_60 ?? false,
   });
   return response.data;
 }
@@ -54,6 +57,9 @@ export async function updatePropertyOwner(
   if (data.notes !== undefined) payload.notes = data.notes ?? null;
   if (data.bank_account !== undefined) payload.bank_account = data.bank_account ?? null;
   if (data.is_active !== undefined) payload.is_active = data.is_active;
+  if (data.is_company !== undefined) payload.is_company = data.is_company;
+  if (data.birth_date !== undefined) payload.birth_date = data.birth_date ?? null;
+  if (data.over_60 !== undefined) payload.over_60 = data.over_60;
 
   const response = await apiClient.patch<PropertyOwner>(`/property-owners/${id}`, payload);
   return response.data;
