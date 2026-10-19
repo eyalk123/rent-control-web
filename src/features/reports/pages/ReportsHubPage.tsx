@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/hooks/useLanguage';
-import { BarChart2, List, FileText, Trash2 } from 'lucide-react';
+import { BarChart2, List, FileText, Landmark, Trash2 } from 'lucide-react';
+import { capabilities } from '@/shared/utils/capabilities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReportHistory, deleteReportExport } from '../api/reports';
 import { ANCHORS } from '@/features/onboarding/anchors';
@@ -66,6 +67,16 @@ export function ReportsHubPage() {
       color: 'var(--color-chart-1)',
       path: '/reports/expense-log',
     },
+    // Israel only (`tax_tracks`), and web only: the apps do not have it.
+    ...(capabilities().taxTracks
+      ? [{
+          icon: Landmark,
+          title: t('taxTracks.title'),
+          subtitle: t('taxTracks.description'),
+          color: 'var(--color-chart-2)',
+          path: '/reports/tax-tracks',
+        }]
+      : []),
   ];
 
   return (

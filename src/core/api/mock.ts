@@ -36,6 +36,7 @@ import type {
 import type { StreamChatArgs } from '@/features/agent/api/agentStream';
 import type { Subscription } from '@/features/subscription/types';
 import type { DiscountLookup } from '@/features/subscription/api/subscriptionApi';
+import type { TaxFigure, TaxGroup, TaxGroupWrite, TaxInputsWrite, TaxReport, TaxReportGroup } from '@/features/reports/api/taxTracks';
 
 // Set to true to use in-memory mock data when no backend is available.
 // Driven by VITE_USE_MOCK_API so E2E (and offline dev) can opt in without a code change.
@@ -1819,3 +1820,133 @@ export const mockFeedbackApi = {
   },
 };
 
+// ─── Tax tracks ─────────────────────────────────────────────────────────────────
+// A small stand-in for the server's calculation (`tax_tracks_service.py`), enough to lay the
+// page out offline: one group per owner, rent by `month_for`, the 2024–2026 ceiling. The
+// marginal track is a flat 31% on the rent once other income is in — the real arithmetic
+// (brackets, credits, depreciation, surtax) is tested on the backend.
+const MOCK_TAX_CEILING = 5654;
+let mockTaxGroups: TaxGroup[] = [];
+let nextTaxGroupId = 1;
+let mockTaxInputs: TaxInputsWrite[] = [];
+
+export const mockTaxTracksApi = {
+  getReport: async (year: number): Promise<TaxReport> => {
+    const thisYear = new Date().getFullYear();
+    const groups = new Map<string, TaxReportGroup>();
+    const keyOf = (p: Property) => {
+      const custom = mockTaxGroups.find(
+        (g) => g.property_ids.includes(p.id) || (p.property_owner_id != null && g.property_owner_ids.includes(p.property_owner_id)),
+      );
+      if (custom) return { key: `custom:${custom.id}`, kind: 'custom' as const, name: custom.name, group: custom };
+      if (p.property_owner_id != null) return { key: `owner:${p.property_owner_id}`, kind: 'owner' as const, name: p.property_owner ?? null };
+      return { key: 'none', kind: 'none' as const, name: null };
+    };
+    for (const g of mockTaxGroups) {
+      groups.set(`custom:${g.id}`, emptyMockTaxGroup(`custom:${g.id}`, 'custom', g.name, g));
+    }
+    for (const p of mockProperties) {
+      const k = keyOf(p);
+      if (!groups.has(k.key)) groups.set(k.key, emptyMockTaxGroup(k.key, k.kind, k.name));
+      const group = groups.get(k.key)!;
+      if (p.type === 'commercial') {
+        group.commercial.push({ id: p.id, address: p.address, city: p.city });
+        continue;
+      }
+      let rent = 0;
+      for (const tx of mockTransactions) {
+        const month = tx.month_for ?? tx.date_of_payment;
+        if (tx.type !== 'revenue' || tx.property_id !== p.id || !month.startsWith(String(year))) continue;
+        group.rent_by_month[Number(month.slice(5, 7)) - 1] += Number(tx.amount);
+        rent += Number(tx.amount);
+      }
+      group.properties.push({ id: p.id, address: p.address, city: p.city, rent });
+    }
+    for (const group of groups.values()) {
+      group.total_rent = group.rent_by_month.reduce((a, b) => a + b, 0);
+      const months = group.rent_by_month.map((rent, i) => ({
+        month: i + 1,
+        rent,
+        taxable: rent <= MOCK_TAX_CEILING ? 0 : rent <= 2 * MOCK_TAX_CEILING ? 2 * (rent - MOCK_TAX_CEILING) : rent,
+      }));
+      const taxable = months.reduce((a, m) => a + m.taxable, 0);
+      const other = mockTaxInputs.find((i) => i.group_key === group.key && i.year === year)?.other_income ?? null;
+      const known = other != null;
+      const needsOther = known ? [] : [{ code: 'other_income' as const }];
+      group.inputs = {
+        other_income: other, credit_points: null, credit_points_asked: known && other < 65340,
+        credit_points_used: 2.25, credit_points_threshold: 65340,
+      };
+      group.exemption = {
+        available: true, ceiling: MOCK_TAX_CEILING, missing: taxable > 0 ? needsOther : [], company_renter: [],
+        months, taxable, exempt: group.total_rent - taxable,
+        tax: taxable === 0 ? 0 : known ? taxable * 0.31 : null,
+        ...(taxable > 0 && known ? { taxable_income: taxable, income_tax: taxable * 0.31, surtax: 0, capital_surtax: 0 } : {}),
+      };
+      group.ten_percent = {
+        available: true, rate_pct: 10, gross: group.total_rent, base_tax: group.total_rent / 10,
+        tax: known ? group.total_rent / 10 : null, missing: needsOther,
+        ...(known ? { surtax: 0, capital_surtax: 0 } : {}),
+      };
+      group.marginal = {
+        available: known, missing: needsOther, rent: group.total_rent, expenses: 0, depreciation: [],
+        expenses_so_far: year === thisYear,
+        ...(known ? { depreciation_total: 0, income: group.total_rent, income_tax: group.total_rent * 0.31, surtax: 0, capital_surtax: 0, tax: group.total_rent * 0.31 } : {}),
+      };
+      group.combination = { available: false, reason: group.properties.length < 2 ? 'one_flat' : 'missing' };
+      if (group.properties.length === 1) group.notes.push({ code: 'rent_paid_deduction', cap: 90000 });
+    }
+    const law = (value: number, reference: string): TaxFigure => ({ value, source: 'law', reference, url: 'https://www.nevo.co.il' });
+    return {
+      year,
+      country: 'IL',
+      years: Array.from({ length: thisYear - 2021 }, (_, i) => 2022 + i),
+      is_forecast: year === thisYear,
+      forecast_from_month: year === thisYear ? new Date().getMonth() + 2 : null,
+      figures: {
+        rent_exemption_ceiling_monthly: { value: MOCK_TAX_CEILING, source: 'document', reference: null, url: 'https://www.gov.il' },
+        ten_percent_rate_pct: law(10, 'סעיף 122 לפקודת מס הכנסה'),
+        rent_paid_deduction_cap: law(90000, 'סעיף 122(ו) לפקודת מס הכנסה'),
+      },
+      document: { url: 'https://www.gov.il', fetched_at: todayISO() },
+      company_owners: [],
+      locked_properties: 0,
+      groups: [...groups.values()].filter((g) => g.kind === 'custom' || g.properties.length + g.commercial.length > 0),
+    };
+  },
+  saveGroup: async (data: TaxGroupWrite, id?: number): Promise<TaxGroup> => {
+    const clash = mockTaxGroups.some(
+      (g) => g.id !== id && (g.property_owner_ids.some((o) => data.property_owner_ids.includes(o)) || g.property_ids.some((p) => data.property_ids.includes(p))),
+    );
+    if (clash) throw mockConflict('An owner or property is already in another group');
+    const group: TaxGroup = { id: id ?? nextTaxGroupId++, ...data, name: data.name.trim() };
+    mockTaxGroups = [...mockTaxGroups.filter((g) => g.id !== group.id), group];
+    return group;
+  },
+  deleteGroup: async (id: number): Promise<void> => {
+    mockTaxGroups = mockTaxGroups.filter((g) => g.id !== id);
+    mockTaxInputs = mockTaxInputs.filter((i) => i.group_key !== `custom:${id}`);
+  },
+  saveInputs: async (data: TaxInputsWrite): Promise<TaxInputsWrite> => {
+    mockTaxInputs = [...mockTaxInputs.filter((i) => i.group_key !== data.group_key || i.year !== data.year), data];
+    return data;
+  },
+};
+
+function emptyMockTaxGroup(key: string, kind: TaxReportGroup['kind'], name: string | null, custom?: TaxGroup): TaxReportGroup {
+  return {
+    key, kind, name,
+    group_id: custom?.id ?? null,
+    property_owner_ids: custom?.property_owner_ids ?? [],
+    member_property_ids: custom?.property_ids ?? [],
+    properties: [], commercial: [], rent_by_month: Array(12).fill(0), forecast_months: [], total_rent: 0, checks: [],
+    exemption: { available: false, ceiling: null, missing: [], company_renter: [] },
+    ten_percent: { available: false, rate_pct: null, gross: 0, base_tax: null, tax: null, missing: [] },
+    marginal: { available: false, missing: [], rent: 0, expenses: 0, depreciation: [], expenses_so_far: false },
+    combination: { available: false, reason: null },
+    expenses: { counted: [], not_counted: [], renovation: 0, recognised: ['insurance', 'legal_professional', 'maintenance', 'repairs'] },
+    inputs: { other_income: null, credit_points: null, credit_points_asked: false, credit_points_used: null, credit_points_threshold: null },
+    senior: false,
+    notes: [],
+  };
+}

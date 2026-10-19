@@ -25,6 +25,7 @@ const PropertyOwnersPage = lazy(() => import('@/features/property-owners/pages/P
 const SuppliersListPage = lazy(() => import('@/features/suppliers/pages/SuppliersListPage').then((m) => ({ default: m.SuppliersListPage })));
 const ReportsHubPage = lazy(() => import('@/features/reports/pages/ReportsHubPage').then((m) => ({ default: m.ReportsHubPage })));
 const IncomeExpenseReportPage = lazy(() => import('@/features/reports/pages/IncomeExpenseReportPage').then((m) => ({ default: m.IncomeExpenseReportPage })));
+const TaxTracksReportPage = lazy(() => import('@/features/reports/pages/TaxTracksReportPage').then((m) => ({ default: m.TaxTracksReportPage })));
 const ExpenseLogReportPage = lazy(() => import('@/features/reports/pages/ExpenseLogReportPage').then((m) => ({ default: m.ExpenseLogReportPage })));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const NotificationsSettingsPage = lazy(() => import('@/features/notifications/pages/NotificationsSettingsPage').then((m) => ({ default: m.NotificationsSettingsPage })));
@@ -147,6 +148,7 @@ const router = createBrowserRouter([
           { path: '/reports', element: <ReportsHubPage /> },
           { path: '/reports/income-expense', element: <IncomeExpenseReportPage /> },
           { path: '/reports/expense-log', element: <ExpenseLogReportPage /> },
+          { path: '/reports/tax-tracks', element: <TaxTracksReportPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/settings/notifications', element: <NotificationsSettingsPage /> },
           { path: '/settings/notifications/:event', element: <NotificationEventPage /> },
